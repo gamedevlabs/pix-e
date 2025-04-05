@@ -1,4 +1,20 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const toast = useToast()
+
+function showToast() {
+  toast.add({
+    title: 'Success',
+    description: 'Your action was completed successfully.',
+    color: 'success',
+  })
+}
+
+const colorMode = useColorMode()
+
+function switchColorMode() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
+</script>
 
 <template>
   <UContainer class="py-10 space-y-10">
@@ -10,6 +26,12 @@
       <div class="flex items-center gap-4">
         <UButton color="secondary" variant="ghost" to="/">Home</UButton>
         <UButton color="secondary" variant="ghost" to="/about">About</UButton>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="{colorMode.value === 'dark' ? 'i-heroicons-sun' : 'i-heroicons-moon'}"
+          @click="switchColorMode"
+        />
       </div>
     </header>
 
@@ -19,7 +41,7 @@
       <p class="text-gray-500 dark:text-gray-400 mb-6">
         Clean, composable, and styled out of the box with Nuxt UI.
       </p>
-      <UButton size="lg" color="primary">Get Started</UButton>
+      <UButton size="lg" color="primary" @click="showToast">Get Started</UButton>
     </section>
 
     <!-- Cards Section -->
