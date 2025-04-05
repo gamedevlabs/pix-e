@@ -9,7 +9,15 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*.{js,vue,ts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{html,json,yml,yaml,md,css,scss,less}": "prettier --write"
   },
   "dependencies": {
     "@nuxt/content": "^3.4.0",
@@ -28,6 +36,8 @@
   },
   "devDependencies": {
     "@vue/eslint-config-prettier": "^10.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "prettier": "^3.5.3"
   }
 }
