@@ -1,16 +1,4 @@
-<script setup lang="ts">
-const toast = useToast()
-
-function showToast() {
-  toast.add({
-    title: 'Success',
-    description: 'Your action was completed successfully.',
-    color: 'success',
-  })
-}
-
-showToast()
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <section>
