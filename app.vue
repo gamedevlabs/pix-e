@@ -38,8 +38,9 @@ const items = ref<NavigationMenuItem[]>([
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">PIX:E</h1>
         </div>
-        <div>
+        <div class="flex items-center">
           <!-- Put user info, settings, logout etc. here -->
+          <ColorModeSwitch class="mx-8" />
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </div>
       </header>
@@ -51,9 +52,6 @@ const items = ref<NavigationMenuItem[]>([
           class="w-64 border-r border-gray-200 dark:border-gray-800 p-4 overflow-y-auto flex flex-col items-stretch"
         >
           <UNavigationMenu orientation="vertical" :items="items" />
-          <div class="mt-auto flex justify-center">
-            <ColorModeSwitch />
-          </div>
         </aside>
 
         <!-- Page Content -->
