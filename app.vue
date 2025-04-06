@@ -34,7 +34,10 @@ const items = ref<NavigationMenuItem[]>([
       <header
         class="h-16 border-b border-gray-200 dark:border-gray-800 px-6 flex items-center justify-between"
       >
-        <h1 class="text-xl font-semibold">PIX:E</h1>
+        <div class="flex items-center">
+          <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
+          <h1 class="text-xl font-bold">PIX:E</h1>
+        </div>
         <div>
           <!-- Put user info, settings, logout etc. here -->
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
