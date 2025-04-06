@@ -8,6 +8,14 @@ function showToast() {
     color: 'success',
   })
 }
+
+function showToast2() {
+  toast.add({
+    title: 'Success',
+    description: 'Your action was completed successfully.',
+    color: 'warning',
+  })
+}
 </script>
 
 <template>
@@ -19,6 +27,11 @@ function showToast() {
         Clean, composable, and styled out of the box with Nuxt UI.
       </p>
       <UButton size="lg" color="primary" @click="showToast">Get Started</UButton>
+      <UButton size="lg" color="secondary" @click="showToast">Get Started</UButton>
+      <UButton size="lg" color="success" @click="showToast">Get Started</UButton>
+      <UButton size="lg" color="info" @click="showToast">Get Started</UButton>
+      <UButton size="lg" color="warning" @click="showToast2">Get Started</UButton>
+      <UButton size="lg" color="error" @click="showToast">Get Started</UButton>
     </section>
 
     <!-- Cards Section -->
