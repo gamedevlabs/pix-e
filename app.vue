@@ -25,12 +25,6 @@ const items = ref<NavigationMenuItem[]>([
     disabled: true,
   },
 ])
-
-const colorMode = useColorMode()
-
-function switchColorMode() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-}
 </script>
 
 <template>
@@ -39,13 +33,8 @@ function switchColorMode() {
       <!-- Topbar -->
       <header class="h-16 border-b border-gray-200 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold">PIX:E</h1>
+        <ColorModeSwitch />
         <div>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="{colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'}"
-            @click="switchColorMode"
-          />
           <!-- Put user info, settings, logout etc. here -->
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </div>
