@@ -13,6 +13,11 @@ const items = ref<NavigationMenuItem[]>([
     to: '/about',
   },
   {
+    label: 'PXNodes',
+    icon: 'i-lucide-database',
+    to: '/pxnodes',
+  },
+  {
     label: 'GitHub',
     icon: 'i-simple-icons-github',
     badge: '3.8k',
@@ -36,7 +41,7 @@ const items = ref<NavigationMenuItem[]>([
       >
         <div class="flex items-center">
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
-          <h1 class="text-xl font-bold">PIX:E</h1>
+          <h1 class="text-xl font-bold">pix:e</h1>
         </div>
         <div class="flex items-center">
           <!-- Put user info, settings, logout etc. here -->
