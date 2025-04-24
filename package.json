@@ -1,44 +1,31 @@
 {
-  "name": "nuxt-app",
+  "name": "fullstack-pix-e",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gamedevlabs/pix-e.git"
+  },
   "private": true,
-  "type": "module",
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
-    "lint": "eslint . --fix",
-    "format": "prettier --write .",
-    "prepare": "husky"
+    "lint": "npm run lint --workspace=frontend",
+    "format": "npm run format --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "dev": "npm run dev --workspace=frontend"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0"
   },
   "lint-staged": {
     "**/*.{js,vue,ts}": [
-      "eslint --fix",
-      "prettier --write"
+      "npm run lint --workspace=frontend",
+      "npm exec --workspace=frontend prettier -- --write"
     ],
-    "**/*.{html,json,yml,yaml,md,css,scss,less}": "prettier --write"
-  },
-  "dependencies": {
-    "@nuxt/content": "^3.4.0",
-    "@nuxt/eslint": "^1.3.0",
-    "@nuxt/fonts": "^0.11.1",
-    "@nuxt/icon": "^1.11.0",
-    "@nuxt/image": "^1.10.0",
-    "@nuxt/test-utils": "^3.17.2",
-    "@nuxt/ui": "^3.0.2",
-    "eslint": "^9.24.0",
-    "nuxt": "^3.16.2",
-    "pinia": "^3.0.1",
-    "typescript": "^5.8.3",
-    "uuid": "^11.1.0",
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
-  },
-  "devDependencies": {
-    "@vue/eslint-config-prettier": "^10.2.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.5.0",
-    "prettier": "^3.5.3"
+    "**/*.{html,json,yml,yaml,md,css,scss,less}": "npm exec --workspace=frontend prettier -- --write"
   }
 }
