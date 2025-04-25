@@ -15,7 +15,8 @@
     "lint": "npm run lint --workspace=frontend",
     "format": "npm run format --workspace=frontend",
     "build": "npm run build --workspace=frontend",
-    "dev": "npm run dev --workspace=frontend"
+    "dev": "npm run dev --workspace=frontend",
+    "prepare": "husky"
   },
   "devDependencies": {
     "husky": "^9.1.7",
