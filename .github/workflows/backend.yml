@@ -1,8 +1,10 @@
-name: Lint and Type Check Python Code (with Reviewdog)
+name: CI Pipeline Backend # Lint and Type Check Python Code (with Reviewdog)
 
 on:
+  push:
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   lint:
