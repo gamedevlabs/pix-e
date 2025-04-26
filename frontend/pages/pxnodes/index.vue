@@ -1,13 +1,7 @@
 <script setup lang="ts">
-const { pxnodes, loading, fetchPxNodes, createPxNode, updatePxNode, deletePxNode } = usePxNodes()
+const { pxnodes, fetchPxNodes, createPxNode, updatePxNode, deletePxNode } = usePxNodes()
 
 const form = ref({
-  name: '',
-  description: '',
-})
-
-const editingNode = ref<PxNode | null>(null)
-const editForm = ref({
   name: '',
   description: '',
 })
@@ -53,6 +47,5 @@ async function handleUpdate(updatedNode: PxNode) {
         <PxNodeCard :node="node" @edit="handleUpdate" @delete="deletePxNode" />
       </div>
     </section>
-    
   </div>
 </template>
