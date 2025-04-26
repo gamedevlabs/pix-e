@@ -1,4 +1,4 @@
-name: Ensure PR is rebased
+name: Check if PR is rebased
 
 on:
   pull_request:
@@ -8,6 +8,18 @@ jobs:
   check-rebase:
     runs-on: ubuntu-latest
     steps:
-      - uses: z0al/rebase-up-to-date@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          base: main
+          fetch-depth: 0 # Important! We need full history
+
+      - name: Check for merge base
+        run: |
+          git fetch origin main
+          BASE=$(git merge-base HEAD origin/main)
+          if [ "$BASE" != "$(git rev-parse origin/main)" ]; then
+            echo "❌ This branch is not rebased onto the latest main."
+            exit 1
+          else
+            echo "✅ Branch is properly rebased onto main."
+          fi
