@@ -1,69 +1,55 @@
-// composables/usePXGraph.ts
 import { ref } from 'vue'
-import { v4 as uuid } from 'uuid'
-import type { PXComponentDefinition, PXNode, PXValueType } from '@/types/px'
+import type { PxNode } from "~/types/px";
 
-export function usePXGraph() {
-  const componentDefs = ref<PXComponentDefinition[]>([])
-  const nodes = ref<PXNode[]>([])
+const API_URL = 'http://localhost:8000/pxnodes/'
 
-  // -----------------
-  // Creation
-  // -----------------
-  function createComponentDef(name: string, type: PXValueType): PXComponentDefinition {
-    const comp = { id: uuid(), name, type }
-    componentDefs.value.push(comp)
-    return comp
-  }
+export function usePxNodes() {
+  const pxnodes = ref<PxNode[]>([])
+  const loading = ref(false)
+  const error = ref<unknown>(null)
 
-  function createNode(name: string, description: string): PXNode {
-    const node = { id: uuid(), name, description, values: {} }
-    nodes.value.push(node)
-    return node
-  }
-
-  // -----------------
-  // Attachment
-  // -----------------
-  function attachComponentToNode(nodeId: string, compId: string, value: unknown) {
-    const node = nodes.value.find((n) => n.id === nodeId)
-    const def = componentDefs.value.find((d) => d.id === compId)
-    if (!node || !def) return
-
-    // You could add validation here if needed (e.g., check typeof)
-    node.values[compId] = value
-  }
-
-  function removeComponentFromNode(nodeId: string, compId: string) {
-    const node = nodes.value.find((n) => n.id === nodeId)
-    if (node && node.values[compId] !== undefined) {
-      // Save way to delete compId from array
-      const { [compId]: _, ...rest } = node.values
-      node.values = rest
+  async function fetchPxNodes() {
+    loading.value = true
+    try {
+      const { data } = await useFetch(API_URL)
+      pxnodes.value = data.value || []
+    } catch (err) {
+      error.value = err
+    } finally {
+      loading.value = false
     }
   }
 
-  // -----------------
-  // Accessors
-  // -----------------
-  function getComponentValue(node: PXNode, compId: string): unknown {
-    return node.values[compId]
+  async function createPxNode(payload: { name: string; description: string }) {
+    await $fetch<PxNode>(API_URL, {
+      method: 'POST',
+      body: payload,
+    })
+    await fetchPxNodes()
   }
 
-  function getAttachedComponents(node: PXNode): PXComponentDefinition[] {
-    return componentDefs.value.filter((c) =>
-      Object.prototype.hasOwnProperty.call(node.values, c.id),
-    )
+  async function updatePxNode(id: number, payload: { name: string; description: string }) {
+    await $fetch<PxNode>(`${API_URL}${id}/`, {
+      method: 'PUT',
+      body: payload,
+    })
+    await fetchPxNodes()
+  }
+
+  async function deletePxNode(id: number) {
+    await $fetch<null>(`${API_URL}${id}/`, {
+      method: 'DELETE',
+    })
+    await fetchPxNodes()
   }
 
   return {
-    componentDefs,
-    nodes,
-    createComponentDef,
-    createNode,
-    attachComponentToNode,
-    removeComponentFromNode,
-    getComponentValue,
-    getAttachedComponents,
+    pxnodes,
+    loading,
+    error,
+    fetchPxNodes,
+    createPxNode,
+    updatePxNode,
+    deletePxNode,
   }
 }

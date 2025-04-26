@@ -1,74 +1,109 @@
 <script setup lang="ts">
-const {
-  componentDefs,
-  nodes,
-  createComponentDef,
-  createNode,
-  attachComponentToNode,
-  getAttachedComponents,
-  getComponentValue,
-} = usePXGraph()
+import { ref, onMounted } from 'vue'
 
-const newNodeName = ref('')
-const newNodeDesc = ref('')
-const newComponentName = ref('')
-const newComponentType = ref<'number' | 'string' | 'boolean'>('number')
+const { pxnodes, loading, fetchPxNodes, createPxNode, updatePxNode, deletePxNode } = usePxNodes()
 
-function addNode() {
-  createNode(newNodeName.value, newNodeDesc.value)
-  newNodeName.value = ''
-  newNodeDesc.value = ''
+const form = ref({
+  name: '',
+  description: '',
+})
+
+const editingNode = ref<PxNode | null>(null)
+const editForm = ref({
+  name: '',
+  description: '',
+})
+
+onMounted(() => {
+  fetchPxNodes()
+})
+
+async function handleCreate() {
+  await createPxNode(form.value)
+  form.value.name = ''
+  form.value.description = ''
 }
 
-function addComponent() {
-  createComponentDef(newComponentName.value, newComponentType.value)
-  newComponentName.value = ''
-  newComponentType.value = 'number'
+function startEdit(node: PxNode) {
+  editingNode.value = node
+  editForm.value.name = node.name
+  editForm.value.description = node.description
 }
 
-function attachToFirstNode(compId: string, value: unknown) {
-  if (nodes.value.length > 0) {
-    attachComponentToNode(nodes.value[0].id, compId, value)
-  }
+async function handleUpdate() {
+  if (!editingNode.value) return
+  await updatePxNode(editingNode.value.id, editForm.value)
+  editingNode.value = null
 }
 </script>
 
 <template>
-  <div>
-    <h2>New PXNode</h2>
-    <input v-model="newNodeName" placeholder="Name" />
-    <input v-model="newNodeDesc" placeholder="Description" />
-    <UButton @click="addNode">Create</UButton>
+  <div class="p-8">
+    <h1 class="text-2xl font-bold mb-6">Px Nodes</h1>
 
-    <h2>New PXComponent</h2>
-    <input v-model="newComponentName" placeholder="Component name" />
-    <select v-model="newComponentType">
-      <option value="number">Number</option>
-      <option value="string">String</option>
-      <option value="boolean">Boolean</option>
-    </select>
-    <UButton @click="addComponent">Create</UButton>
+    <!-- Create Form -->
+    <form @submit.prevent="handleCreate" class="mb-6 space-y-4">
+      <input
+        v-model="form.name"
+        type="text"
+        placeholder="Name"
+        class="input input-bordered w-full"
+      />
+      <textarea
+        v-model="form.description"
+        placeholder="Description"
+        class="textarea textarea-bordered w-full"
+      />
+      <UButton type="submit" class="btn btn-primary">Create Node</UButton>
+    </form>
 
-    <h2>Components</h2>
-    <ul>
-      <li v-for="comp in componentDefs" :key="comp.id">
-        {{ comp.name }} ({{ comp.type }})
-        <UButton @click="attachToFirstNode(comp.id, comp.type === 'number' ? 42 : 'default')">
-          Attach to first node with example value
-        </UButton>
-      </li>
-    </ul>
+    <!-- List of Px Nodes -->
+    <div v-if="loading">Loading...</div>
+    <div v-else class="grid gap-4">
+      <div v-for="node in pxnodes" :key="node.id" class="card p-4 shadow">
+        <div class="flex justify-between items-center">
+          <div>
+            <NuxtLink
+              :to="`/pxnodes/${node.id}`"
+              class="font-semibold text-lg text-blue-500 hover:underline"
+            >
+              {{ node.name }}
+            </NuxtLink>
+            <p class="text-sm text-gray-500">{{ node.description }}</p>
+          </div>
+          <div class="flex gap-2">
+            <button @click="startEdit(node)" class="btn btn-outline btn-sm">Edit</button>
+            <button @click="deletePxNode(node.id)" class="btn btn-error btn-sm">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <h2>PXNodes</h2>
-    <ul>
-      <li v-for="node in nodes" :key="node.id">
-        <strong>{{ node.name }}</strong> - {{ node.description }}
-        <ul>
-          <li v-for="comp in getAttachedComponents(node)" :key="comp.id">
-            {{ comp.name }} = {{ getComponentValue(node, comp.id) }}
-          </li>
-        </ul>
-      </li>
-    </ul>
+    <!-- Edit Modal -->
+    <div
+      v-if="editingNode"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white p-6 rounded-lg w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Edit Node</h2>
+        <form @submit.prevent="handleUpdate" class="space-y-4">
+          <input
+            v-model="editForm.name"
+            type="text"
+            placeholder="Name"
+            class="input input-bordered w-full"
+          />
+          <textarea
+            v-model="editForm.description"
+            placeholder="Description"
+            class="textarea textarea-bordered w-full"
+          />
+          <div class="flex justify-end gap-2">
+            <button type="button" @click="editingNode = null" class="btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
