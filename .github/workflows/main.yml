@@ -29,11 +29,9 @@ jobs:
 
       - name: 🧹 Lint with ESLint
         run: npm run lint-check
-        continue-on-error: true
 
       - name: Check Prettier formatting
         run: npm run format-check
-        continue-on-error: true
 
       - name: 🛠️ Build the Nuxt app
         run: npm run build
@@ -61,17 +59,12 @@ jobs:
 
       - name: Run Black
         run: black --check .
-        continue-on-error: true
 
       - name: Run isort
         run: isort --check-only .
-        continue-on-error: true
 
       - name: Run Flake8
         run: flake8 .
-        continue-on-error: true
 
       - name: Run mypy
         run: mypy .
-        continue-on-error: true
-
