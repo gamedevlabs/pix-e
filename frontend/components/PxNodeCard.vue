@@ -19,7 +19,7 @@ function startEdit() {
 
 function confirmEdit() {
   isBeingEdited.value = false
-  emit('edit', { ...props.node, ...editForm.value})
+  emit('edit', { ...props.node, ...editForm.value })
 }
 
 function cancelEdit() {
@@ -37,11 +37,11 @@ function emitDelete() {
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.node.name }}</h2>
-      <UTextarea v-else v-model="editForm.name"/>
+      <UTextarea v-else v-model="editForm.name" />
     </template>
 
     <p v-if="!isBeingEdited">{{ props.node.description }}</p>
-    <UTextarea v-else v-model="editForm.description"/>
+    <UTextarea v-else v-model="editForm.description" />
 
     <template #footer>
       <div v-if="!isBeingEdited" class="flex justify-end gap-2">

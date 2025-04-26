@@ -34,8 +34,7 @@ export function usePxNodes() {
         color: 'success',
       })
       await fetchPxNodes()
-    }
-    catch (err) {
+    } catch (err) {
       error.value = err
       toast.add({
         title: 'Error creating node',
@@ -55,8 +54,7 @@ export function usePxNodes() {
         color: 'success',
       })
       await fetchPxNodes()
-    }
-    catch (err) {
+    } catch (err) {
       error.value = err
       toast.add({
         title: 'Error updating node',
@@ -75,8 +73,7 @@ export function usePxNodes() {
         color: 'success',
       })
       await fetchPxNodes()
-    }
-    catch (err) {
+    } catch (err) {
       error.value = err
       toast.add({
         title: 'Error deleting node',
