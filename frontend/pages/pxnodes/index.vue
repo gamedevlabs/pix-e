@@ -42,14 +42,14 @@ async function handleUpdate() {
     <h1 class="text-2xl font-bold mb-6">Px Nodes</h1>
 
     <!-- Create Form -->
-    <form @submit.prevent="handleCreate" class="mb-6 space-y-4">
-      <input
+    <form class="mb-6 space-y-4" @submit.prevent="handleCreate">
+      <UInput
         v-model="form.name"
         type="text"
         placeholder="Name"
         class="input input-bordered w-full"
       />
-      <textarea
+      <UTextarea
         v-model="form.description"
         placeholder="Description"
         class="textarea textarea-bordered w-full"
@@ -72,8 +72,8 @@ async function handleUpdate() {
             <p class="text-sm text-gray-500">{{ node.description }}</p>
           </div>
           <div class="flex gap-2">
-            <button @click="startEdit(node)" class="btn btn-outline btn-sm">Edit</button>
-            <button @click="deletePxNode(node.id)" class="btn btn-error btn-sm">Delete</button>
+            <UButton class="btn btn-outline btn-sm" @click="startEdit(node)">Edit</UButton>
+            <UButton class="btn btn-error btn-sm" @click="deletePxNode(node.id)">Delete</UButton>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ async function handleUpdate() {
     >
       <div class="bg-white p-6 rounded-lg w-full max-w-md">
         <h2 class="text-xl font-bold mb-4">Edit Node</h2>
-        <form @submit.prevent="handleUpdate" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="handleUpdate">
           <input
             v-model="editForm.name"
             type="text"
@@ -99,7 +99,7 @@ async function handleUpdate() {
             class="textarea textarea-bordered w-full"
           />
           <div class="flex justify-end gap-2">
-            <button type="button" @click="editingNode = null" class="btn">Cancel</button>
+            <button type="button" class="btn" @click="editingNode = null">Cancel</button>
             <button type="submit" class="btn btn-primary">Save</button>
           </div>
         </form>
