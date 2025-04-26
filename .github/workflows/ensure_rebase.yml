@@ -1,0 +1,13 @@
+name: Ensure PR is rebased
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check-rebase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: z0al/rebase-up-to-date@v3
+        with:
+          base: main
