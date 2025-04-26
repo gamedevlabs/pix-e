@@ -25,8 +25,6 @@ function addComponent() {
   newComponentName.value = ''
   newComponentType.value = 'number'
 }
-const boi = 'boi'
-console.log(boi)
 
 function attachToFirstNode(compId: string, value: unknown) {
   if (nodes.value.length > 0) {
