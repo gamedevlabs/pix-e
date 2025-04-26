@@ -1,0 +1,25 @@
+name: Ensure Rebase
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check-rebase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important! We need full history
+
+      - name: Check for merge base
+        run: |
+          git fetch origin main
+          BASE=$(git merge-base HEAD origin/main)
+          if [ "$BASE" != "$(git rev-parse origin/main)" ]; then
+            echo "❌ This branch is not rebased onto the latest main."
+            exit 1
+          else
+            echo "✅ Branch is properly rebased onto main."
+          fi

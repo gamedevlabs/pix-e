@@ -10,14 +10,8 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "**/*.{js,vue,ts}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "**/*.{html,json,yml,yaml,md,css,scss,less}": "prettier --write"
+    "lint-check": "eslint .",
+    "format-check": "prettier . --check"
   },
   "dependencies": {
     "@nuxt/content": "^3.4.0",
