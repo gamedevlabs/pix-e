@@ -25,7 +25,7 @@ function addComponent() {
   newComponentName.value = ''
   newComponentType.value = 'number'
 }
-const boi = 'boi';
+const boi = 'boi'
 console.log(boi)
 
 function attachToFirstNode(compId: string, value: unknown) {
@@ -38,12 +38,12 @@ function attachToFirstNode(compId: string, value: unknown) {
 <template>
   <div>
     <h2>New PXNode</h2>
-    <input v-model="newNodeName" placeholder="Name" >
-    <input v-model="newNodeDesc" placeholder="Description" >
+    <input v-model="newNodeName" placeholder="Name" />
+    <input v-model="newNodeDesc" placeholder="Description" />
     <UButton @click="addNode">Create</UButton>
 
     <h2>New PXComponent</h2>
-    <input v-model="newComponentName" placeholder="Component name" >
+    <input v-model="newComponentName" placeholder="Component name" />
     <select v-model="newComponentType">
       <option value="number">Number</option>
       <option value="string">String</option>
