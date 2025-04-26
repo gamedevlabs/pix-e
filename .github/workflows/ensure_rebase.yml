@@ -1,4 +1,4 @@
-name: Check if PR is rebased
+name: Ensure Rebase
 
 on:
   pull_request:
