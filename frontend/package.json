@@ -1,7 +1,6 @@
 {
   "name": "nuxt-app",
   "private": true,
-  "workspaces": ["frontend"],
   "type": "module",
   "scripts": {
     "build": "nuxt build",
@@ -10,7 +9,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint-check": "eslint .",
+    "format-check": "prettier . --check"
   },
   "dependencies": {
     "@nuxt/content": "^3.4.0",

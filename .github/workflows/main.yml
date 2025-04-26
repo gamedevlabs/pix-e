@@ -1,4 +1,4 @@
-name: CI Pipeline Frontend
+name: CI Pipeline
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  lint-and-build:
+  frontend:
     runs-on: ubuntu-latest
 
     defaults:
@@ -25,10 +25,47 @@ jobs:
           cache: "npm"
 
       - name: 📦 Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: 🧹 Lint with ESLint
-        run: npm run lint
+        run: npm run lint-check
+
+      - name: Check Prettier formatting
+        run: npm run format-check
 
       - name: 🛠️ Build the Nuxt app
         run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend # 👈 all `run` steps happen inside backend/
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # or your version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Black
+        run: black --check .
+
+      - name: Run isort
+        run: isort --check-only .
+
+      - name: Run Flake8
+        run: flake8 .
+
+      - name: Run mypy
+        run: mypy .
+
