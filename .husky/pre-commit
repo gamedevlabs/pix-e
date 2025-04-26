@@ -1,6 +1,0 @@
-# Frontend javascript & html & css checks
-npx lint-staged
-
-# Backend Python checks
-source backend/.venv/Scripts/activate
-pre-commit run --all-files
