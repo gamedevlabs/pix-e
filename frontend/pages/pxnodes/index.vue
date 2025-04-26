@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-
 const { pxnodes, loading, fetchPxNodes, createPxNode, updatePxNode, deletePxNode } = usePxNodes()
 
 const form = ref({
@@ -54,30 +52,31 @@ async function handleUpdate() {
         placeholder="Description"
         class="textarea textarea-bordered w-full"
       />
-      <UButton type="submit" class="btn btn-primary">Create Node</UButton>
+      <UButton type="submit">Create Node</UButton>
     </form>
 
-    <!-- List of Px Nodes -->
-    <div v-if="loading">Loading...</div>
-    <div v-else class="grid gap-4">
-      <div v-for="node in pxnodes" :key="node.id" class="card p-4 shadow">
-        <div class="flex justify-between items-center">
-          <div>
-            <NuxtLink
-              :to="`/pxnodes/${node.id}`"
-              class="font-semibold text-lg text-blue-500 hover:underline"
-            >
-              {{ node.name }}
-            </NuxtLink>
-            <p class="text-sm text-gray-500">{{ node.description }}</p>
+    <!-- Cards Section -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <UCard v-for="node in pxnodes" :key="node.id" class="hover:shadow-lg transition">
+        <template #header>
+          <h2 class="font-semibold text-lg">{{ node.name }}</h2>
+        </template>
+        <p>{{ node.description }}</p>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton color="secondary" variant="soft" @click="startEdit(node)">Edit</UButton>
+            <UButton color="error" variant="soft" @click="deletePxNode(node.id)">Delete</UButton>
           </div>
-          <div class="flex gap-2">
-            <UButton class="btn btn-outline btn-sm" @click="startEdit(node)">Edit</UButton>
-            <UButton class="btn btn-error btn-sm" @click="deletePxNode(node.id)">Delete</UButton>
-          </div>
-        </div>
+        </template>
+      </UCard>
+    </section>
+
+    <!-- Cards Section -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="node in pxnodes" :key="node.id">
+        <PxNodeCard :node="node"/>
       </div>
-    </div>
+    </section>
 
     <!-- Edit Modal -->
     <div
@@ -87,20 +86,20 @@ async function handleUpdate() {
       <div class="bg-white p-6 rounded-lg w-full max-w-md">
         <h2 class="text-xl font-bold mb-4">Edit Node</h2>
         <form class="space-y-4" @submit.prevent="handleUpdate">
-          <input
+          <UInput
             v-model="editForm.name"
             type="text"
             placeholder="Name"
             class="input input-bordered w-full"
           />
-          <textarea
+          <UTextarea
             v-model="editForm.description"
             placeholder="Description"
             class="textarea textarea-bordered w-full"
           />
           <div class="flex justify-end gap-2">
-            <button type="button" class="btn" @click="editingNode = null">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save</button>
+            <UButton type="button" @click="editingNode = null">Cancel</UButton>
+            <UButton type="submit">Save</UButton>
           </div>
         </form>
       </div>
