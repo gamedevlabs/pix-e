@@ -1,5 +1,11 @@
 <script setup lang="ts">
-const { pxnodes, fetchPxNodes, createPxNode, updatePxNode, deletePxNode } = usePxNodes()
+const {
+  items: pxNodes,
+  fetchAll: fetchPxNodes,
+  createItem: createPxNode,
+  updateItem: updatePxNode,
+  deleteItem: deletePxNode,
+} = usePxNodes()
 
 const form = ref({
   name: '',
@@ -18,6 +24,10 @@ async function handleCreate() {
 
 async function handleUpdate(updatedNode: PxNode) {
   await updatePxNode(updatedNode.id, updatedNode)
+}
+
+async function handleAddComponent() {
+  console.log('AddComponent')
 }
 </script>
 
@@ -43,8 +53,13 @@ async function handleUpdate(updatedNode: PxNode) {
 
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="node in pxnodes" :key="node.id">
-        <PxNodeCard :node="node" @edit="handleUpdate" @delete="deletePxNode" />
+      <div v-for="node in pxNodes" :key="node.id">
+        <PxNodeCard
+          :node="node"
+          @add-component="handleAddComponent"
+          @edit="handleUpdate"
+          @delete="deletePxNode"
+        />
       </div>
     </section>
   </div>
