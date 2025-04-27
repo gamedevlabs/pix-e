@@ -4,11 +4,17 @@
   "description": "",
   "main": "install.js",
   "scripts": {
-    "install-all": "node install.js"
+    "install-all": "node install.js",
+    "start-backend": "cd backend && (.venv\\Scripts\\python.exe manage.py runserver || ./.venv/bin/python manage.py runserver)",
+    "start-frontend": "cd frontend && npm run dev",
+    "start-all": "concurrently \"npm run start-backend\" \"npm run start-frontend\""
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/gamedevlabs/pix-e.git"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

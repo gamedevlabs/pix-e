@@ -36,6 +36,10 @@ async function main() {
   console.log('\n📦 Installing frontend (Nuxt) dependencies...');
   runCommand(`npm install`, { cwd: frontendDir });
 
+  // Step 4: Install project root dependencies
+  console.log('\n📦 Installing project root dependencies...');
+  runCommand(`npm install`);
+
   console.log('\n🎉 All dependencies installed successfully!');
 }
 
