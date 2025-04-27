@@ -4,6 +4,7 @@ const props = defineProps<{ node: PxNode }>()
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
   (e: 'delete', id: number): void
+  (e: 'addComponent', id: number): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -28,6 +29,10 @@ function cancelEdit() {
   editForm.value.description = props.node.description
 }
 
+function emitAddComponent() {
+  emit('addComponent', props.node.id)
+}
+
 function emitDelete() {
   emit('delete', props.node.id)
 }
@@ -45,6 +50,8 @@ function emitDelete() {
 
     <template #footer>
       <div v-if="!isBeingEdited" class="flex justify-end gap-2">
+        <UButton color="primary" variant="soft" @click="emitAddComponent">Add Component</UButton>
+
         <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
         <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
       </div>
