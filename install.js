@@ -20,7 +20,7 @@ async function main() {
   // Step 1: Setup Python virtualenv if not exists
   if (!existsSync(venvDir)) {
     console.log('🔧 Creating Python virtual environment...');
-    runCommand(`python -m venv venv`, { cwd: backendDir });
+    runCommand(`python -m venv .venv`, { cwd: backendDir });
   } else {
     console.log('✅ Python virtual environment already exists.');
   }
@@ -28,8 +28,8 @@ async function main() {
   // Step 2: Install backend dependencies
   console.log('\n📦 Installing backend (Django) dependencies...');
   const activateCmd = process.platform === 'win32'
-    ? `.\\venv\\Scripts\\activate && pip install -r requirements.txt`
-    : `source ./venv/bin/activate && pip install -r requirements.txt`;
+    ? `.\\.venv\\Scripts\\activate && pip install -r requirements.txt`
+    : `source ./.venv/bin/activate && pip install -r requirements.txt`;
   runCommand(activateCmd, { cwd: backendDir, shell: true });
 
   // Step 3: Install frontend dependencies
