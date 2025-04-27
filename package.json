@@ -1,0 +1,14 @@
+{
+  "name": "pix-e-root",
+  "version": "0.0.0",
+  "description": "",
+  "main": "install.js",
+  "scripts": {
+    "install-all": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gamedevlabs/pix-e.git"
+  },
+  "private": true
+}
