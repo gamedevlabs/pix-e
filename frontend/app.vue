@@ -13,9 +13,14 @@ const items = ref<NavigationMenuItem[]>([
     to: '/about',
   },
   {
-    label: 'PXNodes',
+    label: 'PxNodes',
     icon: 'i-lucide-database',
     to: '/pxnodes',
+  },
+  {
+    label: 'PxComponents',
+    icon: 'i-lucide-database',
+    to: '/pxcomponents',
   },
   {
     label: 'GitHub',
