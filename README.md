@@ -1,75 +1,42 @@
-# Nuxt Minimal Starter
+# pix:e Minimal Starter
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Look at the wiki once we have one
 
 ## Setup
 
-Make sure to install dependencies:
+1. Install python
+2. Install node.js
+3. Run one of the following commands (currently, we are only supporting npm).
 
 ```bash
 # npm
-npm install
+npm run install-all
 
 # pnpm
-pnpm install
+pnpm run install-all
 
 # yarn
-yarn install
+yarn run install-all
 
 # bun
-bun install
+bun run install-all
 ```
 
 ## Development Server
 
-Start the development server on `http://localhost:3000`:
+Start both backend on `http://localhost:8000` and frontend on `http://localhost:3000`:
 
 ```bash
 # npm
-npm run dev
+npm run start-all
 
 # pnpm
-pnpm dev
+pnpm run start-all
 
 # yarn
-yarn dev
+yarn run start-all
 
 # bun
-bun run dev
+bun run start-all
 ```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+(For now, the start-all script runs with npm in the background)
