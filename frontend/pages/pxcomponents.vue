@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // todo: never code in bs javascript or typescript again
-const { px_component_definitions, fetchPxComponentDefinitions, createPxComponentDefinition } =
+const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions, createItem: createPxComponentDefinition } =
   usePxComponentDefinitions()
 
 onMounted(() => {
@@ -36,7 +36,7 @@ async function handleCreate() {
 
       <!-- Cards Section -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="definition in px_component_definitions" :key="definition.id">
+        <div v-for="definition in pxComponentDefinitions" :key="definition.id">
           <UCard>
             <template #header>
               {{ definition.name }}
