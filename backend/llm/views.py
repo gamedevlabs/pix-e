@@ -1,5 +1,92 @@
 # from django.shortcuts import render
 # from django.views import View
 # from rest_framework.views import APIView
+from uuid import uuid4
+
+from django.http import JsonResponse, HttpResponse
+from rest_framework.views import APIView
+
+from .models import Pillar, GameDesignDescription
+from .gemini.GeminiLink import GeminiLink
+from .serializers import PillarSerializer
+
 
 # Create your views here.
+
+class PillarView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def get(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        pillars = Pillar.objects.filter(user_id=userid)
+        serial = PillarSerializer(pillars, many=True)
+        return JsonResponse({"values" : serial.data}, status=200)
+
+    def post(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        pillarinfo = request.data.get("pillar")
+        pillar = Pillar(user_id=userid, pillar_id=pillarinfo["pillar_id"], description=pillarinfo["description"])
+        pillar.save()
+        return HttpResponse(status=200)
+
+    def delete(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        pillarinfo = request.data.get("pillar")
+        try:
+            pillar = Pillar.objects.get(user_id=userid, pillar_id=pillarinfo["pillar_id"])
+            pillar.delete()
+            return HttpResponse(status=200)
+        except Pillar.DoesNotExist:
+            return JsonResponse({"error": "Pillar not found"}, status=404)
+
+
+class DesignView(APIView):
+    def get(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        try:
+            design = GameDesignDescription.objects.get(user_id=userid)
+            return JsonResponse({"description": design.description}, status=200)
+        except GameDesignDescription.DoesNotExist:
+            return JsonResponse({"description": ""}, status=200)
+
+    def post(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        GameDesignDescription.objects.filter(user_id=userid).update_or_create(user_id=userid, defaults={"description": request.data["description"]})
+        return HttpResponse(status=200)
+
+
+class GeneratorView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.gemini = GeminiLink()
+
+    def get(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        try:
+            design = GameDesignDescription.objects.get(user_id=userid).description
+            pillars = [pillar.description for pillar in Pillar.objects.filter(user_id=userid)]
+
+            prompt = f"Rate the following game description with regards to the following pillars:\n\n{design}\n\nPillars:\n"
+            for pillar in pillars:
+                prompt += f"- {pillar}\n"
+
+            prompt += "\n Do not use any markdown symbols in your answer, simply answer in plain text"
+            answer = self.gemini.generate_text(prompt)
+            return JsonResponse({"feedback": answer}, status=200)
+        except GameDesignDescription.DoesNotExist | GameDesignDescription.MultipleObjectsReturned:
+            return HttpResponse({"error": "GameDesignDescription not found"}, status=404)
+        except Pillar.DoesNotExist:
+            return HttpResponse({"error": "No Pillars found"}, status=404)

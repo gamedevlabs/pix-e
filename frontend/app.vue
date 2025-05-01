@@ -18,6 +18,11 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pxnodes',
   },
   {
+    label: 'Pillars',
+    icon: 'i-lucide-database',
+    to: '/pillars',
+  },
+  {
     label: 'GitHub',
     icon: 'i-simple-icons-github',
     badge: '3.8k',
@@ -30,6 +35,7 @@ const items = ref<NavigationMenuItem[]>([
     disabled: true,
   },
 ])
+useAnonCookie()
 </script>
 
 <template>
