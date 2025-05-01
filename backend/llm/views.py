@@ -4,43 +4,67 @@
 from uuid import uuid4
 
 from django.http import JsonResponse, HttpResponse
-from rest_framework import status
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
 from .models import Pillar, GameDesignDescription
 from .gemini.GeminiLink import GeminiLink
-from .serializers import PillarSerializer, GameDesignSerializer
+from .serializers import PillarSerializer
 
 
 # Create your views here.
 
-class PillarViewSet(ModelViewSet):
-    queryset = Pillar.objects.all()
-    serializer_class = PillarSerializer
+class PillarView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__()
 
-class DesignView(ModelViewSet):
-    queryset = GameDesignDescription.objects.all()
-    serializer_class = GameDesignSerializer
+    def get(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        pillars = Pillar.objects.filter(user_id=userid)
+        serial = PillarSerializer(pillars, many=True)
+        return JsonResponse({"values" : serial.data}, status=200)
 
-    @action(detail=True, methods=['GET'], url_path='get_or_create')
-    def get_or_create(self, request, pk=None):
-        data = request.data
-        design_id = pk
+    def post(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        pillarinfo = request.data.get("pillar")
+        pillar = Pillar(user_id=userid, pillar_id=pillarinfo["pillar_id"], description=pillarinfo["description"])
+        pillar.save()
+        return HttpResponse(status=200)
 
-        obj, created = GameDesignDescription.objects.get_or_create(
-            game_id=design_id,
-            defaults={
-                'description': data.get('description', ''),
-            }
-        )
-        serializer = self.get_serializer(obj)
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
-        )
+    def delete(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        pillarinfo = request.data.get("pillar")
+        try:
+            pillar = Pillar.objects.get(user_id=userid, pillar_id=pillarinfo["pillar_id"])
+            pillar.delete()
+            return HttpResponse(status=200)
+        except Pillar.DoesNotExist:
+            return JsonResponse({"error": "Pillar not found"}, status=404)
+
+
+class DesignView(APIView):
+    def get(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        try:
+            design = GameDesignDescription.objects.get(user_id=userid)
+            return JsonResponse({"description": design.description}, status=200)
+        except GameDesignDescription.DoesNotExist:
+            return JsonResponse({"description": ""}, status=200)
+
+    def post(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
+        GameDesignDescription.objects.filter(user_id=userid).update_or_create(user_id=userid, defaults={"description": request.data["description"]})
+        return HttpResponse(status=200)
+
 
 class GeneratorView(APIView):
     def __init__(self, **kwargs):
@@ -48,9 +72,12 @@ class GeneratorView(APIView):
         self.gemini = GeminiLink()
 
     def get(self, request):
+        userid = request.COOKIES.get("anon_id")
+        if userid is None:
+            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
         try:
-            design = GameDesignDescription.objects.first()
-            pillars = [pillar.description for pillar in Pillar.objects.all()]
+            design = GameDesignDescription.objects.get(user_id=userid).description
+            pillars = [pillar.description for pillar in Pillar.objects.filter(user_id=userid)]
 
             prompt = f"Rate the following game description with regards to the following pillars:\n\n{design}\n\nPillars:\n"
             for pillar in pillars:
