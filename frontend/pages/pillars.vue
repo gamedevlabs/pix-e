@@ -52,7 +52,12 @@ if (import.meta.client) {
 
 async function createPillar() {
   if (newPillar.value.trim() === '') return
-  const index = pillars.value.length
+  const usedIds = new Set(pillars.value.map((obj) => obj.pillar_id))
+  let i = 0
+  while (usedIds.has(i)) {
+    i++
+  }
+  const index = i
   const pillar: Pillar = {
     pillar_id: index,
     description: newPillar.value.trim(),
@@ -72,15 +77,16 @@ async function createPillar() {
   newPillar.value = ''
 }
 
-async function deletePillar(index: number) {
-  if (index < 0 || index >= pillars.value.length) return
-  const pillarToDelete = pillars.value[index]
-  pillars.value.splice(index, 1)
+async function deletePillar(id: number) {
+  const pillarIndex = pillars.value.findIndex((X) => X.pillar_id === id)
+  if (pillarIndex === -1) return
+  const pillar = pillars.value[pillarIndex]
+  pillars.value.splice(pillarIndex, 1)
   try {
     await $fetch(`${config.public.apiBase}/llm/pillars/`, {
       method: 'DELETE',
       body: {
-        pillar: pillarToDelete,
+        pillar: pillar,
       },
       credentials: 'include',
     })
@@ -158,14 +164,14 @@ async function getLLMFeedback() {
     <!-- Pillar Display -->
     <div class="flex mt-6 gap-4 flex-wrap p-5">
       <div
-        v-for="(msg, index) in pillars"
+        v-for="msg in pillars"
         :key="msg.pillar_id"
         class="relative bg-blue-100 text-blue-900 p-6 rounded shadow w-70 min-h-[4rem] flex items-center justify-center text-center wrap-anywhere"
       >
         <button
           class="absolute top-1 right-1 text-blue-700 hover:text-red-600"
           aria-label="Delete"
-          @click="deletePillar(index)"
+          @click="deletePillar(msg.pillar_id)"
         >
           🗑️
         </button>
@@ -181,7 +187,7 @@ async function getLLMFeedback() {
       </div>
     </div>
     <!-- LLM Feedback Button -->
-    <div class="flex mt-6 gap-4 flex-wrap p-5">
+    <div class="flex mt-0 gap-4 flex-wrap p-5">
       <button
         class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 h-fit"
         @click="getLLMFeedback"
