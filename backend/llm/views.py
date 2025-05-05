@@ -18,36 +18,6 @@ class PillarViewSet(ModelViewSet):
     queryset = Pillar.objects.all()
     serializer_class = PillarSerializer
 
-    def get(self, request):
-        userid = request.COOKIES.get("anon_id")
-        if userid is None:
-            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
-        pillars = Pillar.objects.filter(user_id=userid)
-        serial = PillarSerializer(pillars, many=True)
-        return JsonResponse({"values" : serial.data}, status=200)
-
-    def post(self, request):
-        userid = request.COOKIES.get("anon_id")
-        if userid is None:
-            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
-        pillarinfo = request.data.get("pillar")
-        pillar = Pillar(user_id=userid, pillar_id=pillarinfo["pillar_id"], description=pillarinfo["description"])
-        pillar.save()
-        return HttpResponse(status=200)
-
-    def delete(self, request):
-        userid = request.COOKIES.get("anon_id")
-        if userid is None:
-            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
-        pillarinfo = request.data.get("pillar")
-        try:
-            pillar = Pillar.objects.get(user_id=userid, pillar_id=pillarinfo["pillar_id"])
-            pillar.delete()
-            return HttpResponse(status=200)
-        except Pillar.DoesNotExist:
-            return JsonResponse({"error": "Pillar not found"}, status=404)
-
-
 class DesignView(APIView):
     def get(self, request):
         userid = request.COOKIES.get("anon_id")
@@ -73,12 +43,9 @@ class GeneratorView(APIView):
         self.gemini = GeminiLink()
 
     def get(self, request):
-        userid = request.COOKIES.get("anon_id")
-        if userid is None:
-            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
         try:
-            design = GameDesignDescription.objects.get(user_id=userid).description
-            pillars = [pillar.description for pillar in Pillar.objects.filter(user_id=userid)]
+            design = GameDesignDescription.objects.first()
+            pillars = [pillar.description for pillar in Pillar.objects.all()]
 
             prompt = f"Rate the following game description with regards to the following pillars:\n\n{design}\n\nPillars:\n"
             for pillar in pillars:
