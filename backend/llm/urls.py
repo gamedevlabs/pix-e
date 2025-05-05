@@ -11,7 +11,11 @@ router.register(r'pillars', PillarViewSet, basename='pillars')
 
 urlpatterns = router.urls
 
+router = DefaultRouter()
+router.register(r'design', DesignView, basename='design')
+
+urlpatterns += router.urls
+
 urlpatterns += [
-    path('design/', DesignView.as_view()),
     path('feedback/', GeneratorView.as_view()),
 ]

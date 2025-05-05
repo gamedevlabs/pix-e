@@ -1,123 +1,42 @@
 ﻿<script setup lang="ts">
+import { usePillars } from '~/composables/usePillars'
 import { ref } from 'vue'
+import type { Pillar, GameDesign } from '~/types/pillars'
 
 const config = useRuntimeConfig()
-type Pillar = {
-  pillar_id: number
-  description: string
-}
 
-type DesignResponse = {
-  description: string
-}
-type LLMFeedback = {
-  feedback: string
-}
+const {
+  pillars,
+  designIdea,
+  llmFeedback,
+  createPillar,
+  deletePillar,
+  getLLMFeedback,
+  updateDesignIdea,
+} = await usePillars()
 
 const newPillar = ref('')
-const pillars = ref<Pillar[]>([])
 
-const gameDesignIdea = ref('')
-const llmFeedback = ref('Feedback will be displayed here')
-
-if (import.meta.client) {
-  //This is necessary as long as we use the botched cookie id solution
-  await useFetch<Pillar[]>(`${config.public.apiBase}/llm/pillars/`, {
-    credentials: 'include',
-  })
-    .then((data) => {
-      if (data.data) {
-        data.data.value?.forEach((x) => {
-          pillars.value.push(x)
-        })
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching:', error)
-    })
-
-  await useFetch<DesignResponse>(`${config.public.apiBase}/llm/design/`, {
-    method: 'GET',
-    credentials: 'include',
-  })
-    .then((data) => {
-      gameDesignIdea.value = data.data.value?.description ?? ''
-    })
-    .catch((error) => {
-      console.error('Error fetching:', error)
-    })
-}
-
-async function createPillar() {
-  if (newPillar.value.trim() === '') return
-  const usedIds = new Set(pillars.value.map((obj) => obj.pillar_id))
-  let i = 0
-  while (usedIds.has(i)) {
-    i++
-  }
-  const index = i
-  const pillar: Pillar = {
-    pillar_id: index,
-    description: newPillar.value.trim(),
-  }
-  pillars.value.push(pillar)
-  try {
-    await $fetch(`${config.public.apiBase}/llm/pillars/`, {
-      method: 'POST',
-      body: JSON.stringify(pillar),
-      credentials: 'include',
-    })
-  } catch (error) {
-    console.error('Error fetching:', error)
-  }
-  newPillar.value = ''
-}
-
-async function deletePillar(id: number) {
-  const pillarIndex = pillars.value.findIndex((X) => X.pillar_id === id)
-  if (pillarIndex === -1) return
-  const pillar = pillars.value[pillarIndex]
-  pillars.value.splice(pillarIndex, 1)
-  try {
-    await $fetch(`${config.public.apiBase}/llm/pillars/`, {
-      method: 'DELETE',
-      body: {
-        pillar: pillar,
-      },
-      credentials: 'include',
-    })
-  } catch (error) {
-    console.error('Error fetching:', error)
-  }
-}
-
-async function updateDesignIdea() {
-  if (gameDesignIdea.value.trim() === '') return
-  try {
-    await $fetch(`${config.public.apiBase}/llm/design/`, {
-      method: 'POST',
-      body: {
-        description: gameDesignIdea.value,
-      },
-      credentials: 'include',
-    })
-  } catch (error) {
-    console.error('Error fetching:', error)
-  }
-}
-
-async function getLLMFeedback() {
-  try {
-    llmFeedback.value = (
-      await $fetch<LLMFeedback>(`${config.public.apiBase}/llm/feedback/`, {
-        method: 'GET',
-        credentials: 'include',
+await useFetch<Pillar[]>(`${config.public.apiBase}/llm/pillars/`, {
+  credentials: 'include',
+})
+  .then((data) => {
+    if (data.data) {
+      data.data.value?.forEach((x) => {
+        pillars.value.push(x)
       })
-    ).feedback
-  } catch (error) {
+    }
+  })
+  .catch((error) => {
     console.error('Error fetching:', error)
-  }
-}
+  })
+
+await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/`, {
+  method: 'GET',
+  credentials: 'include',
+}).then((data) => {
+  designIdea.value = data.data.value?.description ?? ''
+})
 </script>
 
 <template>
@@ -132,14 +51,14 @@ async function getLLMFeedback() {
           rows="4"
         />
 
-        <UButton @click="createPillar"> Save Pillar </UButton>
+        <UButton @click="createPillar(newPillar)"> Save Pillar</UButton>
       </div>
 
       <!-- Game Design Idea Section -->
       <div class="flex items-start gap-2 w-full max-w-xl">
-        <UButton @click="updateDesignIdea"> Save Design </UButton>
+        <UButton @click="updateDesignIdea(designIdea)"> Save Design</UButton>
         <textarea
-          v-model="gameDesignIdea"
+          v-model="designIdea"
           class="w-full p-2 border border-gray-300 rounded resize-none"
           rows="4"
           placeholder="Enter your game design idea here..."
@@ -149,24 +68,24 @@ async function getLLMFeedback() {
 
     <!-- Pillar Display -->
     <div class="flex mt-6 gap-4 flex-wrap p-5">
-      <div class="relative" v-for="msg in pillars" :key="msg.pillar_id">
+      <div v-for="pillar in pillars" :key="pillar.pillar_id" class="relative">
         <UCard>
           <template #header>
-              <h2 class="font-semibold text-lg">Pillar</h2>
+            <h2 class="font-semibold text-lg">Pillar</h2>
           </template>
-          <p>{{ msg.description }}</p>
+          <p>{{ pillar.description }}</p>
           <template #footer>
             <UButton color="neutral" variant="soft">Read more</UButton>
           </template>
         </UCard>
 
-        <!-- Delete-Button absolut zum Card-Container -->
         <UButton
           aria-label="Delete"
           icon="i-lucide-trash-2"
-          @click="deletePillar(msg.pillar_id)"
           color="error"
+          variant="ghost"
           class="absolute top-2 right-2 z-10"
+          @click="deletePillar(pillar)"
         />
       </div>
     </div>
@@ -179,7 +98,7 @@ async function getLLMFeedback() {
       </div>
     </div>
     <div class="flex mt-0 gap-4 flex-wrap p-5">
-      <UButton @click="getLLMFeedback"> Get LLM Feedback </UButton>
+      <UButton @click="getLLMFeedback"> Get LLM Feedback</UButton>
     </div>
   </div>
 </template>
