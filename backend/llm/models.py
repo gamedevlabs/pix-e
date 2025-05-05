@@ -10,6 +10,12 @@ class Pillar(models.Model):
     pillar_id = models.IntegerField(primary_key=True, default=0) #this is insufficient if there are multiple users
     description = models.TextField()
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 class GameDesignDescription(models.Model):
     user_id = models.CharField(max_length=255, primary_key=True)
     description = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

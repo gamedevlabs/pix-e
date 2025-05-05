@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from django.http import JsonResponse, HttpResponse
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from .models import Pillar, GameDesignDescription
 from .gemini.GeminiLink import GeminiLink
@@ -13,9 +14,9 @@ from .serializers import PillarSerializer
 
 # Create your views here.
 
-class PillarView(APIView):
-    def __init__(self, **kwargs):
-        super().__init__()
+class PillarViewSet(ModelViewSet):
+    queryset = Pillar.objects.all()
+    serializer_class = PillarSerializer
 
     def get(self, request):
         userid = request.COOKIES.get("anon_id")
