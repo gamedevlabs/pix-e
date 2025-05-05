@@ -4,12 +4,15 @@
 from uuid import uuid4
 
 from django.http import JsonResponse, HttpResponse
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .models import Pillar, GameDesignDescription
 from .gemini.GeminiLink import GeminiLink
-from .serializers import PillarSerializer
+from .serializers import PillarSerializer, GameDesignSerializer
 
 
 # Create your views here.
@@ -18,24 +21,26 @@ class PillarViewSet(ModelViewSet):
     queryset = Pillar.objects.all()
     serializer_class = PillarSerializer
 
-class DesignView(APIView):
-    def get(self, request):
-        userid = request.COOKIES.get("anon_id")
-        if userid is None:
-            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
-        try:
-            design = GameDesignDescription.objects.get(user_id=userid)
-            return JsonResponse({"description": design.description}, status=200)
-        except GameDesignDescription.DoesNotExist:
-            return JsonResponse({"description": ""}, status=200)
+class DesignView(ModelViewSet):
+    queryset = GameDesignDescription.objects.all()
+    serializer_class = GameDesignSerializer
 
-    def post(self, request):
-        userid = request.COOKIES.get("anon_id")
-        if userid is None:
-            return JsonResponse({"error": "anon_id cookie not set"}, status=400)
-        GameDesignDescription.objects.filter(user_id=userid).update_or_create(user_id=userid, defaults={"description": request.data["description"]})
-        return HttpResponse(status=200)
+    @action(detail=True, methods=['GET'], url_path='get_or_create')
+    def get_or_create(self, request, pk=None):
+        data = request.data
+        design_id = pk
 
+        obj, created = GameDesignDescription.objects.get_or_create(
+            game_id=design_id,
+            defaults={
+                'description': data.get('description', ''),
+            }
+        )
+        serializer = self.get_serializer(obj)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
 
 class GeneratorView(APIView):
     def __init__(self, **kwargs):

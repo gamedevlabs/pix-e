@@ -6,7 +6,7 @@ from django.db import models
 # Entire keying system needs to rely on probably foreign keys from the user table
 
 class Pillar(models.Model):
-    pillar_id = models.IntegerField(primary_key=True, default=0)
+    pillar_id = models.BigAutoField(primary_key=True)
     #user_id = models.CharField(max_length=255)
     description = models.TextField()
 
@@ -14,7 +14,7 @@ class Pillar(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 class GameDesignDescription(models.Model):
-    user_id = models.CharField(max_length=255, primary_key=True)
+    game_id = models.IntegerField(primary_key=True, default=0) #just 0 for now
     description = models.TextField()
 
     created_at = models.DateTimeField(auto_now_add=True)
