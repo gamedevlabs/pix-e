@@ -136,22 +136,20 @@ async function getLLMFeedback() {
           rows="4"
         />
 
-        <button
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 h-fit"
+        <UButton
           @click="createPillar"
         >
           Save Pillar
-        </button>
+        </UButton>
       </div>
 
       <!-- Game Design Idea Section -->
       <div class="flex items-start gap-2 w-full max-w-xl">
-        <button
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 h-fit"
+        <UButton
           @click="updateDesignIdea"
         >
           Save Design
-        </button>
+        </UButton>
         <textarea
           v-model="gameDesignIdea"
           class="w-full p-2 border border-gray-300 rounded resize-none"
@@ -168,13 +166,12 @@ async function getLLMFeedback() {
         :key="msg.pillar_id"
         class="relative bg-blue-100 text-blue-900 p-6 rounded shadow w-70 min-h-[4rem] flex items-center justify-center text-center wrap-anywhere"
       >
-        <button
-          class="absolute top-1 right-1 text-blue-700 hover:text-red-600"
+        <UButton
           aria-label="Delete"
           @click="deletePillar(msg.pillar_id)"
         >
           🗑️
-        </button>
+        </UButton>
         {{ msg.description }}
       </div>
     </div>
@@ -186,14 +183,12 @@ async function getLLMFeedback() {
         {{ llmFeedback }}
       </div>
     </div>
-    <!-- LLM Feedback Button -->
     <div class="flex mt-0 gap-4 flex-wrap p-5">
-      <button
-        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 h-fit"
+      <UButton
         @click="getLLMFeedback"
       >
         Get LLM Feedback
-      </button>
+      </UButton>
     </div>
   </div>
 </template>
