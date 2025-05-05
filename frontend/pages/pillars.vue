@@ -6,9 +6,7 @@ type Pillar = {
   pillar_id: number
   description: string
 }
-type PillarResponse = {
-  values: Pillar[]
-}
+
 type DesignResponse = {
   description: string
 }
@@ -24,12 +22,12 @@ const llmFeedback = ref('Feedback will be displayed here')
 
 if (import.meta.client) {
   //This is necessary as long as we use the botched cookie id solution
-  await useFetch<PillarResponse>(`${config.public.apiBase}/llm/pillars/`, {
+  await useFetch<Pillar[]>(`${config.public.apiBase}/llm/pillars/`, {
     credentials: 'include',
   })
     .then((data) => {
       if (data.data) {
-        data.data.value?.values?.forEach((x) => {
+        data.data.value?.forEach((x) => {
           pillars.value.push(x)
         })
       }
@@ -66,9 +64,7 @@ async function createPillar() {
   try {
     await $fetch(`${config.public.apiBase}/llm/pillars/`, {
       method: 'POST',
-      body: {
-        pillar: pillar,
-      },
+      body: JSON.stringify(pillar),
       credentials: 'include',
     })
   } catch (error) {
@@ -136,20 +132,12 @@ async function getLLMFeedback() {
           rows="4"
         />
 
-        <UButton
-          @click="createPillar"
-        >
-          Save Pillar
-        </UButton>
+        <UButton @click="createPillar"> Save Pillar </UButton>
       </div>
 
       <!-- Game Design Idea Section -->
       <div class="flex items-start gap-2 w-full max-w-xl">
-        <UButton
-          @click="updateDesignIdea"
-        >
-          Save Design
-        </UButton>
+        <UButton @click="updateDesignIdea"> Save Design </UButton>
         <textarea
           v-model="gameDesignIdea"
           class="w-full p-2 border border-gray-300 rounded resize-none"
@@ -161,18 +149,25 @@ async function getLLMFeedback() {
 
     <!-- Pillar Display -->
     <div class="flex mt-6 gap-4 flex-wrap p-5">
-      <div
-        v-for="msg in pillars"
-        :key="msg.pillar_id"
-        class="relative bg-blue-100 text-blue-900 p-6 rounded shadow w-70 min-h-[4rem] flex items-center justify-center text-center wrap-anywhere"
-      >
+      <div class="relative" v-for="msg in pillars" :key="msg.pillar_id">
+        <UCard>
+          <template #header>
+              <h2 class="font-semibold text-lg">Pillar</h2>
+          </template>
+          <p>{{ msg.description }}</p>
+          <template #footer>
+            <UButton color="neutral" variant="soft">Read more</UButton>
+          </template>
+        </UCard>
+
+        <!-- Delete-Button absolut zum Card-Container -->
         <UButton
           aria-label="Delete"
+          icon="i-lucide-trash-2"
           @click="deletePillar(msg.pillar_id)"
-        >
-          🗑️
-        </UButton>
-        {{ msg.description }}
+          color="error"
+          class="absolute top-2 right-2 z-10"
+        />
       </div>
     </div>
     <!-- LLM Feedback -->
@@ -184,11 +179,7 @@ async function getLLMFeedback() {
       </div>
     </div>
     <div class="flex mt-0 gap-4 flex-wrap p-5">
-      <UButton
-        @click="getLLMFeedback"
-      >
-        Get LLM Feedback
-      </UButton>
+      <UButton @click="getLLMFeedback"> Get LLM Feedback </UButton>
     </div>
   </div>
 </template>
