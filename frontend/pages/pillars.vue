@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { usePillars } from '~/composables/usePillars'
 import { ref } from 'vue'
-import type { Pillar, GameDesign } from '~/types/pillars'
+import type { GameDesign, Pillar } from '~/types/pillars'
 
 const config = useRuntimeConfig()
 
@@ -15,7 +15,7 @@ const {
   updateDesignIdea,
 } = await usePillars()
 
-const newPillar = ref('')
+const selectedPillar = ref(-1)
 
 await useFetch<Pillar[]>(`${config.public.apiBase}/llm/pillars/`, {
   credentials: 'include',
@@ -41,41 +41,36 @@ await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/
 
 <template>
   <div class="p-6">
-    <div class="flex p-4 gap-40">
-      <!-- New Pillar Section -->
-      <div class="flex items-start gap-2 w-full max-w-xl">
-        <textarea
-          v-model="newPillar"
-          placeholder="Enter new pillar..."
-          class="border rounded px-3 py-2 w-full resize-none"
-          rows="4"
-        />
-
-        <UButton @click="createPillar(newPillar)"> Save Pillar</UButton>
-      </div>
-
-      <!-- Game Design Idea Section -->
-      <div class="flex items-start gap-2 w-full max-w-xl">
-        <UButton @click="updateDesignIdea(designIdea)"> Save Design</UButton>
-        <textarea
-          v-model="designIdea"
-          class="w-full p-2 border border-gray-300 rounded resize-none"
-          rows="4"
-          placeholder="Enter your game design idea here..."
-        />
-      </div>
+    <!-- Game Design Idea Section -->
+    <div class="flex items-start gap-2 w-full max-w-xl">
+      <UButton @click="updateDesignIdea(designIdea)"> Save Design</UButton>
+      <textarea
+        v-model="designIdea"
+        class="w-full p-2 border border-gray-300 rounded resize-none"
+        rows="4"
+        placeholder="Enter your game design idea here..."
+      />
     </div>
 
     <!-- Pillar Display -->
     <div class="flex mt-6 gap-4 flex-wrap p-5">
       <div v-for="pillar in pillars" :key="pillar.pillar_id" class="relative">
-        <UCard>
-          <template #header>
-            <h2 class="font-semibold text-lg">Pillar</h2>
+        <UCard class="w-60 min-h-50 flex flex-col justify-between">
+          <template v-if="selectedPillar != pillar.pillar_id" #header>
+            <h2 class="font-semibold text-lg">{{ pillar.name }}</h2>
+          </template>
+          <template v-else #header>
+            <UInput
+              v-model="pillar.name"
+              class="font-semibold text-lg"
+              placeholder="Pillar name..."
+            />
           </template>
           <p>{{ pillar.description }}</p>
           <template #footer>
-            <UButton color="neutral" variant="soft">Read more</UButton>
+            <UButton @click="selectedPillar = pillar.pillar_id" color="neutral" variant="soft"
+              >Edit
+            </UButton>
           </template>
         </UCard>
 
@@ -86,6 +81,16 @@ await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/
           variant="ghost"
           class="absolute top-2 right-2 z-10"
           @click="deletePillar(pillar)"
+        />
+      </div>
+      <div>
+        <UButton
+          icon="i-lucide-plus"
+          variant="soft"
+          color="secondary"
+          size="lg"
+          class="w-50 min-h-50 [&>*]:text-[50px] justify-center"
+          @click="createPillar"
         />
       </div>
     </div>

@@ -1,6 +1,7 @@
 ﻿
 export type Pillar = {
   pillar_id: number
+  name: string
   description: string
 }
 
