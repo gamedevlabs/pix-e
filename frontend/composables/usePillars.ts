@@ -7,9 +7,13 @@ export async function usePillars() {
   const designIdea = ref<string>('')
   const llmFeedback = ref<string>('Feedback will be displayed here')
 
-  async function createPillar(newPillar: string) {
-    const pillar: Pillar = await pillarsApi.createPillarInBackend(newPillar)
+  async function createPillar() {
+    const pillar: Pillar = await pillarsApi.createPillarInBackend()
     pillars.value.splice(pillar.pillar_id, 0, pillar)
+  }
+
+  async function updatePillar(pillar: Pillar) {
+    await pillarsApi.updatePillarInBackend(pillar)
   }
 
   async function deletePillar(pillar: Pillar) {
@@ -29,12 +33,12 @@ export async function usePillars() {
     llmFeedback.value = await pillarsApi.getLLMFeedback()
   }
 
-
   return {
     pillars,
     designIdea,
     llmFeedback,
     createPillar,
+    updatePillar,
     deletePillar,
     updateDesignIdea,
     getLLMFeedback,
