@@ -42,7 +42,7 @@ class DesignView(ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
-class GeneratorView(APIView):
+class OverallFeedbackView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
         self.gemini = GeminiLink()
@@ -50,16 +50,42 @@ class GeneratorView(APIView):
     def get(self, request):
         try:
             design = GameDesignDescription.objects.first()
-            pillars = [pillar.description for pillar in Pillar.objects.all()]
+            pillars = [pillar for pillar in Pillar.objects.all()]
 
-            prompt = f"Rate the following game description with regards to the following pillars:\n\n{design}\n\nPillars:\n"
+            prompt = f"Rate the following game design description with regards to the following design pillars:\n{design}\n\nPillars:\n"
+            prompt += f"Game Design Description: {design.description}\n"
+            prompt += f"Design Pillars:\n"
             for pillar in pillars:
-                prompt += f"- {pillar}\n"
+                prompt += f"Title: {pillar.title}\n"
+                prompt += f"Description: {pillar.description}\n\n"
 
-            prompt += "\n Do not use any markdown symbols in your answer, simply answer in plain text"
-            answer = self.gemini.generate_text(prompt)
+            prompt += "\nDo not use any markdown in your answer. Answer directly as if your giving your feedback to the designer."
+            answer = self.gemini.generate_response(prompt)
             return JsonResponse({"feedback": answer}, status=200)
-        except GameDesignDescription.DoesNotExist | GameDesignDescription.MultipleObjectsReturned:
-            return HttpResponse({"error": "GameDesignDescription not found"}, status=404)
-        except Pillar.DoesNotExist:
-            return HttpResponse({"error": "No Pillars found"}, status=404)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+
+class PillarFeedbackView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.gemini = GeminiLink()
+
+    def get(self, request, pillar_id):
+        try:
+            pillar = Pillar.objects.filter(pillar_id=pillar_id).first()
+            prompt = """Check if the following Game Design Pillar is written in a sensible way.
+                        First validate, but only list these issues if they are present otherwise ignore this section:
+                        1. The title is not clear or does not match the description.
+                        2. The description is not written as continuous text.
+                        3. The intent of the pillar is not clear.\n
+                        Then give feedback on the pillar and if it could be improved.\n
+                      \n\n"""
+            prompt += f"Title: {pillar.title}\n"
+            prompt += f"Description: {pillar.description}\n\n"
+
+            prompt += f"Do not use any markdown in your answer. Answer directly as if your giving your feedback to the designer."
+            answer = self.gemini.generate_response(prompt)
+            return JsonResponse({"feedback": answer}, status=200)
+        except Exception as e:
+            return HttpResponse({"error": e}, status=404)

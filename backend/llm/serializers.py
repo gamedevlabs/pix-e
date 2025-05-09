@@ -5,7 +5,7 @@ from .models import Pillar, GameDesignDescription
 class PillarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pillar
-        fields = ["pillar_id", "description"]
+        fields = "__all__"
         read_only_fields = ["pillar_id"]
 
 class GameDesignSerializer(serializers.ModelSerializer):
