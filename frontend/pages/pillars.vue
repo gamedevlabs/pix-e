@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
-import {usePillars} from '~/composables/usePillars'
-import {ref} from 'vue'
-import type {GameDesign, Pillar} from '~/types/pillars'
+import { usePillars } from '~/composables/usePillars'
+import { ref } from 'vue'
+import type { GameDesign, Pillar } from '~/types/pillars'
 
 const config = useRuntimeConfig()
 
@@ -9,27 +9,18 @@ const {
   pillars,
   designIdea,
   llmFeedback,
+  initalPillarFetch,
   createPillar,
+  updatePillar,
   deletePillar,
   getLLMFeedback,
+  validatePillar,
   updateDesignIdea,
 } = await usePillars()
 
 const selectedPillar = ref(-1)
 
-await useFetch<Pillar[]>(`${config.public.apiBase}/llm/pillars/`, {
-  credentials: 'include',
-})
-    .then((data) => {
-      if (data.data) {
-        data.data.value?.forEach((x) => {
-          pillars.value.push(x)
-        })
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching:', error)
-    })
+initalPillarFetch()
 
 await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/`, {
   method: 'GET',
@@ -37,74 +28,166 @@ await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/
 }).then((data) => {
   designIdea.value = data.data.value?.description ?? ''
 })
+
+async function handlePillarCreation() {
+  const newPillar = await createPillar()
+  selectedPillar.value = newPillar.pillar_id
+}
+
+async function handlePillarSelect(toSelect: number) {
+  if (selectedPillar.value != -1) {
+    const pillar = pillars.value.find((p) => p.pillar_id === selectedPillar.value)
+    if (pillar) {
+      await updatePillar(pillar)
+    }
+  }
+  selectedPillar.value = toSelect
+}
+
+async function handlePillarDelete(pillar: Pillar) {
+  if (selectedPillar.value === pillar.pillar_id) {
+    selectedPillar.value = -1
+  }
+  await deletePillar(pillar)
+}
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-4">
     <!-- Game Design Idea Section -->
-    <div class="flex items-start gap-2 w-full max-w-xl">
-      <UButton @click="updateDesignIdea(designIdea)"> Save Design</UButton>
-      <textarea
-          v-model="designIdea"
-          class="w-full p-2 border border-gray-300 rounded resize-none"
-          rows="4"
-          placeholder="Enter your game design idea here..."
+    <h2 class="text-2xl font-bold mb-4">Game Design Idea:</h2>
+    <div class="flex items-stretch w-300 max-w-xxl">
+      <UTextarea
+        v-model="designIdea"
+        placeholder="Enter your game design idea here..."
+        variant="outline"
+        color="secondary"
+        size="xl"
+        class="w-full"
+        autoresize
+        @focusout="updateDesignIdea"
       />
     </div>
 
     <!-- Pillar Display -->
+    <h2 class="text-2xl font-bold mt-6 mb-4">Pillars:</h2>
     <div class="flex mt-6 gap-4 flex-wrap p-5">
       <div v-for="pillar in pillars" :key="pillar.pillar_id" class="relative">
-        <UCard v-if="selectedPillar != pillar.pillar_id" class="w-60 min-h-50 flex flex-col justify-between">
-            <template v-if="selectedPillar != pillar.pillar_id" #header>
-              <h2 class="font-semibold text-lg">{{ pillar.name }}</h2>
-            </template>
-            <template v-else #header>
-              <UInput
-                  v-model="pillar.name"
-                  class="font-semibold text-lg"
-                  placeholder="Pillar name..."
-                  size="xl"
+        <UCard class="w-70 min-h-55 flex flex-col justify-center-safe" variant="soft">
+          <template #header>
+            <div class="w-full h-12 flex items-center justify-between">
+              <div class="flex-1">
+                <template v-if="selectedPillar === pillar.pillar_id">
+                  <UInput
+                    v-model="pillar.title"
+                    placeholder="Enter name..."
+                    size="xl"
+                    variant="subtle"
+                  />
+                </template>
+                <template v-else>
+                  <h3 class="text-lg font-semibold h-full flex items-center">
+                    {{ pillar.title !== '' ? pillar.title : 'Title' }}
+                  </h3>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <div class="flex-1 w-full flex items-center left-0">
+            <template v-if="selectedPillar === pillar.pillar_id">
+              <UTextarea
+                v-model="pillar.description"
+                placeholder="Enter description here..."
+                size="lg"
+                variant="subtle"
+                :rows="1"
+                autoresize
+                class="w-full"
               />
             </template>
-            <p>{{ pillar.description }}</p>
-            <template #footer>
-              <UButton @click="selectedPillar = pillar.pillar_id" color="neutral" variant="soft"
-              >Edit
-              </UButton>
+            <template v-else>
+              <p>{{ pillar.description !== '' ? pillar.description : 'Description' }}</p>
             </template>
+          </div>
+
+          <template #footer>
+            <div class="flex items-center justify-between">
+              <UButton
+                color="neutral"
+                variant="soft"
+                @click="
+                  selectedPillar === pillar.pillar_id
+                    ? handlePillarSelect(-1)
+                    : handlePillarSelect(pillar.pillar_id)
+                "
+              >
+                {{ selectedPillar === pillar.pillar_id ? 'Save' : 'Edit' }}
+              </UButton>
+              <UButton
+                v-if="selectedPillar !== pillar.pillar_id"
+                color="secondary"
+                variant="soft"
+                label="Validate"
+                @click="validatePillar(pillar)"
+              />
+            </div>
+            <UCollapsible class="pt-4" :open="pillar.display_open" :disabled="!pillar.llm_feedback">
+              <UButton
+                color="neutral"
+                variant="soft"
+                class="w-full text-left"
+                :label="pillar.llm_feedback ? 'LLM Feedback' : 'No LLM Feedback'"
+                icon="i-lucide-chevron-down"
+                @click="pillar.display_open = !pillar.display_open"
+              />
+              <template #content>
+                {{ pillar.llm_feedback }}
+              </template>
+            </UCollapsible>
+          </template>
         </UCard>
 
         <UButton
-            aria-label="Delete"
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            class="absolute top-2 right-2 z-10"
-            @click="deletePillar(pillar)"
+          aria-label="Delete"
+          icon="i-lucide-trash-2"
+          color="error"
+          variant="ghost"
+          class="absolute top-2 right-2 z-10"
+          @click="handlePillarDelete(pillar)"
         />
       </div>
       <div>
         <UButton
-            icon="i-lucide-plus"
-            variant="soft"
-            color="secondary"
-            size="lg"
-            class="w-50 min-h-50 [&>*]:text-[50px] justify-center"
-            @click="createPillar"
+          icon="i-lucide-plus"
+          variant="soft"
+          color="secondary"
+          size="lg"
+          class="w-70 min-h-55 [&>*]:text-[50px] justify-center"
+          @click="handlePillarCreation"
         />
       </div>
     </div>
+
     <!-- LLM Feedback -->
-    <div class="flex mt-6 gap-4 flex-wrap p-5">
+    <h2 class="text-2xl font-bold mt-6 mb-4">
+      LLM Feedback
+      <UButton
+        icon="i-lucide-refresh-cw"
+        label="Refresh"
+        color="secondary"
+        variant="soft"
+        @click="getLLMFeedback"
+      />
+    </h2>
+
+    <div class="flex gap-4 flex-wrap w-300">
       <div
-          class="relative bg-green-100 text-blue-800 p-6 rounded shadow w-full min-h-[4rem] flex items-center justify-center text-center wrap-anywhere"
+        style="color: var(--ui-color-secondary-200)"
+        class="p-4 rounded-lg w-fit whitespace-pre-line"
       >
         {{ llmFeedback }}
       </div>
-    </div>
-    <div class="flex mt-0 gap-4 flex-wrap p-5">
-      <UButton @click="getLLMFeedback"> Get LLM Feedback</UButton>
     </div>
   </div>
 </template>

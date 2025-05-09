@@ -12,7 +12,7 @@ class GeminiLink:
         self.client = genai.Client(api_key=key)
 
 
-    def generate_text(self, prompt: str):
+    def generate_response(self, prompt: str):
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt
