@@ -42,6 +42,7 @@ export async function usePillars() {
   async function initalPillarFetch() {
     await useFetch<PillarDTO[]>(`${config.public.apiBase}/llm/pillars/`, {
       credentials: 'include',
+      headers: useRequestHeaders(['cookie']),
     })
       .then((data) => {
         if (data.data) {

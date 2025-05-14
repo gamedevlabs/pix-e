@@ -13,6 +13,9 @@ export function usePillarsApi() {
       method: 'POST',
       body: JSON.stringify(pillar),
       credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
     })
   }
 
@@ -20,12 +23,15 @@ export function usePillarsApi() {
     const pillarDTO: PillarDTO = {
       pillar_id: pillar.pillar_id,
       title: pillar.title,
-      description: pillar.descript,
+      description: pillar.description,
     }
     await $fetch(`${config.public.apiBase}/llm/pillars/${pillar.pillar_id}/`, {
       method: 'PUT',
       body: JSON.stringify(pillarDTO),
       credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
     })
   }
 
@@ -34,6 +40,9 @@ export function usePillarsApi() {
       await $fetch(`${config.public.apiBase}/llm/pillars/${pillar.pillar_id}/`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       })
     } catch (error) {
       console.error('Error fetching:', error)
@@ -49,6 +58,9 @@ export function usePillarsApi() {
           description: designIdea.trim(),
         },
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       })
     } catch (error) {
       console.error('Error fetching:', error)

@@ -4,7 +4,7 @@
 from uuid import uuid4
 
 from django.http import JsonResponse, HttpResponse
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,17 +13,25 @@ from rest_framework.viewsets import ModelViewSet
 from .models import Pillar, GameDesignDescription
 from .gemini.GeminiLink import GeminiLink
 from .serializers import PillarSerializer, GameDesignSerializer
-
+from django.contrib.auth import authenticate, login
 
 # Create your views here.
 
 class PillarViewSet(ModelViewSet):
-    queryset = Pillar.objects.all()
     serializer_class = PillarSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pillar_id'
+
+    def get_queryset(self):
+        return Pillar.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class DesignView(ModelViewSet):
     queryset = GameDesignDescription.objects.all()
     serializer_class = GameDesignSerializer
+
 
     @action(detail=True, methods=['GET'], url_path='get_or_create')
     def get_or_create(self, request, pk=None):
@@ -39,8 +47,9 @@ class DesignView(ModelViewSet):
         serializer = self.get_serializer(obj)
         return Response(
             serializer.data,
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            status=201 if created else 200,
         )
+
 
 class OverallFeedbackView(APIView):
     def __init__(self, **kwargs):

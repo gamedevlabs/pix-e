@@ -25,6 +25,7 @@ initalPillarFetch()
 await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/`, {
   method: 'GET',
   credentials: 'include',
+  headers: useRequestHeaders(['cookie']),
 }).then((data) => {
   designIdea.value = data.data.value?.description ?? ''
 })
