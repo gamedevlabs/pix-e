@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { useAuthentication } from '~/composables/useAuthentication'
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -35,7 +36,8 @@ const items = ref<NavigationMenuItem[]>([
     disabled: true,
   },
 ])
-useAnonCookie()
+const authentication = useAuthentication()
+authentication.checkAuth()
 </script>
 
 <template>
@@ -49,9 +51,20 @@ useAnonCookie()
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center gap-3">
           <!-- Put user info, settings, logout etc. here -->
-          <ColorModeSwitch class="mx-8" />
+          <ColorModeSwitch />
+          <UButton
+            v-if="authentication.userId.value == null"
+            label="Login"
+            color="primary"
+            variant="subtle"
+            @click="useRouter().push('login')"
+          />
+          <div v-else class="flex items-center gap-2">
+            <p>Hello {{ authentication.username }}</p>
+            <UButton label="Logout" color="error" variant="subtle" @click="authentication.logout" />
+          </div>
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </div>
       </header>
