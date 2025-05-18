@@ -29,11 +29,7 @@ async function handleCreate() {
 
     <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
       <UFormField>
-        <UInput
-            v-model="state.name"
-            type="text"
-            placeholder="Name"
-        />
+        <UInput v-model="state.name" type="text" placeholder="Name" />
       </UFormField>
       <UFormField label="Type" name="type">
         <USelectMenu v-model="state.type" :items="items" />

@@ -3,8 +3,7 @@ const props = defineProps<{ node: PxNode }>()
 
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete', id: number): void
-  (e: 'addComponent', id: number): void
+  (e: 'delete' | 'addComponent', id: number): void
 }>()
 
 const isBeingEdited = ref(false)

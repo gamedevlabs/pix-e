@@ -38,19 +38,11 @@ async function handleAddComponent() {
     <!-- Create Form -->
     <UForm :state="state" class="mb-6 space-y-4" @submit.prevent="handleCreate">
       <UFormField>
-        <UInput
-            v-model="state.name"
-            type="text"
-            placeholder="Name"
-        />
+        <UInput v-model="state.name" type="text" placeholder="Name" />
       </UFormField>
 
       <UFormField>
-        <UTextarea
-            v-model="state.description"
-            placeholder="Description"
-            class="w-full xl:w-1/2"
-        />
+        <UTextarea v-model="state.description" placeholder="Description" class="w-full xl:w-1/2" />
       </UFormField>
 
       <UButton type="submit">Create Node</UButton>
