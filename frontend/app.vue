@@ -8,21 +8,16 @@ const items = ref<NavigationMenuItem[]>([
     to: '/',
   },
   {
-    label: 'About',
-    icon: 'i-lucide-database',
-    to: '/about',
-  },
-  {
     label: 'PxNodes',
-    icon: 'i-lucide-database',
+    icon: 'i-lucide-hexagon',
     to: '/pxnodes',
   },
   {
     label: 'PxComponents',
-    icon: 'i-lucide-database',
+    icon: 'i-lucide-component',
     to: '/pxcomponents',
   },
-  {
+  /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',
     badge: '3.8k',
@@ -33,7 +28,7 @@ const items = ref<NavigationMenuItem[]>([
     label: 'Help',
     icon: 'i-lucide-circle-help',
     disabled: true,
-  },
+  },*/
 ])
 </script>
 
