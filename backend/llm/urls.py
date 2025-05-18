@@ -11,7 +11,18 @@ router.register(r'pillars', PillarViewSet, basename='pillars')
 urlpatterns = router.urls
 
 router = DefaultRouter()
-router.register(r'design', DesignView, basename='design')
+
+designView = DesignView.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+})
+urlpatterns += [path('design/', designView, name='design')]
+designCreate = DesignView.as_view({
+    'get' : 'get_or_create',
+})
+urlpatterns += [path('design/get_or_create/', designCreate, name='design-get_or_create')]
+
+#router.register(r'design', designView, basename='design')
 
 urlpatterns += router.urls
 

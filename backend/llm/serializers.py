@@ -11,4 +11,4 @@ class PillarSerializer(serializers.ModelSerializer):
 class GameDesignSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameDesignDescription
-        fields = ["game_id", "description"]
+        fields = ["description"]

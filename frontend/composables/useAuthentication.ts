@@ -1,75 +1,88 @@
-﻿export function useAuthentication() {
-  const userId = useState<number | null>('auth-user-id', () => null)
-  const username = useState<string | null>('auth-username', () => null)
-  const error = ref('')
+﻿import type { User } from '@/types/authentication'
 
-  async function register(username: string, password: string) {
-    error.value = ''
+export function useAuthentication() {
+  const user = useState<User | null>('auth-user', () => null)
+  const isLoggedIn = computed(() => user.value !== null)
+  const checkedLogin = useState<boolean>('checkedLogin', () => false)
+  const router = useRouter()
+  const config = useRuntimeConfig()
+
+  async function register(username: string, password: string): Promise<boolean> {
     try {
-      await $fetch('http://localhost:8000/accounts/register/', {
+      await $fetch(`${config.public.apiBase}/accounts/register/`, {
         method: 'POST',
         body: { username: username, password: password },
         credentials: 'include',
       })
-      await login(username, password)
+      return await login(username, password)
     } catch {
-      error.value = 'Registration failed.'
+      return false
     }
   }
 
-  async function login(username: string, password: string) {
-    error.value = ''
+  async function login(username: string, password: string): Promise<boolean> {
     try {
-      await $fetch('http://localhost:8000/accounts/login/', {
+      await $fetch(`${config.public.apiBase}/accounts/login/`, {
         method: 'POST',
         body: { username: username, password: password },
         credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
       })
-      await checkAuth()
+      const success = await checkAuthentication()
+      if (!success) {
+        return false
+      }
+      const route = useRoute()
+      const redirectTo = (route.query.redirect as string) || '/'
+      await router.push(redirectTo)
+      return true
     } catch {
-      error.value = 'Login failed.'
+      return false
     }
   }
 
-  async function checkAuth() {
+  async function checkAuthentication(): Promise<boolean> {
     try {
-      const res = await $fetch<{ id: number; username: string }>(
-        'http://localhost:8000/accounts/me/',
-        {
-          credentials: 'include',
-        },
-      )
-      userId.value = res.id
-      username.value = res.username
+      checkedLogin.value = true
+      user.value = await $fetch<User>(`${config.public.apiBase}/accounts/me/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
+      return true
     } catch {
-      error.value = 'Not logged in'
-      userId.value = null
+      user.value = null
+      // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
+      // which would not even remove the console error on the 401 Unauthorized
+      // Rules: ESLint: no-explicit-any, vue: catch-only-any-or-unknown
+      return false
     }
   }
 
-  async function logout() {
-    error.value = ''
+  async function logout(): Promise<boolean> {
     try {
-      await $fetch('http://localhost:8000/accounts/logout/', {
+      await $fetch(`${config.public.apiBase}/accounts/logout/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
       })
-      userId.value = null
+      user.value = null
+      await router.push('/')
+      return true
     } catch {
-      error.value = 'Logout failed.'
+      return false
     }
   }
 
   return {
-    userId,
-    error,
-    username,
+    user,
+    isLoggedIn,
+    checkedLogin,
     register,
     login,
-    checkAuth,
+    checkAuthentication,
     logout,
   }
 }

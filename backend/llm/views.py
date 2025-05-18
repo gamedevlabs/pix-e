@@ -29,19 +29,21 @@ class PillarViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
 
 class DesignView(ModelViewSet):
-    queryset = GameDesignDescription.objects.all()
     serializer_class = GameDesignSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        return GameDesignDescription.objects.filter(user=self.request.user)
 
-    @action(detail=True, methods=['GET'], url_path='get_or_create')
-    def get_or_create(self, request, pk=None):
-        data = request.data
-        design_id = pk
+    def get_object(self):
+        return GameDesignDescription.objects.get(user=self.request.user)
 
+    @action(detail=False, methods=['GET'], url_path='get_or_create')
+    def get_or_create(self, request):
         obj, created = GameDesignDescription.objects.get_or_create(
-            game_id=design_id,
+            user=self.request.user,
             defaults={
-                'description': data.get('description', ''),
+                'description': ''
             }
         )
         serializer = self.get_serializer(obj)

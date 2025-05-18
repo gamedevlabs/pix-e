@@ -3,6 +3,10 @@ import { usePillars } from '~/composables/usePillars'
 import { ref } from 'vue'
 import type { GameDesign, Pillar } from '~/types/pillars'
 
+definePageMeta({
+  middleware: 'authentication',
+})
+
 const config = useRuntimeConfig()
 
 const {
@@ -22,7 +26,7 @@ const selectedPillar = ref(-1)
 
 initalPillarFetch()
 
-await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/0/get_or_create/`, {
+await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`, {
   method: 'GET',
   credentials: 'include',
   headers: useRequestHeaders(['cookie']),

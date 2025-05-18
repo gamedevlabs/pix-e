@@ -37,7 +37,11 @@ const items = ref<NavigationMenuItem[]>([
   },
 ])
 const authentication = useAuthentication()
-authentication.checkAuth()
+authentication.checkAuthentication()
+
+async function handleLogout() {
+  await authentication.logout()
+}
 </script>
 
 <template>
@@ -55,15 +59,15 @@ authentication.checkAuth()
           <!-- Put user info, settings, logout etc. here -->
           <ColorModeSwitch />
           <UButton
-            v-if="authentication.userId.value == null"
+            v-if="!authentication.isLoggedIn.value"
             label="Login"
             color="primary"
             variant="subtle"
             @click="useRouter().push('login')"
           />
           <div v-else class="flex items-center gap-2">
-            <p>Hello {{ authentication.username }}</p>
-            <UButton label="Logout" color="error" variant="subtle" @click="authentication.logout" />
+            <p>Hello {{ authentication.user.value?.username }}</p>
+            <UButton label="Logout" color="error" variant="subtle" @click="handleLogout" />
           </div>
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </div>

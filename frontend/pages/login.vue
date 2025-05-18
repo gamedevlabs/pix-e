@@ -1,55 +1,98 @@
 ﻿<script setup lang="ts">
-import { ref } from 'vue'
+import type { FormError } from '@nuxt/ui'
 import { useAuthentication } from '~/composables/useAuthentication'
 
-const username = ref('')
-const password = ref('')
-const userId = ref<number | null>(null)
-const error = ref('')
-const authentication = useAuthentication()
-const user = ref('')
-await useFetch<{ id: number; username: string }>('http://localhost:8000/accounts/me/', {
-  credentials: 'include',
-  headers: useRequestHeaders(['cookie']),
+const state = reactive({
+  username: '',
+  password: ''
 })
-  .then((data) => {
-    if (data.data.value) {
-      user.value = data.data.value.username
-    } else {
-      user.value = ''
-    }
-  })
-  .catch(() => {
-    user.value = ''
-  })
+const authentication = useAuthentication()
+const show = ref(false)
+
+const validate = (state: any): FormError[] => {
+  const errors = []
+  if (!state.username) errors.push({ name: 'username', message: 'Required' })
+  if (!state.password) errors.push({ name: 'password', message: 'Required' })
+  return errors
+}
+
+const toast = useToast()
+
+async function handleLogin() {
+  const success = await authentication.login(state.username, state.password)
+  if (success) {
+    toast.add({
+      title: 'Login Successful',
+      description: `Welcome Back ${state.username}`,
+      color: 'success,
+    })
+  } else {
+    state.password = ''
+    toast.add({ title: 'Login Failed', description: 'Invalid credentials.', color: 'error' })
+  }
+}
+
+async function handleRegistration() {
+  const success = await authentication.register(state.username, state.password)
+  if (success) {
+    toast.add({
+      title: 'Registration Successful',
+      description: `Welcome ${state.username}`,
+      color: 'success,
+    })
+  } else {
+    toast.add({
+      title: 'Registration Failed',
+      description: 'Username already exists.',
+      color: 'error,
+    })
+  }
+}
 </script>
 
 <template>
-  <div class="max-w-md mx-auto mt-10 p-4 border rounded shadow space-y-4">
-    <h1 class="text-2xl font-bold">Login Test</h1>
+  <div class="items-center justify-center flex-col flex">
+    <h1 class="text-2xl font-bold mb-4">Login</h1>
+    <UForm :validate="validate" :state="state" class="space-y-4 w-60">
+      <UFormField label="Username" name="username" size="lg" required>
+        <UInput v-model="state.username" class="w-full" />
+      </UFormField>
 
-    <UInput v-model="username" placeholder="Username" color="primary" class="w-full" />
-    <UInput
-      v-model="password"
-      type="password"
-      placeholder="Password"
-      color="primary"
-      class="w-full"
-    />
+      <UFormField label="Password" name="password" size="lg" required>
+        <UInput v-model="state.password" :type="show ? 'text' : 'password'" class="w-full">
+          <template #trailing>
+            <UButton
+              color="neutral"
+              variant="link"
+              size="xs"
+              :icon="show ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+              :aria-label="show ? 'Hide password' : 'Show password'"
+              :aria-pressed="show"
+              aria-controls="password"
+              @click="show = !show"
+            />
+          </template>
+        </UInput>
+      </UFormField>
 
-    <div class="flex gap-2">
-      <UButton color="primary" @click="authentication.login(username, password)"> Login </UButton>
-      <UButton color="secondary" @click="authentication.register(username, password)">
-        Register
-      </UButton>
-      <UButton color="success" @click="authentication.checkAuth"> Check Auth </UButton>
-      <UButton color="error" @click="authentication.logout"> Logout </UButton>
-    </div>
-
-    <div>
-      <p v-if="userId !== null" class="text-green-600">Logged in as id: {{ userId }}</p>
-      <p v-else class="text-red-600">{{ error }}</p>
-      <p v-if="user" class="text-gray-600">Current user: {{ user }}</p>
-    </div>
+      <div class="flex items-center gap-2 justify-between">
+        <UButton
+          color="success"
+          type="submit"
+          label="Login"
+          variant="subtle"
+          class="w-full justify-center"
+          @click="handleLogin"
+        />
+        <UButton
+          color="info"
+          type="submit"
+          label="Register"
+          variant="subtle"
+          class="w-full justify-center"
+          @click="handleRegistration"
+        />
+      </div>
+    </UForm>
   </div>
 </template>

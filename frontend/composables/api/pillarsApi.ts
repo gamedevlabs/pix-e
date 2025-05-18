@@ -52,7 +52,7 @@ export function usePillarsApi() {
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
-      await $fetch(`${config.public.apiBase}/llm/design/0/`, {
+      await $fetch(`${config.public.apiBase}/llm/design/`, {
         method: 'PUT',
         body: {
           description: designIdea.trim(),

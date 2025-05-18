@@ -23,7 +23,7 @@ class Pillar(models.Model):
         super().save(*args, **kwargs)
 
 class GameDesignDescription(models.Model):
-    game_id = models.IntegerField(primary_key=True, default=0) #just 0 for now
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='game_designs', primary_key=True)
     description = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
