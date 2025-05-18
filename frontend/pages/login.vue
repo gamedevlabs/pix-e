@@ -4,12 +4,12 @@ import { useAuthentication } from '~/composables/useAuthentication'
 
 const state = reactive({
   username: '',
-  password: ''
+  password: '',
 })
 const authentication = useAuthentication()
 const show = ref(false)
 
-const validate = (state: any): FormError[] => {
+const validate = (state: { username: string; password: string }): FormError[] => {
   const errors = []
   if (!state.username) errors.push({ name: 'username', message: 'Required' })
   if (!state.password) errors.push({ name: 'password', message: 'Required' })
@@ -24,7 +24,7 @@ async function handleLogin() {
     toast.add({
       title: 'Login Successful',
       description: `Welcome Back ${state.username}`,
-      color: 'success,
+      color: 'success',
     })
   } else {
     state.password = ''
@@ -38,13 +38,13 @@ async function handleRegistration() {
     toast.add({
       title: 'Registration Successful',
       description: `Welcome ${state.username}`,
-      color: 'success,
+      color: 'success',
     })
   } else {
     toast.add({
       title: 'Registration Failed',
       description: 'Username already exists.',
-      color: 'error,
+      color: 'error',
     })
   }
 }

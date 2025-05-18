@@ -20,7 +20,7 @@ const items = ref<NavigationMenuItem[]>([
   },
   {
     label: 'Pillars',
-    icon: 'i-lucide-database',
+    icon: 'i-lucide-landmark',
     to: '/pillars',
   },
   {

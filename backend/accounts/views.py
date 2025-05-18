@@ -1,8 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
-from django.shortcuts import render
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,13 +15,17 @@ class RegisterView(APIView):
             return Response({"id": user.id}, status=201)
         return Response(serializer.errors, status=400)
 
+
 class LoginView(APIView):
     def post(self, request):
-        user = authenticate(username=request.data["username"], password=request.data["password"])
+        user = authenticate(
+            username=request.data["username"], password=request.data["password"]
+        )
         if user:
             login(request, user)
             return Response({"id": user.id})
         return Response({"error": "Invalid credentials"}, status=400)
+
 
 class LogoutView(APIView):
     def post(self, request):
@@ -37,6 +38,8 @@ class LogoutView(APIView):
 class MeView(APIView):
     def get(self, request):
         if request.user.is_authenticated:
-            return JsonResponse({"id": request.user.id, "username": request.user.username})
+            return JsonResponse(
+                {"id": request.user.id, "username": request.user.username}
+            )
         else:
             return JsonResponse({"error": "User not authenticated"}, status=401)
