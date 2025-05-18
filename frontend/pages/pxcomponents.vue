@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// todo: never code in bs javascript or typescript again
-const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions, createItem: createPxComponentDefinition } =
-  usePxComponentDefinitions()
+const {
+  items: pxComponentDefinitions,
+  fetchAll: fetchPxComponentDefinitions,
+  createItem: createPxComponentDefinition,
+} = usePxComponentDefinitions()
 
 onMounted(() => {
   fetchPxComponentDefinitions()
@@ -22,31 +24,34 @@ async function handleCreate() {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-    <div>
-      <UForm :state="state" class="gap-6" @submit="handleCreate">
-        <UFormField label="Name" name="name">
-          <UInput v-model="state.name" />
-        </UFormField>
-        <UFormField label="Type" name="type">
-          <USelectMenu v-model="state.type" :items="items" />
-        </UFormField>
-        <UButton type="submit">Submit</UButton>
-      </UForm>
+  <div class="p-8">
+    <h1 class="text-2xl font-bold mb-6">Px Components</h1>
 
-      <!-- Cards Section -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="definition in pxComponentDefinitions" :key="definition.id">
-          <UCard>
-            <template #header>
-              {{ definition.name }}
-            </template>
-            {{ definition.type }}
-          </UCard>
-        </div>
-      </section>
-    </div>
-    <div>hello world</div>
+    <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
+      <UFormField>
+        <UInput
+            v-model="state.name"
+            type="text"
+            placeholder="Name"
+        />
+      </UFormField>
+      <UFormField label="Type" name="type">
+        <USelectMenu v-model="state.type" :items="items" />
+      </UFormField>
+      <UButton type="submit">Create Component</UButton>
+    </UForm>
+
+    <!-- Cards Section -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div v-for="definition in pxComponentDefinitions" :key="definition.id">
+        <UCard>
+          <template #header>
+            {{ definition.name }}
+          </template>
+          {{ definition.type }}
+        </UCard>
+      </div>
+    </section>
   </div>
 </template>
 

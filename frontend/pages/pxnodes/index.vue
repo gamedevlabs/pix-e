@@ -7,7 +7,7 @@ const {
   deleteItem: deletePxNode,
 } = usePxNodes()
 
-const form = ref({
+const state = ref({
   name: '',
   description: '',
 })
@@ -17,9 +17,9 @@ onMounted(() => {
 })
 
 async function handleCreate() {
-  await createPxNode(form.value)
-  form.value.name = ''
-  form.value.description = ''
+  await createPxNode(state.value)
+  state.value.name = ''
+  state.value.description = ''
 }
 
 async function handleUpdate(updatedNode: PxNode) {
@@ -36,23 +36,28 @@ async function handleAddComponent() {
     <h1 class="text-2xl font-bold mb-6">Px Nodes</h1>
 
     <!-- Create Form -->
-    <form class="mb-6 space-y-4" @submit.prevent="handleCreate">
-      <UInput
-        v-model="form.name"
-        type="text"
-        placeholder="Name"
-        class="input input-bordered w-full"
-      />
-      <UTextarea
-        v-model="form.description"
-        placeholder="Description"
-        class="textarea textarea-bordered w-full"
-      />
+    <UForm :state="state" class="mb-6 space-y-4" @submit.prevent="handleCreate">
+      <UFormField>
+        <UInput
+            v-model="state.name"
+            type="text"
+            placeholder="Name"
+        />
+      </UFormField>
+
+      <UFormField>
+        <UTextarea
+            v-model="state.description"
+            placeholder="Description"
+            class="w-full xl:w-1/2"
+        />
+      </UFormField>
+
       <UButton type="submit">Create Node</UButton>
-    </form>
+    </UForm>
 
     <!-- Cards Section -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="node in pxNodes" :key="node.id">
         <PxNodeCard
           :node="node"
