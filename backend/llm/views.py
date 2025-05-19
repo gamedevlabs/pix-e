@@ -60,18 +60,22 @@ class OverallFeedbackView(APIView):
             design = GameDesignDescription.objects.first()
             pillars = [pillar for pillar in Pillar.objects.all()]
 
-            prompt = (f"Rate the following game design description with regards to the "
-                      f"following design pillars:\n"
-                      f"{design}\n\nPillars:\n")
+            prompt = (
+                f"Rate the following game design description with regards to the "
+                f"following design pillars:\n"
+                f"{design}\n\nPillars:\n"
+            )
             prompt += f"Game Design Description: {design.description}\n"
             prompt += "Design Pillars:\n"
             for pillar in pillars:
                 prompt += f"Title: {pillar.title}\n"
                 prompt += f"Description: {pillar.description}\n\n"
 
-            prompt += ("\nDo not use any markdown in your answer. Answer directly as "
-                       "if you are giving your feedback to "
-                       "the designer.")
+            prompt += (
+                "\nDo not use any markdown in your answer. Answer directly as "
+                "if you are giving your feedback to "
+                "the designer."
+            )
             answer = self.gemini.generate_response(prompt)
             return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:
@@ -97,9 +101,11 @@ class PillarFeedbackView(APIView):
             prompt += f"Title: {pillar.title}\n"
             prompt += f"Description: {pillar.description}\n\n"
 
-            prompt += ("Do not use any markdown in your answer. Answer directly as if"
-                       " your giving your feedback to the "
-                       "designer.")
+            prompt += (
+                "Do not use any markdown in your answer. Answer directly as if"
+                " your giving your feedback to the "
+                "designer."
+            )
             answer = self.gemini.generate_response(prompt)
             return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:

@@ -1,8 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (DesignView, OverallFeedbackView, PillarFeedbackView,
-                    PillarViewSet)
+from .views import DesignView, OverallFeedbackView, PillarFeedbackView, PillarViewSet
 
 app_name = "llm"
 
