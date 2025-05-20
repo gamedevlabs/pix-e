@@ -49,7 +49,9 @@ function emitDelete() {
 
     <template #footer>
       <div v-if="!isBeingEdited" class="flex justify-end gap-2">
+        <!--
         <UButton color="primary" variant="soft" @click="emitAddComponent">Add Component</UButton>
+        -->
 
         <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
         <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
