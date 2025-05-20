@@ -27,11 +27,11 @@ function cancelEdit() {
   editForm.value.name = props.node.name
   editForm.value.description = props.node.description
 }
-
+/*
 function emitAddComponent() {
   emit('addComponent', props.node.id)
 }
-
+*/
 function emitDelete() {
   emit('delete', props.node.id)
 }
