@@ -40,8 +40,11 @@ function emitDelete() {
 <template>
   <UCard class="hover:shadow-lg transition">
     <template #header>
-      <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.node.name }}</h2>
-      <UTextarea v-else v-model="editForm.name" />
+        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
+          <NuxtLink :to="{ name: 'pxnodes-id', params: { id: props.node.id } }">{{ props.node.name }}
+          </NuxtLink>
+        </h2>
+        <UTextarea v-else v-model="editForm.name" />
     </template>
 
     <p v-if="!isBeingEdited">{{ props.node.description }}</p>
