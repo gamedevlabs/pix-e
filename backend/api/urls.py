@@ -22,5 +22,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("llm/", include("llm.urls")),
     path("accounts/", include("accounts.urls")),
-    path("", include("pxnodes.urls"))
+    path("", include("pxnodes.urls")),
 ]
