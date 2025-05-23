@@ -9,7 +9,7 @@ class GeminiLink:
     """
 
     def __init__(self):
-        key = os.environ.get("GEMINI_KEY")
+        key = os.environ.get("GEMINI_API_KEY")
         if key is None:
             raise ValueError("GEMINI_KEY environment variable not set")
         self.client = genai.Client(api_key=key)
