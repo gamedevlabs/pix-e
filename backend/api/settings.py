@@ -36,27 +36,30 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corsheaders",
     "rest_framework",
+    "corsheaders",
+    "pxnodes",
     "llm",
     "accounts",
 ]
 
 REST_FRAMEWORK = {
-    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
 }
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # "llm.middleware.AnonymousSessionMiddleware", #currently unused cookie setter as ssr blocks its usefulness anyway
 ]
 
 CORS_ALLOWED_ORIGINS = [

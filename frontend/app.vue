@@ -9,21 +9,21 @@ const items = ref<NavigationMenuItem[]>([
     to: '/',
   },
   {
-    label: 'About',
-    icon: 'i-lucide-database',
-    to: '/about',
-  },
-  {
-    label: 'PXNodes',
-    icon: 'i-lucide-database',
+    label: 'PxNodes',
+    icon: 'i-lucide-hexagon',
     to: '/pxnodes',
   },
   {
+    label: 'PxComponents',
+    icon: 'i-lucide-component',
+    to: '/pxcomponents',
+  },
+  /*{
     label: 'Pillars',
     icon: 'i-lucide-landmark',
     to: '/pillars',
   },
-  {
+  /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',
     badge: '3.8k',
@@ -34,7 +34,7 @@ const items = ref<NavigationMenuItem[]>([
     label: 'Help',
     icon: 'i-lucide-circle-help',
     disabled: true,
-  },
+  },*/
 ])
 const authentication = useAuthentication()
 authentication.checkAuthentication()
