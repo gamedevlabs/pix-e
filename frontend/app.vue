@@ -17,6 +17,11 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-component',
     to: '/pxcomponents',
   },
+  {
+    label: 'PxComponentsDefinitions',
+    icon: 'i-lucide-component',
+    to: '/pxcomponentdefinitions',
+  },
   /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',

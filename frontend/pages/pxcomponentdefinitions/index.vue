@@ -3,6 +3,8 @@ const {
   items: pxComponentDefinitions,
   fetchAll: fetchPxComponentDefinitions,
   createItem: createPxComponentDefinition,
+  updateItem: updatePxDefinition,
+  deleteItem: deletePxDefinition,
 } = usePxComponentDefinitions()
 
 onMounted(() => {
@@ -20,6 +22,10 @@ async function handleCreate() {
   await createPxComponentDefinition(state.value)
   state.value.name = ''
   state.value.type = 'none'
+}
+
+async function handleUpdate(updatedDefinition: PxComponentDefinition) {
+  await updatePxDefinition(updatedDefinition.id, updatedDefinition)
 }
 </script>
 
@@ -40,12 +46,12 @@ async function handleCreate() {
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="definition in pxComponentDefinitions" :key="definition.id">
-        <UCard>
-          <template #header>
-            {{ definition.name }}
-          </template>
-          {{ definition.type }}
-        </UCard>
+        <PxComponentDefinitionCard
+          :definition="definition"
+          :visualization-style="'detailed'"
+          @edit="handleUpdate"
+          @delete="deletePxDefinition"
+        />
       </div>
     </section>
   </div>
