@@ -33,6 +33,14 @@ async function handleLogin() {
 }
 
 async function handleRegistration() {
+  if (validate(state).length > 0) {
+    toast.add({
+      title: 'Registration Failed',
+      description: 'Please fill in all fields.',
+      color: 'error',
+    })
+    return
+  }
   const success = await authentication.register(state.username, state.password)
   if (success) {
     toast.add({
