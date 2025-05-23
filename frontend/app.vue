@@ -18,6 +18,11 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pxcomponents',
   },
   {
+    label: 'PxComponentsDefinitions',
+    icon: 'i-lucide-component',
+    to: '/pxcomponentdefinitions',
+  },
+  {
     label: 'Pillars',
     icon: 'i-lucide-landmark',
     to: '/pillars',

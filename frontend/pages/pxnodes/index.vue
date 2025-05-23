@@ -7,6 +7,8 @@ const {
   deleteItem: deletePxNode,
 } = usePxNodes()
 
+const { items: pxComponent, fetchAll: fetchPxComponents } = usePxComponents()
+
 const state = ref({
   name: '',
   description: '',
@@ -14,6 +16,7 @@ const state = ref({
 
 onMounted(() => {
   fetchPxNodes()
+  fetchPxComponents()
 })
 
 async function handleCreate() {
@@ -53,6 +56,7 @@ async function handleAddComponent() {
       <div v-for="node in pxNodes" :key="node.id">
         <PxNodeCard
           :node="node"
+          :components="pxComponent.filter((component) => component.node === node.id)"
           @add-component="handleAddComponent"
           @edit="handleUpdate"
           @delete="deletePxNode"
