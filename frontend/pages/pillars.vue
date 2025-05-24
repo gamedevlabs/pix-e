@@ -1,8 +1,4 @@
 ﻿<script setup lang="ts">
-import { usePillars } from '~/composables/usePillars'
-import { ref } from 'vue'
-import type { GameDesign, Pillar } from '~/types/pillars'
-
 definePageMeta({
   middleware: 'authentication',
 })

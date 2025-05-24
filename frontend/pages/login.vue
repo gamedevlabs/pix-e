@@ -1,6 +1,5 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
-import { useAuthentication } from '~/composables/useAuthentication'
 
 const state = reactive({
   username: '',

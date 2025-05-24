@@ -1,6 +1,4 @@
-﻿import type { User } from '@/types/authentication'
-
-export function useAuthentication() {
+﻿export function useAuthentication() {
   const user = useState<User | null>('auth-user', () => null)
   const isLoggedIn = computed(() => user.value !== null)
   const checkedLogin = useState<boolean>('checkedLogin', () => false)

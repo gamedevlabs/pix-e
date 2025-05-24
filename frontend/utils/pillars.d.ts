@@ -1,10 +1,10 @@
-﻿export type PillarDTO = {
+﻿type PillarDTO = {
   pillar_id: number
   title: string
   description: string
 }
 
-export type Pillar = {
+type Pillar = {
   pillar_id: number
   title: string
   description: string
@@ -12,10 +12,10 @@ export type Pillar = {
   display_open: boolean
 }
 
-export type GameDesign = {
+type GameDesign = {
   game_id: number
   description: string
 }
-export type LLMFeedback = {
+type LLMFeedback = {
   feedback: string
 }

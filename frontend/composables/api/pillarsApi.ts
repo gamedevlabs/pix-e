@@ -1,6 +1,4 @@
-﻿import type { LLMFeedback, Pillar, PillarDTO } from '~/types/pillars'
-
-export function usePillarsApi() {
+﻿export function usePillarsApi() {
   const config = useRuntimeConfig()
 
   async function createPillarAPICall() {

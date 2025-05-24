@@ -1,4 +1,4 @@
-﻿export type User = {
+﻿type User = {
   id: number
   username: string
 }

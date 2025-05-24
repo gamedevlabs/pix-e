@@ -1,5 +1,4 @@
-﻿import type { Pillar, PillarDTO } from '@/types/pillars'
-import { usePillarsApi } from '@/composables/api/pillarsApi'
+﻿import { usePillarsApi } from '@/composables/api/pillarsApi'
 
 export async function usePillars() {
   const config = useRuntimeConfig()
