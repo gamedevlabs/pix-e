@@ -16,5 +16,8 @@
   "private": true,
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0"
   }
 }

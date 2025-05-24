@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "pxnodes",
+    "llm",
+    "accounts",
 ]
 
 REST_FRAMEWORK = {
@@ -60,9 +62,17 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "api.urls"
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
 
 TEMPLATES = [
     {
