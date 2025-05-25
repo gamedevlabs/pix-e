@@ -10,7 +10,6 @@ updates:
     schedule:
       interval: "weekly"
     target-branch: "dependabot-main"
-    automerge: true
 
   # Enable version updates for pip
   - package-ecosystem: "pip"
@@ -19,5 +18,4 @@ updates:
     schedule:
       interval: "weekly"
     target-branch: "dependabot-main"
-    automerge: true
 
