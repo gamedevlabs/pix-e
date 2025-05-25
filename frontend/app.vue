@@ -17,6 +17,11 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-component',
     to: '/pxcomponents',
   },
+  {
+    label: 'Pillars',
+    icon: 'i-lucide-landmark',
+    to: '/pillars',
+  },
   /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',
@@ -30,6 +35,12 @@ const items = ref<NavigationMenuItem[]>([
     disabled: true,
   },*/
 ])
+const authentication = useAuthentication()
+authentication.checkAuthentication()
+
+async function handleLogout() {
+  await authentication.logout()
+}
 </script>
 
 <template>
@@ -43,9 +54,20 @@ const items = ref<NavigationMenuItem[]>([
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center gap-3">
           <!-- Put user info, settings, logout etc. here -->
-          <ColorModeSwitch class="mx-8" />
+          <ColorModeSwitch />
+          <UButton
+            v-if="!authentication.isLoggedIn.value"
+            label="Login"
+            color="primary"
+            variant="subtle"
+            @click="useRouter().push('login')"
+          />
+          <div v-else class="flex items-center gap-2">
+            <p>Hello {{ authentication.user.value?.username }}</p>
+            <UButton label="Logout" color="error" variant="subtle" @click="handleLogout" />
+          </div>
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </div>
       </header>
