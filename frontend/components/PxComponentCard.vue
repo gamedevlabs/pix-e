@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import PxComponentCardPreview from '~/components/PxComponentCardPreview.vue'
-import PxComponentCardDetailed from '~/components/PxComponentCardDetailed.vue'
 
 const props = defineProps<{
   component: PxComponent
