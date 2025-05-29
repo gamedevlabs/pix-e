@@ -10,7 +10,10 @@ export function useCrud<T>(apiUrl: string) {
   async function fetchAll() {
     loading.value = true
     try {
-      const data = await $fetch<T[]>(API_URL)
+      const data = await $fetch<T[]>(API_URL, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
       items.value = data || []
     } catch (err) {
       error.value = err
@@ -34,15 +37,21 @@ export function useCrud<T>(apiUrl: string) {
 
   async function createItem(payload: Partial<T>) {
     try {
-      await $fetch<T>(API_URL, {
+      const result = await $fetch<T>(API_URL, {
         method: 'POST',
         body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       })
       success('Item created successfully!')
       await fetchAll()
+      return result
     } catch (err) {
       error.value = err
       errorToast(err)
+      return null
     }
   }
 
@@ -51,6 +60,10 @@ export function useCrud<T>(apiUrl: string) {
       await $fetch<T>(`${API_URL}${id}/`, {
         method: 'PATCH',
         body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       })
       success('Item updated successfully!')
       await fetchAll()
@@ -64,6 +77,10 @@ export function useCrud<T>(apiUrl: string) {
     try {
       await $fetch<null>(`${API_URL}${id}/`, {
         method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').vale,
+        } as HeadersInt,
       })
       success('Item deleted successfully!')
       await fetchAll()
