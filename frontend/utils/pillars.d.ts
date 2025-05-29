@@ -25,3 +25,12 @@ type PillarFeedback = {
   }[]
   content_feedback: string
 }
+
+type PillarFeedback = {
+  hasStructureIssue: boolean
+  structuralIssues: {
+    description: string
+    severity: number
+  }[]
+  content_feedback: string
+}

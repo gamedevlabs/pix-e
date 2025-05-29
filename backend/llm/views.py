@@ -1,6 +1,7 @@
 # from django.shortcuts import render
 # from django.views import View
 # from rest_framework.views import APIView
+
 from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
@@ -8,19 +9,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .llm_links import PillarPrompts
 from .llm_links.GeminiLink import GeminiLink
-from .llm_links.LLMSwitcher import LLMSwitcher
-from .llm_links.OpenAILink import OpenAILink
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
 # Create your views here.
 
-
 class PillarViewSet(ModelViewSet):
     serializer_class = PillarSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "pillar_id"
 
     def get_queryset(self):
         return Pillar.objects.filter(user=self.request.user)
@@ -54,18 +52,31 @@ class DesignView(ModelViewSet):
 class OverallFeedbackView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
-        self.llmSwitcher = LLMSwitcher()
+        self.gemini = GeminiLink()
 
-    def post(self, request):
+    def get(self, request):
         try:
             design = GameDesignDescription.objects.first()
-            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            pillars = [pillar for pillar in Pillar.objects.all()]
 
-            model = request.data["model"]
-            llm = self.llmSwitcher.get_llm(model)
-            answer = llm.evaluate_pillars_in_context(pillars, design.description)
+            prompt = (
+                f"Rate the following game design description with regards to the "
+                f"following design pillars:\n"
+                f"{design}\n\nPillars:\n"
+            )
+            prompt += f"Game Design Description: {design.description}\n"
+            prompt += "Design Pillars:\n"
+            for pillar in pillars:
+                prompt += f"Title: {pillar.title}\n"
+                prompt += f"Description: {pillar.description}\n\n"
 
-            return HttpResponse(answer.model_dump_json(), content_type="application/json", status=200)
+            prompt += (
+                "\nDo not use any markdown in your answer. Answer directly as "
+                "if you are giving your feedback to "
+                "the designer."
+            )
+            answer = self.gemini.generate_response(prompt)
+            return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 
@@ -73,50 +84,16 @@ class OverallFeedbackView(APIView):
 class PillarFeedbackView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
-        self.llmSwitcher = LLMSwitcher()
+        self.gemini = GeminiLink()
 
-    def post(self, request, id):
+    def get(self, request, pillar_id):
         try:
-            pillar = Pillar.objects.filter(id=id).first()
-            model = request.data["model"]
-            llm = self.llmSwitcher.get_llm(model)
-            answer = llm.evaluate_pillar(pillar)
+            pillar = Pillar.objects.filter(pillar_id=pillar_id).first()
 
+            answer = self.gemini.generate_pillar_response(pillar)
+            print(answer)
             return HttpResponse(
                 answer.model_dump_json(), content_type="application/json", status=200
             )
         except Exception as e:
-            print(e)
-            return HttpResponse({"error": e}, status=500)
-
-
-class FixPillarView(APIView):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.gemini = GeminiLink()
-
-    def post(self, request, id):
-        try:
-            pillar = Pillar.objects.filter(id=id).first()
-            pillar = self.gemini.improve_pillar(pillar)
-            data = PillarSerializer(pillar).data
-            return JsonResponse(data, status=200)
-        except Exception as e:
-            return HttpResponse({"error": str(e)}, status=500)
-
-
-class EvaluateContextView(APIView):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.gemini = GeminiLink()
-
-    def post(self, request):
-        try:
-            context = request.data.get("context", "")
-            if not context:
-                return HttpResponse({"error": "Context is required"}, status=400)
-
-            response = self.gemini.evaluate_context_with_pillars(context)
-            return JsonResponse(response.model_dump(), status=200)
-        except Exception as e:
-            return HttpResponse({"error": str(e)}, status=500)
+            return HttpResponse({"error": e}, status=404)
