@@ -1,6 +1,8 @@
 ﻿<script setup lang="ts">
 const props = defineProps<{
   component: PxComponent
+  definition: PxComponentDefinition
+  node: PxNode
 }>()
 
 const emit = defineEmits<{
@@ -17,13 +19,13 @@ function emitDelete() {
     <template #header>
       <h2 class="font-semibold text-lg">
         <NuxtLink :to="{ name: 'pxcomponents-id', params: { id: props.component.id } }">
-          Definition: {{ props.component.definition }}
+          Definition: {{ props.definition.name }}
         </NuxtLink>
       </h2>
     </template>
 
-    <p>Value {{ props.component.value }}</p>
-    <p>Node {{ props.component.node }}</p>
+    <p>Value: {{ props.component.value }}</p>
+    <p>Associated Node: {{ props.node.name }}, ID: {{ props.node.id }}</p>
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
         <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>

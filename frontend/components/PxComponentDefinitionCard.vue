@@ -9,9 +9,8 @@ const emit = defineEmits<{
   (e: 'delete', id: number): void
 }>()
 
-function confirmEdit() {
-  isBeingEdited.value = false
-  emit('edit', { ...props.node, ...editForm.value })
+function confirmEdit(updatedDefinition: PxComponentDefinition) {
+  emit('edit', { ...props.definition, ...updatedDefinition })
 }
 
 function emitDelete() {

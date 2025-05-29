@@ -31,7 +31,7 @@ async function handleUpdate(updatedDefinition: PxComponentDefinition) {
 
 <template>
   <div class="p-8">
-    <h1 class="text-2xl font-bold mb-6">Px Components</h1>
+    <h1 class="text-2xl font-bold mb-6">Px Definitions</h1>
 
     <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
       <UFormField>

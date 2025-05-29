@@ -7,8 +7,6 @@ const {
   deleteItem: deletePxNode,
 } = usePxNodes()
 
-const { items: pxComponent, fetchAll: fetchPxComponents } = usePxComponents()
-
 const state = ref({
   name: '',
   description: '',
@@ -16,7 +14,6 @@ const state = ref({
 
 onMounted(() => {
   fetchPxNodes()
-  fetchPxComponents()
 })
 
 async function handleCreate() {
@@ -27,10 +24,6 @@ async function handleCreate() {
 
 async function handleUpdate(updatedNode: PxNode) {
   await updatePxNode(updatedNode.id, updatedNode)
-}
-
-async function handleAddComponent() {
-  console.log('AddComponent')
 }
 </script>
 
@@ -54,13 +47,7 @@ async function handleAddComponent() {
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="node in pxNodes" :key="node.id">
-        <PxNodeCard
-          :node="node"
-          :components="pxComponent.filter((component) => component.node === node.id)"
-          @add-component="handleAddComponent"
-          @edit="handleUpdate"
-          @delete="deletePxNode"
-        />
+        <PxNodeCard :node="node" @edit="handleUpdate" @delete="deletePxNode" />
       </div>
     </section>
   </div>

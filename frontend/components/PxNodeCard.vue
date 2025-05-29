@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { LazyPxComponentCreationForm } from '#components'
+
 const props = defineProps<{
   node: PxNode
-  components: Array<PxComponent>
+  components?: Array<PxComponent>
 }>()
 
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'addComponent', id: number): void
+  (e: 'delete', id: number): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -15,6 +17,32 @@ const editForm = ref({
   name: props.node.name,
   description: props.node.description,
 })
+
+onMounted(() => {
+  getComponents()
+})
+
+const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
+
+const associatedComponents = ref<Array<PxComponent>>([])
+
+async function getComponents() {
+  if (props.components) {
+    associatedComponents.value = props.components
+    return
+  }
+  await fetchPxComponents()
+  associatedComponents.value = pxComponents.value.filter(
+    (component) => component.node === props.node.id,
+  )
+}
+
+async function updateComponents() {
+  await fetchPxComponents()
+  associatedComponents.value = pxComponents.value.filter(
+    (component) => component.node === props.node.id,
+  )
+}
 
 function startEdit() {
   isBeingEdited.value = true
@@ -30,13 +58,17 @@ function cancelEdit() {
   editForm.value.name = props.node.name
   editForm.value.description = props.node.description
 }
-/*
-function emitAddComponent() {
-  emit('addComponent', props.node.id)
-}
-*/
+
 function emitDelete() {
   emit('delete', props.node.id)
+}
+
+const overlay = useOverlay()
+const modal = overlay.create(LazyPxComponentCreationForm)
+
+async function handleAddComponent() {
+  await modal.open({ selectedNodeId: props.node.id }).result
+  await updateComponents()
 }
 </script>
 
@@ -54,8 +86,8 @@ function emitDelete() {
     <div v-if="!isBeingEdited">
       <p>{{ props.node.description }}</p>
       <br />
-      <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <div v-for="component in props.components" :key="component.id" class="">
+      <section class="grid grid-cols-1 gap-6">
+        <div v-for="component in associatedComponents" :key="component.id" class="">
           <PxComponentCard visualization-style="preview" :component="component" />
         </div>
       </section>
@@ -64,7 +96,7 @@ function emitDelete() {
 
     <template #footer>
       <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-        <!-- <UButton color="primary" variant="soft" @click="emitAddComponent">Add Component</UButton> -->
+        <UButton color="primary" variant="soft" @click="handleAddComponent">Add Component</UButton>
         <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
         <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
       </div>

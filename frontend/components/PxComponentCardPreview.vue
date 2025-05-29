@@ -1,9 +1,10 @@
 ﻿<script setup lang="ts">
-const props = defineProps<{ component: PxComponent }>()
+const props = defineProps<{ component: PxComponent; definition: PxComponentDefinition }>()
 </script>
 <template>
-  <ULink to="{ name: 'pxcomponents-id', params: { id: props.component.id } }">
-    <UButton> {{ props.component.definition }}</UButton>
-  </ULink>
+  <UButton :to="{ name: 'pxcomponents-id', params: { id: props.component.id } }">
+    {{ props.definition.name }} <br />
+    {{ props.component.value }}</UButton
+  >
 </template>
 <style scoped></style>
