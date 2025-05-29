@@ -9,12 +9,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .gemini.GeminiLink import GeminiLink
+from .llm_links.GeminiLink import GeminiLink
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
 # Create your views here.
-
 
 class PillarViewSet(ModelViewSet):
     serializer_class = PillarSerializer
@@ -90,23 +89,11 @@ class PillarFeedbackView(APIView):
     def get(self, request, pillar_id):
         try:
             pillar = Pillar.objects.filter(pillar_id=pillar_id).first()
-            prompt = """Check if the following Game Design Pillar is written in a
-                        sensible way. First validate, but only list these issues if
-                        they are present otherwise ignore this section:
-                        1. The title is not clear or does not match the description.
-                        2. The description is not written as continuous text.
-                        3. The intent of the pillar is not clear.\n
-                        Then give feedback on the pillar and if it could be improved.\n
-                      \n\n"""
-            prompt += f"Title: {pillar.title}\n"
-            prompt += f"Description: {pillar.description}\n\n"
 
-            prompt += (
-                "Do not use any markdown in your answer. Answer directly as if"
-                " your giving your feedback to the "
-                "designer."
+            answer = self.gemini.generate_pillar_response(pillar)
+            print(answer)
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
             )
-            answer = self.gemini.generate_response(prompt)
-            return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:
             return HttpResponse({"error": e}, status=404)
