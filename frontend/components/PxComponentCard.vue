@@ -11,10 +11,9 @@ const emit = defineEmits<{
   (e: 'delete', id: number): void
 }>()
 
-const { fetchById: fetchPxDefinitionById} =
-  usePxComponentDefinitions()
+const { fetchById: fetchPxDefinitionById } = usePxComponentDefinitions()
 
-const { fetchById: fetchPxNodeById} = usePxNodes()
+const { fetchById: fetchPxNodeById } = usePxNodes()
 
 onMounted(() => {
   getDefinition()
