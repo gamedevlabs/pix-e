@@ -47,7 +47,7 @@ async function handleUpdate(updatedNode: PxNode) {
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="node in pxNodes" :key="node.id">
-        <PxNodeCard :node="node" @edit="handleUpdate" @delete="deletePxNode" />
+        <PxNodeCardLogic :node="node" @edit="handleUpdate" @delete="deletePxNode" />
       </div>
     </section>
   </div>

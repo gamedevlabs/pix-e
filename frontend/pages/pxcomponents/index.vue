@@ -17,7 +17,7 @@ onMounted(() => {
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="component in pxComponents" :key="component.id">
-        <PxComponentCard
+        <PxComponentCardLogic
           visualization-style="detailed"
           :component="component"
           @delete="deletePxComponent"

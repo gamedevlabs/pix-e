@@ -1,10 +1,12 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { LazyPxComponentCreationForm } from '#components'
 
 const props = defineProps<{
   node: PxNode
-  components?: Array<PxComponent>
+  components: Array<PxComponent>
 }>()
+
+const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
@@ -12,37 +14,12 @@ const emit = defineEmits<{
 }>()
 
 const isBeingEdited = ref(false)
+const associatedComponents = ref<Array<PxComponent>>(props.components)
 
 const editForm = ref({
   name: props.node.name,
   description: props.node.description,
 })
-
-onMounted(() => {
-  getComponents()
-})
-
-const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
-
-const associatedComponents = ref<Array<PxComponent>>([])
-
-async function getComponents() {
-  if (props.components) {
-    associatedComponents.value = props.components
-    return
-  }
-  await fetchPxComponents()
-  associatedComponents.value = pxComponents.value.filter(
-    (component) => component.node === props.node.id,
-  )
-}
-
-async function updateComponents() {
-  await fetchPxComponents()
-  associatedComponents.value = pxComponents.value.filter(
-    (component) => component.node === props.node.id,
-  )
-}
 
 function startEdit() {
   isBeingEdited.value = true
@@ -66,6 +43,13 @@ function emitDelete() {
 const overlay = useOverlay()
 const modal = overlay.create(LazyPxComponentCreationForm)
 
+async function updateComponents() {
+  await fetchPxComponents()
+  associatedComponents.value = pxComponents.value.filter(
+    (component) => component.node === props.node.id,
+  )
+}
+
 async function handleAddComponent() {
   await modal.open({ selectedNodeId: props.node.id }).result
   await updateComponents()
@@ -88,7 +72,7 @@ async function handleAddComponent() {
       <br />
       <section class="grid grid-cols-1 gap-6">
         <div v-for="component in associatedComponents" :key="component.id" class="">
-          <PxComponentCard visualization-style="preview" :component="component" />
+          <PxComponentCardLogic visualization-style="preview" :component="component" />
         </div>
       </section>
     </div>
@@ -107,5 +91,3 @@ async function handleAddComponent() {
     </template>
   </UCard>
 </template>
-
-<style scoped></style>

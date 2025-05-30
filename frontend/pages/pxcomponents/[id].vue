@@ -37,7 +37,7 @@ async function handleDelete() {
   <div class="p-8">
     <div v-if="errorPxComponent">Error loading component.</div>
     <div v-else-if="fetchedComponent">
-      <PxComponentCard
+      <PxComponentCardLogic
         visualization-style="detailed"
         :component="fetchedComponent"
         @edit="handleUpdate"

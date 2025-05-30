@@ -37,7 +37,7 @@ async function handleDelete() {
   <div class="p-8">
     <div v-if="errorPxNode">Error loading node.</div>
     <div v-else-if="fetchedNode">
-      <PxNodeCard
+      <PxNodeCardLogic
         :node="fetchedNode"
         visualization-style="detailed"
         @edit="handleUpdate"

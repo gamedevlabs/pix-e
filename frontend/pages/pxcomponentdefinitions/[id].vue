@@ -37,7 +37,7 @@ async function handleDelete() {
   <div class="p-8">
     <div v-if="errorPxDefinition">Error loading definition.</div>
     <div v-else-if="fetchedDefinition">
-      <PxComponentDefinitionCard
+      <PxComponentDefinitionCardLogic
         visualization-style="detailed"
         :definition="fetchedDefinition"
         @edit="handleUpdate"

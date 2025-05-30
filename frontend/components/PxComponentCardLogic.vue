@@ -6,11 +6,6 @@ const props = defineProps<{
   visualizationStyle: 'preview' | 'detailed'
 }>()
 
-const emit = defineEmits<{
-  (e: 'edit', updatedComponent: PxComponent): void
-  (e: 'delete', id: number): void
-}>()
-
 const { fetchById: fetchPxDefinitionById } = usePxComponentDefinitions()
 
 const { fetchById: fetchPxNodeById } = usePxNodes()
@@ -38,10 +33,6 @@ async function getNode() {
   }
   associatedNode.value = await fetchPxNodeById(props.component.node)
 }
-
-function emitDelete() {
-  emit('delete', props.component.id)
-}
 </script>
 
 <template>
@@ -57,7 +48,6 @@ function emitDelete() {
     :component="component"
     :definition="associatedDefinition!"
     :node="associatedNode!"
-    @delete="emitDelete"
   />
 </template>
 <style scoped></style>

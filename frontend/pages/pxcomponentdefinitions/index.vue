@@ -46,9 +46,8 @@ async function handleUpdate(updatedDefinition: PxComponentDefinition) {
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="definition in pxComponentDefinitions" :key="definition.id">
-        <PxComponentDefinitionCard
+        <PxComponentDefinitionCardDetailed
           :definition="definition"
-          :visualization-style="'detailed'"
           @edit="handleUpdate"
           @delete="deletePxDefinition"
         />
