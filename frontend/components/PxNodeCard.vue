@@ -1,67 +1,65 @@
 <script setup lang="ts">
-const props = defineProps<{ node: PxNode }>()
-
-const emit = defineEmits<{
-  (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'addComponent', id: number): void
+const props = defineProps<{
+  node: PxNode
+  components?: Array<PxComponent>
 }>()
 
-const isBeingEdited = ref(false)
-
-const editForm = ref({
-  name: props.node.name,
-  description: props.node.description,
+onMounted(() => {
+  getComponents()
 })
 
-function startEdit() {
-  isBeingEdited.value = true
+const {
+  items: pxComponents,
+  fetchAll: fetchPxComponents,
+  loading: loadingPxComponents,
+  error: errorPxComponents,
+} = usePxComponents()
+
+const emit = defineEmits<{
+  (e: 'addForeignComponent', id: number): void
+}>()
+
+const associatedComponents = ref<Array<PxComponent> | undefined>(props.components)
+
+async function getComponents() {
+  if (associatedComponents.value) {
+    return
+  }
+  await fetchPxComponents()
+  associatedComponents.value = pxComponents.value.filter(
+    (component) => component.node === props.node.id,
+  )
 }
 
-function confirmEdit() {
-  isBeingEdited.value = false
-  emit('edit', { ...props.node, ...editForm.value })
+async function updateComponents(id: number) {
+  if (id !== props.node.id) {
+    emit('addForeignComponent', id)
+    return
+  }
+  await fetchPxComponents()
+  associatedComponents.value = pxComponents.value.filter(
+    (component) => component.node === props.node.id,
+  )
 }
 
-function cancelEdit() {
-  isBeingEdited.value = !isBeingEdited.value
-  editForm.value.name = props.node.name
-  editForm.value.description = props.node.description
-}
-/*
-function emitAddComponent() {
-  emit('addComponent', props.node.id)
-}
-*/
-function emitDelete() {
-  emit('delete', props.node.id)
+async function handleDeleteComponent(id: number) {
+  const index = associatedComponents.value!.findIndex((component) => component.id === id)
+  if (index > -1) {
+    associatedComponents.value!.splice(index, 1)
+  }
 }
 </script>
 
 <template>
-  <UCard class="hover:shadow-lg transition">
-    <template #header>
-      <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.node.name }}</h2>
-      <UTextarea v-else v-model="editForm.name" />
-    </template>
-
-    <p v-if="!isBeingEdited">{{ props.node.description }}</p>
-    <UTextarea v-else v-model="editForm.description" />
-
-    <template #footer>
-      <div v-if="!isBeingEdited" class="flex justify-end gap-2">
-        <!--
-        <UButton color="primary" variant="soft" @click="emitAddComponent">Add Component</UButton>
-        -->
-
-        <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
-        <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
-      </div>
-      <div v-else class="flex gap-2">
-        <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
-        <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
-      </div>
-    </template>
-  </UCard>
+  <div v-if="errorPxComponents">Error loading Px Node {{ node.name }}</div>
+  <PxNodeCardDetailed
+    v-else-if="associatedComponents"
+    :node="node"
+    :components="associatedComponents"
+    @delete-component="handleDeleteComponent"
+    @add-component="updateComponents"
+  />
+  <div v-else-if="loadingPxComponents">Loading PxNode {{ node.name }}</div>
 </template>
 
 <style scoped></style>

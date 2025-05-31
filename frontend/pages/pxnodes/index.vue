@@ -2,6 +2,7 @@
 const {
   items: pxNodes,
   fetchAll: fetchPxNodes,
+  fetchById: fetchPxNodeById,
   createItem: createPxNode,
   updateItem: updatePxNode,
   deleteItem: deletePxNode,
@@ -26,8 +27,16 @@ async function handleUpdate(updatedNode: PxNode) {
   await updatePxNode(updatedNode.id, updatedNode)
 }
 
-async function handleAddComponent() {
-  console.log('AddComponent')
+async function handleForeignAddComponent(id: number) {
+  const fetchedNode = await fetchPxNodeById(id)
+  const index = pxNodes.value.findIndex((node) => node.id === id)
+
+  if (index > -1) {
+    pxNodes.value.splice(index, 1)
+  }
+  if (fetchedNode) {
+    pxNodes.value.push(fetchedNode!)
+  }
 }
 </script>
 
@@ -53,9 +62,9 @@ async function handleAddComponent() {
       <div v-for="node in pxNodes" :key="node.id">
         <PxNodeCard
           :node="node"
-          @add-component="handleAddComponent"
           @edit="handleUpdate"
           @delete="deletePxNode"
+          @add-foreign-component="handleForeignAddComponent"
         />
       </div>
     </section>
