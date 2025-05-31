@@ -10,7 +10,7 @@ from .serializers import (
 
 
 class PxNodeViewSet(viewsets.ModelViewSet):
-    queryset = PxNode.objects.all().order_by("-created_at")
+    queryset = PxNode.objects.all().order_by("created_at")
     serializer_class = PxNodeSerializer
 
     """

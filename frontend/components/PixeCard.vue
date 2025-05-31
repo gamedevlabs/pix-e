@@ -1,69 +1,118 @@
 <script setup lang="ts">
-const props = defineProps<{ object: NameDescriptionTuple }>()
-
-const emit = defineEmits<{
-  (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'addComponent', id: number): void
+const props = defineProps<{
+  namedEntity: NamedEntity
+  isBeingEdited: boolean
 }>()
 
-const isBeingEdited = ref(false)
+const emit = defineEmits<{
+  (event: 'update', namedEntityDraft: NamedEntity): void
+  (event: 'edit' | 'delete'): void
+}>()
 
-const editForm = ref({
-  name: props.object.name,
-  description: props.object.description,
-})
+const draft = ref({ ...props.namedEntity })
 
-function startEdit() {
-  isBeingEdited.value = true
+watch(
+  () => props.isBeingEdited,
+  (newVal) => {
+    if (newVal) {
+      draft.value = { ...props.namedEntity }
+    }
+  },
+)
+
+function emitEdit() {
+  emit('edit')
 }
 
-function confirmEdit() {
-  isBeingEdited.value = false
-  emit('edit', { ...props.node, ...editForm.value })
+function emitUpdate() {
+  emit('update', draft.value)
 }
 
-function cancelEdit() {
-  isBeingEdited.value = !isBeingEdited.value
-  editForm.value.name = props.node.name
-  editForm.value.description = props.node.description
-}
-/*
-function emitAddComponent() {
-  emit('addComponent', props.node.id)
-}
-*/
 function emitDelete() {
-  emit('delete', props.node.id)
+  emit('delete')
 }
 </script>
 
 <template>
-  <UCard class="hover:shadow-lg transition">
+  <UCard class="w-72 min-h-55 hover:shadow-lg transition">
     <template #header>
-      <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.node.name }}</h2>
-      <UTextarea v-else v-model="editForm.name" />
+      <div v-if="!isBeingEdited" class="header">
+        <h2 class="font-semibold text-lg">
+          {{ props.namedEntity.name }}
+        </h2>
+        <div>
+          <UButton
+            aria-label="Edit"
+            icon="i-lucide-pencil"
+            color="primary"
+            variant="ghost"
+            @click="emitEdit"
+          />
+          <UButton
+            aria-label="Delete"
+            icon="i-lucide-trash-2"
+            color="error"
+            variant="ghost"
+            @click="emitDelete"
+          />
+        </div>
+      </div>
+
+      <div v-else class="header">
+        <UInput v-model="draft.name" class="max-w-44" variant="subtle" placeholder="Enter name here..."/>
+        <div>
+          <UButton
+            aria-label="Edit"
+            icon="i-lucide-save"
+            color="primary"
+            variant="ghost"
+            @click="emitUpdate"
+          />
+          <UButton
+            aria-label="Delete"
+            icon="i-lucide-x"
+            color="error"
+            variant="ghost"
+            @click="emitEdit"
+          />
+        </div>
+      </div>
     </template>
 
-    <p v-if="!isBeingEdited">{{ props.node.description }}</p>
-    <UTextarea v-else v-model="editForm.description" />
+    <template #default>
+      <p v-if="!isBeingEdited">{{ namedEntity.description }}</p>
+      <UTextarea
+        v-else
+        v-model="draft.description"
+        placeholder="Enter description here..."
+        size="lg"
+        variant="subtle"
+        :rows="1"
+        autoresize
+        class="w-full"
+      />
 
-    <template #footer>
-      <div v-if="!isBeingEdited" class="flex justify-end gap-2">
-        <!--
-        <UButton color="primary" variant="soft" @click="emitAddComponent">Add Component</UButton>
-        -->
-
-        <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
-        <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
+      <div v-if="!isBeingEdited">
+        <slot name="defaultExtra" />
       </div>
-      <div v-else class="flex gap-2">
-        <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
-        <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
+      <div v-else>
+        <slot name="defaultExtraEdit" />
+      </div>
+    </template>
+
+    <template v-if="$slots.footerExtra || $slots.footerExtraEdit" #footer>
+      <div v-if="!isBeingEdited">
+        <slot name="footerExtra" />
+      </div>
+      <div v-else>
+        <slot name="footerExtraEdit" />
       </div>
     </template>
   </UCard>
 </template>
 
 <style scoped>
-
+.header {
+  @apply flex items-center justify-between w-full;
+}
 </style>
