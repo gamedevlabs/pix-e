@@ -54,7 +54,7 @@ async function handlePillarDelete(pillar: Pillar) {
 </script>
 
 <template>
-  <div class="p-4">
+  <div>
     <!-- Game Design Idea Section -->
     <h2 class="text-2xl font-bold mb-4">Game Design Idea:</h2>
     <div class="flex items-stretch w-300 max-w-xxl">
