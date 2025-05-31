@@ -8,13 +8,17 @@ onMounted(() => {
   getComponents()
 })
 
-const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
+const {
+  items: pxComponents,
+  fetchAll: fetchPxComponents,
+  loading: loadingPxComponents,
+  error: errorPxComponents,
+} = usePxComponents()
 
-const associatedComponents = ref<Array<PxComponent>>([])
+const associatedComponents = ref<Array<PxComponent> | undefined>(props.components)
 
 async function getComponents() {
-  if (props.components) {
-    associatedComponents.value = props.components
+  if (associatedComponents.value) {
     return
   }
   await fetchPxComponents()
@@ -25,7 +29,13 @@ async function getComponents() {
 </script>
 
 <template>
-  <PxNodeCardDetailed :node="node" :components="associatedComponents" />
+  <div v-if="errorPxComponents">Error loading Px Node {{ node.name }}</div>
+  <PxNodeCardDetailed
+    v-else-if="associatedComponents"
+    :node="node"
+    :components="associatedComponents"
+  />
+  <div v-else-if="loadingPxComponents">Loading PxNode {{ node.name }}</div>
 </template>
 
 <style scoped></style>
