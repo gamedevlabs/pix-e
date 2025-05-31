@@ -67,7 +67,7 @@ async function handleAddComponent() {
       <br />
       <section class="grid grid-cols-1 gap-6">
         <div v-for="component in components" :key="component.id">
-          <PxComponentCardLogic
+          <PxComponentCard
             visualization-style="preview"
             :component="component"
             @delete="emitDeleteComponent"
