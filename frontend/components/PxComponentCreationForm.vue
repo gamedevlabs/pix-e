@@ -4,9 +4,11 @@ const props = defineProps<{ selectedNodeId: number }>()
 const { createItem: createPxComponent } = usePxComponents()
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
 const { items: pxDefinitions, fetchAll: fetchPxDefinitions } = usePxComponentDefinitions()
+const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 
 onMounted(() => {
   fetchPxNodes()
+  fetchPxComponents()
   fetchPxDefinitions()
 })
 
@@ -48,7 +50,15 @@ async function onSubmit() {
             v-model="state.definitionRef"
             value-key="id"
             label-key="name"
-            :items="pxDefinitions"
+            :items="
+              pxDefinitions.filter(
+                (definition) =>
+                  pxComponents.filter(
+                    (component) =>
+                      component.node === state.nodeRef && component.definition === definition.id,
+                  ).length === 0,
+              )
+            "
             class="w-full"
             placeholder="Select Definition Reference"
           />
@@ -83,7 +93,6 @@ async function onSubmit() {
                 'boolean'
               "
               v-model="state.value"
-              required
               placeholder="Enter Boolean Value"
               class="w-full"
             />
