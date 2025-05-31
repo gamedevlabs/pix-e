@@ -19,7 +19,7 @@ const items = ref<NavigationMenuItem[]>([
   },
   {
     label: 'PxComponentsDefinitions',
-    icon: 'i-lucide-component',
+    icon: 'i-lucide-library-big',
     to: '/pxcomponentdefinitions',
   },
   {
