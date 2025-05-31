@@ -4,7 +4,7 @@ export function useCrud<T>(apiUrl: string) {
   const items = ref<T[]>([])
   const loading = ref(false)
   const error = ref<unknown>(null)
-  const toast = useToast()
+  const { success, error: errorToast } = usePixeToast()
   const API_URL = BASE_URL + apiUrl
 
   async function fetchAll() {
@@ -14,11 +14,7 @@ export function useCrud<T>(apiUrl: string) {
       items.value = data || []
     } catch (err) {
       error.value = err
-      toast.add({
-        title: 'Error loading items...',
-        //description: 'Your action was completed successfully.',
-        color: 'error',
-      })
+      errorToast(err)
     } finally {
       loading.value = false
     }
@@ -42,17 +38,11 @@ export function useCrud<T>(apiUrl: string) {
         method: 'POST',
         body: payload,
       })
-      toast.add({
-        title: 'Item created successfully!',
-        color: 'success',
-      })
+      success('Item created successfully!')
       await fetchAll()
     } catch (err) {
       error.value = err
-      toast.add({
-        title: 'Error creating item',
-        color: 'error',
-      })
+      errorToast(err)
     }
   }
 
@@ -62,17 +52,11 @@ export function useCrud<T>(apiUrl: string) {
         method: 'PUT',
         body: payload,
       })
-      toast.add({
-        title: 'Item updated successfully!',
-        color: 'success',
-      })
+      success('Item updated successfully!')
       await fetchAll()
     } catch (err) {
       error.value = err
-      toast.add({
-        title: 'Error updating item',
-        color: 'error',
-      })
+      errorToast(err)
     }
   }
 
@@ -81,17 +65,11 @@ export function useCrud<T>(apiUrl: string) {
       await $fetch<null>(`${API_URL}${id}/`, {
         method: 'DELETE',
       })
-      toast.add({
-        title: 'Item deleted successfully!',
-        color: 'success',
-      })
+      success('Item deleted successfully!')
       await fetchAll()
     } catch (err) {
       error.value = err
-      toast.add({
-        title: 'Error deleting item',
-        color: 'error',
-      })
+      errorToast(err)
     }
   }
 

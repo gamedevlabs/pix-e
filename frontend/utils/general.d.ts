@@ -1,4 +1,4 @@
-interface NameDescriptionTuple {
+interface NamedEntity {
   name: string;
   description: string;
 }
