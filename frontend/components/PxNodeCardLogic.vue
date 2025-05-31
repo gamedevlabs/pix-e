@@ -26,6 +26,22 @@ async function getComponents() {
     (component) => component.node === props.node.id,
   )
 }
+
+async function updateComponents() {
+  await fetchPxComponents()
+  console.log('hehe')
+  associatedComponents.value = pxComponents.value.filter(
+    (component) => component.node === props.node.id,
+  )
+  console.log(associatedComponents.value.length)
+}
+
+async function handleDeleteComponent(id: number) {
+  const index = associatedComponents.value!.findIndex((component) => component.id === id)
+  if (index > -1) {
+    associatedComponents.value!.splice(index, 1)
+  }
+}
 </script>
 
 <template>
@@ -34,6 +50,8 @@ async function getComponents() {
     v-else-if="associatedComponents"
     :node="node"
     :components="associatedComponents"
+    @delete-component="handleDeleteComponent"
+    @add-component="updateComponents"
   />
   <div v-else-if="loadingPxComponents">Loading PxNode {{ node.name }}</div>
 </template>

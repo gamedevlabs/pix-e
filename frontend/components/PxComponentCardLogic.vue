@@ -6,6 +6,12 @@ const props = defineProps<{
   visualizationStyle: 'preview' | 'detailed'
 }>()
 
+const emit = defineEmits<{
+  (e: 'delete', id: number): void
+}>()
+
+const { deleteItem: deletePxComponent } = usePxComponents()
+
 const { fetchById: fetchPxDefinitionById } = usePxComponentDefinitions()
 
 const { fetchById: fetchPxNodeById } = usePxNodes()
@@ -33,6 +39,12 @@ async function getNode() {
   }
   associatedNode.value = await fetchPxNodeById(props.component.node)
 }
+
+async function handleDelete(id: number) {
+  await deletePxComponent(id)
+
+  emit('delete', id)
+}
 </script>
 
 <template>
@@ -41,6 +53,7 @@ async function getNode() {
     v-else-if="visualizationStyle === 'preview'"
     :component="component"
     :definition="associatedDefinition!"
+    @delete="handleDelete"
   />
 
   <PxComponentCardDetailed
@@ -48,6 +61,7 @@ async function getNode() {
     :component="component"
     :definition="associatedDefinition!"
     :node="associatedNode!"
+    @delete="handleDelete"
   />
 </template>
 <style scoped></style>

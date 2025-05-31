@@ -1,13 +1,14 @@
 <script setup lang="ts">
-const {
-  items: pxComponents,
-  fetchAll: fetchPxComponents,
-  deleteItem: deletePxComponent,
-} = usePxComponents()
+const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 
 onMounted(() => {
   fetchPxComponents()
 })
+
+function handleDelete(id: number) {
+  const index = pxComponents.value.findIndex((component) => component.id === id)
+  pxComponents.value.splice(index, 1)
+}
 </script>
 
 <template>
@@ -20,7 +21,7 @@ onMounted(() => {
         <PxComponentCardLogic
           visualization-style="detailed"
           :component="component"
-          @delete="deletePxComponent"
+          @delete="handleDelete"
         />
       </div>
     </section>

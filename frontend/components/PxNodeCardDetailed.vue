@@ -6,15 +6,13 @@ const props = defineProps<{
   components: Array<PxComponent>
 }>()
 
-const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
-
 const emit = defineEmits<{
+  (e: 'addComponent'): void
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete', id: number): void
+  (e: 'delete' | 'deleteComponent', id: number): void
 }>()
 
 const isBeingEdited = ref(false)
-const associatedComponents = ref<Array<PxComponent>>(props.components)
 
 const editForm = ref({
   name: props.node.name,
@@ -40,19 +38,16 @@ function emitDelete() {
   emit('delete', props.node.id)
 }
 
+function emitDeleteComponent(id: number) {
+  emit('deleteComponent', id)
+}
+
 const overlay = useOverlay()
 const modal = overlay.create(LazyPxComponentCreationForm)
 
-async function updateComponents() {
-  await fetchPxComponents()
-  associatedComponents.value = pxComponents.value.filter(
-    (component) => component.node === props.node.id,
-  )
-}
-
 async function handleAddComponent() {
   await modal.open({ selectedNodeId: props.node.id }).result
-  await updateComponents()
+  emit('addComponent')
 }
 </script>
 
@@ -71,8 +66,12 @@ async function handleAddComponent() {
       <p>{{ props.node.description }}</p>
       <br />
       <section class="grid grid-cols-1 gap-6">
-        <div v-for="component in associatedComponents" :key="component.id" class="">
-          <PxComponentCardLogic visualization-style="preview" :component="component" />
+        <div v-for="component in components" :key="component.id">
+          <PxComponentCardLogic
+            visualization-style="preview"
+            :component="component"
+            @delete="emitDeleteComponent"
+          />
         </div>
       </section>
     </div>

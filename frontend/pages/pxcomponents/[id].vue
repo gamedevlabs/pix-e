@@ -5,7 +5,6 @@ const id = route.params.id as unknown as number
 const {
   fetchById: fetchPxComponentById,
   updateItem: updatePxComponent,
-  deleteItem: deletePxComponent,
   loading: loadingPxComponent,
   error: errorPxComponent,
 } = usePxComponents()
@@ -27,8 +26,6 @@ async function handleUpdate(updatedComponent: PxComponent) {
 }
 
 async function handleDelete() {
-  await deletePxComponent(id)
-
   await navigateTo('/pxcomponents')
 }
 </script>
