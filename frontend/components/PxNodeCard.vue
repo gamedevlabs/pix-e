@@ -15,6 +15,10 @@ const {
   error: errorPxComponents,
 } = usePxComponents()
 
+const emit = defineEmits<{
+  (e: 'addForeignComponent', id: number): void
+}>()
+
 const associatedComponents = ref<Array<PxComponent> | undefined>(props.components)
 
 async function getComponents() {
@@ -27,13 +31,15 @@ async function getComponents() {
   )
 }
 
-async function updateComponents() {
+async function updateComponents(id: number) {
+  if (id !== props.node.id) {
+    emit('addForeignComponent', id)
+    return
+  }
   await fetchPxComponents()
-  console.log('hehe')
   associatedComponents.value = pxComponents.value.filter(
     (component) => component.node === props.node.id,
   )
-  console.log(associatedComponents.value.length)
 }
 
 async function handleDeleteComponent(id: number) {

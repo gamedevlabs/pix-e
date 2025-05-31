@@ -7,9 +7,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'addComponent'): void
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'deleteComponent', id: number): void
+  (e: 'delete' | 'deleteComponent' | 'addComponent', id: number): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -46,8 +45,8 @@ const overlay = useOverlay()
 const modal = overlay.create(LazyPxComponentCreationForm)
 
 async function handleAddComponent() {
-  await modal.open({ selectedNodeId: props.node.id }).result
-  emit('addComponent')
+  const nodeId = await modal.open({ selectedNodeId: props.node.id }).result
+  emit('addComponent', nodeId)
 }
 </script>
 

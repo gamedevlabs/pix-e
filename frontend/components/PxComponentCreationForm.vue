@@ -12,7 +12,7 @@ onMounted(() => {
   fetchPxDefinitions()
 })
 
-const emit = defineEmits<{ close: [boolean] }>()
+const emit = defineEmits<{ close: [number] }>()
 
 const state = ref({
   nodeRef: props.selectedNodeId,
@@ -26,7 +26,7 @@ async function onSubmit() {
     definition: state.value.definitionRef,
     value: state.value.value,
   })
-  emit('close', true)
+  emit('close', state.value.nodeRef)
 }
 </script>
 
