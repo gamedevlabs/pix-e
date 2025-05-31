@@ -35,7 +35,7 @@ async function handleForeignAddComponent() {
 </script>
 
 <template>
-  <div class="p-8">
+  <div class="p-4">
     <h1 class="text-2xl font-bold mb-6">Px Nodes</h1>
 
     <!-- Create Form -->
