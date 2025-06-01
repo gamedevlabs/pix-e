@@ -34,7 +34,7 @@ function emitDelete() {
 </script>
 
 <template>
-  <UCard class="w-72 min-h-55 hover:shadow-lg transition">
+  <UCard class="w-72 min-h-55 hover:shadow-lg transition" variant="subtle">
     <template #header>
       <div v-if="!isBeingEdited" class="header">
         <h2 class="font-semibold text-lg">
