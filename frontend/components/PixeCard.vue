@@ -1,11 +1,14 @@
 <script setup lang="ts">
 const props = defineProps<{
-  namedEntity: NamedEntity
-  isBeingEdited: boolean
+  namedEntity: Partial<NamedEntity>
+  isBeingEdited?: boolean
+  showEdit?: boolean
+  showDelete?: boolean
+  variant?: 'compact'
 }>()
 
 const emit = defineEmits<{
-  (event: 'update', namedEntityDraft: NamedEntity): void
+  (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
   (event: 'edit' | 'delete'): void
 }>()
 
@@ -34,7 +37,13 @@ function emitDelete() {
 </script>
 
 <template>
-  <UCard class="w-72 min-h-55 hover:shadow-lg transition" variant="subtle">
+  <UCard
+    :class="[
+      'w-72 hover:shadow-lg transition',
+      variant !== null && variant === 'compact' ? 'min-h-35' : 'min-h-55',
+    ]"
+    variant="subtle"
+  >
     <template #header>
       <div v-if="!isBeingEdited" class="header">
         <h2 class="font-semibold text-lg">
@@ -42,6 +51,7 @@ function emitDelete() {
         </h2>
         <div>
           <UButton
+            v-if="showEdit"
             aria-label="Edit"
             icon="i-lucide-pencil"
             color="primary"
@@ -49,6 +59,7 @@ function emitDelete() {
             @click="emitEdit"
           />
           <UButton
+            v-if="showDelete"
             aria-label="Delete"
             icon="i-lucide-trash-2"
             color="error"
@@ -59,17 +70,22 @@ function emitDelete() {
       </div>
 
       <div v-else class="header">
-        <UInput v-model="draft.name" class="max-w-44" variant="subtle" placeholder="Enter name here..."/>
+        <UInput
+          v-model="draft.name"
+          class="max-w-44"
+          variant="subtle"
+          placeholder="Enter name here..."
+        />
         <div>
           <UButton
-            aria-label="Edit"
+            aria-label="Update"
             icon="i-lucide-save"
             color="primary"
             variant="ghost"
             @click="emitUpdate"
           />
           <UButton
-            aria-label="Delete"
+            aria-label="Cancel"
             icon="i-lucide-x"
             color="error"
             variant="ghost"
@@ -80,23 +96,25 @@ function emitDelete() {
     </template>
 
     <template #default>
-      <p v-if="!isBeingEdited">{{ namedEntity.description }}</p>
-      <UTextarea
-        v-else
-        v-model="draft.description"
-        placeholder="Enter description here..."
-        size="lg"
-        variant="subtle"
-        :rows="1"
-        autoresize
-        class="w-full"
-      />
+      <div v-if="namedEntity.description">
+        <p v-if="!isBeingEdited">{{ namedEntity.description }}</p>
+        <UTextarea
+          v-else
+          v-model="draft.description"
+          placeholder="Enter description here..."
+          size="lg"
+          variant="subtle"
+          :rows="1"
+          autoresize
+          class="w-full"
+        />
+      </div>
 
       <div v-if="!isBeingEdited">
-        <slot name="defaultExtra" />
+        <slot name="default" />
       </div>
       <div v-else>
-        <slot name="defaultExtraEdit" />
+        <slot name="defaultEdit" />
       </div>
     </template>
 
