@@ -2,7 +2,6 @@
 const {
   items: pxNodes,
   fetchAll: fetchPxNodes,
-  fetchById: fetchPxNodeById,
   createItem: createPxNode,
   updateItem: updatePxNode,
   deleteItem: deletePxNode,
@@ -27,16 +26,11 @@ async function handleUpdate(updatedNode: PxNode) {
   await updatePxNode(updatedNode.id, updatedNode)
 }
 
-async function handleForeignAddComponent(id: number) {
-  const fetchedNode = await fetchPxNodeById(id)
-  const index = pxNodes.value.findIndex((node) => node.id === id)
-
-  if (index > -1) {
-    pxNodes.value.splice(index, 1)
-  }
-  if (fetchedNode) {
-    pxNodes.value.push(fetchedNode!)
-  }
+// Not particularly efficient, but works for now.
+// Problem is that I do not get the specified PxNodeCard to reload its components from here
+async function handleForeignAddComponent() {
+  pxNodes.value = []
+  await fetchPxNodes()
 }
 </script>
 
@@ -59,14 +53,14 @@ async function handleForeignAddComponent(id: number) {
 
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <div v-for="node in pxNodes" :key="node.id">
-        <PxNodeCard
-          :node="node"
-          @edit="handleUpdate"
-          @delete="deletePxNode"
-          @add-foreign-component="handleForeignAddComponent"
-        />
-      </div>
+      <PxNodeCard
+        v-for="node in pxNodes"
+        :key="node.id"
+        :node="node"
+        @edit="handleUpdate"
+        @delete="deletePxNode"
+        @add-foreign-component="handleForeignAddComponent"
+      />
     </section>
   </div>
 </template>
