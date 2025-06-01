@@ -96,7 +96,7 @@ function emitDelete() {
     </template>
 
     <template #default>
-      <div v-if="namedEntity.description">
+      <div v-if="'description' in namedEntity">
         <p v-if="!isBeingEdited">{{ namedEntity.description }}</p>
         <UTextarea
           v-else

@@ -8,11 +8,6 @@ const items = ref<NavigationMenuItem[]>([
     to: '/',
   },
   {
-    label: 'pix:e Page Layout',
-    icon: 'i-lucide-plane',
-    to: '/generalPageLayout',
-  },
-  {
     label: 'PxNodes',
     icon: 'i-lucide-hexagon',
     to: '/pxnodes',
