@@ -87,7 +87,7 @@ async function handleLogout() {
         </aside>
 
         <!-- Page Content -->
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main class="flex-1 p-10 overflow-y-auto">
           <NuxtPage />
         </main>
       </div>

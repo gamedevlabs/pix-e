@@ -28,7 +28,7 @@ interface PXNode {
 }
  */
 
-interface PxNode {
+interface PxNode extends NamedEntity {
   id: number
   name: string
   description: string
