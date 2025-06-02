@@ -17,14 +17,55 @@ const emit = defineEmits<{ close: [number] }>()
 const state = ref({
   nodeRef: props.selectedNodeId,
   definitionRef: undefined,
-  value: undefined,
+  stringValue: undefined,
+  numberValue: undefined,
+  booleanValue: false,
+})
+
+const availableDefinitionsForSelectedNode = computed(() => {
+  return pxDefinitions.value.filter(
+    (definition) =>
+      pxComponents.value.filter(
+        (component) =>
+          component.node === state.value.nodeRef && component.definition === definition.id,
+      ).length === 0,
+  )
+})
+
+const selectedDefinition = computed(() => {
+  if (!availableDefinitionsForSelectedNode.value) {
+    return undefined
+  }
+  return availableDefinitionsForSelectedNode.value
+    .filter((def) => def.id === state.value.definitionRef)
+    .pop()
 })
 
 async function onSubmit() {
+  if (!selectedDefinition.value) return
+
+  let enteredValue
+
+  switch (selectedDefinition.value.type) {
+    case 'number':
+      enteredValue = state.value.numberValue
+      break
+    case 'boolean':
+      enteredValue = state.value.booleanValue
+      break
+    case 'string':
+      enteredValue = state.value.stringValue
+      break
+    default:
+      enteredValue = undefined
+  }
+
+  if (enteredValue === undefined) return
+
   await createPxComponent({
     node: state.value.nodeRef,
     definition: state.value.definitionRef,
-    value: state.value.value,
+    value: enteredValue,
   })
   emit('close', state.value.nodeRef)
 }
@@ -46,53 +87,48 @@ async function onSubmit() {
         </UFormField>
 
         <UFormField label="Definition Reference" name="definitionRef" class="max-w-96" required>
+          <div v-if="availableDefinitionsForSelectedNode.length === 0">
+            The selected node already has a component for each definition available.
+          </div>
           <USelect
+            v-else
             v-model="state.definitionRef"
             value-key="id"
             label-key="name"
-            :items="
-              pxDefinitions.filter(
-                (definition) =>
-                  pxComponents.filter(
-                    (component) =>
-                      component.node === state.nodeRef && component.definition === definition.id,
-                  ).length === 0,
-              )
-            "
+            :items="availableDefinitionsForSelectedNode"
             class="w-full"
             placeholder="Select Definition Reference"
           />
         </UFormField>
 
         <UFormField label="Value" name="value" class="max-w-96" required>
-          <div v-if="!state.definitionRef">Please select a value type before entering a value.</div>
+          <div
+            v-if="
+              !state.definitionRef ||
+              !selectedDefinition ||
+              availableDefinitionsForSelectedNode.length === 0
+            "
+          >
+            Please select a value type before entering a value.
+          </div>
           <div v-else>
             <UInput
-              v-if="
-                pxDefinitions.filter((def) => def.id === state.definitionRef).pop()?.type ===
-                'string'
-              "
-              v-model="state.value"
+              v-if="selectedDefinition!.type === 'string'"
+              v-model="state.stringValue"
               required
               placeholder="Enter String Value"
               class="w-full"
             />
             <UInputNumber
-              v-else-if="
-                pxDefinitions.filter((def) => def.id === state.definitionRef).pop()?.type ===
-                'number'
-              "
-              v-model="state.value"
+              v-else-if="selectedDefinition!.type === 'number'"
+              v-model="state.numberValue"
               required
               placeholder="Enter Numeric Value"
               class="w-full"
             />
             <UCheckbox
-              v-else-if="
-                pxDefinitions.filter((def) => def.id === state.definitionRef).pop()?.type ===
-                'boolean'
-              "
-              v-model="state.value"
+              v-else-if="selectedDefinition!.type === 'boolean'"
+              v-model="state.booleanValue"
               placeholder="Enter Boolean Value"
               class="w-full"
             />
