@@ -3,6 +3,8 @@ const {
   items: pxComponentDefinitions,
   fetchAll: fetchPxComponentDefinitions,
   createItem: createPxComponentDefinition,
+  updateItem: updatePxDefinition,
+  deleteItem: deletePxDefinition,
 } = usePxComponentDefinitions()
 
 onMounted(() => {
@@ -21,11 +23,15 @@ async function handleCreate() {
   state.value.name = ''
   state.value.type = 'none'
 }
+
+async function handleUpdate(updatedDefinition: PxComponentDefinition) {
+  await updatePxDefinition(updatedDefinition.id, updatedDefinition)
+}
 </script>
 
 <template>
   <div class="p-8">
-    <h1 class="text-2xl font-bold mb-6">Px Components</h1>
+    <h1 class="text-2xl font-bold mb-6">Px Definitions</h1>
 
     <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
       <UFormField>
@@ -40,12 +46,11 @@ async function handleCreate() {
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="definition in pxComponentDefinitions" :key="definition.id">
-        <UCard>
-          <template #header>
-            {{ definition.name }}
-          </template>
-          {{ definition.type }}
-        </UCard>
+        <PxComponentDefinitionCardDetailed
+          :definition="definition"
+          @edit="handleUpdate"
+          @delete="deletePxDefinition"
+        />
       </div>
     </section>
   </div>
