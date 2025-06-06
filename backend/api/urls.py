@@ -17,7 +17,24 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
+from llm.views import (
+    MoodboardStartView,
+    MoodboardGenerateView,
+    MoodboardGetView,
+    MoodboardEndView,
+    MoodboardSuggestView,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/moodboard/start/", MoodboardStartView.as_view(), name="moodboard_start"),
+    path("api/moodboard/generate/", MoodboardGenerateView.as_view(), name="moodboard_generate"),
+    path("api/moodboard/<uuid:session_id>/", MoodboardGetView.as_view(), name="moodboard_get"),
+    path("api/moodboard/end/", MoodboardEndView.as_view(), name="moodboard_end"),
+    path("api/moodboard/suggest/", MoodboardSuggestView.as_view(), name="moodboard-suggest"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

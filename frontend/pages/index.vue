@@ -32,6 +32,8 @@ function showToast2() {
       <UButton size="lg" color="info" @click="showToast">Get Started</UButton>
       <UButton size="lg" color="warning" @click="showToast2">Get Started</UButton>
       <UButton size="lg" color="error" @click="showToast">Get Started</UButton>
+      <br />
+      <UButton size="lg" color="primary" class="mt-6" to="/moodboard">Open Moodboard</UButton>
     </section>
 
     <!-- Cards Section -->

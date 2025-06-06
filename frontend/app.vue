@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, provide } from 'vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const items = ref<NavigationMenuItem[]>([
@@ -30,10 +31,15 @@ const items = ref<NavigationMenuItem[]>([
     disabled: true,
   },
 ])
+
+const loading = ref(false)
+// Provide loading as a global property
+provide('globalLoading', loading)
 </script>
 
 <template>
   <UApp>
+    <div v-if="loading" class="global-loading-bar"></div>
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
       <header
@@ -78,5 +84,24 @@ const items = ref<NavigationMenuItem[]>([
 .page-leave-to {
   opacity: 0;
   filter: blur(1rem);
+}
+
+.global-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+  animation: loading 2s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: -200%;
+  }
+  100% {
+    background-position: 200%;
+  }
 }
 </style>
