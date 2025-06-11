@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import { PillarFixModal } from '#components'
-
 const props = defineProps<{
   pillar: Pillar
   isBeingEdited?: boolean
@@ -12,38 +10,29 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
   (event: 'edit' | 'delete'): void
-  (event: 'dismiss', index: number): void
 }>()
 
 const toast = useToast()
 const pillars = usePillars()
-const overlay = useOverlay()
 
-async function open() {
-  const modal = overlay.create(PillarFixModal, {
-    props: {
-      originalPillar: props.pillar,
-      onClose: (pillar) => emit('update', pillar),
-    },
-  })
-  modal.open()
-}
+const hasFeedback = ref(
+  props.pillar.llm_feedback !== null && props.pillar.llm_feedback !== undefined,
+)
+const feedbackOpen = ref(
+  props.pillar.llm_feedback !== null && props.pillar.llm_feedback !== undefined,
+)
 
 async function handleValidation() {
   await pillars.validatePillar(props.pillar)
-  if (props.pillar.llm_feedback?.hasStructureIssue) {
-    toast.add({
-      title: 'Structural Issues Found',
-      description: `Found ${props.pillar.llm_feedback.structuralIssues.length} issues.`,
-      color: 'warning',
-    })
-  } else {
-    toast.add({
-      title: 'No Structural Issues',
-      description: 'The pillar is structurally sound.',
-      color: 'success',
-    })
+  hasFeedback.value = true
+  feedbackOpen.value = true
+}
+
+async function initialValidation() {
+  if (hasFeedback.value) {
+    return
   }
+  handleValidation()
 }
 </script>
 
@@ -57,54 +46,46 @@ async function handleValidation() {
     :show-edit="showEdit"
     :show-delete="showDelete"
     :variant="variant"
-    :class="[
-      'outline-1',
-      (pillar.llm_feedback?.structuralIssues.length ?? 0 > 0)
-        ? 'outline-error-500'
-        : 'outline-success-500',
-    ]"
     @edit="emit('edit')"
     @update="(v) => emit('update', v)"
     @delete="emit('delete')"
+    :class="[
+      'outline outline-1',
+      pillar.llm_feedback?.hasStructureIssue ? 'outline-error-500' : 'outline-success-500',
+    ]"
   >
     <template #footerExtra>
       <div class="relative">
-        <div class="justify-between flex items-center mb-2 gap-2">
-          <h2 class="font-semibold text-lg">LLM Feedback</h2>
+        <UCollapsible v-model:open="feedbackOpen" class="flex flex-col gap-2 w-50">
           <UButton
-            size="md"
-            icon="i-lucide-refresh-cw"
-            color="secondary"
+            v-model="feedbackOpen"
+            class="group"
+            color="neutral"
             variant="subtle"
-            label="Generate"
-            loading-auto
-            @click="handleValidation"
-          />
-        </div>
-        <div v-for="(issue, index) in pillar.llm_feedback?.structuralIssues" :key="index">
-          <UAlert
-            class="mb-2"
-            variant="subtle"
-            :color="issue.severity >= 3 ? 'error' : 'warning'"
-            :title="issue.title"
-            :description="'Severity ' + issue.severity"
-            :actions="[
-              {
-                label: 'Fix with AI',
-                color: 'primary',
-                variant: 'subtle',
-                onClick: () => open(),
-              },
-              {
-                label: 'Dismiss',
-                color: 'warning',
-                variant: 'subtle',
-                class: 'ml-auto',
-                onClick: () => emit('dismiss', index),
-              },
-            ]"
-          />
-        </div>
+            trailing-icon="i-lucide-chevron-down"
+            :ui="{
+              trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200',
+            }"
+            block
+            @click="initialValidation"
+          >
+            <span v-if="hasFeedback">LLM Feedback</span>
+            <span v-else>Validate Pillar</span>
+          </UButton>
+
+          <template #content>
+            {{ pillar.llm_feedback }}
+          </template>
+        </UCollapsible>
+
+        <UButton
+          class="absolute top-0 right-0"
+          size="xl"
+          icon="i-lucide-refresh-cw"
+          color="secondary"
+          variant="ghost"
+          @click="handleValidation"
+        />
       </div>
     </template>
   </NamedEntityCard>

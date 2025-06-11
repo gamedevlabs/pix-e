@@ -35,7 +35,7 @@ class GeminiLink:
             1. The title does not match the description.
             2. The intent of the pillar is not clear.
             3. The pillar focuses on more than one aspect.
-            Pillar Title: {pillar.title}\n
+            Pillar Title: {pillar.name}\n
             Pillar Description: {pillar.description}
             Then give feedback on the pillar and if it could be improved.
             Answer directly as if you are giving your feedback to the designer."""
