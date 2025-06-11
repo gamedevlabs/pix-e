@@ -21,26 +21,22 @@
 
   async function getLLMFeedback() {
     return (
-      await $fetch<LLMFeedback>(`${config.public.apiBase}/llm/feedback/`, {
+      await $fetch<PillarFeedback>(`${config.public.apiBase}/llm/feedback/`, {
         method: 'GET',
         credentials: 'include',
       })
-    ).feedback
+    ).content_feedback
   }
 
   async function validatePillarAPICall(pillar: Pillar) {
-    pillar.llm_feedback = (
-      await $fetch<LLMFeedback>(
-        `${config.public.apiBase}/llm/pillars/${pillar.pillar_id}/validate/`,
-        {
-          method: 'GET',
-          credentials: 'include',
-        },
-      )
-    ).feedback
-    pillar.display_open = true
+    pillar.llm_feedback = await $fetch<PillarFeedback>(
+      `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      },
+    )
   }
-
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,

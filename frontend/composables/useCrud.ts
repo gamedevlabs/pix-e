@@ -79,8 +79,8 @@ export function useCrud<T>(apiUrl: string) {
         method: 'DELETE',
         credentials: 'include',
         headers: {
-          'X-CSRFToken': useCookie('csrftoken').vale,
-        } as HeadersInt,
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       })
       success('Item deleted successfully!')
       await fetchAll()
