@@ -1,6 +1,6 @@
 ﻿import { usePillarsApi } from '@/composables/api/pillarsApi'
 
-export async function usePillars() {
+export function usePillars() {
   const basics = useCrud<Pillar>('llm/pillars/')
 
   const config = useRuntimeConfig()
@@ -21,7 +21,7 @@ export async function usePillars() {
   }
 
   return {
-    basics,
+    ...basics,
     designIdea,
     llmFeedback,
     validatePillar,

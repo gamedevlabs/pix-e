@@ -18,7 +18,6 @@ from .serializers import GameDesignSerializer, PillarSerializer
 class PillarViewSet(ModelViewSet):
     serializer_class = PillarSerializer
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = "pillar_id"
 
     def get_queryset(self):
         return Pillar.objects.filter(user=self.request.user)
@@ -67,7 +66,7 @@ class OverallFeedbackView(APIView):
             prompt += f"Game Design Description: {design.description}\n"
             prompt += "Design Pillars:\n"
             for pillar in pillars:
-                prompt += f"Title: {pillar.title}\n"
+                prompt += f"Title: {pillar.name}\n"
                 prompt += f"Description: {pillar.description}\n\n"
 
             prompt += (
@@ -86,9 +85,9 @@ class PillarFeedbackView(APIView):
         super().__init__()
         self.gemini = GeminiLink()
 
-    def get(self, request, pillar_id):
+    def get(self, request, id):
         try:
-            pillar = Pillar.objects.filter(pillar_id=pillar_id).first()
+            pillar = Pillar.objects.filter(id=id).first()
 
             answer = self.gemini.generate_pillar_response(pillar)
             print(answer)
@@ -96,4 +95,5 @@ class PillarFeedbackView(APIView):
                 answer.model_dump_json(), content_type="application/json", status=200
             )
         except Exception as e:
-            return HttpResponse({"error": e}, status=404)
+            print(e)
+            return HttpResponse({"error": e}, status=500)

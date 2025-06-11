@@ -35,7 +35,7 @@ urlpatterns += router.urls
 urlpatterns += [
     path("feedback/", OverallFeedbackView.as_view()),
     path(
-        "pillars/<int:pillar_id>/validate/",
+        "pillars/<int:id>/validate/",
         PillarFeedbackView.as_view(),
         name="pillar-validate",
     ),
