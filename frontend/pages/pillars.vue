@@ -14,9 +14,8 @@ const {
   designIdea,
   llmFeedback,
   getLLMFeedback,
-  validatePillar,
   updateDesignIdea,
-} = await usePillars()
+} = usePillars()
 
 await pillarsFetchAll()
 
