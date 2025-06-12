@@ -48,6 +48,8 @@ const items = ref<NavigationMenuItem[]>([
 const authentication = useAuthentication()
 authentication.checkAuthentication()
 
+const llmstore = useLLM()
+
 async function handleLogout() {
   await authentication.logout()
 }
@@ -66,6 +68,13 @@ async function handleLogout() {
         </div>
         <div class="flex items-center gap-3">
           <!-- Put user info, settings, logout etc. here -->
+          <USelect
+            v-model="llmstore.active_llm"
+            :items="llmstore.llm_models"
+            value-key="value"
+            :icon="llmstore.llm_icon"
+            class="w-48"
+          />
           <ColorModeSwitch />
           <UButton
             v-if="!authentication.isLoggedIn.value"

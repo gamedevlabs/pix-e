@@ -3,7 +3,6 @@
 export function usePillars() {
   const basics = useCrud<Pillar>('llm/pillars/')
 
-  const config = useRuntimeConfig()
   const pillarsApi = usePillarsApi()
   const designIdea = ref<string>('')
   const llmFeedback = ref<string>('Feedback will be displayed here')
@@ -20,6 +19,12 @@ export function usePillars() {
     return await pillarsApi.validatePillarAPICall(pillar)
   }
 
+  async function fixPillarWithAI(pillar: Pillar) {
+    const updatedPillar = await pillarsApi.fixPillarWithAIAPICall(pillar)
+    pillar.name = updatedPillar.name
+    pillar.description = updatedPillar.description
+    pillar.llm_feedback = null
+  }
   return {
     ...basics,
     designIdea,
@@ -27,5 +32,6 @@ export function usePillars() {
     validatePillar,
     updateDesignIdea,
     getLLMFeedback,
+    fixPillarWithAI,
   }
 }

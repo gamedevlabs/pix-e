@@ -1,7 +1,7 @@
 # from django.shortcuts import render
 # from django.views import View
 # from rest_framework.views import APIView
-
+from annotated_types.test_cases import cases
 from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from .llm_links.GeminiLink import GeminiLink
+from .llm_links.OpenAILink import OpenAILink
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
@@ -84,12 +85,20 @@ class PillarFeedbackView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
         self.gemini = GeminiLink()
+        self.openai = OpenAILink()
 
-    def get(self, request, id):
+    def post(self, request, id):
         try:
             pillar = Pillar.objects.filter(id=id).first()
+            model = request.data["model"]
+            print(model)
+            answer = None
+            match model:
+                case "gemini":
+                    answer = self.gemini.generate_pillar_response(pillar)
+                case "openai":
+                    answer = self.openai.generate_pillar_response(pillar)
 
-            answer = self.gemini.generate_pillar_response(pillar)
             print(answer)
             return HttpResponse(
                 answer.model_dump_json(), content_type="application/json", status=200
@@ -97,3 +106,21 @@ class PillarFeedbackView(APIView):
         except Exception as e:
             print(e)
             return HttpResponse({"error": e}, status=500)
+
+
+class FixPillarView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.gemini = GeminiLink()
+
+    def post(self, request, id):
+        try:
+            pillar = Pillar.objects.filter(id=id).first()
+            pillar = self.gemini.fix_pillar_through_llm(pillar)
+            data = PillarSerializer(pillar).data
+            print("Fixed Pillar")
+            return JsonResponse(
+                data,
+                status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=500)

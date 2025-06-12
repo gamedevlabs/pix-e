@@ -1,7 +1,8 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import DesignView, OverallFeedbackView, PillarFeedbackView, PillarViewSet
+from .views import DesignView, OverallFeedbackView, PillarFeedbackView, PillarViewSet, \
+    FixPillarView
 
 app_name = "llm"
 
@@ -39,4 +40,9 @@ urlpatterns += [
         PillarFeedbackView.as_view(),
         name="pillar-validate",
     ),
+    path(
+        "pillars/<int:id>/fix/",
+        FixPillarView.as_view(),
+        name="pillar-fix",
+    )
 ]
