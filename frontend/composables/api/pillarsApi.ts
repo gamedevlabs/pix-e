@@ -28,8 +28,8 @@
         },
         credentials: 'include',
         headers: {
-          'X-CSRFToken': useCookie('csrftoken').valu,
-        } as HeadersIni,
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       })
     ).content_feedback
   }
@@ -45,7 +45,7 @@
         credentials: 'include',
         headers: {
           'X-CSRFToken': useCookie('csrftoken').valu,
-        } as HeadersIni,
+        } as HeadersInit,
       },
     )
   }
@@ -64,6 +64,6 @@
     updateDesignIdeaAPICall,
     validatePillarAPICall,
     getLLMFeedback,
-    fixPillarWithAIAPICal,
+    fixPillarWithAIAPICall,
   }
 }
