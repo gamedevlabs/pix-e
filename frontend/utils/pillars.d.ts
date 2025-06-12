@@ -1,6 +1,6 @@
 ﻿type PillarDTO = {
   id: number
-  title: string
+  name: string
   description: string
 }
 
@@ -8,7 +8,7 @@ interface Pillar extends NamedEntity {
   id: number
   name: string
   description: string
-  llm_feedback: PillarFeedback
+  llm_feedback: PillarFeedback | null
 }
 
 type GameDesign = {

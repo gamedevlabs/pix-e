@@ -1,6 +1,6 @@
 ﻿export function usePillarsApi() {
   const config = useRuntimeConfig()
-
+  const llm = useLLM()
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
@@ -22,8 +22,14 @@
   async function getLLMFeedback() {
     return (
       await $fetch<PillarFeedback>(`${config.public.apiBase}/llm/feedback/`, {
-        method: 'GET',
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+        },
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').valu,
+        } as HeadersIni,
       })
     ).content_feedback
   }
@@ -32,14 +38,32 @@
     pillar.llm_feedback = await $fetch<PillarFeedback>(
       `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
       {
-        method: 'GET',
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+        },
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').valu,
+        } as HeadersIni,
       },
     )
+  }
+
+  async function fixPillarWithAIAPICall(pillar: Pillar) {
+    return await $fetch<PillarDTO>(`${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`, {
+      method: 'POST',
+      body: pillar,
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
   }
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
     getLLMFeedback,
+    fixPillarWithAIAPICal,
   }
 }

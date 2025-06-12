@@ -12,3 +12,7 @@ class PillarResponse(BaseModel):
     hasStructureIssue: bool
     structuralIssues: list[StructuralIssue]
     content_feedback: str
+
+class FixablePillar(BaseModel):
+    name: str
+    description: str
