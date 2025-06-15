@@ -21,7 +21,7 @@
 
   async function getLLMFeedback() {
     return (
-      await $fetch<PillarFeedback>(`${config.public.apiBase}/llm/feedback/`, {
+      await $fetch<{ feedback: string }>(`${config.public.apiBase}/llm/feedback/`, {
         method: 'POST',
         body: {
           model: llm.active_llm,
@@ -31,7 +31,7 @@
           'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
       })
-    ).content_feedback
+    ).feedback
   }
 
   async function validatePillarAPICall(pillar: Pillar) {
@@ -44,7 +44,7 @@
         },
         credentials: 'include',
         headers: {
-          'X-CSRFToken': useCookie('csrftoken').valu,
+          'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
       },
     )

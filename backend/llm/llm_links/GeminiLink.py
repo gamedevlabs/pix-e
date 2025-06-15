@@ -2,10 +2,9 @@ import os
 
 from google import genai
 
-from .PillarPrompts import ValidationPrompt
-from .responseSchemes import PillarResponse, FixablePillar
 from ..models import Pillar
-
+from .PillarPrompts import ValidationPrompt
+from .responseSchemes import FixablePillar, PillarResponse
 
 
 class GeminiLink:
@@ -47,8 +46,7 @@ class GeminiLink:
         Fix a game design pillar using the Gemini API.
         :param pillar: The pillar to fix.
         """
-        prompt = (
-            f"""Improve the following Game Design Pillar.
+        prompt = f"""Improve the following Game Design Pillar.
             Check for structural issues regarding the following points:
             1. The title does not match the description.
             2. The intent of the pillar is not clear.
@@ -57,7 +55,6 @@ class GeminiLink:
             Pillar Title: {pillar.name}\n
             Pillar Description: {pillar.description}
             Rewrite erroneous parts of the pillar and return a new pillar object."""
-        )
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,

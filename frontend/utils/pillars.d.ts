@@ -19,6 +19,7 @@ type GameDesign = {
 type PillarFeedback = {
   hasStructureIssue: boolean
   structuralIssues: {
+    title: string
     description: string
     severity: number
   }[]

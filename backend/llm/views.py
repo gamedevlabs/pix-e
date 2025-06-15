@@ -1,7 +1,6 @@
 # from django.shortcuts import render
 # from django.views import View
 # from rest_framework.views import APIView
-from annotated_types.test_cases import cases
 from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
@@ -9,12 +8,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from .llm_links import PillarPrompts
 from .llm_links.GeminiLink import GeminiLink
 from .llm_links.OpenAILink import OpenAILink
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
 # Create your views here.
+
 
 class PillarViewSet(ModelViewSet):
     serializer_class = PillarSerializer
@@ -53,29 +54,27 @@ class OverallFeedbackView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
         self.gemini = GeminiLink()
+        self.openai = OpenAILink()
 
-    def get(self, request):
+    def post(self, request):
         try:
             design = GameDesignDescription.objects.first()
-            pillars = [pillar for pillar in Pillar.objects.all()]
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
 
-            prompt = (
-                f"Rate the following game design description with regards to the "
-                f"following design pillars:\n"
-                f"{design}\n\nPillars:\n"
+            prompt = PillarPrompts.OverallFeedbackPrompt % (
+                design.description,
+                "\n".join(
+                    [f"{pillar.name}:\n {pillar.description}" for pillar in pillars]
+                ),
             )
-            prompt += f"Game Design Description: {design.description}\n"
-            prompt += "Design Pillars:\n"
-            for pillar in pillars:
-                prompt += f"Title: {pillar.name}\n"
-                prompt += f"Description: {pillar.description}\n\n"
+            model = request.data["model"]
+            answer = None
+            match model:
+                case "gemini":
+                    answer = self.gemini.generate_response(prompt)
+                case "openai":
+                    answer = self.openai.generate_response(prompt)
 
-            prompt += (
-                "\nDo not use any markdown in your answer. Answer directly as "
-                "if you are giving your feedback to "
-                "the designer."
-            )
-            answer = self.gemini.generate_response(prompt)
             return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
@@ -91,7 +90,6 @@ class PillarFeedbackView(APIView):
         try:
             pillar = Pillar.objects.filter(id=id).first()
             model = request.data["model"]
-            print(model)
             answer = None
             match model:
                 case "gemini":
@@ -119,8 +117,6 @@ class FixPillarView(APIView):
             pillar = self.gemini.fix_pillar_through_llm(pillar)
             data = PillarSerializer(pillar).data
             print("Fixed Pillar")
-            return JsonResponse(
-                data,
-                status=200)
+            return JsonResponse(data, status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=500)
