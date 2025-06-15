@@ -1,4 +1,5 @@
 import os
+
 from openai import OpenAI
 
 from llm.llm_links.PillarPrompts import ValidationPrompt
@@ -14,6 +15,18 @@ class OpenAILink:
             raise ValueError("GEMINI_KEY environment variable not set")
         self.client = OpenAI(api_key=key)  # could also auto infer from environment
         pass
+
+    def generate_response(self, prompt: str) -> str:
+        """
+        Generate a response using the OpenAI API.
+        :param prompt: The prompt to send to the OpenAI model.
+        :return: The generated response text.
+        """
+        response = self.client.responses.create(
+            model="gpt-4o-mini",
+            input=prompt,
+        )
+        return response.output_text
 
     def generate_pillar_response(self, pillar: Pillar) -> PillarResponse:
         """

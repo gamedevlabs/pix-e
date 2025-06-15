@@ -43,28 +43,17 @@ async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) 
   await updatePillar(id, { ...namedEntityDraft })
   selectedPillar.value = -1
 }
+
+async function dismissIssue(pillar: Pillar, index: number) {
+  pillar.llm_feedback?.structuralIssues.splice(index, 1)
+}
 </script>
 
 <template>
-  <div>
-    <div>
-      <!-- Game Design Idea Section -->
-      <h2 class="text-2xl font-bold mb-4">Game Design Idea:</h2>
-      <div class="flex items-stretch w-300 max-w-xxl">
-        <UTextarea
-          v-model="designIdea"
-          placeholder="Enter your game design idea here..."
-          variant="outline"
-          color="secondary"
-          size="xl"
-          class="w-full"
-          autoresize
-          @focusout="updateDesignIdea"
-        />
-      </div>
-
+  <div class="flex -m-10">
+    <div class="flex-1 min-w-0 p-10">
       <!-- Pillar Display -->
-      <h2 class="text-2xl font-bold mt-6 mb-4">Pillars:</h2>
+      <h2 class="text-2xl font-bold mb-4">Pillars:</h2>
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="pillar in pillars" :key="pillar.id">
           <PillarCard
@@ -75,6 +64,7 @@ async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) 
             @edit="selectedPillar = selectedPillar === pillar.id ? -1 : pillar.id"
             @update="(namedEntityDraft) => handleUpdate(pillar.id, namedEntityDraft)"
             @delete="deletePillar(pillar.id)"
+            @dismiss="dismissIssue(pillar, $event)"
           />
         </div>
         <div v-if="newItem">
@@ -87,27 +77,45 @@ async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) 
           />
         </div>
       </SimpleCardSection>
-    </div>
 
-    <!-- LLM Feedback -->
-    <h2 class="text-2xl font-bold mt-6 mb-4">
-      LLM Feedback
-      <UButton
-        icon="i-lucide-refresh-cw"
-        label="Refresh"
-        color="secondary"
-        variant="soft"
-        @click="getLLMFeedback"
-      />
-    </h2>
+      <!-- Overall LLM Feedback -->
+      <h2 class="text-2xl font-bold mt-6 mb-4">
+        LLM Feedback
+        <UButton
+          icon="i-lucide-refresh-cw"
+          label="Refresh"
+          color="secondary"
+          variant="soft"
+          @click="getLLMFeedback"
+        />
+      </h2>
 
-    <div class="flex gap-4 flex-wrap w-300">
-      <div
-        style="color: var(--ui-color-secondary-200)"
-        class="p-4 rounded-lg w-fit whitespace-pre-line"
-      >
-        {{ llmFeedback }}
+      <div class="flex gap-4 flex-wrap w-300">
+        <div
+          style="color: var(--ui-color-secondary-200)"
+          class="p-4 rounded-lg w-fit whitespace-pre-line"
+        >
+          {{ llmFeedback }}
+        </div>
       </div>
+    </div>
+    <!-- Game Design Idea Section -->
+    <div
+      class="flex-shrink-0 basis-[20%] min-w-[220px] max-w-[420px] border-l border-b border-neutral-500 p-6"
+    >
+      <h2 class="text-2xl font-semibold mb-4">Game Design Idea:</h2>
+      <UTextarea
+        v-model="designIdea"
+        placeholder="Enter your game design idea here..."
+        variant="outline"
+        color="secondary"
+        size="xl"
+        :rows="25"
+        :max-rows="0"
+        autoresize
+        class="w-full"
+        @focusout="updateDesignIdea"
+      />
     </div>
   </div>
 </template>

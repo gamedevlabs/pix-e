@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { PillarFixModal } from '#components'
+
 const props = defineProps<{
   pillar: Pillar
   isBeingEdited?: boolean
@@ -10,21 +12,38 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
   (event: 'edit' | 'delete'): void
+  (event: 'dismiss', index: number): void
 }>()
 
 const toast = useToast()
 const pillars = usePillars()
+const overlay = useOverlay()
 
-async function dismissIssue(index: number) {
-  props.pillar.llm_feedback?.structuralIssues.splice(index, 1)
+async function open() {
+  const modal = overlay.create(PillarFixModal, {
+    props: {
+      originalPillar: props.pillar,
+      onClose: (pillar) => emit('update', pillar),
+    },
+  })
+  modal.open()
 }
 
 async function handleValidation() {
   await pillars.validatePillar(props.pillar)
-}
-
-async function fixWithAI(pillar: Pillar) {
-  await pillars.fixPillarWithAI(pillar)
+  if (props.pillar.llm_feedback?.hasStructureIssue) {
+    toast.add({
+      title: 'Structural Issues Found',
+      description: `Found ${props.pillar.llm_feedback.structuralIssues.length} issues.`,
+      color: 'warnin',
+    })
+  } else {
+    toast.add({
+      title: 'No Structural Issues',
+      description: 'The pillar is structurally sound.',
+      color: 'succes',
+    })
+  }
 }
 </script>
 
@@ -38,26 +57,27 @@ async function fixWithAI(pillar: Pillar) {
     :show-edit="showEdit"
     :show-delete="showDelete"
     :variant="variant"
-    @edit="emit('edit')"
-    @update="(v) => emit('update', v)"
-    @delete="emit('delete')"
     :class="[
-      'outline outline-1',
-      pillar.llm_feedback?.structuralIssues.length > 0
+      'outline-1',
+      (pillar.llm_feedback?.structuralIssues.length ?? 0 > 0)
         ? 'outline-error-500'
         : 'outline-success-500',
     ]"
+    @edit="emit('edit')"
+    @update="(v) => emit('update', v)"
+    @delete="emit('delete')"
   >
     <template #footerExtra>
       <div class="relative">
-        <div class="justify-between flex items-center mb-2">
+        <div class="justify-between flex items-center mb-2 gap-2">
           <h2 class="font-semibold text-lg">LLM Feedback</h2>
           <UButton
-            size="xl"
-            trailing-icon="i-lucide-refresh-cw"
+            size="md"
+            icon="i-lucide-refresh-cw"
             color="secondary"
-            variant="ghost"
+            variant="subtle"
             label="Generate"
+            loading-auto
             @click="handleValidation"
           />
         </div>
@@ -66,21 +86,21 @@ async function fixWithAI(pillar: Pillar) {
             class="mb-2"
             variant="subtle"
             :color="issue.severity >= 3 ? 'error' : 'warning'"
-            :title="'Structural Issue Severity: ' + issue.severity"
-            :description="issue.description"
+            :title="issue.title"
+            :description="'Severity ' + issue.severity"
             :actions="[
               {
                 label: 'Fix with AI',
                 color: 'primary',
                 variant: 'subtle',
-                onClick: () => fixWithAI(props.pillar),
+                onClick: () => open(),
               },
               {
                 label: 'Dismiss',
                 color: 'warning',
                 variant: 'subtle',
                 class: 'ml-auto',
-                onClick: () => dismissIssue(index),
+                onClick: () => emit('dismiss', index),
               },
             ]"
           />
