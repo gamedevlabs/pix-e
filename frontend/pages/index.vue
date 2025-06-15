@@ -1,51 +1,57 @@
-<script setup lang="ts">
-const toast = useToast()
-
-function showToast() {
-  toast.add({
-    title: 'Success',
-    description: 'Your action was completed successfully.',
-    color: 'success',
-  })
-}
-
-function showToast2() {
-  toast.add({
-    title: 'Success',
-    description: 'Your action was completed successfully.',
-    color: 'warning',
-  })
-}
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <UContainer class="py-10 space-y-10">
     <!-- Hero Section -->
     <section class="text-center">
-      <h1 class="text-4xl font-bold mb-4">Welcome to Nuxt UI 🎉</h1>
-      <p class="text-gray-500 dark:text-gray-400 mb-6">
-        Clean, composable, and styled out of the box with Nuxt UI.
-      </p>
-      <UButton size="lg" color="primary" @click="showToast">Get Started</UButton>
-      <UButton size="lg" color="secondary" @click="showToast">Get Started</UButton>
-      <UButton size="lg" color="success" @click="showToast">Get Started</UButton>
-      <UButton size="lg" color="info" @click="showToast">Get Started</UButton>
-      <UButton size="lg" color="warning" @click="showToast2">Get Started</UButton>
-      <UButton size="lg" color="error" @click="showToast">Get Started</UButton>
+      <h1 class="text-4xl font-bold mb-4">Welcome to pix:e 🎉</h1>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">Design your game with research.</p>
       <br />
       <UButton size="lg" color="primary" class="mt-6" to="/moodboard">Open Moodboard</UButton>
     </section>
 
     <!-- Cards Section -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <UCard v-for="n in 3" :key="n" class="hover:shadow-lg transition">
+      <UCard class="hover:shadow-lg transition">
         <template #header>
-          <h2 class="font-semibold text-lg">Card Title {{ n }}</h2>
+          <h2 class="font-semibold text-lg">Formalized Player Experience</h2>
         </template>
-        <p>This is some content inside card {{ n }}. You can use this section for anything.</p>
+        <p>
+          You can design player experiences through a formalization (currently being implemented).
+        </p>
+        <!--
         <template #footer>
           <UButton color="neutral" variant="soft">Read more</UButton>
         </template>
+        -->
+      </UCard>
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
+          <h2 class="font-semibold text-lg">LLM supported Design Pillars</h2>
+        </template>
+        <p>
+          The tool has design pillar functionality, that is validated and cross-checked by the help
+          of LLMs to make sure your design stays consistent.
+        </p>
+        <!--
+        <template #footer>
+          <UButton color="neutral" variant="soft">Read more</UButton>
+        </template>
+        -->
+      </UCard>
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
+          <h2 class="font-semibold text-lg">Moodboard Generation</h2>
+        </template>
+        <p>
+          Through multimodal LLMs, you can design your moodboard directly in the app by describing
+          and interaction with the tool.
+        </p>
+        <!--
+        <template #footer>
+          <UButton color="neutral" variant="soft">Read more</UButton>
+        </template>
+        -->
       </UCard>
     </section>
   </UContainer>

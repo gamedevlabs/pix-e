@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from llm.views import (
@@ -34,6 +34,9 @@ urlpatterns = [
     path("api/moodboard/<uuid:session_id>/", MoodboardGetView.as_view(), name="moodboard_get"),
     path("api/moodboard/end/", MoodboardEndView.as_view(), name="moodboard_end"),
     path("api/moodboard/suggest/", MoodboardSuggestView.as_view(), name="moodboard-suggest"),
+    path("llm/", include("llm.urls")),
+    path("accounts/", include("accounts.urls")),
+    path("", include("pxnodes.urls")),
 ]
 
 if settings.DEBUG:

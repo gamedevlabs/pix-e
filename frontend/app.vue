@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, provide } from 'vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { useAuthentication } from '@/composables/useAuthentication'
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -9,16 +10,26 @@ const items = ref<NavigationMenuItem[]>([
     to: '/',
   },
   {
-    label: 'About',
-    icon: 'i-lucide-database',
-    to: '/about',
-  },
-  {
-    label: 'PXNodes',
-    icon: 'i-lucide-database',
+    label: 'PxNodes',
+    icon: 'i-lucide-hexagon',
     to: '/pxnodes',
   },
   {
+    label: 'PxComponents',
+    icon: 'i-lucide-component',
+    to: '/pxcomponents',
+  },
+  {
+    label: 'PxComponentsDefinitions',
+    icon: 'i-lucide-library-big',
+    to: '/pxcomponentdefinitions',
+  },
+  {
+    label: 'Pillars',
+    icon: 'i-lucide-landmark',
+    to: '/pillars',
+  },
+  /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',
     badge: '3.8k',
@@ -29,8 +40,14 @@ const items = ref<NavigationMenuItem[]>([
     label: 'Help',
     icon: 'i-lucide-circle-help',
     disabled: true,
-  },
+  },*/
 ])
+const authentication = useAuthentication()
+authentication.checkAuthentication()
+
+async function handleLogout() {
+  await authentication.logout()
+}
 
 const loading = ref(false)
 // Provide loading as a global property
@@ -49,9 +66,20 @@ provide('globalLoading', loading)
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center gap-3">
           <!-- Put user info, settings, logout etc. here -->
-          <ColorModeSwitch class="mx-8" />
+          <ColorModeSwitch />
+          <UButton
+            v-if="!authentication.isLoggedIn.value"
+            label="Login"
+            color="primary"
+            variant="subtle"
+            @click="useRouter().push('login')"
+          />
+          <div v-else class="flex items-center gap-2">
+            <p>Hello {{ authentication.user.value?.username }}</p>
+            <UButton label="Logout" color="error" variant="subtle" @click="handleLogout" />
+          </div>
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </div>
       </header>
@@ -66,7 +94,7 @@ provide('globalLoading', loading)
         </aside>
 
         <!-- Page Content -->
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main class="flex-1 p-10 overflow-y-auto">
           <NuxtPage />
         </main>
       </div>
