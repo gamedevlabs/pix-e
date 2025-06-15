@@ -20,10 +20,7 @@ export function usePillars() {
   }
 
   async function fixPillarWithAI(pillar: Pillar) {
-    const updatedPillar = await pillarsApi.fixPillarWithAIAPICall(pillar)
-    pillar.name = updatedPillar.name
-    pillar.description = updatedPillar.description
-    pillar.llm_feedback = null
+    return await pillarsApi.fixPillarWithAIAPICall(pillar)
   }
   return {
     ...basics,
