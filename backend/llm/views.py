@@ -116,7 +116,6 @@ class FixPillarView(APIView):
             pillar = Pillar.objects.filter(id=id).first()
             pillar = self.gemini.fix_pillar_through_llm(pillar)
             data = PillarSerializer(pillar).data
-            print("Fixed Pillar")
             return JsonResponse(data, status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=500)
