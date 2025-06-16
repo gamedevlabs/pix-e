@@ -71,11 +71,11 @@ class OverallFeedbackView(APIView):
             answer = None
             match model:
                 case "gemini":
-                    answer = self.gemini.generate_response(prompt)
+                    answer = self.gemini.generate_overall_feedback(prompt)
                 case "openai":
-                    answer = self.openai.generate_response(prompt)
+                    answer = self.openai.generate_overall_response(prompt)
 
-            return JsonResponse({"feedback": answer}, status=200)
+            return HttpResponse(answer.model_dump_json(), content_type="application/json", status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 

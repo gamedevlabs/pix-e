@@ -4,7 +4,7 @@ from google import genai
 
 from ..models import Pillar
 from .PillarPrompts import ValidationPrompt
-from .responseSchemes import FixablePillar, PillarResponse
+from .responseSchemes import FixablePillar, PillarResponse, OverallFeedback
 
 
 class GeminiLink:
@@ -18,11 +18,16 @@ class GeminiLink:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         self.client = genai.Client(api_key=key)
 
-    def generate_response(self, prompt: str):
+    def generate_overall_feedback(self, prompt: str) -> OverallFeedback:
         response = self.client.models.generate_content(
-            model="gemini-2.0-flash", contents=prompt
+            model="gemini-2.0-flash",
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": OverallFeedback,
+            },
         )
-        return response.text
+        return response.parsed
 
     def generate_pillar_response(self, pillar: Pillar) -> PillarResponse:
         """

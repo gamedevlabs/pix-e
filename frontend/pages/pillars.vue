@@ -86,11 +86,12 @@ async function dismissIssue(pillar: Pillar, index: number) {
           label="Refresh"
           color="secondary"
           variant="soft"
+          loading-auto
           @click="getLLMFeedback"
         />
       </h2>
 
-      <div class="flex gap-4 flex-wrap w-300">
+      <div class="flex gap-4 flex-wrap w-full">
         <div
           style="color: var(--ui-color-secondary-200)"
           class="p-4 rounded-lg w-fit whitespace-pre-line"
@@ -101,7 +102,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
     </div>
     <!-- Game Design Idea Section -->
     <div
-      class="flex-shrink-0 basis-[20%] min-w-[220px] max-w-[420px] border-l border-b border-neutral-500 p-6"
+      class="flex-shrink-0 basis-[20%] min-w-[250px] max-w-[420px] border-l border-b border-neutral-500 p-6"
     >
       <h2 class="text-2xl font-semibold mb-4">Game Design Idea:</h2>
       <UTextarea
