@@ -3,7 +3,7 @@ import os
 from openai import OpenAI
 
 from llm.llm_links.PillarPrompts import ValidationPrompt
-from llm.llm_links.responseSchemes import PillarResponse
+from llm.llm_links.responseSchemes import PillarResponse, OverallFeedback
 from llm.models import Pillar
 
 
@@ -15,17 +15,18 @@ class OpenAILink:
         self.client = OpenAI(api_key=key)  # could also auto infer from environment
         pass
 
-    def generate_response(self, prompt: str) -> str:
+    def generate_overall_response(self, prompt: str) -> OverallFeedback:
         """
         Generate a response using the OpenAI API.
         :param prompt: The prompt to send to the OpenAI model.
-        :return: The generated response text.
+        :return: An OverallFeedback object containing the response.
         """
         response = self.client.responses.create(
             model="gpt-4o-mini",
             input=prompt,
+            text_format=OverallFeedback,
         )
-        return response.output_text
+        return response.output_parsed
 
     def generate_pillar_response(self, pillar: Pillar) -> PillarResponse:
         """
