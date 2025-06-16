@@ -35,13 +35,13 @@ async function handleValidation() {
     toast.add({
       title: 'Structural Issues Found',
       description: `Found ${props.pillar.llm_feedback.structuralIssues.length} issues.`,
-      color: 'warnin',
+      color: 'warning',
     })
   } else {
     toast.add({
       title: 'No Structural Issues',
       description: 'The pillar is structurally sound.',
-      color: 'succes',
+      color: 'success',
     })
   }
 }
