@@ -8,11 +8,10 @@ from llm.models import Pillar
 
 
 class OpenAILink:
-
     def __init__(self):
         key = os.environ.get("OPENAI_API_KEY")
         if key is None:
-            raise ValueError("GEMINI_KEY environment variable not set")
+            raise ValueError("OPENAI_API_KEY environment variable not set")
         self.client = OpenAI(api_key=key)  # could also auto infer from environment
         pass
 
