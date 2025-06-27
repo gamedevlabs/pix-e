@@ -1,6 +1,6 @@
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
-# from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from .models import PxComponent, PxComponentDefinition, PxNode
 from .serializers import (
     PxComponentDefinitionSerializer,
@@ -10,8 +10,16 @@ from .serializers import (
 
 
 class PxNodeViewSet(viewsets.ModelViewSet):
-    queryset = PxNode.objects.all().order_by("created_at")
     serializer_class = PxNodeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            PxNode.objects.all().filter(owner=self.request.user).order_by("created_at")
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
     """
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -21,10 +29,26 @@ class PxNodeViewSet(viewsets.ModelViewSet):
 
 
 class PxComponentDefinitionViewSet(viewsets.ModelViewSet):
-    queryset = PxComponentDefinition.objects.all().order_by("-created_at")
     serializer_class = PxComponentDefinitionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return PxComponentDefinition.objects.filter(owner=self.request.user).order_by(
+            "created_at"
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class PxComponentViewSet(viewsets.ModelViewSet):
-    queryset = PxComponent.objects.all().order_by("-created_at")
     serializer_class = PxComponentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return PxComponent.objects.filter(owner=self.request.user).order_by(
+            "created_at"
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)

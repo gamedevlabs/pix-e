@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'authentication',
+})
+
 const {
   items: pxComponentDefinitions,
   fetchAll: fetchPxComponentDefinitions,

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'authentication',
+})
+
 const route = useRoute()
 const id = route.params.id as unknown as number
 
