@@ -36,3 +36,34 @@ interface PxNode extends NamedEntity {
   updated_at: string
   owner: number | null
 }
+
+interface PxChart extends NamedEntity {
+  id: number
+  name: string
+  description: string
+  created_at: string
+  updated_at: string
+  owner: number | null
+  nodes: PxChartNode[]
+  edges: PxChartEdge[]
+}
+
+interface PxChartNode {
+  id: number
+  name: string
+  content: JSON
+  px_chart: PxChart
+  created_at: string
+  updated_at: string
+  owner: number | null
+}
+
+interface PxChartEdge {
+  id: number
+  px_chart: PxChart
+  source: number
+  destination: number
+  created_at: string
+  updated_at: string
+  owner: number | null
+}

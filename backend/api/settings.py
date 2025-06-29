@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "pxnodes",
     "llm",
     "accounts",
+    "pxcharts"
 ]
 
 REST_FRAMEWORK = {
