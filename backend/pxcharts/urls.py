@@ -1,12 +1,13 @@
 from rest_framework_nested import routers
-from .views import PxChartViewSet, PxChartEdgeViewSet, PxChartNodeViewSet
+
+from .views import PxChartEdgeViewSet, PxChartNodeViewSet, PxChartViewSet
 
 router = routers.SimpleRouter()
-router.register(r'pxcharts', PxChartViewSet)
+router.register(r"pxcharts", PxChartViewSet)
 
 # Nested under each chart
-charts_router = routers.NestedSimpleRouter(router, r'pxcharts', lookup='px_chart')
-charts_router.register(r'pxedges', PxChartEdgeViewSet, basename='px_chart_edge')
-charts_router.register(r'pxnodes', PxChartNodeViewSet, basename='px_chart_node')
+charts_router = routers.NestedSimpleRouter(router, r"pxcharts", lookup="px_chart")
+charts_router.register(r"pxedges", PxChartEdgeViewSet, basename="px_chart_edge")
+charts_router.register(r"pxnodes", PxChartNodeViewSet, basename="px_chart_node")
 
 urlpatterns = router.urls + charts_router.urls

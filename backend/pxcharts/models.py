@@ -3,6 +3,7 @@ from django.db import models
 
 User = get_user_model()
 
+
 # Create your models here.
 class PxChart(models.Model):
     name = models.CharField(max_length=255)
@@ -18,6 +19,7 @@ class PxChart(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class PxChartNode(models.Model):
     px_chart = models.ForeignKey(
@@ -57,7 +59,8 @@ class PxChartEdge(models.Model):
         verbose_name_plural = "px chart edges"
         constraints = [
             models.UniqueConstraint(
-                fields=["px_chart", "source", "destination"], name="unique_edge")
+                fields=["px_chart", "source", "destination"], name="unique_edge"
+            )
         ]
 
     def __str__(self):
