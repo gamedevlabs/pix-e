@@ -1,27 +1,14 @@
 ﻿<script setup lang="ts">
-const {
-  fetchById: fetchPxDefinition,
-  updateItem: updatePxDefinition,
-  deleteItem: deletePxDefinition,
-  loading: loadingPxDefinition,
-  error: errorPxDefinition,
-} = usePxCharts()
-
-const fetchedDefinition = ref<PxChart | null>(null)
+const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
 
 onMounted(() => {
-  getDefinition()
+  fetchPxCharts()
 })
-
-async function getDefinition() {
-  fetchedDefinition.value = await fetchPxDefinition(1)
-}
 </script>
 
 <template>
   <div class="p-8">
-    <div> {{fetchedDefinition}}</div>
-    <div> Hello </div>
+    <div v-for="chart in pxCharts" :key="chart.id">{{ chart }}</div>
   </div>
 </template>
 
