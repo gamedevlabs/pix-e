@@ -25,7 +25,7 @@ const items = ref<NavigationMenuItem[]>([
   {
     label: 'PxCharts',
     icon: 'i-lucide-chart-network',
-    to: '/pxgraphs',
+    to: '/pxcharts',
   },
   {
     label: 'Pillars',
