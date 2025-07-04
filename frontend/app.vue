@@ -32,6 +32,11 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-landmark',
     to: '/pillars',
   },
+  {
+    label: 'Player Expectations',
+    icon: 'i-lucide-gamepad-2',
+    to: '/playerExpectations',
+  },
   /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',
