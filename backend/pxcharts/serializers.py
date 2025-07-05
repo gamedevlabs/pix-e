@@ -6,14 +6,34 @@ from .models import PxChart, PxChartEdge, PxChartNode
 class PxChartNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartNode
-        fields = ["id", "name", "content", "owner", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "content",
+            "position_x",
+            "position_y",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "owner", "created_at", "updated_at"]
+
+
+class PxChartNodeFlowSerializer(serializers.ModelSerializer):
+    position = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PxChartNode
+        fields = ["id", "position", "content"]
+
+    def get_position(self, obj):
+        return {"x": obj.position_x, "y": obj.position_y}
 
 
 class PxChartEdgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartEdge
-        fields = ["id", "px_chart", "source", "destination", "created_at", "updated_at"]
+        fields = ["id", "source", "target", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def validate(self, data):
@@ -23,9 +43,9 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Source node does not belong to the chart."
             )
-        if data["destination"].px_chart_id != int(chart_id):
+        if data["target"].px_chart_id != int(chart_id):
             raise serializers.ValidationError(
-                "Destination node does not belong to the chart."
+                "Target node does not belong to the chart."
             )
         return data
 
