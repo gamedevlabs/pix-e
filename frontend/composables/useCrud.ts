@@ -49,7 +49,7 @@ export function useCrud<T>(apiUrl: string) {
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
       await $fetch<T>(`${API_URL}${id}/`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: payload,
       })
       success('Item updated successfully!')
