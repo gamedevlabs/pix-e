@@ -36,7 +36,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
       })
     } catch (err) {
       error.value = err
-      errorToast(err)
+      errorToast(err.data.detail)
       return null
     } finally {
       loading.value = false
