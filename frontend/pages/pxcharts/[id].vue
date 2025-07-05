@@ -124,8 +124,4 @@ function onConnect(params: { source: string; target: string }) {
   </div>
 </template>
 
-<style scoped>
-@import '@vue-flow/core/dist/style.css';
-
-@import '@vue-flow/core/dist/theme-default.css';
-</style>
+<style scoped></style>
