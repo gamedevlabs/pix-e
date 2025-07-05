@@ -8,8 +8,8 @@ User = get_user_model()
 class PxChart(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -27,8 +27,10 @@ class PxChartNode(models.Model):
     )
     name = models.CharField(max_length=255)
     content = models.JSONField()
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    position_x = models.FloatField(default=0.0)
+    position_y = models.FloatField(default=0.0)
 
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -47,10 +49,11 @@ class PxChartEdge(models.Model):
     source = models.ForeignKey(
         PxChartNode, on_delete=models.CASCADE, related_name="outgoing_edges"
     )
-    destination = models.ForeignKey(
+    target = models.ForeignKey(
         PxChartNode, on_delete=models.CASCADE, related_name="incoming_edges"
     )
 
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -59,9 +62,9 @@ class PxChartEdge(models.Model):
         verbose_name_plural = "px chart edges"
         constraints = [
             models.UniqueConstraint(
-                fields=["px_chart", "source", "destination"], name="unique_edge"
+                fields=["px_chart", "source", "target"], name="unique_edge"
             )
         ]
 
     def __str__(self):
-        return f"{self.px_chart.name}: {self.source.name} --- ({self.destination.name})"
+        return f"{self.px_chart.name}: {self.source.name} --- ({self.target.name})"

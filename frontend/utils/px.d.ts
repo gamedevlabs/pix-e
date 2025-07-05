@@ -52,17 +52,19 @@ interface PxChartNode {
   id: number
   name: string
   content: JSON
-  px_chart: PxChart
+  px_chart: number
   created_at: string
   updated_at: string
+  position_x: number
+  position_y: number
   owner: number | null
 }
 
 interface PxChartEdge {
   id: number
-  px_chart: PxChart
+  px_chart: number
   source: number
-  destination: number
+  target: number
   created_at: string
   updated_at: string
   owner: number | null
