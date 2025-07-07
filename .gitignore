@@ -17,3 +17,4 @@ logs
 
 # Build output, for some reason JetBrains only accepts the ignore here
 .nuxt
+.python-version
