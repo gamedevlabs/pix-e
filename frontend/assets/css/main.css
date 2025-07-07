@@ -4,22 +4,43 @@
 @import '@vue-flow/core/dist/theme-default.css';
 
 :root {
-  --color-primary: #FF4500; /* OrangeRed - a vibrant game-like accent */
-  --color-secondary: #00CED1; /* DarkTurquoise - another vibrant accent */
-  --color-background: #1a1a1a; /* Dark background */
-  --color-text: #f0f0f0; /* Light text for contrast */
-  --color-card-background: #2a2a2a; /* Slightly lighter dark for cards */
-  --color-border: #444444; /* Subtle borders */
+  --color-primary: #00F0FF; /* Neon Blue - main accent */
+  --color-secondary: #FF00F0; /* Neon Pink - secondary accent */
+  --color-background: #1A0033; /* Very dark purple/blue for background */
+  --color-text: #E0E0FF; /* Light purple-ish white for text */
+  --color-card-background: #2A004D; /* Darker purple for cards/sections */
+  --color-input-background: #3A0066; /* Even darker for input fields */
+  --color-border: #5500AA; /* Purple border */
+  --color-hover-background: #3A0077; /* Slightly lighter purple for hover states */
+
+  --color-positive: #00FF00; /* Bright Green */
+  --color-negative: #FF0000; /* Bright Red */
+  --color-neutral: #FFFF00; /* Bright Yellow */
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family: 'Arial', sans-serif;
+  font-family: 'Press Start 2P', cursive; /* A pixel-art style font if available */
+  /* Fallback to a generic monospace or sans-serif if the custom font isn't loaded */
+}
+
+/* Apply font to all elements for consistency */
+* {
+  font-family: 'Press Start 2P', cursive;
 }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--color-primary);
+}
+
+.neon-text-glow {
+  text-shadow:
+    0 0 5px var(--color-primary),
+    0 0 10px var(--color-primary),
+    0 0 20px var(--color-primary),
+    0 0 40px var(--color-primary),
+    0 0 80px var(--color-primary);
 }
 
 /* General button styling */
@@ -27,19 +48,26 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--color-primary);
   color: var(--color-text);
   border: 1px solid var(--color-primary);
+  transition: all 0.3s ease;
 }
 
 .UButton:hover {
-  background-color: darken(var(--color-primary), 10%);
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 10px var(--color-secondary);
 }
 
 /* Card-like elements */
-.UCard, .SimpleCardSection {
+.bg-card-background {
   background-color: var(--color-card-background);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
+}
+
+.border-border {
+  border-color: var(--color-border);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 240, 255, 0.2), 0 4px 6px -2px rgba(0, 240, 255, 0.1); /* Primary color glow */
 }
 
 /* Table styling */
@@ -56,43 +84,125 @@ th, td {
 }
 
 th {
-  background-color: var(--color-card-background);
-  color: var(--color-primary);
+  background-color: var(--color-input-background);
+  color: var(--color-secondary);
+  cursor: pointer; /* Indicate clickable headers */
+}
+
+th:hover {
+  background-color: var(--color-hover-background); /* Darker on hover */
 }
 
 tr:nth-child(even) {
-  background-color: #222222; /* Slightly different row color */
+  background-color: var(--color-card-background); /* Slightly different row color */
 }
 
-/* Dropdown/Select styling */
-.filter-group select, .USelect {
-  background-color: var(--color-card-background);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  padding: 8px;
-  border-radius: 4px;
+.error-message {
+  color: var(--color-negative);
+  font-weight: bold;
 }
 
-.filter-group select option {
-  background-color: var(--color-card-background);
-  color: var(--color-text);
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 10px;
 }
 
-/* Specific styles for MultiSelectFilter */
-.UButton[trailing-icon="i-heroicons-chevron-down-20-solid"] {
-  background-color: var(--color-secondary);
-  border-color: var(--color-secondary);
-}
-
-.UButton[trailing-icon="i-heroicons-chevron-down-20-solid"]:hover {
-  background-color: darken(var(--color-secondary), 10%);
-}
-
-.UCheckbox {
-  color: var(--color-text);
-}
-
-.UCheckbox input:checked + span {
+.pagination-controls button {
   background-color: var(--color-primary);
-  border-color: var(--color-primary);
+  color: var(--color-text);
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.pagination-controls button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+}
+
+.pagination-controls span {
+  color: var(--color-text);
+  font-weight: bold;
+}
+
+/* Input and Select fields */
+.bg-input-background {
+  background-color: var(--color-input-background);
+}
+
+.text-text {
+  color: var(--color-text);
+}
+
+.border-border {
+  border-color: var(--color-border);
+}
+
+.focus\:ring-primary:focus {
+  --tw-ring-color: var(--color-primary);
+}
+
+.focus\:border-transparent:focus {
+  border-color: transparent;
+}
+
+/* Specific colors for sentiment text */
+.text-green-400 {
+  color: var(--color-positive);
+}
+
+.text-red-400 {
+  color: var(--color-negative);
+}
+
+.text-yellow-400 {
+  color: var(--color-neutral);
+}
+
+/* Chart specific styles */
+.chart-container h3 {
+  color: var(--color-secondary);
+}
+
+.chart-container {
+  background-color: var(--color-card-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  height: 300px; /* Fixed height for the chart container */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.chart-container canvas {
+  max-height: 250px; /* Adjust canvas height within container */
+}
+
+/* Utility classes for text colors */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-secondary);
+}
+
+.text-text {
+  color: var(--color-text);
+}
+
+.bg-hover-background:hover {
+  background-color: var(--color-hover-background);
 }
