@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from .models import PxChart, PxChartEdge, PxChartNode
+from pxnodes.serializers import PxNodeSerializer
+
+from .models import PxChart, PxChartEdge, PxChartNode, PxChartNodeLayout
 
 
 class PxChartNodeSerializer(serializers.ModelSerializer):
@@ -10,8 +12,6 @@ class PxChartNodeSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "content",
-            "position_x",
-            "position_y",
             "owner",
             "created_at",
             "updated_at",
@@ -19,15 +19,47 @@ class PxChartNodeSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "owner", "created_at", "updated_at"]
 
 
-class PxChartNodeFlowSerializer(serializers.ModelSerializer):
-    position = serializers.SerializerMethodField()
+class PxChartNodeLayoutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PxChartNodeLayout
+        fields = ["id", "position_x", "position_y", "width", "height"]
+        read_only_fields = ["id"]
+
+
+class PxChartNodeDetailSerializer(serializers.ModelSerializer):
+    layout = PxChartNodeLayoutSerializer()
+    content = PxNodeSerializer()
 
     class Meta:
         model = PxChartNode
-        fields = ["id", "position", "content"]
+        fields = [
+            "id",
+            "name",
+            "content",
+            "layout",
+            "px_chart",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "owner", "created_at", "updated_at", "px_chart"]
 
-    def get_position(self, obj):
-        return {"x": obj.position_x, "y": obj.position_y}
+    def update(self, instance, validated_data):
+        layout_data = validated_data.pop("layout", None)
+
+        # Update main node fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update layout if provided
+        if layout_data:
+            layout = instance.layout
+            for attr, value in layout_data.items():
+                setattr(layout, attr, value)
+            layout.save()
+
+        return instance
 
 
 class PxChartEdgeSerializer(serializers.ModelSerializer):
@@ -51,7 +83,7 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
 
 
 class PxChartDetailSerializer(serializers.ModelSerializer):
-    nodes = PxChartNodeSerializer(many=True, read_only=True)
+    nodes = PxChartNodeDetailSerializer(many=True, read_only=True)
     edges = PxChartEdgeSerializer(many=True, read_only=True)
 
     class Meta:
