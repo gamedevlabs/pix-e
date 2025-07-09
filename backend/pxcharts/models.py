@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from pxnodes.models import PxNode
+
 User = get_user_model()
 
 
@@ -26,9 +28,7 @@ class PxChartNode(models.Model):
         PxChart, on_delete=models.CASCADE, related_name="nodes"
     )
     name = models.CharField(max_length=255)
-    content = models.JSONField()
-    position_x = models.FloatField(default=0.0)
-    position_y = models.FloatField(default=0.0)
+    content = models.ForeignKey(PxNode, on_delete=models.CASCADE, blank=True, null=True)
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -40,6 +40,16 @@ class PxChartNode(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class PxChartNodeLayout(models.Model):
+    node = models.OneToOneField(
+        PxChartNode, on_delete=models.CASCADE, related_name="layout"
+    )
+    position_x = models.FloatField(default=0)
+    position_y = models.FloatField(default=0)
+    height = models.FloatField(default=0)
+    width = models.FloatField(default=0)
 
 
 class PxChartEdge(models.Model):
