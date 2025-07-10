@@ -9,4 +9,4 @@ class PxChartsConfig(AppConfig):
     # With this import whenever a PxGraphNode is created,
     # it also adds an instance in the layout table for that PxGraphNode
     def ready(self):
-        import pxcharts.signals
+        import pxcharts.signals  # noqa: F401
