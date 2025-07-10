@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from pxnodes.models import PxNode
-from pxnodes.serializers import PxNodeSerializer
 
 from .models import PxChart, PxChartEdge, PxChartNode, PxChartNodeLayout
 
@@ -27,7 +26,9 @@ class PxChartNodeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
 
 
@@ -39,7 +40,9 @@ class PxChartNodeLayoutSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
 
 
@@ -66,7 +69,9 @@ class PxChartNodeDetailSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
 
         layout_data = validated_data.pop("layout", None)
 
@@ -108,9 +113,10 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
-
 
 
 class PxChartDetailSerializer(serializers.ModelSerializer):
@@ -134,9 +140,10 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
-
 
 
 class PxChartSerializer(serializers.ModelSerializer):
@@ -149,6 +156,7 @@ class PxChartSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
-

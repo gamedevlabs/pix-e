@@ -40,7 +40,7 @@ onMounted(() => {
 })
 
 async function loadContent() {
-  if(!containsPxNodeData.value) {
+  if (!containsPxNodeData.value) {
     pxNode.value = undefined
     return
   }
@@ -84,7 +84,7 @@ async function removePxNode() {
 async function handleAddPxNode() {
   const nodeId = await modal.open().result
 
-  if(!nodeId) return
+  if (!nodeId) return
 
   emit('addPxNode', props.id, nodeId)
 }
@@ -94,25 +94,31 @@ async function handleAddPxNode() {
   <div>
     <UCard class="hover:shadow-lg transition">
       <template #header>
-        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
-          {{ props.data.name }} Pog
-        </h2>
+        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.data.name }} Pog</h2>
         <UTextarea v-else v-model="editForm.name" :rows="1" />
         Hehehehe
       </template>
 
       <template #default>
         <div v-if="pxNode">
-          <PxNodeCard :node="pxNode" :visualization-style="'preview'"/>
+          <PxNodeCard :node="pxNode" :visualization-style="'preview'" />
         </div>
         <div class="flex flex-wrap justify-end gap-2">
-          <UButton v-if="!containsPxNodeData" color="primary" variant="soft" @click="handleAddPxNode">Add Px Node</UButton>
+          <UButton
+            v-if="!containsPxNodeData"
+            color="primary"
+            variant="soft"
+            @click="handleAddPxNode"
+            >Add Px Node</UButton
+          >
         </div>
       </template>
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton v-if="containsPxNodeData" color="primary" variant="soft" @click="removePxNode()">Remove Px Node</UButton>
+          <UButton v-if="containsPxNodeData" color="primary" variant="soft" @click="removePxNode()"
+            >Remove Px Node</UButton
+          >
           <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>
