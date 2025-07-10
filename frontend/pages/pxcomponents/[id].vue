@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
-const id = route.params.id as unknown as number
+const id = route.params.id as string
 
 const {
   fetchById: fetchPxComponentById,

@@ -1,5 +1,7 @@
 ﻿<script setup lang="ts">
-const props = defineProps<{ selectedNodeId: number }>()
+import { v4 } from 'uuid'
+
+const props = defineProps<{ selectedNodeId: string }>()
 
 const { createItem: createPxComponent } = usePxComponents()
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
@@ -12,7 +14,7 @@ onMounted(() => {
   fetchPxDefinitions()
 })
 
-const emit = defineEmits<{ close: [number] }>()
+const emit = defineEmits<{ close: [string] }>()
 
 const state = ref({
   nodeRef: props.selectedNodeId,
@@ -44,7 +46,7 @@ const selectedDefinition = computed(() => {
 async function onSubmit() {
   if (!selectedDefinition.value) return
 
-  let enteredValue
+  let enteredValue: number | boolean | string | undefined
 
   switch (selectedDefinition.value.type) {
     case 'number':
@@ -63,6 +65,12 @@ async function onSubmit() {
   if (enteredValue === undefined) return
 
   await createPxComponent({
+    id: v4(),
+    node: state.value.nodeRef,
+    definition: state.value.definitionRef,
+    value: enteredValue,
+  })
+  console.log({
     node: state.value.nodeRef,
     definition: state.value.definitionRef,
     value: enteredValue,

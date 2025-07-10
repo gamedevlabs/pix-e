@@ -1,8 +1,20 @@
 <script setup lang="ts">
-const props = defineProps<{
-  node: PxNode
-  components?: Array<PxComponent>
-}>()
+import PxNodeCardPreview from '~/components/PxNodeCardPreview.vue'
+
+const props = defineProps({
+  node: {
+    type: Object as PropType<PxNode>,
+    required: true,
+  },
+  components: {
+    type: Array as PropType<Array<PxComponent>>,
+    default: null,
+  },
+  visualizationStyle: {
+    type: String as PropType<'preview' | 'detailed'>,
+    default: 'detailed',
+  }
+})
 
 onMounted(() => {
   getComponents()
@@ -16,13 +28,13 @@ const {
 } = usePxComponents()
 
 const emit = defineEmits<{
-  (e: 'addForeignComponent', id: number): void
+  (e: 'addForeignComponent', id: string): void
 }>()
 
 const associatedComponents = ref<Array<PxComponent> | undefined>(props.components)
 
 async function getComponents() {
-  if (associatedComponents.value) {
+  if (associatedComponents.value || props.visualizationStyle === 'preview') {
     return
   }
   await fetchPxComponents()
@@ -31,7 +43,7 @@ async function getComponents() {
   )
 }
 
-async function updateComponents(id: number) {
+async function updateComponents(id: string) {
   if (id !== props.node.id) {
     emit('addForeignComponent', id)
     return
@@ -42,7 +54,7 @@ async function updateComponents(id: number) {
   )
 }
 
-async function handleDeleteComponent(id: number) {
+async function handleDeleteComponent(id: string) {
   const index = associatedComponents.value!.findIndex((component) => component.id === id)
   if (index > -1) {
     associatedComponents.value!.splice(index, 1)
@@ -52,8 +64,9 @@ async function handleDeleteComponent(id: number) {
 
 <template>
   <div v-if="errorPxComponents">Error loading Px Node {{ node.name }}</div>
+  <PxNodeCardPreview v-else-if="visualizationStyle === 'preview'" :node="node"/>
   <PxNodeCardDetailed
-    v-else-if="associatedComponents"
+    v-else-if="associatedComponents && visualizationStyle === 'detailed'"
     :node="node"
     :components="associatedComponents"
     @delete-component="handleDeleteComponent"

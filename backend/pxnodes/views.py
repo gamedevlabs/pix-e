@@ -16,7 +16,7 @@ class PxNodeViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsAuthenticatedOrReadOnly]
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(owner=self.request.user)
     """
 
 

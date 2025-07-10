@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { v4 } from 'uuid'
+
 const {
   items: pxNodes,
   fetchAll: fetchPxNodes,
@@ -17,7 +19,8 @@ onMounted(() => {
 })
 
 async function handleCreate() {
-  await createPxNode(state.value)
+  const newUuid = v4()
+  await createPxNode({id: newUuid, ...state.value})
   state.value.name = ''
   state.value.description = ''
 }
@@ -57,6 +60,7 @@ async function handleForeignAddComponent() {
         v-for="node in pxNodes"
         :key="node.id"
         :node="node"
+        :visualization-style="'detailed'"
         @edit="handleUpdate"
         @delete="deletePxNode"
         @add-foreign-component="handleForeignAddComponent"

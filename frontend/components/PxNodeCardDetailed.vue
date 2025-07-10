@@ -8,7 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'deleteComponent' | 'addComponent', id: number): void
+  (e: 'delete' | 'deleteComponent' | 'addComponent', id: string): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -37,7 +37,7 @@ function emitDelete() {
   emit('delete', props.node.id)
 }
 
-function emitDeleteComponent(id: number) {
+function emitDeleteComponent(id: string) {
   emit('deleteComponent', id)
 }
 

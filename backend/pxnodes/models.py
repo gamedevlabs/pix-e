@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -6,6 +8,7 @@ User = get_user_model()
 
 # Create your models here.
 class PxNode(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -18,8 +21,9 @@ class PxNode(models.Model):
 
 
 class PxComponentDefinition(models.Model):
-    TYPE_CHOICES = [("number", "Number"), ("string", "String"), ("boolean", "Boolean")]
+    id = models.UUIDField(primary_key=True, editable=False)
 
+    TYPE_CHOICES = [("number", "Number"), ("string", "String"), ("boolean", "Boolean")]
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -32,9 +36,12 @@ class PxComponentDefinition(models.Model):
 
 
 class PxComponent(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
     node = models.ForeignKey(
         "PxNode", on_delete=models.CASCADE, related_name="components"
     )
+
     definition = models.ForeignKey("PxComponentDefinition", on_delete=models.CASCADE)
     value = models.JSONField()
 

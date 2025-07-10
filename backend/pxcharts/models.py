@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -8,6 +10,8 @@ User = get_user_model()
 
 # Create your models here.
 class PxChart(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
     name = models.CharField(max_length=255)
     description = models.TextField()
 
@@ -24,11 +28,15 @@ class PxChart(models.Model):
 
 
 class PxChartNode(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
     px_chart = models.ForeignKey(
         PxChart, on_delete=models.CASCADE, related_name="nodes"
     )
     name = models.CharField(max_length=255)
-    content = models.ForeignKey(PxNode, on_delete=models.CASCADE, blank=True, null=True)
+    content = models.ForeignKey(
+        PxNode, on_delete=models.SET_NULL, blank=True, null=True
+    )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,6 +61,8 @@ class PxChartNodeLayout(models.Model):
 
 
 class PxChartEdge(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
     px_chart = models.ForeignKey(
         PxChart, on_delete=models.CASCADE, related_name="edges"
     )

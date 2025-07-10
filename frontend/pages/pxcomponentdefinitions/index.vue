@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { v4 } from 'uuid'
+
 const {
   items: pxComponentDefinitions,
   fetchAll: fetchPxComponentDefinitions,
@@ -19,7 +21,8 @@ const state = ref<{ name: string; type: PxValueType }>({
 })
 
 async function handleCreate() {
-  await createPxComponentDefinition(state.value)
+  const newUuid = v4()
+  await createPxComponentDefinition({id: newUuid, ...state.value})
   state.value.name = ''
   state.value.type = 'none'
 }

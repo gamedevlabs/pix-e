@@ -2,26 +2,51 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
+import { LazyPxGraphComponentsPxGraphNodeAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartNode>>()
 const emit = defineEmits<{
   (e: 'edit', updatedNode: Partial<PxChartNode>): void
-  (e: 'delete', id: string): void
+  (e: 'delete' | 'deletePxNode', id: string): void
+  (e: 'addPxNode', pxGraphNodeId: string, pxNodeId: string): void
 }>()
 
 const { updateItem: updatePxChartNode } = usePxChartNodes(props.data.px_chart)
+const { fetchById: getPxNode } = usePxNodes()
+
+const overlay = useOverlay()
+const modal = overlay.create(LazyPxGraphComponentsPxGraphNodeAddPxNodeForm)
 
 const minWidth = 250
-const minHeight = 200
+const minHeight = 100
 
 const isBeingEdited = ref(false)
 const editForm = ref({
   name: props.data.name,
 })
 
+const pxNode = ref(undefined)
+
 const containsPxNodeData = computed(() => {
   return props.data.content
 })
+
+watch(containsPxNodeData, () => {
+  loadContent()
+})
+
+onMounted(() => {
+  loadContent()
+})
+
+async function loadContent() {
+  if(!containsPxNodeData.value) {
+    pxNode.value = undefined
+    return
+  }
+
+  pxNode.value = await getPxNode(props.data.content)
+}
 
 async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: ResizeParams }) {
   await updatePxChartNode(props.id, {
@@ -51,6 +76,18 @@ function cancelEdit() {
 async function emitDelete() {
   emit('delete', props.id)
 }
+
+async function removePxNode() {
+  emit('deletePxNode', props.id)
+}
+
+async function handleAddPxNode() {
+  const nodeId = await modal.open().result
+
+  if(!nodeId) return
+
+  emit('addPxNode', props.id, nodeId)
+}
 </script>
 
 <template>
@@ -58,14 +95,25 @@ async function emitDelete() {
     <UCard class="hover:shadow-lg transition">
       <template #header>
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
-          {{ props.data.name }}
+          {{ props.data.name }} Pog
         </h2>
-        <UTextarea v-else v-model="editForm.name" />
+        <UTextarea v-else v-model="editForm.name" :rows="1" />
+        Hehehehe
+      </template>
+
+      <template #default>
+        <div v-if="pxNode">
+          <PxNodeCard :node="pxNode" :visualization-style="'preview'"/>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2">
+          <UButton v-if="!containsPxNodeData" color="primary" variant="soft" @click="handleAddPxNode">Add Px Node</UButton>
+        </div>
       </template>
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
+          <UButton v-if="containsPxNodeData" color="primary" variant="soft" @click="removePxNode()">Remove Px Node</UButton>
+          <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>
         <div v-else class="flex gap-2">
@@ -80,8 +128,6 @@ async function emitDelete() {
       :min-height="minHeight"
       @resize-end="handleResizeEnd"
     />
-
-    <PxNodeCard v-if="containsPxNodeData" :node="props.data.content!" />
 
     <Handle id="target-a" type="target" :position="Position.Top" />
     <Handle id="source-b" type="source" :position="Position.Bottom" />
