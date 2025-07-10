@@ -22,7 +22,7 @@ const state = ref<{ name: string; type: PxValueType }>({
 
 async function handleCreate() {
   const newUuid = v4()
-  await createPxComponentDefinition({id: newUuid, ...state.value})
+  await createPxComponentDefinition({ id: newUuid, ...state.value })
   state.value.name = ''
   state.value.type = 'none'
 }

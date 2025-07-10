@@ -13,7 +13,9 @@ class PxNodeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
 
 
@@ -26,7 +28,9 @@ class PxComponentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)
 
 
@@ -39,5 +43,7 @@ class PxComponentDefinitionSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError({"id": "Cannot update ID after creation."})
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
         return super().update(instance, validated_data)

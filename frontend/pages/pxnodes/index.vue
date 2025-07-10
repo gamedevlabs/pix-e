@@ -20,7 +20,7 @@ onMounted(() => {
 
 async function handleCreate() {
   const newUuid = v4()
-  await createPxNode({id: newUuid, ...state.value})
+  await createPxNode({ id: newUuid, ...state.value })
   state.value.name = ''
   state.value.description = ''
 }

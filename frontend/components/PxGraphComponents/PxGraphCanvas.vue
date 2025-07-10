@@ -16,7 +16,7 @@ import { v4 } from 'uuid'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
-const { fitView, project, updateNode } = useVueFlow()
+const { project, updateNode } = useVueFlow()
 
 // const { layout } = usePxGraphLayout()
 
@@ -24,13 +24,11 @@ const chartId = props.chartId
 
 const { fetchById: fetchPxChart } = usePxCharts()
 const {
-  items: allPxChartNodes,
   updateItem: updatePxChartNode,
   createItem: createPxChartNode,
   deleteItem: deletePxChartNode,
 } = usePxChartNodes(chartId)
 const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
-const { fetchById: getPxNode } = usePxNodes()
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
@@ -56,7 +54,7 @@ async function loadGraph() {
       nodes.value = data.nodes.map((n: PxChartNode) => ({
         id: n.id,
         type: 'pxGraph',
-        position: { x: n.layout.position_x ?? 100, y: n.layout.position_y ?? 100},
+        position: { x: n.layout.position_x ?? 100, y: n.layout.position_y ?? 100 },
         height: n.layout.height,
         width: n.layout.width,
         data: { name: n.name, content: n.content, px_chart: n.px_chart },
@@ -140,13 +138,16 @@ async function addNode(position_x = 0, position_y = 0) {
     nodes.value.push({
       id: newId,
       type: 'pxGraph',
-      position: { x: newNodePayload.layout.position_x ?? 100, y: newNodePayload.layout.position_y ?? 100},
+      position: {
+        x: newNodePayload.layout.position_x ?? 100,
+        y: newNodePayload.layout.position_y ?? 100,
+      },
       height: newNodePayload.layout.height,
       width: newNodePayload.layout.width,
       data: { name: newNodePayload.name, content: newNodePayload.content, px_chart: props.chartId },
     })
   } catch {
-    alert("Failed to add node: " + error.value)
+    alert('Failed to add node: ' + error.value)
   }
 }
 
@@ -193,7 +194,7 @@ async function handleUpdatePxGraphNode(updatedPxChartNode: Partial<PxChartNode>)
 
   // Update node in graph view
   const updatedNodeIdString = updatedPxChartNode.id as unknown as string
-  updateNode(updatedNodeIdString, { data: updatedPxChartNode})
+  updateNode(updatedNodeIdString, { data: updatedPxChartNode })
 
   nodes.value[nodes.value.findIndex((node) => node.id === updatedNodeIdString)] = {
     ...nodes.value[nodes.value.findIndex((node) => node.id === updatedNodeIdString)],

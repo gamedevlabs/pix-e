@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
 
 onMounted(() => {

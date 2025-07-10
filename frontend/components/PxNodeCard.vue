@@ -13,7 +13,7 @@ const props = defineProps({
   visualizationStyle: {
     type: String as PropType<'preview' | 'detailed'>,
     default: 'detailed',
-  }
+  },
 })
 
 onMounted(() => {
@@ -64,7 +64,7 @@ async function handleDeleteComponent(id: string) {
 
 <template>
   <div v-if="errorPxComponents">Error loading Px Node {{ node.name }}</div>
-  <PxNodeCardPreview v-else-if="visualizationStyle === 'preview'" :node="node"/>
+  <PxNodeCardPreview v-else-if="visualizationStyle === 'preview'" :node="node" />
   <PxNodeCardDetailed
     v-else-if="associatedComponents && visualizationStyle === 'detailed'"
     :node="node"
