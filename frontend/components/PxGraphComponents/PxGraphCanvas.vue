@@ -12,10 +12,11 @@ import {
 import { Background } from '@vue-flow/background'
 import PxGraphNode from '~/components/PxGraphComponents/PxGraphNode.vue'
 import PxGraphEdge from '~/components/PxGraphComponents/PxGraphEdge.vue'
+import { v4 } from 'uuid'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
-const { fitView, project } = useVueFlow()
+const { fitView, project, updateNode } = useVueFlow()
 
 // const { layout } = usePxGraphLayout()
 
@@ -23,11 +24,13 @@ const chartId = props.chartId
 
 const { fetchById: fetchPxChart } = usePxCharts()
 const {
+  items: allPxChartNodes,
   updateItem: updatePxChartNode,
-  createItem: createPxNode,
-  deleteItem: deletePxNode,
+  createItem: createPxChartNode,
+  deleteItem: deletePxChartNode,
 } = usePxChartNodes(chartId)
 const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+const { fetchById: getPxNode } = usePxNodes()
 
 const nodes = ref<Node[]>([])
 const edges = ref<Edge[]>([])
@@ -50,20 +53,19 @@ async function loadGraph() {
   try {
     const data = await fetchPxChart(chartId)
     if (data) {
-      console.log(data.nodes[0])
       nodes.value = data.nodes.map((n: PxChartNode) => ({
-        id: String(n.id),
+        id: n.id,
         type: 'pxGraph',
-        position: { x: n.layout.position_x, y: n.layout.position_y },
+        position: { x: n.layout.position_x ?? 100, y: n.layout.position_y ?? 100},
         height: n.layout.height,
         width: n.layout.width,
         data: { name: n.name, content: n.content, px_chart: n.px_chart },
       }))
 
       edges.value = data.edges.map((e: PxChartEdge) => ({
-        id: String(e.id),
-        source: String(e.source),
-        target: String(e.target),
+        id: e.id,
+        source: e.source,
+        target: e.target,
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
@@ -108,15 +110,23 @@ async function onNodeDragStop(event: NodeDragEvent) {
         height: node.height as number,
       },
     })
+
+    // Update node in local nodes-array
+    // const indexOf = nodes.value.findIndex((node) => node.id === event.node.id)
+    // nodes.value.splice(
+    //   indexOf,
+    //   1, {...nodes.value[indexOf], position: {x: node.position.x, y: node.position.y},}
+    // )
   } catch {
     error.value = 'Failed to update node position'
   }
 }
 
 async function addNode(position_x = 0, position_y = 0) {
+  const newId = v4()
   const newNodePayload = {
+    id: newId,
     name: 'New node',
-    content: null,
     layout: {
       position_x: position_x,
       position_y: position_y,
@@ -125,18 +135,26 @@ async function addNode(position_x = 0, position_y = 0) {
     },
   }
   try {
-    await createPxNode(newNodePayload)
-    await loadGraph()
+    await createPxChartNode(newNodePayload)
+
+    nodes.value.push({
+      id: newId,
+      type: 'pxGraph',
+      position: { x: newNodePayload.layout.position_x ?? 100, y: newNodePayload.layout.position_y ?? 100},
+      height: newNodePayload.layout.height,
+      width: newNodePayload.layout.width,
+      data: { name: newNodePayload.name, content: newNodePayload.content, px_chart: props.chartId },
+    })
   } catch {
-    error.value = 'Failed to add node'
+    alert("Failed to add node: " + error.value)
   }
 }
 
 function onConnect(params: { source: string; target: string }) {
   createPxEdge({
-    source: Number(params.source),
-    target: Number(params.target),
-    px_chart: Number(chartId),
+    source: params.source,
+    target: params.target,
+    px_chart: chartId,
   })
     .then(loadGraph)
     .catch(() => (error.value = 'Failed to create edge'))
@@ -144,7 +162,6 @@ function onConnect(params: { source: string; target: string }) {
 
 /*
 async function layoutGraph(direction: string) {
-  console.log(direction)
   nodes.value = layout(nodes.value, edges.value, direction)
 
   await nextTick(() => {
@@ -156,16 +173,13 @@ async function layoutGraph(direction: string) {
 async function onNodesChange(changes) {
   for (const change of changes) {
     if (change.type === 'remove') {
-      await deletePxNode(change.id)
-      console.log('node deleted')
-    } else if (change.type === 'resize') {
-      console.log('node resized')
+      await deletePxChartNode(change.id)
     }
   }
 }
 
 async function handleDeletePxGraphNode(nodeId: string) {
-  await deletePxNode(nodeId)
+  await deletePxChartNode(nodeId)
 
   nodes.value.splice(
     nodes.value.findIndex((node) => node.id === nodeId),
@@ -174,10 +188,12 @@ async function handleDeletePxGraphNode(nodeId: string) {
 }
 
 async function handleUpdatePxGraphNode(updatedPxChartNode: Partial<PxChartNode>) {
-  console.log(updatedPxChartNode.id)
+  // Update node in backend
   await updatePxChartNode(updatedPxChartNode.id!, updatedPxChartNode)
 
+  // Update node in graph view
   const updatedNodeIdString = updatedPxChartNode.id as unknown as string
+  updateNode(updatedNodeIdString, { data: updatedPxChartNode})
 
   nodes.value[nodes.value.findIndex((node) => node.id === updatedNodeIdString)] = {
     ...nodes.value[nodes.value.findIndex((node) => node.id === updatedNodeIdString)],
@@ -189,7 +205,6 @@ async function onEdgesChange(changes) {
   for (const change of changes) {
     if (change.type === 'remove') {
       await deletePxEdge(change.id)
-      console.log('edge deleted')
     }
   }
 }
@@ -201,26 +216,47 @@ function onContextMenu(mouseEvent: MouseEvent) {
   const pos = project({ x: mouseEvent.x, y: mouseEvent.y })
   addNode(pos.x, pos.y)
 }
+
+async function handleAddPxNode(pxGraphNodeId: string, pxNodeId: string) {
+  const updatedPxGraphNodeContent = {
+    id: pxGraphNodeId,
+    content: pxNodeId,
+  }
+
+  await handleUpdatePxGraphNode(updatedPxGraphNodeContent)
+}
+
+async function handleDeletePxNode(pxGraphNodeId: string) {
+  const updatedPxGraphNodeContent = {
+    id: pxGraphNodeId,
+    content: null,
+  }
+
+  await handleUpdatePxGraphNode(updatedPxGraphNodeContent)
+}
 </script>
 
 <template>
   <VueFlow
-    :nodes="nodes"
+    v-model:nodes="nodes"
     :edges="edges"
     :edge-types="edgeTypes"
     @node-drag-stop="onNodeDragStop"
     @connect="onConnect"
-    @nodes-initialized="fitView()"
     @nodes-change="onNodesChange"
     @edges-change="onEdgesChange"
     @pane-context-menu="onContextMenu($event)"
   >
+    <!--@nodes-initialized="fitView()"-->
+
     <Background />
 
     <template #node-pxGraph="customNodeProps">
       <PxGraphNode
         v-bind="customNodeProps"
+        @delete-px-node="handleDeletePxNode"
         @delete="handleDeletePxGraphNode"
+        @add-px-node="handleAddPxNode"
         @edit="handleUpdatePxGraphNode"
       />
     </template>

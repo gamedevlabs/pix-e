@@ -9,7 +9,7 @@ onMounted(() => {
   fetchPxComponents()
 })
 
-function handleDelete(id: number) {
+function handleDelete(id: string) {
   const index = pxComponents.value.findIndex((component) => component.id === id)
   pxComponents.value.splice(index, 1)
 }

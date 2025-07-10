@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { v4 } from 'uuid'
+
 const {
   items: pxCharts,
   fetchAll: fetchPxCharts,
@@ -11,7 +13,7 @@ onMounted(() => {
   fetchPxCharts()
 })
 
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 
 const newItem = ref<NamedEntity | null>(null)
 
@@ -20,11 +22,12 @@ function addItem() {
 }
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  await createPxChart(newEntityDraft)
+  const newUuid = v4()
+  await createPxChart({id: newUuid, ...newEntityDraft})
   newItem.value = null
 }
 
-async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) {
+async function handleUpdate(id: string, namedEntityDraft: Partial<NamedEntity>) {
   await updatePxChart(id, { ...namedEntityDraft })
   editingId.value = null
 }
@@ -37,8 +40,8 @@ async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) 
 
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="chart in pxCharts" :key="chart.id">
-          <NamedEntityCard
-            :named-entity="chart"
+          <PxGraphCard
+            :px-chart="chart"
             :is-being-edited="editingId === chart.id"
             show-edit
             show-delete
