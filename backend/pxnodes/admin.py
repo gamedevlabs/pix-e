@@ -1,3 +1,7 @@
-# from django.contrib import admin
+from django.contrib import admin
 
-# Register your models here.
+from .models import PxComponent, PxComponentDefinition, PxNode
+
+admin.site.register(PxNode)
+admin.site.register(PxComponent)
+admin.site.register(PxComponentDefinition)
