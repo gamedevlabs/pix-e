@@ -215,21 +215,28 @@ async function handleUpdatePxGraphNode(updatedPxChartNode: Partial<PxChartNode>)
   // This means, that for the backend, the updatedPxChartNode can just be used, however, for
   // frontend array, these attributes need to be put into data.
   let data = null
-  if(updatedPxChartNode.content !== undefined) {
-    data = merge(data, {data: {content: updatedPxChartNode.content}})
+  if (updatedPxChartNode.content !== undefined) {
+    data = merge(data, { data: { content: updatedPxChartNode.content } })
   }
-  if(updatedPxChartNode.name) {
-    data = merge(data, {data: {name: updatedPxChartNode.name}})
+  if (updatedPxChartNode.name) {
+    data = merge(data, { data: { name: updatedPxChartNode.name } })
   }
-  if(updatedPxChartNode.px_chart) {
-    data = merge(data, {data: {px_chart: updatedPxChartNode.px_chart}})
+  if (updatedPxChartNode.px_chart) {
+    data = merge(data, { data: { px_chart: updatedPxChartNode.px_chart } })
   }
 
   // Update node in backend
   await updatePxChartNode(updatedPxChartNode.id!, updatedPxChartNode)
 
-  nodes.value.splice(nodes.value.findIndex((node) => node.id === updatedPxChartNode.id), 1,
-    merge(nodes.value[nodes.value.findIndex((node) => node.id === updatedPxChartNode.id)], updatedPxChartNode, data))
+  nodes.value.splice(
+    nodes.value.findIndex((node) => node.id === updatedPxChartNode.id),
+    1,
+    merge(
+      nodes.value[nodes.value.findIndex((node) => node.id === updatedPxChartNode.id)],
+      updatedPxChartNode,
+      data,
+    ),
+  )
 }
 
 async function onEdgesChange(changes) {

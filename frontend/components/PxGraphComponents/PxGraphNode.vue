@@ -45,7 +45,7 @@ async function loadContent() {
     return
   }
 
-  if(!props.data || !props.data.content) {
+  if (!props.data || !props.data.content) {
     return
   }
 
