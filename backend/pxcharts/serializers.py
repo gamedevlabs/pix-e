@@ -101,11 +101,11 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         chart_id = self.context["view"].kwargs.get("px_chart_pk")
 
-        if data["source"].px_chart_id != int(chart_id):
+        if str(data["source"].px_chart_id) != chart_id:
             raise serializers.ValidationError(
                 "Source node does not belong to the chart."
             )
-        if data["target"].px_chart_id != int(chart_id):
+        if str(data["target"].px_chart_id) != chart_id:
             raise serializers.ValidationError(
                 "Target node does not belong to the chart."
             )

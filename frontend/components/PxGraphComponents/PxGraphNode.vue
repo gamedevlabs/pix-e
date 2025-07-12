@@ -25,7 +25,7 @@ const editForm = ref({
   name: props.data.name,
 })
 
-const pxNode = ref(undefined)
+const pxNode = ref<PxNode | null>(null)
 
 const containsPxNodeData = computed(() => {
   return props.data.content
@@ -41,11 +41,15 @@ onMounted(() => {
 
 async function loadContent() {
   if (!containsPxNodeData.value) {
-    pxNode.value = undefined
+    pxNode.value = null
     return
   }
 
-  pxNode.value = await getPxNode(props.data.content)
+  if(!props.data || !props.data.content) {
+    return
+  }
+
+  pxNode.value = await getPxNode(props.data.content!)
 }
 
 async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: ResizeParams }) {
@@ -65,7 +69,7 @@ function startEdit() {
 
 async function confirmEdit() {
   isBeingEdited.value = false
-  emit('edit', { id: props.id as unknown as number, name: editForm.value.name })
+  emit('edit', { id: props.id, name: editForm.value.name })
 }
 
 function cancelEdit() {
@@ -94,9 +98,8 @@ async function handleAddPxNode() {
   <div>
     <UCard class="hover:shadow-lg transition">
       <template #header>
-        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.data.name }} Pog</h2>
+        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.data.name }}</h2>
         <UTextarea v-else v-model="editForm.name" :rows="1" />
-        Hehehehe
       </template>
 
       <template #default>
@@ -135,8 +138,8 @@ async function handleAddPxNode() {
       @resize-end="handleResizeEnd"
     />
 
-    <Handle id="target-a" type="target" :position="Position.Top" />
-    <Handle id="source-b" type="source" :position="Position.Bottom" />
+    <Handle id="target-a" type="target" :position="Position.Left" />
+    <Handle id="source-b" type="source" :position="Position.Right" />
   </div>
 </template>
 

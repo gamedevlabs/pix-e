@@ -13,10 +13,11 @@ import { Background } from '@vue-flow/background'
 import PxGraphNode from '~/components/PxGraphComponents/PxGraphNode.vue'
 import PxGraphEdge from '~/components/PxGraphComponents/PxGraphEdge.vue'
 import { v4 } from 'uuid'
+import merge from 'lodash.merge'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
-const { project, updateNode } = useVueFlow()
+const { project } = useVueFlow()
 
 // const { layout } = usePxGraphLayout()
 
@@ -59,6 +60,8 @@ async function loadGraph() {
         width: n.layout.width,
         data: { name: n.name, content: n.content, px_chart: n.px_chart },
       }))
+
+      console.log(nodes.value[0])
 
       edges.value = data.edges.map((e: PxChartEdge) => ({
         id: e.id,
@@ -109,12 +112,8 @@ async function onNodeDragStop(event: NodeDragEvent) {
       },
     })
 
-    // Update node in local nodes-array
-    // const indexOf = nodes.value.findIndex((node) => node.id === event.node.id)
-    // nodes.value.splice(
-    //   indexOf,
-    //   1, {...nodes.value[indexOf], position: {x: node.position.x, y: node.position.y},}
-    // )
+    // The node movement position update is handled by Vue Flow, and since we double bind
+    // the nodes, the changes are also forwarded to our single-source-of truth!
   } catch {
     error.value = 'Failed to update node position'
   }
@@ -125,6 +124,7 @@ async function addNode(position_x = 0, position_y = 0) {
   const newNodePayload = {
     id: newId,
     name: 'New node',
+    content: null,
     layout: {
       position_x: position_x,
       position_y: position_y,
@@ -152,13 +152,27 @@ async function addNode(position_x = 0, position_y = 0) {
 }
 
 function onConnect(params: { source: string; target: string }) {
+  const newUuid = v4()
   createPxEdge({
+    id: newUuid,
     source: params.source,
     target: params.target,
     px_chart: chartId,
   })
-    .then(loadGraph)
     .catch(() => (error.value = 'Failed to create edge'))
+    .finally(() => {
+      edges.value.push({
+        id: newUuid,
+        source: params.source,
+        target: params.target,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 20,
+          height: 20,
+        },
+        type: 'pxGraph',
+      })
+    })
 }
 
 /*
@@ -186,20 +200,36 @@ async function handleDeletePxGraphNode(nodeId: string) {
     nodes.value.findIndex((node) => node.id === nodeId),
     1,
   )
+
+  // Remove all edges connected to removed node from local model
+  edges.value = edges.value.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
 }
 
 async function handleUpdatePxGraphNode(updatedPxChartNode: Partial<PxChartNode>) {
+  if (!updatedPxChartNode.id) {
+    alert('An update was issued to a node, however, no ID was provided. Aborting.')
+    return
+  }
+
+  // Here, we have to make sure that properties like name, content, or pxgraph are handled correctly
+  // This means, that for the backend, the updatedPxChartNode can just be used, however, for
+  // frontend array, these attributes need to be put into data.
+  let data = null
+  if(updatedPxChartNode.content !== undefined) {
+    data = merge(data, {data: {content: updatedPxChartNode.content}})
+  }
+  if(updatedPxChartNode.name) {
+    data = merge(data, {data: {name: updatedPxChartNode.name}})
+  }
+  if(updatedPxChartNode.px_chart) {
+    data = merge(data, {data: {px_chart: updatedPxChartNode.px_chart}})
+  }
+
   // Update node in backend
   await updatePxChartNode(updatedPxChartNode.id!, updatedPxChartNode)
 
-  // Update node in graph view
-  const updatedNodeIdString = updatedPxChartNode.id as unknown as string
-  updateNode(updatedNodeIdString, { data: updatedPxChartNode })
-
-  nodes.value[nodes.value.findIndex((node) => node.id === updatedNodeIdString)] = {
-    ...nodes.value[nodes.value.findIndex((node) => node.id === updatedNodeIdString)],
-    ...updatedPxChartNode,
-  }
+  nodes.value.splice(nodes.value.findIndex((node) => node.id === updatedPxChartNode.id), 1,
+    merge(nodes.value[nodes.value.findIndex((node) => node.id === updatedPxChartNode.id)], updatedPxChartNode, data))
 }
 
 async function onEdgesChange(changes) {
@@ -240,7 +270,7 @@ async function handleDeletePxNode(pxGraphNodeId: string) {
 <template>
   <VueFlow
     v-model:nodes="nodes"
-    :edges="edges"
+    v-model:edges="edges"
     :edge-types="edgeTypes"
     @node-drag-stop="onNodeDragStop"
     @connect="onConnect"

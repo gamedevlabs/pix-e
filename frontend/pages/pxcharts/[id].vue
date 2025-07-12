@@ -6,7 +6,9 @@ const chartId = route.params.id as string
 </script>
 
 <template>
-  <PxGraphCanvas :chart-id="chartId" />
+  <div class="w-full h-full">
+    <PxGraphCanvas :chart-id="chartId" />
+  </div>
 </template>
 
 <style scoped></style>
