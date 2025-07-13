@@ -138,8 +138,14 @@ async function handleAddPxNode() {
       @resize-end="handleResizeEnd"
     />
 
-    <Handle id="target-a" type="target" :position="Position.Left" />
+    <Handle id="target-a" type="target" :position="Position.Top" />
+    <Handle id="target-b" type="target" :position="Position.Right" />
+    <Handle id="target-c" type="target" :position="Position.Bottom" />
+    <Handle id="target-d" type="target" :position="Position.Left" />
+    <Handle id="source-a" type="source" :position="Position.Top" />
     <Handle id="source-b" type="source" :position="Position.Right" />
+    <Handle id="source-c" type="source" :position="Position.Bottom" />
+    <Handle id="source-d" type="source" :position="Position.Left" />
   </div>
 </template>
 

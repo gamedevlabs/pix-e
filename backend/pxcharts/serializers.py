@@ -95,7 +95,15 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PxChartEdge
-        fields = ["id", "source", "target", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "source",
+            "sourceHandle",
+            "target",
+            "targetHandle",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, data):

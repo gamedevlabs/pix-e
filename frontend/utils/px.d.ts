@@ -70,7 +70,9 @@ interface PxChartEdge {
   id: string
   px_chart: string
   source: string
+  sourceHandle: string
   target: string
+  targetHandle: string
   created_at: string
   updated_at: string
   owner: number | null

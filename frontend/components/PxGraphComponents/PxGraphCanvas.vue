@@ -8,6 +8,7 @@ import {
   useVueFlow,
   Panel,
   PanelPosition,
+  type Connection,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import PxGraphNode from '~/components/PxGraphComponents/PxGraphNode.vue'
@@ -66,7 +67,9 @@ async function loadGraph() {
       edges.value = data.edges.map((e: PxChartEdge) => ({
         id: e.id,
         source: e.source,
+        sourceHandle: e.sourceHandle,
         target: e.target,
+        targetHandle: e.targetHandle,
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
@@ -151,20 +154,24 @@ async function addNode(position_x = 0, position_y = 0) {
   }
 }
 
-function onConnect(params: { source: string; target: string }) {
+function onConnect(connection: Connection) {
   const newUuid = v4()
   createPxEdge({
     id: newUuid,
-    source: params.source,
-    target: params.target,
+    source: connection.source,
+    sourceHandle: connection.sourceHandle,
+    target: connection.target,
+    targetHandle: connection.targetHandle,
     px_chart: chartId,
   })
     .catch(() => (error.value = 'Failed to create edge'))
     .finally(() => {
       edges.value.push({
         id: newUuid,
-        source: params.source,
-        target: params.target,
+        source: connection.source,
+        sourceHandle: connection.sourceHandle,
+        target: connection.target,
+        targetHandle: connection.targetHandle,
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,

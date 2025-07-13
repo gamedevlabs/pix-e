@@ -67,9 +67,11 @@ class PxChartEdge(models.Model):
     source = models.ForeignKey(
         PxChartNode, on_delete=models.CASCADE, related_name="outgoing_edges"
     )
+    sourceHandle = models.CharField(max_length=255, default="")
     target = models.ForeignKey(
         PxChartNode, on_delete=models.CASCADE, related_name="incoming_edges"
     )
+    targetHandle = models.CharField(max_length=255, default="")
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -80,7 +82,8 @@ class PxChartEdge(models.Model):
         verbose_name_plural = "px chart edges"
         constraints = [
             models.UniqueConstraint(
-                fields=["px_chart", "source", "target"], name="unique_edge"
+                fields=["px_chart", "source", "sourceHandle", "target", "targetHandle"],
+                name="unique_edge",
             )
         ]
 
