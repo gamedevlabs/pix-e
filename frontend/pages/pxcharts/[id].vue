@@ -1,6 +1,10 @@
 ﻿<script setup lang="ts">
 import PxGraphCanvas from '~/components/PxGraphComponents/PxGraphCanvas.vue'
 
+definePageMeta({
+  middleware: 'authentication',
+})
+
 const route = useRoute()
 const chartId = route.params.id as string
 </script>

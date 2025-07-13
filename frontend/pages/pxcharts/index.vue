@@ -1,6 +1,10 @@
 ﻿<script setup lang="ts">
 import { v4 } from 'uuid'
 
+definePageMeta({
+  middleware: 'authentication',
+})
+
 const {
   items: pxCharts,
   fetchAll: fetchPxCharts,

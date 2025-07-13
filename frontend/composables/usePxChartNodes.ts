@@ -1,3 +1,3 @@
 export function usePxChartNodes(chartId: string | number) {
-  return useCrud<PxChartNode>(`api/pxcharts/${chartId}/pxnodes/`)
+  return useCrudWithAuthentication<PxChartNode>(`api/pxcharts/${chartId}/pxnodes/`)
 }

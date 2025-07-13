@@ -23,7 +23,7 @@ const { project } = useVueFlow()
 
 const chartId = props.chartId
 
-const { fetchById: fetchPxChart } = usePxCharts()
+const { error: pxChartError, fetchById: fetchPxChart } = usePxCharts()
 const {
   updateItem: updatePxChartNode,
   createItem: createPxChartNode,
@@ -275,7 +275,12 @@ async function handleDeletePxNode(pxGraphNodeId: string) {
 </script>
 
 <template>
+  <div v-if="pxChartError">
+    <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
+    <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
+  </div>
   <VueFlow
+    v-else
     v-model:nodes="nodes"
     v-model:edges="edges"
     :edge-types="edgeTypes"
