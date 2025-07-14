@@ -19,9 +19,9 @@
     }
   }
 
-  async function getLLMFeedback() {
+  async function getPillarsInContextFeedback() {
     return (
-      await $fetch<{ feedback: string }>(`${config.public.apiBase}/llm/feedback/`, {
+      await $fetch<PillarsInContextFeedback>(`${config.public.apiBase}/llm/feedback/`, {
         method: 'POST',
         body: {
           model: llm.active_llm,
@@ -31,7 +31,7 @@
           'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
       })
-    ).feedback
+    )
   }
 
   async function validatePillarAPICall(pillar: Pillar) {
@@ -53,7 +53,9 @@
   async function fixPillarWithAIAPICall(pillar: Pillar) {
     return await $fetch<PillarDTO>(`${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`, {
       method: 'POST',
-      body: pillar,
+      body: {
+        model: llm.active_llm,
+      },
       credentials: 'include',
       headers: {
         'X-CSRFToken': useCookie('csrftoken').value,
@@ -63,7 +65,7 @@
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
-    getLLMFeedback,
+    getPillarsInContextFeedbackAPICall: getPillarsInContextFeedback,
     fixPillarWithAIAPICall,
   }
 }

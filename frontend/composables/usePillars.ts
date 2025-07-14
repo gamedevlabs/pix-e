@@ -5,14 +5,18 @@ export function usePillars() {
 
   const pillarsApi = usePillarsApi()
   const designIdea = ref<string>('')
-  const llmFeedback = ref<string>('Feedback will be displayed here')
+  const llmFeedback = ref<PillarsInContextFeedback>({
+    pillarFeedback: [],
+    additionalFeedback: 'There is no feedback yet.',
+    proposedAdditions: [],
+  })
 
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
 
-  async function getLLMFeedback() {
-    llmFeedback.value = await pillarsApi.getLLMFeedback()
+  async function getPillarsInContextFeedback() {
+    llmFeedback.value = await pillarsApi.getPillarsInContextFeedbackAPICall()
   }
 
   async function validatePillar(pillar: Pillar) {
@@ -28,7 +32,7 @@ export function usePillars() {
     llmFeedback,
     validatePillar,
     updateDesignIdea,
-    getLLMFeedback,
+    getPillarsInContextFeedback,
     fixPillarWithAI,
   }
 }

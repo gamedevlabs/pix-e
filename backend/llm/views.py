@@ -8,10 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .llm_links import PillarPrompts
-from .llm_links.GeminiLink import GeminiLink
 from .llm_links.LLMSwitcher import LLMSwitcher
-from .llm_links.OpenAILink import OpenAILink
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
@@ -93,12 +90,13 @@ class PillarFeedbackView(APIView):
 class FixPillarView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
-        self.gemini = GeminiLink()
+        self.llmSwitcher = LLMSwitcher()
 
     def post(self, request, id):
         try:
             pillar = Pillar.objects.filter(id=id).first()
-            pillar = self.gemini.improve_pillar(pillar)
+            llm = self.llmSwitcher.get_llm(request.data["model"])
+            pillar = llm.improve_pillar(pillar)
             data = PillarSerializer(pillar).data
             return JsonResponse(data, status=200)
         except Exception as e:
@@ -108,15 +106,15 @@ class FixPillarView(APIView):
 class EvaluateContextView(APIView):
     def __init__(self, **kwargs):
         super().__init__()
-        self.gemini = GeminiLink()
+        self.llmSwitcher = LLMSwitcher()
 
     def post(self, request):
         try:
             context = request.data.get("context", "")
             if not context:
                 return HttpResponse({"error": "Context is required"}, status=400)
-
-            response = self.gemini.evaluate_context_with_pillars(context)
+            llm = self.llmSwitcher.get_llm(request.data["model"])
+            response = llm.evaluate_context_with_pillars(context)
             return JsonResponse(response.model_dump(), status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=500)

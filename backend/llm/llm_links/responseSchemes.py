@@ -20,3 +20,10 @@ class PillarResponse(BaseModel):
 class FixablePillar(BaseModel):
     name: str
     description: str
+
+class PillarsInContextResponse(BaseModel):
+    pillarFeedback: list[
+        FixablePillar # weak naming type
+    ]
+    additionalFeedback: str
+    proposedAdditions: list[FixablePillar]

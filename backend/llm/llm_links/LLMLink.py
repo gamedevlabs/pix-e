@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from llm.llm_links.responseSchemes import StringFeedback, PillarResponse
+from llm.llm_links.responseSchemes import StringFeedback, PillarResponse, PillarsInContextResponse
 from llm.models import Pillar
 
 class LLMLink(ABC):
@@ -15,7 +15,7 @@ class LLMLink(ABC):
 
 
     @abstractmethod
-    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> StringFeedback:
+    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> PillarsInContextResponse:
         """
         Generate a response for a list of game design pillars in a given context.
         :param pillars: A list of Pillar objects to analyze.
@@ -28,8 +28,9 @@ class LLMLink(ABC):
     def improve_pillar(self, pillar: Pillar) -> Pillar:
         """
         Improve a game design pillar using the LLM.
-        :param pillar: The pillar to fix.
-        :return: The fixed Pillar object.
+        This method will store the improved pillar in the database.
+        :param pillar: The pillar to improve.
+        :return: The improved Pillar object.
         """
         pass
     

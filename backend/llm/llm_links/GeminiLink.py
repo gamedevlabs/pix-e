@@ -2,11 +2,10 @@ import os
 
 from google import genai
 
-from . import PillarPrompts
 from .LLMLink import LLMLink
 from ..models import Pillar
-from .PillarPrompts import ValidationPrompt, ImprovePillarPrompt
-from .responseSchemes import FixablePillar, PillarResponse, StringFeedback
+from .prompts import *
+from .responseSchemes import FixablePillar, PillarResponse, StringFeedback, PillarsInContextResponse
 
 
 class GeminiLink(LLMLink):
@@ -20,8 +19,8 @@ class GeminiLink(LLMLink):
             raise ValueError("GEMINI_API_KEY environment variable not set")
         self.client = genai.Client(api_key=key)
 
-    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> StringFeedback:
-        prompt = PillarPrompts.OverallFeedbackPrompt % (
+    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> PillarsInContextResponse:
+        prompt = OverallFeedbackPrompt % (
                 context,
                 "\n".join(
                     [f"{pillar.name}:\n {pillar.description}" for pillar in pillars]
@@ -32,9 +31,10 @@ class GeminiLink(LLMLink):
             contents=prompt,
             config={
                 "response_mime_type": "application/json",
-                "response_schema": StringFeedback,
+                "response_schema": PillarsInContextResponse,
             },
         )
+        print(response.parsed)
         return response.parsed
 
     def evaluate_pillar(self, pillar: Pillar) -> PillarResponse:
@@ -66,4 +66,4 @@ class GeminiLink(LLMLink):
         return pillar
 
     def evaluate_context_with_pillars(self, pillars: list[Pillar], context: str) -> StringFeedback:
-        pass
+        raise NotImplementedError()

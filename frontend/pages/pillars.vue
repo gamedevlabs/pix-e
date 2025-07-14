@@ -13,7 +13,7 @@ const {
   deleteItem: deletePillar,
   designIdea,
   llmFeedback,
-  getLLMFeedback,
+  getPillarsInContextFeedback,
   updateDesignIdea,
 } = usePillars()
 
@@ -79,30 +79,44 @@ async function dismissIssue(pillar: Pillar, index: number) {
       </SimpleCardSection>
 
       <!-- Overall LLM Feedback -->
-      <h2 class="text-2xl font-bold mt-6 mb-4">
-        LLM Feedback
-        <UButton
-          icon="i-lucide-refresh-cw"
-          label="Refresh"
-          color="secondary"
-          variant="soft"
-          loading-auto
-          @click="getLLMFeedback"
-        />
-      </h2>
+      <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
+        <h2 class="text-2xl font-bold">
+          LLM Feedback
+          <UButton
+            icon="i-lucide-refresh-cw"
+            label="Refresh"
+            color="secondary"
+            variant="soft"
+            loading-auto
+            @click="getPillarsInContextFeedback"
+          />
+        </h2>
 
-      <div class="flex gap-4 flex-wrap w-full">
-        <div
-          style="color: var(--ui-color-secondary-200)"
-          class="p-4 rounded-lg w-fit whitespace-pre-line"
-        >
-          {{ llmFeedback }}
+        <div class="w-full p-4 gap-4">
+          <!-- Direct Feedback -->
+            <div v-for="pillar in llmFeedback.pillarFeedback">
+              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
+              <p>{{ pillar.description }}</p>
+            </div>
+        </div>
+        <h2 class="text-2xl font-bold">Additions:</h2>
+        <!-- Additional Feedback -->
+        <div class="w-full p-4 gap-4">
+          <h3 class="text-lg font-semibold">General Additions</h3>
+          <p v-if="llmFeedback.additionalFeedback">
+            {{ llmFeedback.additionalFeedback }}
+          </p>
+          <div v-for="pillar in llmFeedback.proposedAdditions">
+            <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
+            <p>{{ pillar.description }}</p>
+          </div>
         </div>
       </div>
     </div>
+
     <!-- Game Design Idea Section -->
     <div
-      class="flex-shrink-0 basis-[20%] min-w-[250px] max-w-[420px] border-l border-b border-neutral-500 p-6"
+      class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
     >
       <h2 class="text-2xl font-semibold mb-4">Game Design Idea:</h2>
       <UTextarea
