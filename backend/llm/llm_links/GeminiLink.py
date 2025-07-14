@@ -2,12 +2,14 @@ import os
 
 from google import genai
 
+from . import PillarPrompts
+from .LLMLink import LLMLink
 from ..models import Pillar
 from .PillarPrompts import ValidationPrompt
-from .responseSchemes import FixablePillar, PillarResponse, OverallFeedback
+from .responseSchemes import FixablePillar, PillarResponse, StringFeedback
 
 
-class GeminiLink:
+class GeminiLink(LLMLink):
     """
     Class to interact with the Gemini API.
     """
@@ -18,23 +20,24 @@ class GeminiLink:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         self.client = genai.Client(api_key=key)
 
-    def generate_overall_feedback(self, prompt: str) -> OverallFeedback:
+    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        prompt = PillarPrompts.OverallFeedbackPrompt % (
+                context,
+                "\n".join(
+                    [f"{pillar.name}:\n {pillar.description}" for pillar in pillars]
+                ),
+            )
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,
             config={
                 "response_mime_type": "application/json",
-                "response_schema": OverallFeedback,
+                "response_schema": StringFeedback,
             },
         )
         return response.parsed
 
-    def generate_pillar_response(self, pillar: Pillar) -> PillarResponse:
-        """
-        Generate a response for a game design pillar.
-        :param pillar: The pillar text to analyze.
-        :return: A PillarResponse object containing the analysis.
-        """
+    def evaluate_pillar(self, pillar: Pillar) -> PillarResponse:
         prompt = ValidationPrompt % (pillar.name, pillar.description)
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
@@ -46,11 +49,7 @@ class GeminiLink:
         )
         return response.parsed
 
-    def fix_pillar_through_llm(self, pillar: Pillar) -> Pillar:
-        """
-        Fix a game design pillar using the Gemini API.
-        :param pillar: The pillar to fix.
-        """
+    def improve_pillar(self, pillar: Pillar) -> Pillar:
         prompt = f"""Improve the following Game Design Pillar.
             Check for structural issues regarding the following points:
             1. The title does not match the description.
@@ -73,3 +72,6 @@ class GeminiLink:
         pillar.description = fixed_pillar.description
         pillar.save()
         return pillar
+
+    def evaluate_context_with_pillars(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        pass
