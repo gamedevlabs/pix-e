@@ -51,7 +51,7 @@ interface PxChart extends NamedEntity {
 interface PxChartNode {
   id: string
   name: string
-  content: PxNode | null
+  content: string | null
   px_chart: string
   layout: PxChartNodeLayout
   created_at: string

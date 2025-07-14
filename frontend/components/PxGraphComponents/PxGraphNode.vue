@@ -17,15 +17,22 @@ const { fetchById: getPxNode } = usePxNodes()
 const overlay = useOverlay()
 const modal = overlay.create(LazyPxGraphComponentsPxGraphNodeAddPxNodeForm)
 
-const minWidth = 250
-const minHeight = 100
-
 const isBeingEdited = ref(false)
 const editForm = ref({
   name: props.data.name,
 })
 
 const pxNode = ref<PxNode | null>(null)
+
+const cardRef = useTemplateRef('cardRef')
+let observer: ResizeObserver
+
+const minWidth = 400
+const minHeightGivenContent = computed(() => {
+  return cardHeight
+})
+const cardWidth = ref(0)
+const cardHeight = ref(0)
 
 const containsPxNodeData = computed(() => {
   return props.data.content
@@ -37,6 +44,13 @@ watch(containsPxNodeData, () => {
 
 onMounted(() => {
   loadContent()
+  listenToResizing()
+})
+
+onBeforeUnmount(() => {
+  if (observer && cardRef.value) {
+    observer.unobserve(cardRef.value)
+  }
 })
 
 async function loadContent() {
@@ -81,10 +95,6 @@ async function emitDelete() {
   emit('delete', props.id)
 }
 
-async function removePxNode() {
-  emit('deletePxNode', props.id)
-}
-
 async function handleAddPxNode() {
   const nodeId = await modal.open().result
 
@@ -92,10 +102,27 @@ async function handleAddPxNode() {
 
   emit('addPxNode', props.id, nodeId)
 }
+
+async function removePxNode() {
+  emit('deletePxNode', props.id)
+}
+
+function listenToResizing() {
+  if (cardRef.value) {
+    observer = new ResizeObserver((entries) => {
+      for (let i = 0; i < entries.length; i++) {
+        const { width, height } = entries[i].contentRect
+        cardWidth.value = width
+        cardHeight.value = height
+      }
+    })
+    observer.observe(cardRef.value)
+  }
+}
 </script>
 
 <template>
-  <div>
+  <div ref="cardRef">
     <UCard class="hover:shadow-lg transition">
       <template #header>
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.data.name }}</h2>
@@ -131,10 +158,11 @@ async function handleAddPxNode() {
         </div>
       </template>
     </UCard>
+
     <NodeResizer
       :is-visible="props.selected"
       :min-width="minWidth"
-      :min-height="minHeight"
+      :min-height="minHeightGivenContent.value"
       @resize-end="handleResizeEnd"
     />
 

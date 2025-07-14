@@ -7,8 +7,9 @@ import {
   VueFlow,
   useVueFlow,
   Panel,
-  PanelPosition,
   type Connection,
+  type EdgeChange,
+  type NodeChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import PxGraphNode from '~/components/PxGraphComponents/PxGraphNode.vue'
@@ -18,9 +19,7 @@ import merge from 'lodash.merge'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
-const { project } = useVueFlow()
-
-// const { layout } = usePxGraphLayout()
+const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
 
@@ -37,17 +36,11 @@ const edges = ref<Edge[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-/*
-const nodeTypes = {
-  pxGraph: markRaw(PxGraphNode),
-}
-*/
-
 const edgeTypes = {
   pxGraph: markRaw(PxGraphEdge),
 }
 
-// Load graph with Vue Flow shape
+// Load graph with Vue Flow properties
 async function loadGraph() {
   loading.value = true
   try {
@@ -61,8 +54,6 @@ async function loadGraph() {
         width: n.layout.width,
         data: { name: n.name, content: n.content, px_chart: n.px_chart },
       }))
-
-      console.log(nodes.value[0])
 
       edges.value = data.edges.map((e: PxChartEdge) => ({
         id: e.id,
@@ -114,7 +105,6 @@ async function onNodeDragStop(event: NodeDragEvent) {
         height: node.height as number,
       },
     })
-
     // The node movement position update is handled by Vue Flow, and since we double bind
     // the nodes, the changes are also forwarded to our single-source-of truth!
   } catch {
@@ -155,13 +145,24 @@ async function addNode(position_x = 0, position_y = 0) {
 }
 
 function onConnect(connection: Connection) {
+  if (
+    connection.source == null ||
+    connection.sourceHandle == null ||
+    connection.target == null ||
+    connection.targetHandle == null ||
+    chartId == null
+  ) {
+    alert('onConnect did not provide enough information. Aborting!')
+    return
+  }
+
   const newUuid = v4()
   createPxEdge({
     id: newUuid,
     source: connection.source,
-    sourceHandle: connection.sourceHandle,
+    sourceHandle: connection.sourceHandle!,
     target: connection.target,
-    targetHandle: connection.targetHandle,
+    targetHandle: connection.targetHandle!,
     px_chart: chartId,
   })
     .catch(() => (error.value = 'Failed to create edge'))
@@ -191,14 +192,6 @@ async function layoutGraph(direction: string) {
   })
 }
 */
-
-async function onNodesChange(changes) {
-  for (const change of changes) {
-    if (change.type === 'remove') {
-      await deletePxChartNode(change.id)
-    }
-  }
-}
 
 async function handleDeletePxGraphNode(nodeId: string) {
   await deletePxChartNode(nodeId)
@@ -246,22 +239,6 @@ async function handleUpdatePxGraphNode(updatedPxChartNode: Partial<PxChartNode>)
   )
 }
 
-async function onEdgesChange(changes) {
-  for (const change of changes) {
-    if (change.type === 'remove') {
-      await deletePxEdge(change.id)
-    }
-  }
-}
-
-function onContextMenu(mouseEvent: MouseEvent) {
-  // prevent the browser's default menu
-  mouseEvent.preventDefault()
-  // for now, just create node
-  const pos = project({ x: mouseEvent.x, y: mouseEvent.y })
-  addNode(pos.x, pos.y)
-}
-
 async function handleAddPxNode(pxGraphNodeId: string, pxNodeId: string) {
   const updatedPxGraphNodeContent = {
     id: pxGraphNodeId,
@@ -278,6 +255,30 @@ async function handleDeletePxNode(pxGraphNodeId: string) {
   }
 
   await handleUpdatePxGraphNode(updatedPxGraphNodeContent)
+}
+
+async function onNodesChange(changes: NodeChange[]) {
+  for (const change of changes) {
+    if (change.type === 'remove') {
+      await deletePxChartNode(change.id)
+    }
+  }
+}
+
+async function onEdgesChange(changes: EdgeChange[]) {
+  for (const change of changes) {
+    if (change.type === 'remove') {
+      await deletePxEdge(change.id)
+    }
+  }
+}
+
+function onContextMenu(mouseEvent: MouseEvent) {
+  // prevent the browser's default menu
+  mouseEvent.preventDefault()
+  // for now, just create node
+  const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
+  addNode(pos.x, pos.y)
 }
 </script>
 
@@ -311,7 +312,7 @@ async function handleDeletePxNode(pxGraphNodeId: string) {
       />
     </template>
 
-    <Panel :position="PanelPosition.BottomLeft">
+    <Panel :position="'bottom-left'">
       <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
         <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addNode" />
       </UTooltip>
