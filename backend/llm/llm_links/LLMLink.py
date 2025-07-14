@@ -1,0 +1,44 @@
+from abc import ABC, abstractmethod
+
+from llm.llm_links.responseSchemes import StringFeedback, PillarResponse
+from llm.models import Pillar
+
+class LLMLink(ABC):
+    @abstractmethod
+    def evaluate_pillar(self, pillar: Pillar) -> PillarResponse:
+        """
+        Generate a response for a game design pillar.
+        :param pillar: The pillar text to analyze.
+        :return: A PillarResponse object containing the analysis.
+        """
+        pass
+
+
+    @abstractmethod
+    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        """
+        Generate a response for a list of game design pillars in a given context.
+        :param pillars: A list of Pillar objects to analyze.
+        :param context: The context in which to evaluate the pillars.
+        :return: A StringFeedback object containing the evaluation results.
+        """
+        pass
+
+    @abstractmethod
+    def improve_pillar(self, pillar: Pillar) -> Pillar:
+        """
+        Improve a game design pillar using the LLM.
+        :param pillar: The pillar to fix.
+        :return: The fixed Pillar object.
+        """
+        pass
+    
+    @abstractmethod
+    def evaluate_context_with_pillars(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        """
+        Evaluate the context against a list of pillars.
+        :param pillars: A list of Pillar objects to use for evaluation.
+        :param context: The context to evaluate.
+        :return: A StringFeedback object containing the evaluation results.
+        """
+        pass
