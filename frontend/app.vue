@@ -9,8 +9,8 @@ const items = ref<NavigationMenuItem[]>([
   },
   {
     label: 'PxNodes',
-    icon: 'i-lucide-hexagon',
-    to: '/pxnodes',
+    icon: 'i-lucide-hexagon', 
+    to: '/pxnodes', 
   },
   {
     label: 'PxComponents',
@@ -22,6 +22,11 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-library-big',
     to: '/pxcomponentdefinitions',
   },
+    {
+    label: 'Sentiment Analysis',
+    icon: 'i-lucide-library-big',
+    to: '/sentiments',
+  },
   {
     label: 'PxCharts',
     icon: 'i-lucide-chart-network',
@@ -31,11 +36,6 @@ const items = ref<NavigationMenuItem[]>([
     label: 'Pillars',
     icon: 'i-lucide-landmark',
     to: '/pillars',
-  },
-  {
-    label: 'Player Expectations',
-    icon: 'i-lucide-gamepad-2',
-    to: '/playerExpectations',
   },
   /*{
     label: 'GitHub',
