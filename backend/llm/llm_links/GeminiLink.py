@@ -5,7 +5,7 @@ from google import genai
 from . import PillarPrompts
 from .LLMLink import LLMLink
 from ..models import Pillar
-from .PillarPrompts import ValidationPrompt
+from .PillarPrompts import ValidationPrompt, ImprovePillarPrompt
 from .responseSchemes import FixablePillar, PillarResponse, StringFeedback
 
 
@@ -50,15 +50,7 @@ class GeminiLink(LLMLink):
         return response.parsed
 
     def improve_pillar(self, pillar: Pillar) -> Pillar:
-        prompt = f"""Improve the following Game Design Pillar.
-            Check for structural issues regarding the following points:
-            1. The title does not match the description.
-            2. The intent of the pillar is not clear.
-            3. The pillar focuses on more than one aspect.
-            4. The description uses bullet points or lists.
-            Pillar Title: {pillar.name}\n
-            Pillar Description: {pillar.description}
-            Rewrite erroneous parts of the pillar and return a new pillar object."""
+        prompt = ImprovePillarPrompt % (pillar.name, pillar.description)
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
             contents=prompt,

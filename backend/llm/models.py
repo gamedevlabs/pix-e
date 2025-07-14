@@ -16,7 +16,7 @@ class Pillar(models.Model):
 
 
 class GameDesignDescription(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         "auth.User",
         on_delete=models.CASCADE,
         related_name="game_designs",

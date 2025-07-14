@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from .models import GameDesignDescription, Pillar
 
-
 class PillarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pillar
