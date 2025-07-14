@@ -25,3 +25,15 @@ type PillarFeedback = {
   }[]
   content_feedback: string
 }
+
+type PillarsInContextFeedback = {
+  pillarFeedback: {
+    name: string,
+    description: string,
+  }[]
+  additionalFeedback: string
+  proposedAdditions: {
+    name: string
+    description: string
+  }[]
+}
