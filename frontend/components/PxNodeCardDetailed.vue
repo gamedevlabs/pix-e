@@ -61,20 +61,22 @@ async function handleAddComponent() {
       <UTextarea v-else v-model="editForm.name" />
     </template>
 
-    <div v-if="!isBeingEdited">
-      <p>{{ props.node.description }}</p>
-      <br />
-      <section class="grid grid-cols-1 gap-6">
-        <div v-for="component in components" :key="component.id">
-          <PxComponentCard
-            visualization-style="preview"
-            :component="component"
-            @delete="emitDeleteComponent"
-          />
-        </div>
-      </section>
-    </div>
-    <UTextarea v-else v-model="editForm.description" />
+    <template #default>
+      <div v-if="!isBeingEdited">
+        <p>{{ props.node.description }}</p>
+        <br />
+        <section class="grid grid-cols-1 gap-6">
+          <div v-for="component in components" :key="component.id">
+            <PxComponentCard
+              visualization-style="preview"
+              :component="component"
+              @delete="emitDeleteComponent"
+            />
+          </div>
+        </section>
+      </div>
+      <UTextarea v-else v-model="editForm.description" />
+    </template>
 
     <template #footer>
       <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">

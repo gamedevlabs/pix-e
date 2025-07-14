@@ -14,8 +14,10 @@ const props = defineProps<{
       </h2>
     </template>
 
-    <div>
-      <p>{{ props.node.description }}</p>
-    </div>
+    <template #default>
+        <div>
+          <p>{{ props.node.description }}</p>
+        </div>
+    </template>
   </UCard>
 </template>
