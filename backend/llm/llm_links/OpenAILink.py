@@ -2,12 +2,14 @@ import os
 
 from openai import OpenAI
 
+from llm.llm_links import PillarPrompts
+from llm.llm_links.LLMLink import LLMLink
 from llm.llm_links.PillarPrompts import ValidationPrompt
-from llm.llm_links.responseSchemes import PillarResponse, OverallFeedback
+from llm.llm_links.responseSchemes import PillarResponse, StringFeedback
 from llm.models import Pillar
 
 
-class OpenAILink:
+class OpenAILink(LLMLink):
     def __init__(self):
         key = os.environ.get("OPENAI_API_KEY")
         if key is None:
@@ -15,20 +17,21 @@ class OpenAILink:
         self.client = OpenAI(api_key=key)  # could also auto infer from environment
         pass
 
-    def generate_overall_response(self, prompt: str) -> OverallFeedback:
-        """
-        Generate a response using the OpenAI API.
-        :param prompt: The prompt to send to the OpenAI model.
-        :return: An OverallFeedback object containing the response.
-        """
+    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        prompt = PillarPrompts.OverallFeedbackPrompt % (
+            context,
+            "\n".join(
+                [f"{pillar.name}:\n {pillar.description}" for pillar in pillars]
+            ),
+        )
         response = self.client.responses.create(
             model="gpt-4o-mini",
             input=prompt,
-            text_format=OverallFeedback,
+            text_format=StringFeedback,
         )
         return response.output_parsed
 
-    def generate_pillar_response(self, pillar: Pillar) -> PillarResponse:
+    def evaluate_pillar(self, pillar: Pillar) -> PillarResponse:
         """
         Generate a response for a game design pillar.
         :param pillar: The pillar text to analyze.
@@ -41,3 +44,9 @@ class OpenAILink:
             text_format=PillarResponse,
         )
         return response.output_parsed
+
+    def improve_pillar(self, pillar: Pillar) -> Pillar:
+        raise NotImplementedError()
+
+    def evaluate_context_with_pillars(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        raise NotImplementedError()

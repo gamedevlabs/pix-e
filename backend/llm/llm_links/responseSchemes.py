@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-class OverallFeedback(BaseModel):
+class StringFeedback(BaseModel):
     feedback: str
 
 class StructuralIssue(BaseModel):
