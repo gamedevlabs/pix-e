@@ -4,14 +4,14 @@
     :ui="dropdownUi"
     class="w-full"
   >
-    <!-- Button showing selections -->
+    <!-- Button showing current selections -->
     <UButton
       :label="buttonLabel"
       trailing-icon="i-heroicons-chevron-down-20-solid"
-      class="w-full justify-between bg-input-background text-text border border-border hover:bg-hover-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 ease-in-out"
+      class="w-full justify-between bg-input-background text-text border border-border hover:bg-hover-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 ease-in-out h-10"
     />
 
-    <!-- Force Vertical List of Options -->
+    <!-- Dropdown content: List of options with checkboxes -->
     <template #item="{ item }">
       <div class="block w-full px-2 py-1">
         <UCheckbox
@@ -46,7 +46,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-// Dropdown items array
+// Computed dropdown items: each option with label, value, checked
 const dropdownItems = computed(() =>
   props.options.map(option => ({
     label: option,
@@ -55,15 +55,16 @@ const dropdownItems = computed(() =>
   }))
 )
 
-// Toggle checkbox selection
+// Toggle selection for option
 const toggleOption = (optionValue: string) => {
-  const newSelection = props.modelValue.includes(optionValue)
+  const isSelected = props.modelValue.includes(optionValue)
+  const updatedSelection = isSelected
     ? props.modelValue.filter(item => item !== optionValue)
     : [...props.modelValue, optionValue]
-  emit('update:modelValue', newSelection)
+  emit('update:modelValue', updatedSelection)
 }
 
-// Button label text
+// Button label text logic
 const buttonLabel = computed(() => {
   const count = props.modelValue.length
   if (count === 0) return props.placeholder
@@ -71,16 +72,16 @@ const buttonLabel = computed(() => {
   return props.modelValue.join(', ')
 })
 
-// Neon Theme Styles
+// Neon-style theme for dropdown and checkboxes
 const dropdownUi = {
   width: 'w-full',
   background: 'bg-[#0f0f23] text-[#00f5ff] border border-[#00f5ff] shadow-lg shadow-[#00f5ff]/30',
   ring: 'ring-2 ring-[#00f5ff]',
   item: {
-    base: 'block w-full', // FORCE VERTICAL STACK
+    base: 'block w-full',
     disabled: 'cursor-not-allowed opacity-50'
   },
-  content: 'flex flex-col gap-1 max-h-64 overflow-y-auto' // Vertical stacking for menu content
+  content: 'flex flex-col gap-1 max-h-64 overflow-y-auto'
 }
 
 const checkboxUi = {

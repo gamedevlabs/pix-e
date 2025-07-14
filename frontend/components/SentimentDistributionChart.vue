@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -30,6 +30,17 @@ const props = defineProps({
     default: () => []
   }
 })
+
+const positiveColor = ref('#4CAF50') // Default green
+const negativeColor = ref('#F44336') // Default red
+const neutralColor = ref('#FFEB3B') // Default yellow
+
+onMounted(() => {
+  const style = getComputedStyle(document.documentElement);
+  positiveColor.value = style.getPropertyValue('--ui-color-success-500').trim() || positiveColor.value;
+  negativeColor.value = style.getPropertyValue('--ui-color-error-500').trim() || negativeColor.value;
+  neutralColor.value = style.getPropertyValue('--ui-color-warning-500').trim() || neutralColor.value;
+});
 
 const sentimentCounts = computed(() => {
   const counts = {
@@ -59,17 +70,17 @@ const chartData = computed(() => {
   if (sentimentCounts.value.positive > 0) {
     labels.push('Positive')
     data.push(sentimentCounts.value.positive)
-    backgroundColors.push('#4CAF50') // Green
+    backgroundColors.push(positiveColor.value)
   }
   if (sentimentCounts.value.negative > 0) {
     labels.push('Negative')
     data.push(sentimentCounts.value.negative)
-    backgroundColors.push('#F44336') // Red
+    backgroundColors.push(negativeColor.value)
   }
   if (sentimentCounts.value.neutral > 0) {
     labels.push('Neutral')
     data.push(sentimentCounts.value.neutral)
-    backgroundColors.push('#FFEB3B') // Yellow
+    backgroundColors.push(neutralColor.value)
   }
 
   return {

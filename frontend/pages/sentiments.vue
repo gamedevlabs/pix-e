@@ -1,75 +1,76 @@
 <template>
-  <div class="sentiment-page-container bg-background text-text min-h-screen p-8">
-    <h1 class="text-4xl text-center mb-8 font-bold text-primary neon-text-glow">Game Sentiment Analysis Dashboard</h1>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <div class="lg:col-span-1">
-        <SentimentFilters :sentiments="sentiments" @filter-change="handleFilterChange" />
-      </div>
-      <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SentimentDistributionChart :data="filteredSentiments" />
-        <DominantAspectChart :data="filteredSentiments" />
-      </div>
+  <div class="sentiment-dashboard">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <SentimentFilters
+        :sentiments="allSentiments"
+        :selected-dataset="selectedDataset"
+        @dataset-change="onDatasetChange"
+        @filter-change="updateFilters"
+      />
+      <SentimentChart :data="filteredData" />
     </div>
-
-    <SentimentTable :data="filteredSentiments" :loading="loading" :error="error" />
+    <SentimentTable :data="filteredData" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useSentiments } from '~/composables/useSentiments'
-import SentimentFilters from '~/components/SentimentFilters.vue'
-import SentimentTable from '~/components/SentimentTable.vue'
-import SentimentDistributionChart from '~/components/SentimentDistributionChart.vue'
-import DominantAspectChart from '~/components/DominantAspectChart.vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import axios from 'axios'
+import SentimentFilters from '@/components/SentimentFilters.vue'
+import SentimentChart from '@/components/SentimentDistributionChart.vue'
+import SentimentTable from '@/components/SentimentTable.vue'
 
-const { sentiments, loading, error, fetchSentiments } = useSentiments()
-
+const allSentiments = ref([])
 const filters = ref({
-  genre: [], // Array for multi-select
-  sentiment: '', // String for single-select
-  game: [] // Array for multi-select
+  genre: [],
+  sentiment: '',
+  game: []
 })
+const selectedDataset = ref('all')
+const loading = ref(false)
+const error = ref(null)
 
-const handleFilterChange = (newFilters) => {
+const fetchSentiments = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    const response = await axios.get(`http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`)
+    allSentiments.value = response.data
+  } catch (err) {
+    console.error(err)
+    error.value = 'Failed to load sentiment data.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchSentiments)
+
+const onDatasetChange = (dataset) => {
+  selectedDataset.value = dataset
+  fetchSentiments()
+}
+
+const updateFilters = (newFilters) => {
   filters.value = newFilters
 }
 
-const filteredSentiments = computed(() => {
-  console.log('filteredSentiments re-computing');
-  console.log('Current filters:', filters.value);
-  let filtered = sentiments.value || []
-
-  // Genre filtering (multi-select)
-  if (filters.value.genre && filters.value.genre.length > 0) {
-    const selectedGenres = filters.value.genre;
-    filtered = filtered.filter(item => {
-      try {
-        const parsedGenres = JSON.parse(item.genres.replace(/'/g, '"'))
-        return selectedGenres.every(selectedG => parsedGenres.includes(selectedG))
-      } catch (e) {
-        console.error("Error parsing genres for filtering:", e, item.genres)
-        return false
-      }
-    })
-  }
-
-  // Sentiment filtering (single-select)
-  if (filters.value.sentiment) {
-    filtered = filtered.filter(item => item.dominant_sentiment === filters.value.sentiment)
-  }
-
-  // Game Name filtering (multi-select)
-  if (filters.value.game && filters.value.game.length > 0) {
-    filtered = filtered.filter(item => filters.value.game.includes(item.name))
-  }
-
-  console.log('Filtered data count:', filtered.length);
-  return filtered
-})
-
-onMounted(() => {
-  fetchSentiments()
+const filteredData = computed(() => {
+  return allSentiments.value.filter(item => {
+    const matchesGenre = filters.value.genre.length === 0 || (
+      item.genres && JSON.parse(item.genres.replace(/'/g, '"')).some(g => filters.value.genre.includes(g))
+    )
+    const matchesSentiment = !filters.value.sentiment || item.dominant_sentiment === filters.value.sentiment
+    const matchesGame = filters.value.game.length === 0 || filters.value.game.includes(item.name)
+    return matchesGenre && matchesSentiment && matchesGame
+  })
 })
 </script>
+
+<style scoped>
+.sentiment-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+</style>

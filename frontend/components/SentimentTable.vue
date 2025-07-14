@@ -1,39 +1,44 @@
 <template>
   <div class="sentiment-table-container bg-card-background p-6 rounded-lg shadow-lg border border-border">
-    <h2 v-if="!loading && !error" class="text-2xl font-bold mb-4 text-primary">Sentiment Data</h2>
-    <p v-if="loading" class="text-yellow-400 animate-pulse">Loading sentiment data...</p>
-    <p v-if="error" class="text-red-500 font-bold">⚠️ Error: {{ error }}</p>
+    <h2 class="text-xl font-bold text-primary mb-4">Filtered Sentiment Data</h2>
 
-    <div v-if="!loading && !error && sortedData.length > 0" class="table-wrapper overflow-x-auto">
+    <!-- Loading State -->
+    <p v-if="loading" class="text-yellow-400 animate-pulse">Loading sentiment data...</p>
+
+    <!-- No Data Message -->
+    <p v-if="!loading && paginatedData.length === 0" class="text-gray-400 text-center">
+      No data available for the selected filters.
+    </p>
+
+    <!-- Data Table -->
+    <div v-if="!loading && paginatedData.length > 0" class="table-wrapper overflow-x-auto">
       <table class="min-w-full bg-card-background rounded-lg text-text">
         <thead>
           <tr>
-            <th @click="sortBy('name')" class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200 rounded-tl-lg">
-              Game Name <span v-if="sortColumn === 'name'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th @click="sortBy('genres')" class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200">
-              Genres <span v-if="sortColumn === 'genres'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th @click="sortBy('review_text')" class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200">
-              Review Text <span v-if="sortColumn === 'review_text'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th @click="sortBy('explicit_expectations')" class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200">
-              Explicit Expectations <span v-if="sortColumn === 'explicit_expectations'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th @click="sortBy('dominant_aspect')" class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200">
-              Dominant Aspect <span v-if="sortColumn === 'dominant_aspect'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th @click="sortBy('dominant_sentiment')" class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200 rounded-tr-lg">
-              Dominant Sentiment <span v-if="sortColumn === 'dominant_sentiment'">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            <th
+              v-for="header in headers"
+              :key="header.key"
+              @click="sortBy(header.key)"
+              class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200"
+              :class="{ 'rounded-tl-lg': header.key === headers[0].key, 'rounded-tr-lg': header.key === headers.at(-1).key }"
+            >
+              {{ header.label }}
+              <span v-if="sortColumn === header.key">
+                {{ sortDirection === 'asc' ? '▲' : '▼' }}
+              </span>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) in paginatedData" :key="index" class="border-t border-border hover:bg-hover-background transition-colors duration-200">
+          <tr
+            v-for="(item, index) in paginatedData"
+            :key="index"
+            class="border-t border-border hover:bg-hover-background transition-colors duration-200"
+          >
             <td class="px-4 py-3">{{ item.name }}</td>
             <td class="px-4 py-3">{{ item.genres }}</td>
-            <td class="px-4 py-3 truncate max-w-xs">{{ item.review_text }}</td>
-            <td class="px-4 py-3">{{ item.explicit_expectations }}</td>
+            <td class="px-4 py-3">{{ item.review_text }}</td>
+            <td class="px-4 py-3">{{ formatCell(item.expectations) }}</td>
             <td class="px-4 py-3">{{ item.dominant_aspect }}</td>
             <td
               class="px-4 py-3 font-bold"
@@ -49,21 +54,33 @@
         </tbody>
       </table>
     </div>
-    <div class="pagination-controls flex justify-center items-center mt-6 space-x-4" v-if="!loading && !error && sortedData.length > 0">
-      <button @click="prevPage" :disabled="currentPage === 1" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark disabled:bg-gray-700 disabled:text-gray-400 transition-colors duration-200">
+
+    <!-- Pagination Controls -->
+    <div
+      v-if="!loading && totalPages > 1"
+      class="pagination-controls flex justify-center items-center mt-6 space-x-4"
+    >
+      <button
+        @click="prevPage"
+        :disabled="currentPage === 1"
+        class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark disabled:bg-gray-700 disabled:text-gray-400 transition-colors duration-200"
+      >
         Previous
       </button>
       <span class="text-text font-medium">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button @click="nextPage" :disabled="currentPage === totalPages" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark disabled:bg-gray-700 disabled:text-gray-400 transition-colors duration-200">
+      <button
+        @click="nextPage"
+        :disabled="currentPage === totalPages"
+        class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark disabled:bg-gray-700 disabled:text-gray-400 transition-colors duration-200"
+      >
         Next
       </button>
     </div>
-    <p v-if="!loading && !error && data.length === 0" class="text-gray-400 text-center mt-4">No data available.</p>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 const props = defineProps({
   data: {
@@ -73,53 +90,65 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
-  },
-  error: {
-    type: String,
-    default: null
   }
 })
+
+const headers = [
+  { label: 'Game Name', key: 'name' },
+  { label: 'Genres', key: 'genres' },
+  { label: 'Review Text', key: 'review_text' },
+  { label: 'Expectations', key: 'expectations' },
+  { label: 'Dominant Aspect', key: 'dominant_aspect' },
+  { label: 'Dominant Sentiment', key: 'dominant_sentiment' }
+]
 
 const sortColumn = ref(null)
 const sortDirection = ref('asc')
-
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
 
-const sortedData = computed(() => {
-  if (!sortColumn.value) {
-    return props.data
+// Reactive colors for sentiment text
+const positiveColor = ref('#4CAF50') // Default green
+const negativeColor = ref('#F44336') // Default red
+const neutralColor = ref('#FFEB3B') // Default yellow
+
+onMounted(() => {
+  const style = getComputedStyle(document.documentElement);
+  positiveColor.value = style.getPropertyValue('--ui-color-success-500').trim() || positiveColor.value;
+  negativeColor.value = style.getPropertyValue('--ui-color-error-500').trim() || negativeColor.value;
+  neutralColor.value = style.getPropertyValue('--ui-color-warning-500').trim() || neutralColor.value;
+});
+
+// Format JSON/array values
+const formatCell = (value) => {
+  if (typeof value === 'object' && value !== null) {
+    return JSON.stringify(value)
   }
+  return value
+}
 
+// Sorted Data
+const sortedData = computed(() => {
+  if (!sortColumn.value) return props.data
   return [...props.data].sort((a, b) => {
-    const aValue = a[sortColumn.value]
-    const bValue = b[sortColumn.value]
-
-    if (aValue === null || aValue === undefined) return sortDirection.value === 'asc' ? 1 : -1;
-    if (bValue === null || bValue === undefined) return sortDirection.value === 'asc' ? -1 : 1;
-
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection.value === 'asc'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue)
-    } else {
-      return sortDirection.value === 'asc'
-        ? aValue - bValue
-        : bValue - aValue
-    }
+    const aVal = a[sortColumn.value]
+    const bVal = b[sortColumn.value]
+    if (aVal == null) return sortDirection.value === 'asc' ? 1 : -1
+    if (bVal == null) return sortDirection.value === 'asc' ? -1 : 1
+    return sortDirection.value === 'asc'
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal))
   })
 })
 
-const totalPages = computed(() => {
-  return Math.ceil(sortedData.value.length / itemsPerPage.value)
-})
-
+// Paginated Data
+const totalPages = computed(() => Math.ceil(sortedData.value.length / itemsPerPage.value))
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
-  return sortedData.value.slice(start, end)
+  return sortedData.value.slice(start, start + itemsPerPage.value)
 })
 
+// Sorting
 const sortBy = (column) => {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -127,28 +156,23 @@ const sortBy = (column) => {
     sortColumn.value = column
     sortDirection.value = 'asc'
   }
-  currentPage.value = 1 // Reset to first page on sort change
+  currentPage.value = 1
 }
 
+// Pagination
 const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
+  if (currentPage.value < totalPages.value) currentPage.value++
 }
-
 const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
+  if (currentPage.value > 1) currentPage.value--
 }
 
-// Reset current page if data or filters change
+// Reset to page 1 on data change
 watch(() => props.data, () => {
   currentPage.value = 1
 })
-
 </script>
 
 <style scoped>
-/* No scoped styles needed here as Tailwind classes are used directly */
+/* Tailwind used for styling, no custom CSS required */
 </style>
