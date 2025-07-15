@@ -14,7 +14,7 @@
     "format-check": "prettier . --check"
   },
   "dependencies": {
-    "@nuxt/content": "^3.4.0",
+    "@nuxt/content": "^3.6.3",
     "@nuxt/eslint": "^1.5.2",
     "@nuxt/fonts": "^0.11.4",
     "@nuxt/icon": "^1.11.0",
