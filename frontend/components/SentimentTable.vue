@@ -43,9 +43,9 @@
             <td
               class="px-4 py-3 font-bold"
               :class="{
-                'text-green-400': item.dominant_sentiment === 'positive',
-                'text-red-400': item.dominant_sentiment === 'negative',
-                'text-yellow-400': item.dominant_sentiment === 'neutral'
+                'text-sentiment-positive': item.dominant_sentiment === 'positive',
+                'text-sentiment-negative': item.dominant_sentiment === 'negative',
+                'text-sentiment-neutral': item.dominant_sentiment === 'neutral'
               }"
             >
               {{ item.dominant_sentiment }}
@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   data: {
@@ -106,18 +106,6 @@ const sortColumn = ref(null)
 const sortDirection = ref('asc')
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
-
-// Reactive colors for sentiment text
-const positiveColor = ref('#4CAF50') // Default green
-const negativeColor = ref('#F44336') // Default red
-const neutralColor = ref('#FFEB3B') // Default yellow
-
-onMounted(() => {
-  const style = getComputedStyle(document.documentElement);
-  positiveColor.value = style.getPropertyValue('--ui-color-success-500').trim() || positiveColor.value;
-  negativeColor.value = style.getPropertyValue('--ui-color-error-500').trim() || negativeColor.value;
-  neutralColor.value = style.getPropertyValue('--ui-color-warning-500').trim() || neutralColor.value;
-});
 
 // Format JSON/array values
 const formatCell = (value) => {
@@ -174,5 +162,13 @@ watch(() => props.data, () => {
 </script>
 
 <style scoped>
-/* Tailwind used for styling, no custom CSS required */
+.text-sentiment-positive {
+  color: #27599e;
+}
+.text-sentiment-neutral {
+  color: #a1d5cc;
+}
+.text-sentiment-negative {
+  color: #d9c85f;
+}
 </style>

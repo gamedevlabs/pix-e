@@ -1,6 +1,6 @@
 <template>
   <div class="chart-container">
-    <h3>Sentiment Distribution</h3>
+  
     <Doughnut
       :data="chartData"
       :options="chartOptions"
@@ -31,16 +31,9 @@ const props = defineProps({
   }
 })
 
-const positiveColor = ref('#4CAF50') // Default green
-const negativeColor = ref('#F44336') // Default red
-const neutralColor = ref('#FFEB3B') // Default yellow
-
-onMounted(() => {
-  const style = getComputedStyle(document.documentElement);
-  positiveColor.value = style.getPropertyValue('--ui-color-success-500').trim() || positiveColor.value;
-  negativeColor.value = style.getPropertyValue('--ui-color-error-500').trim() || negativeColor.value;
-  neutralColor.value = style.getPropertyValue('--ui-color-warning-500').trim() || neutralColor.value;
-});
+const positiveColor = ref('#27599e')
+const neutralColor = ref('#a1d5cc')
+const negativeColor = ref('#d9c85f')
 
 const sentimentCounts = computed(() => {
   const counts = {

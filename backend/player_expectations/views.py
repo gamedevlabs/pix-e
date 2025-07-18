@@ -3,6 +3,7 @@ from django.http import JsonResponse
 import os
 
 
+
 def player_expectations_data(request):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     csv_path = os.path.join(base_dir, 'data', 'ABSA_results.csv')
@@ -87,6 +88,32 @@ def player_expectations_data(request):
         .pivot_table(index='dominant_aspect', columns='year', aggfunc='size', fill_value=0)
     )
     heatmap_dict = heatmap_data.to_dict()
+    implicit_path = os.path.join(base_dir, 'data', 'output_aspect_eval_predictions_labeled_data_base.csv')
+    eval_df=pd.read_csv(implicit_path)
+    eval_df['agreement'] = eval_df['agreement'].str.lower()
+    # Strip leading/trailing quotes from both columns
+    eval_df['model_aspect'] = eval_df['model_aspect'].str.strip('"').str.strip("'")
+    eval_df['gpt_aspect'] = eval_df['gpt_aspect'].str.strip('"').str.strip("'")
+
+    df_disagree = eval_df[eval_df['agreement'].isin(['no','no.'])]
+    print("df_disagree head:")
+    print(df_disagree.head())
+    print("df_disagree shape:", df_disagree.shape)
+
+    confusion_pairs = (
+    df_disagree.groupby(['model_aspect', 'gpt_aspect'])
+    .size()
+    .reset_index(name='count')
+    .sort_values(by='count', ascending=False))
+
+    top_confusions = confusion_pairs.sort_values(by='count', ascending=False).head(10)
+    top_confusions['pair'] = top_confusions['model_aspect'] + ' → ' + top_confusions['gpt_aspect']
+    confusions_list = top_confusions[['pair', 'count']].to_dict(orient='records')
+
+    print("top_confusions:")
+    print(top_confusions)
+    print("confusions_list:")
+    print(confusions_list)
 
     return JsonResponse({
         'aspectFrequency': aspect_freq,
@@ -94,4 +121,5 @@ def player_expectations_data(request):
         'trendOverTime': trend_data,
         'sentimentPie': sentiment_dist,
         'heatmap': heatmap_dict,
+        'topConfusions': confusions_list
     }, safe=False)

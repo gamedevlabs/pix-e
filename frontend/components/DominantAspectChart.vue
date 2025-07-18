@@ -53,13 +53,14 @@ const aspectCounts = computed(() => {
 const chartData = computed(() => {
   const labels = Object.keys(aspectCounts.value)
   const data = Object.values(aspectCounts.value)
+  const poster_palette = ['#27599e', '#a1d5cc', '#d9c85f', '#3b6cb2', '#69a89f']
 
   return {
     labels: labels,
     datasets: [
       {
         label: 'Number of Mentions',
-        backgroundColor: '#00CED1', // DarkTurquoise
+        backgroundColor: poster_palette,
         data: data,
       },
     ],
