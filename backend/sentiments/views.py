@@ -54,16 +54,18 @@ class SentimentData(APIView):
         print(f"df_implicit shape: {df_implicit.shape}, columns: {df_implicit.columns.tolist()}")
         print(f"df_all shape: {df_all.shape}, columns: {df_all.columns.tolist()}")
 
+        # Define condition for 'not_assigned' reviews
+        not_assigned_condition = df_all['expectations'].isnull() | (df_all['expectations'] == '') | (df_all['expectations'] == '[]')
+
         # Filter dataset based on type
         if expectation_type == 'explicit':
-            df = df_all[df_all['expectation_type'] == 'explicit'].copy()
+            df = df_all[(df_all['expectation_type'] == 'explicit') & ~not_assigned_condition].copy()
         elif expectation_type == 'implicit':
-            df = df_all[df_all['expectation_type'] == 'implicit'].copy()
+            df = df_all[(df_all['expectation_type'] == 'implicit') & ~not_assigned_condition].copy()
         elif expectation_type == 'all':
-            df = df_all.copy()
+            df = df_all[~not_assigned_condition].copy()
         elif expectation_type == 'not_assigned':
-            # Filter for entries where 'expectations' is None or an empty string
-            df = df_all[df_all['expectations'].isnull() | (df_all['expectations'] == '') | (df_all['expectations'] == '[]')].copy()
+            df = df_all[not_assigned_condition].copy()
         else:
             return Response(
                 {"error": "Invalid type parameter. Use 'explicit', 'implicit', 'all', or 'not_assigned'."},

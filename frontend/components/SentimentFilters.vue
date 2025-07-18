@@ -9,6 +9,10 @@
         :options="datasetOptions"
         v-model="selectedDatasetArray"
         placeholder="All Expectations"
+       
+        :single-select="true"
+       
+        
       />
     </div>
 
@@ -45,57 +49,69 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import MultiSelectFilter from './MultiSelectFilter.vue'
+import { ref, watch } from 'vue';
+import MultiSelectFilter from './MultiSelectFilter.vue';
 
 const props = defineProps({
-  sentiments: Array,
-  selectedDataset: String
-})
-const emit = defineEmits(['filter-change', 'dataset-change'])
+  selectedDataset: String,
+  uniqueGenres: Array,
+  selectedGenres: Array,
+  uniqueSentiments: Array,
+  selectedSentiment: String,
+  uniqueGames: Array,
+  selectedGames: Array
+});
 
-// Dataset options
+const emit = defineEmits([
+  'dataset-change',
+  'genre-change',
+  'sentiment-change',
+  'game-change'
+]);
+
 const datasetOptions = [
   'All Expectations',
   'Explicit Expectations',
   'Implicit Expectations',
   'Not Assigned'
-]
+];
 
-// MultiSelectFilter returns array so wrap single dataset value
-const selectedDatasetArray = ref([props.selectedDataset])
-const selectedGenre = ref([])
-const selectedSentimentArray = ref([])
-const selectedGame = ref([])
+const datasetMapping = {
+  'All Expectations': 'all',
+  'Explicit Expectations': 'explicit',
+  'Implicit Expectations': 'implicit',
+  'Not Assigned': 'not_assigned'
+};
 
-// Emit dataset change when user selects new dataset
+// Create a reverse mapping to find the label from the prop value
+const reverseDatasetMapping = Object.fromEntries(
+  Object.entries(datasetMapping).map(([key, value]) => [value, key])
+);
+
+// Initialize with the correct label
+const initialLabel = reverseDatasetMapping[props.selectedDataset] || 'All Expectations';
+const selectedDatasetArray = ref([initialLabel]);
+
+const selectedGenre = ref(props.selectedGenres);
+const selectedSentimentArray = ref(props.selectedSentiment ? [props.selectedSentiment] : []);
+const selectedGame = ref(props.selectedGames);
+
+// Watchers to emit changes
 watch(selectedDatasetArray, (newVal) => {
-  const datasetValue = newVal[0] || 'all'
-  emit('dataset-change', datasetValue)
-})
+  const selectedValue = newVal[0] || 'All Expectations';
+  const datasetValue = datasetMapping[selectedValue] || 'all';
+  emit('dataset-change', datasetValue);
+});
 
-// Emit filter changes for genre, sentiment, game
-const applyFilters = () => {
-  emit('filter-change', {
-    genre: selectedGenre.value,
-    sentiment: selectedSentimentArray.value[0] || '', // single select
-    game: selectedGame.value
-  })
-}
+watch(selectedGenre, (newVal) => {
+  emit('genre-change', newVal);
+});
 
-// Watch for filter changes
-watch([selectedGenre, selectedSentimentArray, selectedGame], applyFilters, { deep: true })
+watch(selectedSentimentArray, (newVal) => {
+  emit('sentiment-change', newVal[0] || '');
+});
 
-// Unique filter options
-const uniqueGenres = computed(() =>
-  [...new Set(props.sentiments.flatMap(s =>
-    JSON.parse(s.genres.replace(/'/g, '"'))
-  ))].sort()
-)
-const uniqueSentiments = computed(() =>
-  [...new Set(props.sentiments.map(s => s.dominant_sentiment).filter(Boolean))].sort()
-)
-const uniqueGames = computed(() =>
-  [...new Set(props.sentiments.map(s => s.name).filter(Boolean))].sort()
-)
+watch(selectedGame, (newVal) => {
+  emit('game-change', newVal);
+});
 </script>
