@@ -11,7 +11,8 @@ ValidationPrompt = """Validate the following Game Design Pillar.
             Answer directly as if you are giving your feedback to the designer."""
 
 OverallFeedbackPrompt = """Assume the role of a game design expert.
-    Evaluate if the following Game Design Pillars fit the following Game Design Description.
+    Evaluate if the following Game Design Pillars fit the
+    following Game Design Description.
     Game Design Description: %s
 
     Pillars: %s

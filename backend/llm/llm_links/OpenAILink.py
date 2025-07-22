@@ -37,7 +37,13 @@ class OpenAILink(LLMLink):
             input=prompt,
             text_format=PillarResponse,
         )
-        return response.output_parsed
+        response: PillarResponse = response.output_parsed
+        # Filtering issues with low severity (only necessary for GPT)
+        response.structuralIssues = [
+            issue for issue in response.structuralIssues if issue.severity > 1
+        ]
+        response.hasStructureIssue = len(response.structuralIssues) > 0
+        return response
 
     def improve_pillar(self, pillar: Pillar) -> Pillar:
         prompt = ImprovePillarPrompt % (pillar.name, pillar.description)
