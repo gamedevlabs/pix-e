@@ -4,7 +4,8 @@ from openai import OpenAI
 
 from llm.llm_links.LLMLink import LLMLink
 from llm.llm_links.prompts import *
-from llm.llm_links.responseSchemes import PillarResponse, StringFeedback, FixablePillar, PillarsInContextResponse
+from llm.llm_links.responseSchemes import PillarResponse, StringFeedback, LLMPillar, \
+    PillarsInContextResponse, PillarCompletenessResponse, PillarContradictionResponse
 from llm.models import Pillar
 
 
@@ -50,13 +51,23 @@ class OpenAILink(LLMLink):
         response = self.client.responses.parse(
             model="gpt-4o-mini",
             input=prompt,
-            text_format=FixablePillar,
+            text_format=LLMPillar,
         )
-        fixed_pillar: FixablePillar = response.output_parsed
+        fixed_pillar: LLMPillar = response.output_parsed
         pillar.name = fixed_pillar.name
         pillar.description = fixed_pillar.description
         pillar.save()
         return pillar
 
     def evaluate_context_with_pillars(self, pillars: list[Pillar], context: str) -> StringFeedback:
+        raise NotImplementedError()
+
+    def evaluate_pillar_completeness(self,
+                                      pillars: list[Pillar],
+                                      context: str) -> PillarCompletenessResponse:
+        raise NotImplementedError()
+
+    def evaluate_pillar_contradictions(self,
+                                       pillars: list[Pillar],
+                                       context: str) -> PillarContradictionResponse:
         raise NotImplementedError()

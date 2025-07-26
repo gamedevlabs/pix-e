@@ -11,12 +11,17 @@ export function usePillars() {
     proposedAdditions: [],
   })
 
+  const pillarCompleteness = ref<PillarCompletenessFeedback>({
+    proposedAdditions: [],
+    ideaIssues: [],
+  })
+
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
 
   async function getPillarsInContextFeedback() {
-    llmFeedback.value = await pillarsApi.getPillarsInContextFeedbackAPICall()
+    //llmFeedback.value = await pillarsApi.getPillarsCompletenessAPICall() //deprecated
   }
 
   async function validatePillar(pillar: Pillar) {
@@ -26,13 +31,25 @@ export function usePillars() {
   async function fixPillarWithAI(pillar: Pillar) {
     return await pillarsApi.fixPillarWithAIAPICall(pillar)
   }
+
+  async function getPillarCompleteness(){
+    pillarCompleteness.value = await pillarsApi.getPillarsCompletenessAPICall()
+  }
+
+  async function getPillarContradictions() {
+    return await pillarsApi.getPillarsContradictionsAPICall()
+  }
+
   return {
     ...basics,
     designIdea,
     llmFeedback,
+    pillarCompleteness,
     validatePillar,
     updateDesignIdea,
     getPillarsInContextFeedback,
     fixPillarWithAI,
+    getPillarCompleteness,
+    getPillarContradictions,
   }
 }

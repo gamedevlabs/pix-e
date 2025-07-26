@@ -13,7 +13,8 @@ const {
   deleteItem: deletePillar,
   designIdea,
   llmFeedback,
-  getPillarsInContextFeedback,
+  pillarCompleteness,
+  getPillarCompleteness,
   updateDesignIdea,
 } = usePillars()
 
@@ -88,26 +89,22 @@ async function dismissIssue(pillar: Pillar, index: number) {
             color="secondary"
             variant="soft"
             loading-auto
-            @click="getPillarsInContextFeedback"
+            @click="getPillarCompleteness"
           />
         </h2>
 
         <div class="w-full p-4 gap-4">
           <!-- Direct Feedback -->
-          <div v-for="pillar in llmFeedback.pillarFeedback" :key="pillar.name">
-            <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
+          <div v-for="pillar in pillarCompleteness.ideaIssues" :key="pillar.name">
+            <h3 class="text-lg font-semibold">{{ pillar.name + " " + pillar.pillarId}}</h3>
             <p>{{ pillar.description }}</p>
           </div>
         </div>
         <h2 class="text-2xl font-bold">Additions:</h2>
         <!-- Additional Feedback -->
         <div class="w-full p-4 gap-4">
-          <h3 class="text-lg font-semibold">General Additions</h3>
-          <p v-if="llmFeedback.additionalFeedback">
-            {{ llmFeedback.additionalFeedback }}
-          </p>
-          <div v-for="pillar in llmFeedback.proposedAdditions" :key="pillar.name">
-            <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
+          <div v-for="pillar in pillarCompleteness.proposedAdditions" :key="pillar.name">
+            <h3 class="text-lg font-semibold">{{ pillar.name + " " + pillar.pillarId}}</h3>
             <p>{{ pillar.description }}</p>
           </div>
         </div>
