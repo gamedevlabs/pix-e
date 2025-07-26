@@ -1,7 +1,13 @@
 ﻿type PillarDTO = {
-  id: number
+  pillarId: number
   name: string
   description: string
+}
+
+type ContradictionIssue = {
+  pillarOneTitle: string
+  pillarTwoTitle: string
+  reason: string
 }
 
 interface Pillar extends NamedEntity {
@@ -26,14 +32,23 @@ type PillarFeedback = {
   content_feedback: string
 }
 
+type PillarCompletenessFeedback = {
+  proposedAdditions: PillarDTO[]
+  ideaIssues: PillarDTO[]
+}
+
+type PillarContradictionsFeedback = {
+  hasContradictions: boolean
+  contradictions: ContradictionIssue[]
+}
+
 type PillarsInContextFeedback = {
   pillarFeedback: {
-    name: string,
-    description: string,
-  }[]
-  additionalFeedback: string
-  proposedAdditions: {
     name: string
     description: string
   }[]
+  additionalFeedback: string
+  proposedAdditions: PillarDTO[]
 }
+
+

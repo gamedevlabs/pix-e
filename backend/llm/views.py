@@ -6,11 +6,12 @@ from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .llm_links.LLMSwitcher import LLMSwitcher
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
+
 
 # Create your views here.
 
@@ -48,33 +49,15 @@ class DesignView(ModelViewSet):
         )
 
 
-class OverallFeedbackView(APIView):
+class PillarFeedbackView(ViewSet):
     def __init__(self, **kwargs):
         super().__init__()
         self.llmSwitcher = LLMSwitcher()
 
-    def post(self, request):
+    @action(detail=True, methods=["POST"], url_path="validate")
+    def validate_pillar(self, request, pk):
         try:
-            design = GameDesignDescription.objects.first()
-            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
-
-            model = request.data["model"]
-            llm = self.llmSwitcher.get_llm(model)
-            answer = llm.evaluate_pillars_in_context(pillars, design.description)
-
-            return HttpResponse(answer.model_dump_json(), content_type="application/json", status=200)
-        except Exception as e:
-            return HttpResponse({"error": str(e)}, status=404)
-
-
-class PillarFeedbackView(APIView):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.llmSwitcher = LLMSwitcher()
-
-    def post(self, request, id):
-        try:
-            pillar = Pillar.objects.filter(id=id).first()
+            pillar = Pillar.objects.filter(id=pk).first()
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_pillar(pillar)
@@ -86,15 +69,10 @@ class PillarFeedbackView(APIView):
             print(e)
             return HttpResponse({"error": e}, status=500)
 
-
-class FixPillarView(APIView):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.llmSwitcher = LLMSwitcher()
-
-    def post(self, request, id):
+    @action(detail=True, methods=["POST"], url_path="fix")
+    def fix_pillar(self, request, pk):
         try:
-            pillar = Pillar.objects.filter(id=id).first()
+            pillar = Pillar.objects.filter(id=pk).first()
             llm = self.llmSwitcher.get_llm(request.data["model"])
             pillar = llm.improve_pillar(pillar)
             data = PillarSerializer(pillar).data
@@ -103,7 +81,9 @@ class FixPillarView(APIView):
             return HttpResponse({"error": str(e)}, status=500)
 
 
-class EvaluateContextView(APIView):
+
+
+class EvaluateContextView(ViewSet):
     def __init__(self, **kwargs):
         super().__init__()
         self.llmSwitcher = LLMSwitcher()
@@ -114,7 +94,59 @@ class EvaluateContextView(APIView):
             if not context:
                 return HttpResponse({"error": "Context is required"}, status=400)
             llm = self.llmSwitcher.get_llm(request.data["model"])
+            # todo currently nonsensical
             response = llm.evaluate_context_with_pillars(context)
             return JsonResponse(response.model_dump(), status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=500)
+
+
+class LLMFeedbackView(ViewSet):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.llmSwitcher = LLMSwitcher()
+
+    @action(detail=False, methods=["POST"], url_path="overall")
+    def overall_feedback(self, request):
+        try:
+            design = GameDesignDescription.objects.first()
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillars_in_context(pillars, design.description)
+
+            return HttpResponse(answer.model_dump_json(),
+                                content_type="application/json", status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="completeness")
+    def completeness_feedback(self, request):
+        try:
+            design = GameDesignDescription.objects.first()
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillar_completeness(pillars, design.description)
+
+            return HttpResponse(answer.model_dump_json(),
+                                content_type="application/json", status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="contradictions")
+    def contradictions_feedback(self, request):
+        try:
+            design = GameDesignDescription.objects.first()
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillar_contradictions(pillars, design.description)
+
+            return HttpResponse(answer.model_dump_json(),
+                                content_type="application/json", status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)

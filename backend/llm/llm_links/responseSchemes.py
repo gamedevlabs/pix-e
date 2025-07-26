@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
 
+
 class StringFeedback(BaseModel):
     feedback: str
+
 
 class StructuralIssue(BaseModel):
     title: str
@@ -16,14 +18,20 @@ class PillarResponse(BaseModel):
     structuralIssues: list[StructuralIssue]
     content_feedback: str
 
+class ContradictionIssue(BaseModel):
+    pillarOneTitle: str
+    pillarTwoTitle: str
+    reason: str
 
-class FixablePillar(BaseModel):
+
+class LLMPillar(BaseModel):
+    pillarId: int
     name: str
     description: str
 
+
 class PillarsInContextResponse(BaseModel):
-    pillarFeedback: list[
-        FixablePillar # weak naming type
-    ]
-    additionalFeedback: str
-    proposedAdditions: list[FixablePillar]
+    proposedAdditions: list[LLMPillar]
+    ideaIssues: list[LLMPillar]
+    contradictions: list[ContradictionIssue]
+

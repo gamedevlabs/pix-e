@@ -14,6 +14,10 @@ class Pillar(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"ID: ({self.id}), {self.name}:\n {self.description}"
+
+
 
 class GameDesignDescription(models.Model):
     user = models.OneToOneField(

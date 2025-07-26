@@ -3,20 +3,20 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     DesignView,
-    FixPillarView,
-    OverallFeedbackView,
     PillarFeedbackView,
     PillarViewSet,
+    LLMFeedbackView,
 )
 
 app_name = "llm"
 
 router = DefaultRouter()
 router.register(r"pillars", PillarViewSet, basename="pillars")
+router.register(r"pillars", PillarFeedbackView, basename="pillar-feedback")
+router.register(r"feedback", LLMFeedbackView, basename="llm-feedback")
 
 urlpatterns = router.urls
 
-router = DefaultRouter()
 
 designView = DesignView.as_view(
     {
@@ -32,22 +32,4 @@ designCreate = DesignView.as_view(
 )
 urlpatterns += [
     path("design/get_or_create/", designCreate, name="design-get_or_create")
-]
-
-# router.register(r'design', designView, basename='design')
-
-urlpatterns += router.urls
-
-urlpatterns += [
-    path("feedback/", OverallFeedbackView.as_view()),
-    path(
-        "pillars/<int:id>/validate/",
-        PillarFeedbackView.as_view(),
-        name="pillar-validate",
-    ),
-    path(
-        "pillars/<int:id>/fix/",
-        FixPillarView.as_view(),
-        name="pillar-fix",
-    ),
 ]

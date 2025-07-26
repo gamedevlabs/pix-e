@@ -1,6 +1,7 @@
 ﻿export function usePillarsApi() {
   const config = useRuntimeConfig()
   const llm = useLLM()
+
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
@@ -19,9 +20,10 @@
     }
   }
 
-  async function getPillarsInContextFeedback() {
-    return (
-      await $fetch<PillarsInContextFeedback>(`${config.public.apiBase}/llm/feedback/`, {
+  async function getPillarsCompletenessAPICall() {
+    return await $fetch<PillarCompletenessFeedback>(
+      `${config.public.apiBase}/llm/feedback/completeness/`,
+      {
         method: 'POST',
         body: {
           model: llm.active_llm,
@@ -30,7 +32,23 @@
         headers: {
           'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
-      })
+      },
+    )
+  }
+
+  async function getPillarsContradictionsAPICall() {
+    return await $fetch<PillarContradictionsFeedback>(
+      `${config.public.apiBase}/llm/feedback/contradictions/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
     )
   }
 
@@ -62,10 +80,12 @@
       } as HeadersInit,
     })
   }
+
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
-    getPillarsInContextFeedbackAPICall: getPillarsInContextFeedback,
+    getPillarsCompletenessAPICall,
+    getPillarsContradictionsAPICall,
     fixPillarWithAIAPICall,
   }
 }
