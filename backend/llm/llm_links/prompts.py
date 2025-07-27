@@ -11,15 +11,6 @@ For each feedback limit your answer to one sentence.
 Answer as if you were talking directly to the designer.
 """
 
-OverallFeedbackPrompt = \
-"""Assume the role of a game design expert.
-Evaluate if the following Game Design Pillars fit the
-following Game Design Description.
-Game Design Description: %s
-
-Pillars: %s
-"""
-
 ImprovePillarPrompt = \
 """Improve the following Game Design Pillar.
 Check for structural issues regarding the following points:
@@ -32,6 +23,7 @@ Pillar Description: %s
 Rewrite erroneous parts of the pillar and return a new pillar object.
 """
 
+# Deprecated Prompt, split into multiple prompts below
 PillarInContextPrompt = \
 """Assume the role of a game design expert.
 Evaluate if the following Game Design Idea is sufficiently
@@ -43,6 +35,35 @@ Also evaluate if the pillars stand in contradiction towards each other.
 Game Design Idea: %s
 
 Design Pillars: %s
-
 """
 
+PillarCompletenessPrompt = \
+"""Assume the role of a game design expert.
+Evaluate if the following Game Design Idea is sufficiently
+covered by the following Game Design Pillars.
+
+Game Design Idea: %s
+
+Design Pillars: %s
+"""
+
+PillarContradictionPrompt = \
+"""Assume the role of a game design expert.
+Evaluate if the following Game Design Pillars stand in contradiction
+towards each other. Use the Game Design Idea as context.
+
+Game Design Idea: %s
+
+Design Pillars: %s
+"""
+
+PillarAdditionPrompt = \
+"""Assume the role of a game design expert.
+Evaluate if the following Game Design Idea is sufficiently
+covered by the following Game Design Pillars.
+
+Game Design Idea: %s
+
+Design Pillars: %s
+If not, add new pillars to cover the missing aspects.
+"""

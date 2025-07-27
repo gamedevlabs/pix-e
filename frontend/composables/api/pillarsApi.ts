@@ -20,9 +20,9 @@
     }
   }
 
-  async function getPillarsCompletenessAPICall() {
-    return await $fetch<PillarCompletenessFeedback>(
-      `${config.public.apiBase}/llm/feedback/completeness/`,
+  async function getPillarsInContextAPICall() {
+    return await $fetch<PillarsInContextFeedback>(
+      `${config.public.apiBase}/llm/feedback/overall/`,
       {
         method: 'POST',
         body: {
@@ -84,7 +84,7 @@
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
-    getPillarsCompletenessAPICall,
+    getPillarsInContextAPICall,
     getPillarsContradictionsAPICall,
     fixPillarWithAIAPICall,
   }

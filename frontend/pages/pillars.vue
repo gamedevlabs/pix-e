@@ -13,8 +13,7 @@ const {
   deleteItem: deletePillar,
   designIdea,
   llmFeedback,
-  pillarCompleteness,
-  getPillarCompleteness,
+  getPillarsInContextFeedback,
   updateDesignIdea,
 } = usePillars()
 
@@ -89,25 +88,36 @@ async function dismissIssue(pillar: Pillar, index: number) {
             color="secondary"
             variant="soft"
             loading-auto
-            @click="getPillarCompleteness"
+            @click="getPillarsInContextFeedback"
           />
         </h2>
 
         <div class="w-full p-4 gap-4">
           <!-- Direct Feedback -->
-          <div v-for="pillar in pillarCompleteness.ideaIssues" :key="pillar.name">
+          <div v-for="pillar in llmFeedback.ideaIssues" :key="pillar.name">
             <h3 class="text-lg font-semibold">{{ pillar.name + " " + pillar.pillarId}}</h3>
             <p>{{ pillar.description }}</p>
           </div>
         </div>
-        <h2 class="text-2xl font-bold">Additions:</h2>
-        <!-- Additional Feedback -->
+
+        <!-- Contradictions Feedback -->
+        <h2 class="text-2xl font-bold">Contradictions:</h2>
         <div class="w-full p-4 gap-4">
-          <div v-for="pillar in pillarCompleteness.proposedAdditions" :key="pillar.name">
+          <div v-for="contradiction in llmFeedback.contradictions" :key="contradiction.pillarOneId">
+            <h3 class="text-lg font-semibold">{{ contradiction.pillarOneTitle + " vs " + contradiction.pillarTwoTitle}}</h3>
+            <p>{{ contradiction.reason }}</p>
+          </div>
+        </div>
+
+        <!-- Additions Feedback -->
+        <h2 class="text-2xl font-bold">Additions:</h2>
+        <div class="w-full p-4 gap-4">
+          <div v-for="pillar in llmFeedback.proposedAdditions" :key="pillar.name">
             <h3 class="text-lg font-semibold">{{ pillar.name + " " + pillar.pillarId}}</h3>
             <p>{{ pillar.description }}</p>
           </div>
         </div>
+
       </div>
     </div>
 

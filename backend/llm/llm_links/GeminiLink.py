@@ -21,26 +21,6 @@ class GeminiLink(LLMLink):
             raise ValueError("GEMINI_API_KEY environment variable not set")
         self.client = genai.Client(api_key=key)
 
-    def evaluate_pillars_in_context(self, pillars: list[Pillar],
-                                    context: str) -> PillarsInContextResponse:
-        prompt = OverallFeedbackPrompt % (
-            context,
-            "\n".join(
-                [f"{pillar.name}:\n {pillar.description}" for pillar in pillars]
-            ),
-        )
-        # noinspection PyTypeChecker
-        response = self.client.models.generate_content(
-            model=GeminiLink.MODELNAME,
-            contents=prompt,
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": PillarsInContextResponse,
-            },
-        )
-        print(response.parsed)
-        return response.parsed
-
     def evaluate_pillar(self, pillar: Pillar) -> PillarResponse:
         prompt = ValidationPrompt % (pillar.name, pillar.description)
         # noinspection PyTypeChecker
@@ -71,11 +51,17 @@ class GeminiLink(LLMLink):
         pillar.save()
         return pillar
 
+
+    def evaluate_context_with_pillars(self, pillars: list[Pillar],
+                                      context: str) -> StringFeedback:
+        raise NotImplementedError()
+
     def evaluate_pillar_completeness(self,
                                      pillars: list[Pillar],
-                                     context: str) -> PillarCompletenessResponse:
-        prompt = PillarInContextPrompt % (
-            context, "\n".join([pillar.__str__() for pillar in pillars]),
+                                     designIdea: str) -> PillarCompletenessResponse:
+        prompt = PillarCompletenessPrompt % (
+            designIdea,
+            "\n".join([pillar.__str__() for pillar in pillars]),
         )
         # noinspection PyTypeChecker
         response = self.client.models.generate_content(
@@ -91,11 +77,9 @@ class GeminiLink(LLMLink):
     def evaluate_pillar_contradictions(self,
                                        pillars: list[Pillar],
                                        context: str) -> PillarContradictionResponse:
-        prompt = ContradictionPrompt % (
+        prompt = PillarContradictionPrompt % (
             context,
-            "\n".join(
-                [f"{pillar.name}:\n {pillar.description}" for pillar in pillars]
-            ),
+            "\n".join([pillar.__str__() for pillar in pillars]),
         )
         # noinspection PyTypeChecker
         response = self.client.models.generate_content(
@@ -108,6 +92,20 @@ class GeminiLink(LLMLink):
         )
         return response.parsed
 
-    def evaluate_context_with_pillars(self, pillars: list[Pillar],
-                                      context: str) -> StringFeedback:
-        raise NotImplementedError()
+    def suggest_pillar_additions(self,
+                                 pillars: list[Pillar],
+                                 context: str) -> PillarAdditionsFeedback:
+        prompt = PillarAdditionPrompt % (
+            context,
+            "\n".join([pillar.__str__() for pillar in pillars]),
+        )
+        # noinspection PyTypeChecker
+        response = self.client.models.generate_content(
+            model=GeminiLink.MODELNAME,
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": PillarAdditionsFeedback,
+            },
+        )
+        return response.parsed

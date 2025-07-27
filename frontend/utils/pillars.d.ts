@@ -5,6 +5,8 @@
 }
 
 type ContradictionIssue = {
+  pillarOneId: number
+  pillarTwoId: number
   pillarOneTitle: string
   pillarTwoTitle: string
   reason: string
@@ -43,12 +45,9 @@ type PillarContradictionsFeedback = {
 }
 
 type PillarsInContextFeedback = {
-  pillarFeedback: {
-    name: string
-    description: string
-  }[]
-  additionalFeedback: string
+  ideaIssues: PillarDTO[]
   proposedAdditions: PillarDTO[]
+  contradictions: ContradictionIssue[]
 }
 
 

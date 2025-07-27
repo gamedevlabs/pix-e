@@ -18,11 +18,6 @@ class PillarResponse(BaseModel):
     structuralIssues: list[StructuralIssue]
     content_feedback: str
 
-class ContradictionIssue(BaseModel):
-    pillarOneTitle: str
-    pillarTwoTitle: str
-    reason: str
-
 
 class LLMPillar(BaseModel):
     pillarId: int
@@ -30,8 +25,27 @@ class LLMPillar(BaseModel):
     description: str
 
 
-class PillarsInContextResponse(BaseModel):
-    proposedAdditions: list[LLMPillar]
-    ideaIssues: list[LLMPillar]
+class ContradictionIssue(BaseModel):
+    pillarOneTitle: str
+    pillarTwoTitle: str
+    reason: str
+
+
+class PillarCompletenessResponse(BaseModel):
+    pillarFeedback: list[LLMPillar]
+
+
+class PillarContradictionResponse(BaseModel):
+    hasContradictions: bool
     contradictions: list[ContradictionIssue]
+
+
+class PillarAdditionsFeedback(BaseModel):
+    additions: list[LLMPillar]
+
+
+class PillarsInContextResponse(BaseModel):
+    coverage: PillarCompletenessResponse
+    contradictions: PillarContradictionResponse
+    proposedAdditions: PillarAdditionsFeedback
 
