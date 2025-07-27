@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .llm_links.LLMSwitcher import LLMSwitcher
+from .llm_links.responseSchemes import PillarsInContextResponse
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
@@ -81,8 +82,6 @@ class PillarFeedbackView(ViewSet):
             return HttpResponse({"error": str(e)}, status=500)
 
 
-
-
 class EvaluateContextView(ViewSet):
     def __init__(self, **kwargs):
         super().__init__()
@@ -109,9 +108,11 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="overall")
     def overall_feedback(self, request):
         try:
-            design = GameDesignDescription.objects.first()
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user).first()
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
 
+            answer: PillarsInContextResponse = None
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_pillars_in_context(pillars, design.description)
@@ -122,10 +123,10 @@ class LLMFeedbackView(ViewSet):
             return HttpResponse({"error": str(e)}, status=404)
 
     @action(detail=False, methods=["POST"], url_path="completeness")
-    def completeness_feedback(self, request):
+    def completeness(self, request):
         try:
-            design = GameDesignDescription.objects.first()
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            design = GameDesignDescription.objects.filter(user=self.request.user).first()
 
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
@@ -137,14 +138,29 @@ class LLMFeedbackView(ViewSet):
             return HttpResponse({"error": str(e)}, status=404)
 
     @action(detail=False, methods=["POST"], url_path="contradictions")
-    def contradictions_feedback(self, request):
+    def contradictions(self, request):
         try:
-            design = GameDesignDescription.objects.first()
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            design = GameDesignDescription.objects.filter(user=self.request.user).first()
 
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_pillar_contradictions(pillars, design.description)
+
+            return HttpResponse(answer.model_dump_json(),
+                                content_type="application/json", status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="additions")
+    def additions(self, request):
+        try:
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            design = GameDesignDescription.objects.filter(user=self.request.user).first()
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.suggest_pillar_additions(pillars, design.description)
 
             return HttpResponse(answer.model_dump_json(),
                                 content_type="application/json", status=200)

@@ -6,9 +6,9 @@ export function usePillars() {
   const pillarsApi = usePillarsApi()
   const designIdea = ref<string>('')
   const llmFeedback = ref<PillarsInContextFeedback>({
-    pillarFeedback: [],
-    additionalFeedback: 'There is no feedback yet.',
+    ideaIssues: [],
     proposedAdditions: [],
+    contradictions: [],
   })
 
   const pillarCompleteness = ref<PillarCompletenessFeedback>({
@@ -21,7 +21,7 @@ export function usePillars() {
   }
 
   async function getPillarsInContextFeedback() {
-    //llmFeedback.value = await pillarsApi.getPillarsCompletenessAPICall() //deprecated
+    llmFeedback.value = await pillarsApi.getPillarsInContextAPICall()
   }
 
   async function validatePillar(pillar: Pillar) {
@@ -30,10 +30,6 @@ export function usePillars() {
 
   async function fixPillarWithAI(pillar: Pillar) {
     return await pillarsApi.fixPillarWithAIAPICall(pillar)
-  }
-
-  async function getPillarCompleteness(){
-    pillarCompleteness.value = await pillarsApi.getPillarsCompletenessAPICall()
   }
 
   async function getPillarContradictions() {
@@ -49,7 +45,6 @@ export function usePillars() {
     updateDesignIdea,
     getPillarsInContextFeedback,
     fixPillarWithAI,
-    getPillarCompleteness,
     getPillarContradictions,
   }
 }

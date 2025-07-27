@@ -50,7 +50,7 @@ async function handleValidation() {
 <template>
   <NamedEntityCard
     :named-entity="{
-      name: pillar.name,
+      name: pillar.name + pillar.id,
       description: pillar.description,
     }"
     :is-being-edited="isBeingEdited"

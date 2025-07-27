@@ -17,7 +17,8 @@ class OpenAILink(LLMLink):
         self.client = OpenAI(api_key=key)  # could also auto infer from environment
         pass
 
-    def evaluate_pillars_in_context(self, pillars: list[Pillar], context: str) -> PillarsInContextResponse:
+    def evaluate_pillars_in_context(self, pillars: list[Pillar],
+                                    context: str) -> PillarsInContextResponse:
         prompt = OverallFeedbackPrompt % (
             context,
             "\n".join(
@@ -41,7 +42,7 @@ class OpenAILink(LLMLink):
         response: PillarResponse = response.output_parsed
         # Filtering issues with low severity (only necessary for GPT)
         response.structuralIssues = [
-            issue for issue in response.structuralIssues if issue.severity > 1
+            issue for issue in response.structuralIssues if issue.severity >= 2
         ]
         response.hasStructureIssue = len(response.structuralIssues) > 0
         return response
@@ -59,12 +60,13 @@ class OpenAILink(LLMLink):
         pillar.save()
         return pillar
 
-    def evaluate_context_with_pillars(self, pillars: list[Pillar], context: str) -> StringFeedback:
+    def evaluate_context_with_pillars(self, pillars: list[Pillar],
+                                      context: str) -> StringFeedback:
         raise NotImplementedError()
 
     def evaluate_pillar_completeness(self,
-                                      pillars: list[Pillar],
-                                      context: str) -> PillarCompletenessResponse:
+                                     pillars: list[Pillar],
+                                     context: str) -> PillarCompletenessResponse:
         raise NotImplementedError()
 
     def evaluate_pillar_contradictions(self,

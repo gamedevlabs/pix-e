@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 
 from llm.llm_links.responseSchemes import StringFeedback, PillarResponse, \
-    PillarsInContextResponse,
+    PillarsInContextResponse, PillarContradictionResponse, PillarCompletenessResponse, \
+    PillarAdditionsFeedback
 from llm.models import Pillar
 
 
@@ -15,7 +16,7 @@ class LLMLink(ABC):
         """
         pass
 
-    @abstractmethod
+    # Very expensive (literally) function
     def evaluate_pillars_in_context(self,
                                     pillars: list[Pillar],
                                     context: str) -> PillarsInContextResponse:
@@ -25,7 +26,13 @@ class LLMLink(ABC):
         :param context: The context in which to evaluate the pillars.
         :return: A StringFeedback object containing the evaluation results.
         """
-        pass
+        completeness = self.evaluate_pillar_completeness(pillars, context)
+        contradictions = self.evaluate_pillar_contradictions(pillars, context)
+        additions = self.suggest_pillar_additions(pillars, context)
+        response = PillarsInContextResponse(coverage=completeness,
+                                            contradictions=contradictions,
+                                            proposedAdditions=additions)
+        return response
 
     @abstractmethod
     def improve_pillar(self, pillar: Pillar) -> Pillar:
@@ -66,3 +73,16 @@ class LLMLink(ABC):
         :return: A StringFeedback object containing the evaluation results.
         """
         pass
+
+    @abstractmethod
+    def suggest_pillar_additions(self,
+                                      pillars: list[Pillar],
+                                      context: str) -> PillarAdditionsFeedback:
+        """
+        Suggest additional pillars based on the context and existing pillars.
+        :param pillars: A list of Pillar objects to use for evaluation.
+        :param context: The context to evaluate.
+        :return: A list of suggested Pillar objects.
+        """
+        pass
+
