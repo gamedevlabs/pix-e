@@ -69,3 +69,12 @@ Game Design Idea: %s
 Design Pillars: %s
 If not, add new pillars to cover the missing aspects.
 """
+
+ContextInPillarsPrompt = \
+"""Assume the role of a game design expert.
+Evaluate how well the following idea aligns with the given Game Design Pillars.
+
+Idea: %s
+
+Design Pillars: %s
+"""

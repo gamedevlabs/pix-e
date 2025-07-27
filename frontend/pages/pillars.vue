@@ -15,7 +15,11 @@ const {
   llmFeedback,
   getPillarsInContextFeedback,
   updateDesignIdea,
+  getPillarsCompleteness,
+  getPillarsAdditions,
+  getPillarContradictions,
 } = usePillars()
+const additionalFeature = ref('')
 
 await pillarsFetchAll()
 
@@ -84,7 +88,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
           LLM Feedback
           <UButton
             icon="i-lucide-refresh-cw"
-            label="Refresh"
+            label="Refresh All"
             color="secondary"
             variant="soft"
             loading-auto
@@ -93,33 +97,66 @@ async function dismissIssue(pillar: Pillar, index: number) {
         </h2>
 
         <div class="w-full p-4 gap-4">
+          <h2 class="text-2xl font-bold">
+            Coverage:
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="getPillarsCompleteness"
+            />
+          </h2>
           <!-- Direct Feedback -->
-          <div v-for="pillar in llmFeedback.coverage.pillarFeedback" :key="pillar.name">
-            <h3 class="text-lg font-semibold">{{ pillar.name + ' ' + pillar.pillarId }}</h3>
-            <p>{{ pillar.description }}</p>
+          <div class="w-full p-4 gap-4">
+            <div v-for="pillar in llmFeedback.coverage.pillarFeedback" :key="pillar.name">
+              <h3 class="text-lg font-semibold">{{ pillar.name + ' ' + pillar.pillarId }}</h3>
+              <p>{{ pillar.description }}</p>
+            </div>
           </div>
-        </div>
-
-        <!-- Contradictions Feedback -->
-        <h2 class="text-2xl font-bold">Contradictions:</h2>
-        <div class="w-full p-4 gap-4">
-          <div
-            v-for="contradiction in llmFeedback.contradictions.contradictions"
-            :key="contradiction.pillarOneId"
-          >
-            <h3 class="text-lg font-semibold">
-              {{ contradiction.pillarOneTitle + ' vs ' + contradiction.pillarTwoTitle }}
-            </h3>
-            <p>{{ contradiction.reason }}</p>
+          <!-- Contradictions Feedback -->
+          <h2 class="text-2xl font-bold">
+            Contradictions:
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="getPillarContradictions"
+            />
+          </h2>
+          <div class="w-full p-4 gap-4">
+            <div
+              v-for="contradiction in llmFeedback.contradictions.contradictions"
+              :key="contradiction.pillarOneId"
+            >
+              <h3 class="text-lg font-semibold">
+                {{ contradiction.pillarOneTitle + ' vs ' + contradiction.pillarTwoTitle }}
+              </h3>
+              <p>{{ contradiction.reason }}</p>
+            </div>
           </div>
-        </div>
 
-        <!-- Additions Feedback -->
-        <h2 class="text-2xl font-bold">Additions:</h2>
-        <div class="w-full p-4 gap-4">
-          <div v-for="pillar in llmFeedback.proposedAdditions.additions" :key="pillar.name">
-            <h3 class="text-lg font-semibold">{{ pillar.name + ' ' + pillar.pillarId }}</h3>
-            <p>{{ pillar.description }}</p>
+          <!-- Additions Feedback -->
+          <h2 class="text-2xl font-bold">
+            Additions:
+
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="getPillarsAdditions"
+            />
+          </h2>
+          <div class="w-full p-4 gap-4">
+            <div v-for="pillar in llmFeedback.proposedAdditions.additions" :key="pillar.name">
+              <h3 class="text-lg font-semibold">{{ pillar.name + ' ' + pillar.pillarId }}</h3>
+              <p>{{ pillar.description }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -129,7 +166,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
     <div
       class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
     >
-      <h2 class="text-2xl font-semibold mb-4">Game Design Idea:</h2>
+      <h2 class="text-2xl font-semibold mb-4">Core Design Idea:</h2>
       <UTextarea
         v-model="designIdea"
         placeholder="Enter your game design idea here..."
@@ -141,6 +178,19 @@ async function dismissIssue(pillar: Pillar, index: number) {
         autoresize
         class="w-full"
         @focusout="updateDesignIdea"
+      />
+
+      <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Feature:</h2>
+      <UTextarea
+        v-model="additionalFeature"
+        placeholder="Describe an additional feature or mechanic..."
+        variant="outline"
+        color="secondary"
+        size="xl"
+        :rows="5"
+        :max-rows="0"
+        autoresize
+        class="w-full"
       />
     </div>
   </div>

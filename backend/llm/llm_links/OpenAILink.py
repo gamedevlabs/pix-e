@@ -41,11 +41,11 @@ class OpenAILink(LLMLink):
             text_format=PillarResponse,
         )
         response: PillarResponse = response.output_parsed
-        # Filtering issues with low severity (only necessary for GPT)
-        response.structuralIssues = [
-            issue for issue in response.structuralIssues if issue.severity >= 2
-        ]
-        response.hasStructureIssue = len(response.structuralIssues) > 0
+        # todo(reenable after testing) Filtering issues with low severity (only necessary for GPT)
+        # response.structuralIssues = [
+        #    issue for issue in response.structuralIssues if issue.severity >= 2
+        # ]
+        # response.hasStructureIssue = len(response.structuralIssues) > 0
         return response
 
     def improve_pillar(self, pillar: Pillar) -> Pillar:
@@ -61,10 +61,6 @@ class OpenAILink(LLMLink):
         pillar.save()
         return pillar
 
-    def evaluate_context_with_pillars(self, pillars: list[Pillar],
-                                      context: str) -> StringFeedback:
-        raise NotImplementedError()
-
     def evaluate_pillar_completeness(self,
                                      pillars: list[Pillar],
                                      context: str) -> PillarCompletenessResponse:
@@ -76,6 +72,10 @@ class OpenAILink(LLMLink):
         raise NotImplementedError()
 
     def suggest_pillar_additions(self,
-                                      pillars: list[Pillar],
-                                      context: str) -> PillarAdditionsFeedback:
+                                 pillars: list[Pillar],
+                                 context: str) -> PillarAdditionsFeedback:
+        raise NotImplementedError()
+
+    def evaluate_context_with_pillars(self, pillars: list[Pillar],
+                                      context: str) -> StringFeedback:
         raise NotImplementedError()

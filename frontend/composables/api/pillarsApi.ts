@@ -52,6 +52,38 @@
     )
   }
 
+  async function getPillarsCompletenessAPICall() {
+    return await $fetch<PillarCompletenessFeedback>(
+      `${config.public.apiBase}/llm/feedback/completeness/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
+    )
+  }
+
+  async function getPillarsAdditionsAPICall() {
+    return await $fetch<PillarAdditionsFeedback>(
+      `${config.public.apiBase}/llm/feedback/additions/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
+    )
+  }
+
   async function validatePillarAPICall(pillar: Pillar) {
     pillar.llm_feedback = await $fetch<PillarFeedback>(
       `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
@@ -86,6 +118,8 @@
     validatePillarAPICall,
     getPillarsInContextAPICall,
     getPillarsContradictionsAPICall,
+    getPillarsCompletenessAPICall,
+    getPillarsAdditionsAPICall,
     fixPillarWithAIAPICall,
   }
 }

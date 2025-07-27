@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from llm.llm_links.responseSchemes import StringFeedback, PillarResponse, \
     PillarsInContextResponse, PillarContradictionResponse, PillarCompletenessResponse, \
-    PillarAdditionsFeedback
+    PillarAdditionsFeedback, ContextInPillarsResponse
 from llm.models import Pillar
 
 
@@ -86,3 +86,12 @@ class LLMLink(ABC):
         """
         pass
 
+    @abstractmethod
+    def evaluate_context_with_pillars(self, pillars: list[Pillar],
+                                       context: str) -> ContextInPillarsResponse:
+        """
+        Evaluate the context against a list of pillars.
+        :param pillars: A list of Pillar objects to use for evaluation.
+        :param context: The context to evaluate.
+        :return: A StringFeedback object containing the evaluation results.
+        """
