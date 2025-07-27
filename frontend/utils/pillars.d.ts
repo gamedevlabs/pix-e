@@ -35,19 +35,21 @@ type PillarFeedback = {
 }
 
 type PillarCompletenessFeedback = {
-  proposedAdditions: PillarDTO[]
-  ideaIssues: PillarDTO[]
+  pillarFeedback: PillarDTO[]
 }
 
 type PillarContradictionsFeedback = {
-  hasContradictions: boolean
   contradictions: ContradictionIssue[]
 }
 
+type PillarAdditionsFeedback = {
+  additions: PillarDTO[]
+}
+
 type PillarsInContextFeedback = {
-  ideaIssues: PillarDTO[]
-  proposedAdditions: PillarDTO[]
-  contradictions: ContradictionIssue[]
+  coverage: PillarCompletenessFeedback
+  contradictions: PillarContradictionsFeedback
+  proposedAdditions: PillarAdditionsFeedback
 }
 
 

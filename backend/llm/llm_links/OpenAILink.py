@@ -5,7 +5,8 @@ from openai import OpenAI
 from llm.llm_links.LLMLink import LLMLink
 from llm.llm_links.prompts import *
 from llm.llm_links.responseSchemes import PillarResponse, StringFeedback, LLMPillar, \
-    PillarsInContextResponse, PillarCompletenessResponse, PillarContradictionResponse
+    PillarsInContextResponse, PillarCompletenessResponse, PillarContradictionResponse, \
+    PillarAdditionsFeedback
 from llm.models import Pillar
 
 
@@ -72,4 +73,9 @@ class OpenAILink(LLMLink):
     def evaluate_pillar_contradictions(self,
                                        pillars: list[Pillar],
                                        context: str) -> PillarContradictionResponse:
+        raise NotImplementedError()
+
+    def suggest_pillar_additions(self,
+                                      pillars: list[Pillar],
+                                      context: str) -> PillarAdditionsFeedback:
         raise NotImplementedError()

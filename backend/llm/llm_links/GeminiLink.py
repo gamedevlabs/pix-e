@@ -108,4 +108,5 @@ class GeminiLink(LLMLink):
                 "response_schema": PillarAdditionsFeedback,
             },
         )
+        print(response.parsed)
         return response.parsed

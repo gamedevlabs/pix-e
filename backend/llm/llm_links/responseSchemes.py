@@ -20,12 +20,14 @@ class PillarResponse(BaseModel):
 
 
 class LLMPillar(BaseModel):
-    pillarId: int
+    pillarId: int # Massive Security Risk, no time to worry about it
     name: str
     description: str
 
 
 class ContradictionIssue(BaseModel):
+    pillarOneId: int
+    pillarTwoId: int
     pillarOneTitle: str
     pillarTwoTitle: str
     reason: str
@@ -41,7 +43,7 @@ class PillarContradictionResponse(BaseModel):
 
 
 class PillarAdditionsFeedback(BaseModel):
-    additions: list[LLMPillar]
+    additions: list[LLMPillar] # ignore given pillarId, needs to be created by DB
 
 
 class PillarsInContextResponse(BaseModel):
