@@ -13,7 +13,7 @@ export function usePillars() {
       contradictions: [],
     },
     proposedAdditions: {
-      proposedAdditions: [],
+      additions: [],
     },
   })
 
@@ -37,6 +37,14 @@ export function usePillars() {
     llmFeedback.value.contradictions = await pillarsApi.getPillarsContradictionsAPICall()
   }
 
+  async function getPillarsCompleteness() {
+    llmFeedback.value.coverage = await pillarsApi.getPillarsCompletenessAPICall()
+  }
+
+  async function getPillarsAdditions() {
+    llmFeedback.value.proposedAdditions = await pillarsApi.getPillarsAdditionsAPICall()
+  }
+
   return {
     ...basics,
     designIdea,
@@ -46,5 +54,7 @@ export function usePillars() {
     getPillarsInContextFeedback,
     fixPillarWithAI,
     getPillarContradictions,
+    getPillarsCompleteness,
+    getPillarsAdditions,
   }
 }

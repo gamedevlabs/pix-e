@@ -20,7 +20,7 @@ class PillarResponse(BaseModel):
 
 
 class LLMPillar(BaseModel):
-    pillarId: int # Massive Security Risk, no time to worry about it
+    pillarId: int  # Massive Security Risk, no time to worry about it
     name: str
     description: str
 
@@ -43,7 +43,7 @@ class PillarContradictionResponse(BaseModel):
 
 
 class PillarAdditionsFeedback(BaseModel):
-    additions: list[LLMPillar] # ignore given pillarId, needs to be created by DB
+    additions: list[LLMPillar]  # ignore given pillarId, needs to be created by DB
 
 
 class PillarsInContextResponse(BaseModel):
@@ -51,3 +51,12 @@ class PillarsInContextResponse(BaseModel):
     contradictions: PillarContradictionResponse
     proposedAdditions: PillarAdditionsFeedback
 
+
+class ContextInPillarsResponse(BaseModel):
+    rating: int = Field(
+        ge=1, le=5,
+        description="Rating of how good the context fits, from 1 (bad) to 5 (good)"
+    )
+    feedback: str = Field(
+        description="Feedback on how the context fits with the pillars"
+    )

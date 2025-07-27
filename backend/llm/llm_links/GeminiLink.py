@@ -53,8 +53,21 @@ class GeminiLink(LLMLink):
 
 
     def evaluate_context_with_pillars(self, pillars: list[Pillar],
-                                      context: str) -> StringFeedback:
-        raise NotImplementedError()
+                                      context: str) -> ContextInPillarsResponse:
+        prompt = ContextInPillarsPrompt % (
+            context,
+            "\n".join([pillar.__str__() for pillar in pillars]),
+        )
+        # noinspection PyTypeChecker
+        response = self.client.models.generate_content(
+            model=GeminiLink.MODELNAME,
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": ContextInPillarsResponse,
+            },
+        )
+        return response.parsed
 
     def evaluate_pillar_completeness(self,
                                      pillars: list[Pillar],
@@ -108,5 +121,4 @@ class GeminiLink(LLMLink):
                 "response_schema": PillarAdditionsFeedback,
             },
         )
-        print(response.parsed)
         return response.parsed
