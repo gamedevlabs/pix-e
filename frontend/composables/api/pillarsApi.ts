@@ -113,6 +113,23 @@
     })
   }
 
+  async function getContextInPillarsAPICall(context: string) {
+    return await $fetch<ContextInPillarsFeedback>(
+      `${config.public.apiBase}/llm/feedback/context/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+          context: context,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
+    )
+  }
+
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
@@ -121,5 +138,6 @@
     getPillarsCompletenessAPICall,
     getPillarsAdditionsAPICall,
     fixPillarWithAIAPICall,
+    getContextInPillarsAPICall,
   }
 }

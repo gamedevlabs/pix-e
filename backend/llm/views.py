@@ -82,24 +82,6 @@ class PillarFeedbackView(ViewSet):
             return HttpResponse({"error": str(e)}, status=500)
 
 
-class EvaluateContextView(ViewSet):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.llmSwitcher = LLMSwitcher()
-
-    def post(self, request):
-        try:
-            context = request.data.get("context", "")
-            if not context:
-                return HttpResponse({"error": "Context is required"}, status=400)
-            llm = self.llmSwitcher.get_llm(request.data["model"])
-            # todo currently nonsensical
-            response = llm.evaluate_context_with_pillars(context)
-            return JsonResponse(response.model_dump(), status=200)
-        except Exception as e:
-            return HttpResponse({"error": str(e)}, status=500)
-
-
 class LLMFeedbackView(ViewSet):
     def __init__(self, **kwargs):
         super().__init__()
@@ -161,6 +143,21 @@ class LLMFeedbackView(ViewSet):
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.suggest_pillar_additions(pillars, design.description)
+
+            return HttpResponse(answer.model_dump_json(),
+                                content_type="application/json", status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="context")
+    def context(self, request):
+        try:
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            context = request.data.get("context", "")
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_context_with_pillars(pillars, context)
 
             return HttpResponse(answer.model_dump_json(),
                                 content_type="application/json", status=200)
