@@ -52,4 +52,9 @@ type PillarsInContextFeedback = {
   proposedAdditions: PillarAdditionsFeedback
 }
 
+type ContextInPillarsFeedback = {
+  rating: number
+  feedback: string
+}
+
 

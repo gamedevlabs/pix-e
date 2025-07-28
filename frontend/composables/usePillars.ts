@@ -17,6 +17,13 @@ export function usePillars() {
     },
   })
 
+  const featureFeedback = ref<ContextInPillarsFeedback>({
+    rating: 0,
+    feedback: '',
+  })
+
+  const additionalFeature = ref<string>('')
+
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
@@ -45,10 +52,16 @@ export function usePillars() {
     llmFeedback.value.proposedAdditions = await pillarsApi.getPillarsAdditionsAPICall()
   }
 
+  async function getContextInPillarsFeedback() {
+    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
+  }
+
   return {
     ...basics,
     designIdea,
     llmFeedback,
+    featureFeedback,
+    additionalFeature,
     validatePillar,
     updateDesignIdea,
     getPillarsInContextFeedback,
@@ -56,5 +69,6 @@ export function usePillars() {
     getPillarContradictions,
     getPillarsCompleteness,
     getPillarsAdditions,
+    getContextInPillarsFeedback,
   }
 }

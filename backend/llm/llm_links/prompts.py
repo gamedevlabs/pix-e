@@ -24,7 +24,7 @@ Rewrite erroneous parts of the pillar and return a new pillar object.
 """
 
 # Deprecated Prompt, split into multiple prompts below
-PillarInContextPrompt = \
+PillarsInContextPrompt = \
 """Assume the role of a game design expert.
 Evaluate if the following Game Design Idea is sufficiently
 covered by the following Design Pillars.

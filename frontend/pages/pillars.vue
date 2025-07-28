@@ -11,15 +11,17 @@ const {
   createItem: createPillar,
   updateItem: updatePillar,
   deleteItem: deletePillar,
+  additionalFeature,
   designIdea,
   llmFeedback,
+  featureFeedback,
   getPillarsInContextFeedback,
   updateDesignIdea,
   getPillarsCompleteness,
   getPillarsAdditions,
   getPillarContradictions,
+  getContextInPillarsFeedback,
 } = usePillars()
-const additionalFeature = ref('')
 
 await pillarsFetchAll()
 
@@ -192,6 +194,21 @@ async function dismissIssue(pillar: Pillar, index: number) {
         autoresize
         class="w-full"
       />
+
+      <UButton
+        icon="i-lucide-refresh-cw"
+        label="Generate Feedback"
+        color="secondary"
+        variant="soft"
+        loading-auto
+        @click="getContextInPillarsFeedback"
+      />
+
+      <h2 class="text-2xl font-semibold mt-6 mb-4">Feature Feedback:</h2>
+      <p>{{ featureFeedback.rating }}</p>
+      <p>
+        {{ featureFeedback.feedback }}
+      </p>
     </div>
   </div>
 </template>
