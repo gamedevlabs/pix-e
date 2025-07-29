@@ -2,10 +2,10 @@ from rest_framework import serializers
 
 from pxnodes.models import PxNode
 
-from .models import PxChart, PxChartEdge, PxChartNode, PxChartNodeLayout
+from .models import PxChart, PxChartContainer, PxChartContainerLayout, PxChartEdge
 
 
-class PxChartNodeSerializer(serializers.ModelSerializer):
+class PxChartContainerSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
 
     content = serializers.PrimaryKeyRelatedField(
@@ -13,7 +13,7 @@ class PxChartNodeSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = PxChartNode
+        model = PxChartContainer
         fields = [
             "id",
             "name",
@@ -32,9 +32,9 @@ class PxChartNodeSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxChartNodeLayoutSerializer(serializers.ModelSerializer):
+class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PxChartNodeLayout
+        model = PxChartContainerLayout
         fields = ["id", "position_x", "position_y", "width", "height"]
         read_only_fields = ["id"]
 
@@ -46,15 +46,15 @@ class PxChartNodeLayoutSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxChartNodeDetailSerializer(serializers.ModelSerializer):
+class PxChartContainerDetailSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
-    layout = PxChartNodeLayoutSerializer()
+    layout = PxChartContainerLayoutSerializer()
     content = serializers.PrimaryKeyRelatedField(
         queryset=PxNode.objects.all(), allow_null=True, required=False
     )
 
     class Meta:
-        model = PxChartNode
+        model = PxChartContainer
         fields = [
             "id",
             "name",
@@ -67,6 +67,14 @@ class PxChartNodeDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["owner", "created_at", "updated_at", "px_chart"]
 
+    def create(self, validated_data):
+        nested_data = validated_data.pop("layout", None)
+
+        container = PxChartContainer.objects.create(**validated_data)
+        PxChartContainerLayout.objects.filter(container=container).update(**nested_data)
+
+        return container
+
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
             raise serializers.ValidationError(
@@ -75,7 +83,7 @@ class PxChartNodeDetailSerializer(serializers.ModelSerializer):
 
         layout_data = validated_data.pop("layout", None)
 
-        # Update main node fields
+        # Update main container fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -111,11 +119,11 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
 
         if str(data["source"].px_chart_id) != chart_id:
             raise serializers.ValidationError(
-                "Source node does not belong to the chart."
+                "Source container does not belong to the chart."
             )
         if str(data["target"].px_chart_id) != chart_id:
             raise serializers.ValidationError(
-                "Target node does not belong to the chart."
+                "Target container does not belong to the chart."
             )
         return data
 
@@ -129,7 +137,7 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
 
 class PxChartDetailSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
-    nodes = PxChartNodeDetailSerializer(many=True, read_only=True)
+    containers = PxChartContainerDetailSerializer(many=True, read_only=True)
     edges = PxChartEdgeSerializer(many=True, read_only=True)
 
     class Meta:
@@ -141,7 +149,7 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
             "owner",
             "created_at",
             "updated_at",
-            "nodes",
+            "containers",
             "edges",
         ]
         read_only_fields = ["owner", "created_at", "updated_at"]

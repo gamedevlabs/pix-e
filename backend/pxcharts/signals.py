@@ -1,10 +1,10 @@
 ﻿from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import PxChartNode, PxChartNodeLayout
+from .models import PxChartContainer, PxChartContainerLayout
 
 
-@receiver(post_save, sender=PxChartNode)
+@receiver(post_save, sender=PxChartContainer)
 def create_node_layout(sender, instance, created, **kwargs):
     if created and not hasattr(instance, "layout"):
-        PxChartNodeLayout.objects.create(node=instance)
+        PxChartContainerLayout.objects.create(container=instance)

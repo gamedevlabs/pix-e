@@ -1,13 +1,13 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from pxcharts.models import PxChart, PxChartEdge, PxChartNode
+from pxcharts.models import PxChart, PxChartContainer, PxChartEdge
 from pxcharts.permissions import IsOwner
 from pxcharts.serializers import (
+    PxChartContainerDetailSerializer,
+    PxChartContainerSerializer,
     PxChartDetailSerializer,
     PxChartEdgeSerializer,
-    PxChartNodeDetailSerializer,
-    PxChartNodeSerializer,
     PxChartSerializer,
 )
 
@@ -19,7 +19,7 @@ class PxChartViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.action == "list":
             return PxChart.objects.filter(owner=self.request.user).prefetch_related(
-                "nodes", "edges"
+                "containers", "edges"
             )
         return PxChart.objects.order_by("created_at")
 
@@ -32,8 +32,8 @@ class PxChartViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-class PxChartNodeViewSet(viewsets.ModelViewSet):
-    serializer_class = PxChartNodeSerializer
+class PxChartContainerViewSet(viewsets.ModelViewSet):
+    serializer_class = PxChartContainerSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_serializer_class(self):
@@ -41,18 +41,19 @@ class PxChartNodeViewSet(viewsets.ModelViewSet):
             self.action == "retrieve"
             or self.action == "update"
             or self.action == "partial_update"
+            or self.action == "create"
         ):
-            return PxChartNodeDetailSerializer
+            return PxChartContainerDetailSerializer
         return super().get_serializer_class()
 
     def get_queryset(self):
         if self.action == "list":
-            return PxChartNode.objects.filter(
+            return PxChartContainer.objects.filter(
                 px_chart_id=self.kwargs["px_chart_pk"],
                 px_chart__owner=self.request.user,
                 owner=self.request.user,
             )
-        return PxChartNode.objects.order_by("created_at")
+        return PxChartContainer.objects.order_by("created_at")
 
     def perform_create(self, serializer):
         serializer.save(px_chart_id=self.kwargs["px_chart_pk"], owner=self.request.user)

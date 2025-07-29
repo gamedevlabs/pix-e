@@ -12,7 +12,7 @@ import {
   type NodeChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import PxGraphNode from '~/components/PxGraphComponents/PxGraphNode.vue'
+import PxGraphContainer from '~/components/PxGraphComponents/PxGraphContainer.vue'
 import PxGraphEdge from '~/components/PxGraphComponents/PxGraphEdge.vue'
 import { v4 } from 'uuid'
 import merge from 'lodash.merge'
@@ -25,10 +25,10 @@ const chartId = props.chartId
 
 const { error: pxChartError, fetchById: fetchPxChart } = usePxCharts()
 const {
-  updateItem: updatePxChartNode,
-  createItem: createPxChartNode,
-  deleteItem: deletePxChartNode,
-} = usePxChartNodes(chartId)
+  updateItem: updatePxChartContainer,
+  createItem: createPxChartContainer,
+  deleteItem: deletePxChartContainer,
+} = usePxChartContainers(chartId)
 const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
 
 const nodes = ref<Node[]>([])
@@ -40,16 +40,38 @@ const edgeTypes = {
   pxGraph: markRaw(PxGraphEdge),
 }
 
+const nodeDefaultValues = {
+  type: 'pxGraph',
+  layout: {
+    position_x: 100,
+    position_y: 100,
+    width: 400,
+    height: 0,
+  },
+}
+
+const edgeDefaultValues = {
+  type: 'pxGraph',
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 20,
+    height: 20,
+  },
+}
+
 // Load graph with Vue Flow properties
 async function loadGraph() {
   loading.value = true
   try {
     const data = await fetchPxChart(chartId)
     if (data) {
-      nodes.value = data.nodes.map((n: PxChartNode) => ({
+      nodes.value = data.containers.map((n: PxChartContainer) => ({
         id: n.id,
-        type: 'pxGraph',
-        position: { x: n.layout.position_x ?? 100, y: n.layout.position_y ?? 100 },
+        type: nodeDefaultValues.type,
+        position: {
+          x: n.layout.position_x ?? nodeDefaultValues.layout.position_x,
+          y: n.layout.position_y ?? nodeDefaultValues.layout.position_y,
+        },
         height: n.layout.height,
         width: n.layout.width,
         data: { name: n.name, content: n.content, px_chart: n.px_chart },
@@ -61,12 +83,8 @@ async function loadGraph() {
         sourceHandle: e.sourceHandle,
         target: e.target,
         targetHandle: e.targetHandle,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
-        },
-        type: 'pxGraph',
+        markerEnd: edgeDefaultValues.markerEnd,
+        type: edgeDefaultValues.type,
       }))
     }
   } catch (e) {
@@ -80,24 +98,10 @@ onMounted(() => {
   loadGraph()
 })
 
-/*
-const oneNodeIsSelected = computed(() => {
-  return getSelectedElements.value.length == 1 && isNode(getSelectedElements.value[0])
-})
-
-const oneEdgeIsSelected = computed(() => {
-  return getSelectedElements.value.length == 1 && isEdge(getSelectedElements.value[0])
-})
-
-const multipleElementsSelected = computed(() => {
-  return getSelectedElements.value.length > 1
-})
-*/
-
 async function onNodeDragStop(event: NodeDragEvent) {
   try {
     const node = event.node
-    await updatePxChartNode(node.id, {
+    await updatePxChartContainer(node.id, {
       layout: {
         position_x: node.position.x,
         position_y: node.position.y,
@@ -114,30 +118,33 @@ async function onNodeDragStop(event: NodeDragEvent) {
 
 async function addNode(position_x = 0, position_y = 0) {
   const newId = v4()
-  const newNodePayload = {
+  const newContainerPayload = {
     id: newId,
-    name: 'New node',
+    name: 'New container',
     content: null,
     layout: {
       position_x: position_x,
       position_y: position_y,
-      width: 100,
-      height: 100,
+      width: nodeDefaultValues.layout.width,
+      height: nodeDefaultValues.layout.height,
     },
   }
   try {
-    await createPxChartNode(newNodePayload)
-
+    await createPxChartContainer(newContainerPayload)
     nodes.value.push({
       id: newId,
-      type: 'pxGraph',
+      type: nodeDefaultValues.type,
       position: {
-        x: newNodePayload.layout.position_x ?? 100,
-        y: newNodePayload.layout.position_y ?? 100,
+        x: newContainerPayload.layout.position_x ?? nodeDefaultValues.layout.position_x,
+        y: newContainerPayload.layout.position_y ?? nodeDefaultValues.layout.position_y,
       },
-      height: newNodePayload.layout.height,
-      width: newNodePayload.layout.width,
-      data: { name: newNodePayload.name, content: newNodePayload.content, px_chart: props.chartId },
+      height: newContainerPayload.layout.height,
+      width: newContainerPayload.layout.width,
+      data: {
+        name: newContainerPayload.name,
+        content: newContainerPayload.content,
+        px_chart: props.chartId,
+      },
     })
   } catch {
     alert('Failed to add node: ' + error.value)
@@ -173,12 +180,8 @@ function onConnect(connection: Connection) {
         sourceHandle: connection.sourceHandle,
         target: connection.target,
         targetHandle: connection.targetHandle,
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
-        },
-        type: 'pxGraph',
+        type: edgeDefaultValues.type,
+        markerEnd: edgeDefaultValues.markerEnd,
       })
     })
 }
@@ -193,74 +196,76 @@ async function layoutGraph(direction: string) {
 }
 */
 
-async function handleDeletePxGraphNode(nodeId: string) {
-  await deletePxChartNode(nodeId)
+async function handleDeletePxGraphContainer(containerId: string) {
+  await deletePxChartContainer(containerId)
 
   nodes.value.splice(
-    nodes.value.findIndex((node) => node.id === nodeId),
+    nodes.value.findIndex((node) => node.id === containerId),
     1,
   )
 
-  // Remove all edges connected to removed node from local model
-  edges.value = edges.value.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+  // Remove all edges connected to removed container from local model
+  edges.value = edges.value.filter(
+    (edge) => edge.source !== containerId && edge.target !== containerId,
+  )
 }
 
-async function handleUpdatePxGraphNode(updatedPxChartNode: Partial<PxChartNode>) {
-  if (!updatedPxChartNode.id) {
-    alert('An update was issued to a node, however, no ID was provided. Aborting.')
+async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxChartContainer>) {
+  if (!updatedPxChartContainer.id) {
+    alert('An update was issued to a container, however, no ID was provided. Aborting.')
     return
   }
 
   // Here, we have to make sure that properties like name, content, or pxgraph are handled correctly
-  // This means, that for the backend, the updatedPxChartNode can just be used, however, for
+  // This means, that for the backend, the updatedPxChartContainer can just be used, however, for
   // frontend array, these attributes need to be put into data.
   let data = null
-  if (updatedPxChartNode.content !== undefined) {
-    data = merge(data, { data: { content: updatedPxChartNode.content } })
+  if (updatedPxChartContainer.content !== undefined) {
+    data = merge(data, { data: { content: updatedPxChartContainer.content } })
   }
-  if (updatedPxChartNode.name) {
-    data = merge(data, { data: { name: updatedPxChartNode.name } })
+  if (updatedPxChartContainer.name) {
+    data = merge(data, { data: { name: updatedPxChartContainer.name } })
   }
-  if (updatedPxChartNode.px_chart) {
-    data = merge(data, { data: { px_chart: updatedPxChartNode.px_chart } })
+  if (updatedPxChartContainer.px_chart) {
+    data = merge(data, { data: { px_chart: updatedPxChartContainer.px_chart } })
   }
 
-  // Update node in backend
-  await updatePxChartNode(updatedPxChartNode.id!, updatedPxChartNode)
+  // Update container in backend
+  await updatePxChartContainer(updatedPxChartContainer.id!, updatedPxChartContainer)
 
   nodes.value.splice(
-    nodes.value.findIndex((node) => node.id === updatedPxChartNode.id),
+    nodes.value.findIndex((node) => node.id === updatedPxChartContainer.id),
     1,
     merge(
-      nodes.value[nodes.value.findIndex((node) => node.id === updatedPxChartNode.id)],
-      updatedPxChartNode,
+      nodes.value[nodes.value.findIndex((node) => node.id === updatedPxChartContainer.id)],
+      updatedPxChartContainer,
       data,
     ),
   )
 }
 
-async function handleAddPxNode(pxGraphNodeId: string, pxNodeId: string) {
-  const updatedPxGraphNodeContent = {
-    id: pxGraphNodeId,
+async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
+  const updatedPxGraphContainerContent = {
+    id: pxGraphContainerId,
     content: pxNodeId,
   }
 
-  await handleUpdatePxGraphNode(updatedPxGraphNodeContent)
+  await handleUpdatePxGraphContainer(updatedPxGraphContainerContent)
 }
 
-async function handleDeletePxNode(pxGraphNodeId: string) {
-  const updatedPxGraphNodeContent = {
-    id: pxGraphNodeId,
+async function handleDeletePxNode(pxGraphContainerId: string) {
+  const updatedPxGraphContainerContent = {
+    id: pxGraphContainerId,
     content: null,
   }
 
-  await handleUpdatePxGraphNode(updatedPxGraphNodeContent)
+  await handleUpdatePxGraphContainer(updatedPxGraphContainerContent)
 }
 
 async function onNodesChange(changes: NodeChange[]) {
   for (const change of changes) {
     if (change.type === 'remove') {
-      await deletePxChartNode(change.id)
+      await deletePxChartContainer(change.id)
     }
   }
 }
@@ -276,7 +281,7 @@ async function onEdgesChange(changes: EdgeChange[]) {
 function onContextMenu(mouseEvent: MouseEvent) {
   // prevent the browser's default menu
   mouseEvent.preventDefault()
-  // for now, just create node
+  // for now, just create a container
   const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
   addNode(pos.x, pos.y)
 }
@@ -303,18 +308,18 @@ function onContextMenu(mouseEvent: MouseEvent) {
     <Background />
 
     <template #node-pxGraph="customNodeProps">
-      <PxGraphNode
+      <PxGraphContainer
         v-bind="customNodeProps"
         @delete-px-node="handleDeletePxNode"
-        @delete="handleDeletePxGraphNode"
+        @delete="handleDeletePxGraphContainer"
         @add-px-node="handleAddPxNode"
-        @edit="handleUpdatePxGraphNode"
+        @edit="handleUpdatePxGraphContainer"
       />
     </template>
 
     <Panel :position="'bottom-left'">
       <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addNode" />
+        <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addNode(0, 0)" />
       </UTooltip>
     </Panel>
   </VueFlow>

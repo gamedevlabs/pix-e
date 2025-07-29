@@ -2,20 +2,20 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import { LazyPxGraphComponentsPxGraphNodeAddPxNodeForm } from '#components'
+import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
 
-const props = defineProps<NodeProps<PxChartNode>>()
+const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
-  (e: 'edit', updatedNode: Partial<PxChartNode>): void
+  (e: 'edit', updatedNode: Partial<PxChartContainer>): void
   (e: 'delete' | 'deletePxNode', id: string): void
-  (e: 'addPxNode', pxGraphNodeId: string, pxNodeId: string): void
+  (e: 'addPxNode', pxGraphContainerId: string, pxNodeId: string): void
 }>()
 
-const { updateItem: updatePxChartNode } = usePxChartNodes(props.data.px_chart)
+const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
 const { fetchById: getPxNode } = usePxNodes()
 
 const overlay = useOverlay()
-const modal = overlay.create(LazyPxGraphComponentsPxGraphNodeAddPxNodeForm)
+const modal = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
 
 const isBeingEdited = ref(false)
 const editForm = ref({
@@ -67,7 +67,7 @@ async function loadContent() {
 }
 
 async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: ResizeParams }) {
-  await updatePxChartNode(props.id, {
+  await updatePxChartContainer(props.id, {
     layout: {
       position_x: eventParams.params.x,
       position_y: eventParams.params.y,

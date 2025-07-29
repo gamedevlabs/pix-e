@@ -70,11 +70,6 @@ async function onSubmit() {
     definition: state.value.definitionRef,
     value: enteredValue,
   })
-  console.log({
-    node: state.value.nodeRef,
-    definition: state.value.definitionRef,
-    value: enteredValue,
-  })
   emit('close', state.value.nodeRef)
 }
 </script>

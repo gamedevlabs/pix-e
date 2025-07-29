@@ -44,22 +44,22 @@ interface PxChart extends NamedEntity {
   created_at: string
   updated_at: string
   owner: number | null
-  nodes: PxChartNode[]
+  containers: PxChartContainer[]
   edges: PxChartEdge[]
 }
 
-interface PxChartNode {
+interface PxChartContainer {
   id: string
   name: string
   content: string | null
   px_chart: string
-  layout: PxChartNodeLayout
+  layout: PxChartContainerLayout
   created_at: string
   updated_at: string
   owner: number | null
 }
 
-interface PxChartNodeLayout {
+interface PxChartContainerLayout {
   position_x: number
   position_y: number
   width: number

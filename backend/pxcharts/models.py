@@ -25,11 +25,11 @@ class PxChart(models.Model):
         return self.name
 
 
-class PxChartNode(models.Model):
+class PxChartContainer(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
 
     px_chart = models.ForeignKey(
-        PxChart, on_delete=models.CASCADE, related_name="nodes"
+        PxChart, on_delete=models.CASCADE, related_name="containers"
     )
     name = models.CharField(max_length=255)
     content = models.ForeignKey(
@@ -41,21 +41,25 @@ class PxChartNode(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "px chart node"
-        verbose_name_plural = "px chart nodes"
+        verbose_name = "px chart container"
+        verbose_name_plural = "px chart containers"
 
     def __str__(self):
         return self.name
 
 
-class PxChartNodeLayout(models.Model):
-    node = models.OneToOneField(
-        PxChartNode, on_delete=models.CASCADE, related_name="layout"
+class PxChartContainerLayout(models.Model):
+    container = models.OneToOneField(
+        PxChartContainer, on_delete=models.CASCADE, related_name="layout"
     )
     position_x = models.FloatField(default=0)
     position_y = models.FloatField(default=0)
     height = models.FloatField(default=0)
     width = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = "px chart container layout"
+        verbose_name_plural = "px chart container layouts"
 
 
 class PxChartEdge(models.Model):
@@ -65,11 +69,17 @@ class PxChartEdge(models.Model):
         PxChart, on_delete=models.CASCADE, related_name="edges"
     )
     source = models.ForeignKey(
-        PxChartNode, on_delete=models.CASCADE, related_name="outgoing_edges"
+        PxChartContainer,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="outgoing_edges",
     )
     sourceHandle = models.CharField(max_length=255, default="")
     target = models.ForeignKey(
-        PxChartNode, on_delete=models.CASCADE, related_name="incoming_edges"
+        PxChartContainer,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="incoming_edges",
     )
     targetHandle = models.CharField(max_length=255, default="")
 
