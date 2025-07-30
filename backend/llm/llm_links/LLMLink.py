@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from llm.llm_links.responseSchemes import StringFeedback, PillarResponse, \
+from llm.llm_links.responseSchemes import PillarResponse, \
     PillarsInContextResponse, PillarContradictionResponse, PillarCompletenessResponse, \
     PillarAdditionsFeedback, ContextInPillarsResponse
 from llm.models import Pillar
@@ -41,18 +41,6 @@ class LLMLink(ABC):
         This method will store the improved pillar in the database.
         :param pillar: The pillar to improve.
         :return: The improved Pillar object.
-        """
-        pass
-
-    @abstractmethod
-    def evaluate_context_with_pillars(self,
-                                      pillars: list[Pillar],
-                                      context: str) -> StringFeedback:
-        """
-        Evaluate the context against a list of pillars.
-        :param pillars: A list of Pillar objects to use for evaluation.
-        :param context: The context to evaluate.
-        :return: A StringFeedback object containing the evaluation results.
         """
         pass
 
