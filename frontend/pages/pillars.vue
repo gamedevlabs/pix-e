@@ -156,7 +156,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
           </h2>
           <div class="w-full p-4 gap-4">
             <div v-for="pillar in llmFeedback.proposedAdditions.additions" :key="pillar.name">
-              <h3 class="text-lg font-semibold">{{ pillar.name + ' ' + pillar.pillarId }}</h3>
+              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
               <p>{{ pillar.description }}</p>
             </div>
           </div>
