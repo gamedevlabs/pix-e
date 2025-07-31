@@ -4,6 +4,12 @@
   description: string
 }
 
+type CompletenessAnswer = {
+  pillarId: number
+  name: str
+  reasoning: str
+}
+
 type ContradictionIssue = {
   pillarOneId: number
   pillarTwoId: number
@@ -35,7 +41,7 @@ type PillarFeedback = {
 }
 
 type PillarCompletenessFeedback = {
-  pillarFeedback: PillarDTO[]
+  pillarFeedback: CompletenessAnswer[]
 }
 
 type PillarContradictionsFeedback = {
@@ -56,5 +62,3 @@ type ContextInPillarsFeedback = {
   rating: number
   feedback: string
 }
-
-

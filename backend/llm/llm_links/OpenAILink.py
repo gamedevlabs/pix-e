@@ -19,20 +19,6 @@ class OpenAILink(LLMLink):
         self.client = OpenAI(api_key=key)  # could also auto infer from environment
         pass
 
-
-    def evaluate_pillars_in_context(self, pillars: list[Pillar],
-                                    context: str) -> PillarsInContextResponse:
-        prompt = PillarsInContextPrompt % (
-            context,
-            "\n".join([pillar.__str__() for pillar in pillars]),
-        )
-        response = self.client.responses.parse(
-            model=OpenAILink.MODELNAME,
-            input=prompt,
-            text_format=PillarsInContextResponse,
-        )
-        return response.output_parsed
-
     def evaluate_pillar(self, pillar: Pillar) -> PillarResponse:
         prompt = ValidationPrompt % (pillar.name, pillar.description)
         response = self.client.responses.parse(
