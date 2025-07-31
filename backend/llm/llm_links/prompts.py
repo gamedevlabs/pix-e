@@ -39,9 +39,8 @@ Design Pillars: %s
 
 PillarCompletenessPrompt = \
 """Assume the role of a game design expert.
-Evaluate if the following Game Design Idea is sufficiently
-covered by the following Game Design Pillars.
-Evaluate if the pillar is a good fit for the game idea (e.g. central to the game idea).
+Evaluate if the following Game Design Pillars are a good fit
+for the game idea, explain why.
 Also check if the pillar contradicts the direction of the game idea.
 
 Game Design Idea: %s
