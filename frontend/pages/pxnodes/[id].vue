@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: 'authentication',
+})
+
 const route = useRoute()
 const id = route.params.id as unknown as number
 
@@ -35,7 +39,10 @@ async function handleDelete() {
 
 <template>
   <div class="p-8">
-    <div v-if="errorPxNode">Error loading node.</div>
+    <div v-if="errorPxNode">
+      <div v-if="errorPxNode.response?.status === 403">You do not have access to this node.</div>
+      <div v-if="errorPxNode.response?.status === 404">This node does not exist.</div>
+    </div>
     <div v-else-if="fetchedNode">
       <PxNodeCard
         :node="fetchedNode"

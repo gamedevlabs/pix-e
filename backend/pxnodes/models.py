@@ -13,6 +13,9 @@ class PxNode(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ["owner", "id"]
+
     def __str__(self):
         return self.name
 
@@ -27,6 +30,9 @@ class PxComponentDefinition(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ["owner", "id"]
+
     def __str__(self):
         return f"{self.name} ({self.type})"
 
@@ -38,8 +44,13 @@ class PxComponent(models.Model):
     definition = models.ForeignKey("PxComponentDefinition", on_delete=models.CASCADE)
     value = models.JSONField()
 
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["owner", "id"]
 
     def __str__(self):
         return f"{self.node.name} - {self.definition.name}: ({self.value})"
