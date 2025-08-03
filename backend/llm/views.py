@@ -1,7 +1,3 @@
-# from django.shortcuts import render
-# from django.views import View
-# from rest_framework.views import APIView
-
 from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
@@ -15,16 +11,19 @@ from .serializers import GameDesignSerializer, PillarSerializer
 from django.shortcuts import render
 from django.views import View
 from rest_framework import status
-from .models import MoodboardSession, MoodboardImage
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 import uuid
 from diffusers import StableDiffusionPipeline, StableDiffusionOnnxPipeline
 import torch
-import requests
 import os
 import webcolors
+from .services.manager import llm_manager
+from .services.base import LLMServiceError
+import threading
+import time
+import logging
 # Create your views here.
+
+logger = logging.getLogger(__name__)
 
 
 class PillarViewSet(ModelViewSet):
@@ -145,173 +144,244 @@ def get_sd_model():
 
 # Placeholder for Stable Diffusion image generation
 def generate_gaming_images(prompt, num_images=3):
-    # Only use the user's prompt for relevance
-    full_prompt = prompt
-    pipe = get_sd_model()
-    # Disable NSFW filter if possible
-    if hasattr(pipe, 'safety_checker'):
-        pipe.safety_checker = None
-    images = pipe(
-        [full_prompt] * num_images,
-        num_inference_steps=30,
-        height=512,
-        width=512
-    ).images
-    import uuid, os
-    from django.conf import settings
-    image_urls = []
-    for img in images:
-        img_id = str(uuid.uuid4())
-        img_path = os.path.join(settings.BASE_DIR, 'media', f"moodboard_{img_id}.png")
-        os.makedirs(os.path.dirname(img_path), exist_ok=True)
-        img.save(img_path)
-        image_urls.append(f"/media/moodboard_{img_id}.png")
-    return image_urls
+    """
+    Generate gaming-themed images using Stable Diffusion
+    Falls back to placeholder images if SD is not available
+    """
+    try:
+        # Try to use Stable Diffusion
+        pipe = get_sd_model()
+        # Disable NSFW filter if possible
+        if hasattr(pipe, 'safety_checker'):
+            pipe.safety_checker = None
+        images = pipe(
+            [prompt] * num_images,
+            num_inference_steps=30,
+            height=512,
+            width=512
+        ).images
+        
+        # Save generated images
+        import uuid, os
+        from django.conf import settings
+        image_urls = []
+        for img in images:
+            img_id = str(uuid.uuid4())
+            img_path = os.path.join(settings.BASE_DIR, 'media', f"moodboard_{img_id}.png")
+            os.makedirs(os.path.dirname(img_path), exist_ok=True)
+            img.save(img_path)
+            image_urls.append(f"/media/moodboard_{img_id}.png")
+        return image_urls
+        
+    except Exception as e:
+        print(f"Stable Diffusion not available ({e}), using placeholder images...")
+        # Create placeholder images for testing
+        import uuid, os
+        from PIL import Image, ImageDraw, ImageFont
+        from django.conf import settings
+        
+        image_urls = []
+        for i in range(num_images):
+            # Create a simple placeholder image
+            img = Image.new('RGB', (512, 512), color=(73, 109, 137))
+            draw = ImageDraw.Draw(img)
+            
+            # Add text
+            text_lines = [
+                f"Generated Image {i+1}",
+                f"Prompt: {prompt[:30]}{'...' if len(prompt) > 30 else ''}",
+                "Placeholder Image"
+            ]
+            
+            y_pos = 200
+            for line in text_lines:
+                # Use default font
+                try:
+                    font = ImageFont.load_default()
+                    bbox = draw.textbbox((0, 0), line, font=font)
+                    text_width = bbox[2] - bbox[0]
+                    draw.text((256 - text_width//2, y_pos), line, fill=(255, 255, 255), font=font)
+                except:
+                    # Fallback without font
+                    draw.text((100, y_pos), line, fill=(255, 255, 255))
+                y_pos += 30
+            
+            # Save the image
+            img_id = str(uuid.uuid4())
+            img_path = os.path.join(settings.BASE_DIR, 'media', f"moodboard_{img_id}.png")
+            os.makedirs(os.path.dirname(img_path), exist_ok=True)
+            img.save(img_path)
+            image_urls.append(f"/media/moodboard_{img_id}.png")
+        
+        return image_urls
 
-def summarize_palette(hex_list):
-    names = []
-    for hex_code in hex_list:
+# Legacy moodboard API views removed - now using moodboards app with REST API structure
+# Kept only the image generation utilities that may be used by the new API
+
+
+class TextSuggestionView(APIView):
+    """API for getting text suggestions from LLM models"""
+    
+    def get(self, request):
+        """Get available LLM services and their status"""
         try:
-            name = webcolors.hex_to_name(hex_code)
-        except ValueError:
-            try:
-                rgb = webcolors.hex_to_rgb(hex_code)
-                name = webcolors.rgb_to_name(rgb)
-            except Exception:
-                # Fallback: use short hex or just the color
-                name = hex_code.lstrip('#').upper()
-        names.append(name.replace('_', ' '))
-    return ', '.join(names)
-
-class MoodboardStartView(APIView):
+            services = llm_manager.list_services()
+            active_service = llm_manager.get_active_service()
+            
+            return JsonResponse({
+                'services': services,
+                'active_service': active_service,                'status': 'success'
+            })
+            
+        except Exception as e:
+            return JsonResponse({                'error': str(e),
+                'status': 'error'
+            }, status=500)
+    
     def post(self, request):
-        user = request.user if request.user.is_authenticated else None
-        session = MoodboardSession.objects.create(user=user)
-        return Response({"session_id": str(session.id)}, status=status.HTTP_201_CREATED)
-
-class MoodboardGenerateView(APIView):
-    def post(self, request):
-        session_id = request.data.get("session_id")
-        prompt = request.data.get("prompt")
-        selected_image_ids = request.data.get("selected_image_ids", [])
-        mode = request.data.get("mode", "default")
-        session = get_object_or_404(MoodboardSession, id=session_id, is_active=True)
-
-        # Mark selected images
-        if selected_image_ids:
-            MoodboardImage.objects.filter(id__in=selected_image_ids, session=session).update(is_selected=True)
-
-        # Extract color palette from prompt if present
-        color_palette = None
-        if ", color palette:" in prompt:
-            parts = prompt.split(", color palette:")
-            prompt_main = parts[0].strip()
-            color_palette = parts[1].strip()
-        else:
-            prompt_main = prompt
-
-        # Compose prompt with palette and mood/style at the start
-        palette_instruction = ""
-        if color_palette:
-            # Try to parse hex codes and summarize
-            hex_list = [c.strip() for c in color_palette.split(',') if c.strip().startswith('#')]
-            if hex_list:
-                palette_names = summarize_palette(hex_list)
-                palette_instruction = f"Color palette: {palette_names}. "
+        """Generate text suggestions based on prompt"""
+        try:
+            # Handle JSON parsing
+            if hasattr(request, 'data') and request.data:
+                data = request.data
             else:
-                # fallback: use as-is
-                palette_instruction = f"Color palette: {color_palette}. "
-        if mode == "gaming":
-            game_prefix = (
-                "Concept art for a game environment. The scene should reflect the atmosphere, mood, and style described in the prompt, which could be realistic, stylized, dark, bright, whimsical, or any other game world. Do not restrict to only virtual or typical game settings. "
+                import json
+                data = json.loads(request.body)
+                
+            prompt = data.get('prompt', '').strip()
+            service_id = data.get('service_id')
+            mode = data.get('mode', 'default').lower()  # Get mode (gaming/default)
+            suggestion_type = data.get('suggestion_type', 'short').lower()  # Get suggestion length preference
+            num_suggestions = min(int(data.get('num_suggestions', 3)), 5)  # Max 5 suggestions
+            
+            if not prompt:
+                return JsonResponse({
+                    'error': 'Prompt is required',
+                    'status': 'error'
+                }, status=400)
+            
+            if len(prompt) < 3:
+                return JsonResponse({
+                    'error': 'Prompt must be at least 3 characters long',
+                    'status': 'error'
+                }, status=400)
+              # Generate suggestions with context
+            suggestions = llm_manager.get_suggestions(
+                prompt=prompt,
+                service_id=service_id,
+                num_suggestions=num_suggestions,
+                mode=mode,
+                suggestion_type=suggestion_type,
+                temperature=0.8
             )
-            full_prompt = f"{palette_instruction}{game_prefix}{prompt_main}"
-        else:
-            full_prompt = f"{palette_instruction}{prompt_main}"
+            
+            return JsonResponse({
+                'suggestions': suggestions,
+                'prompt': prompt,
+                'service_used': service_id or llm_manager.get_active_service(),
+                'status': 'success'
+            })
+            
+        except LLMServiceError as e:
+            return JsonResponse({
+                'error': str(e),
+                'status': 'error'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Internal server error: {str(e)}',
+                'status': 'error'
+            }, status=500)
 
-        images = generate_gaming_images(full_prompt)
-        image_objs = [MoodboardImage.objects.create(session=session, image_url=url, prompt=prompt) for url in images]
 
-        # Only delete images that are not selected and are not from the current prompt (i.e., not newly generated)
-        MoodboardImage.objects.filter(session=session, is_selected=False).exclude(prompt=prompt).delete()
-
-        # Always return all unselected images (for selection) and all selected images (for moodboard)
-        images_unselected = session.images.filter(is_selected=False)
-        moodboard = session.images.filter(is_selected=True)
-
-        return Response({
-            "images": [
-                {"id": img.id, "url": img.image_url, "prompt": img.prompt, "is_selected": img.is_selected}
-                for img in images_unselected
-            ],
-            "moodboard": [
-                {"id": img.id, "url": img.image_url, "prompt": img.prompt, "is_selected": img.is_selected}
-                for img in moodboard
-            ]
-        }, status=status.HTTP_200_OK)
-
-class MoodboardGetView(APIView):
-    def get(self, request, session_id):
-        session = get_object_or_404(MoodboardSession, id=session_id)
-        images = session.images.filter(is_selected=False)
-        moodboard = session.images.filter(is_selected=True)
-        return Response({
-            "session_id": str(session.id),
-            "images": [
-                {"id": img.id, "url": img.image_url, "prompt": img.prompt, "is_selected": img.is_selected}
-                for img in images
-            ],
-            "moodboard": [
-                {"id": img.id, "url": img.image_url, "prompt": img.prompt, "is_selected": img.is_selected}
-                for img in moodboard
-            ],
-            "is_active": session.is_active
-        })
-
-class MoodboardEndView(APIView):
+class LLMServiceManagementView(APIView):
+    """API for managing LLM services (load/unload models)"""
+    
     def post(self, request):
-        session_id = request.data.get("session_id")
-        selected_image_ids = request.data.get("selected_image_ids", [])
-        session = get_object_or_404(MoodboardSession, id=session_id, is_active=True)
-        # Mark selected images from the last step
-        if selected_image_ids:
-            MoodboardImage.objects.filter(id__in=selected_image_ids, session=session).update(is_selected=True)
-        session.is_active = False
-        session.save()
-        # Return the final moodboard
-        moodboard = session.images.filter(is_selected=True)
-        return Response({
-            "message": "Moodboard session ended.",
-            "moodboard": [
-                {"id": img.id, "url": img.image_url, "prompt": img.prompt, "is_selected": img.is_selected}
-                for img in moodboard
-            ]
-        }, status=status.HTTP_200_OK)
-
-class MoodboardSuggestView(APIView):
-    def post(self, request):
-        prompt = request.data.get("prompt", "")
-        # Use local Ollama server for open-source LLM inference
-        # OLLAMA_API_URL = "http://localhost:11434/api/generate"
-        # system_prompt = (
-        #     "You are an expert game environment concept artist. "
-        #     "Given a partial or full prompt, suggest 3 creative, relevant, and visually distinct prompt refinements "
-        #     "for generating moodboard images. Only return the suggestions as a numbered list."
-        # )
-        # user_prompt = f"{prompt}"
-        # payload = {
-        #     "model": "llama3",  # Change to your preferred model if needed
-        #     "prompt": f"{system_prompt}\nPrompt: {user_prompt}\nSuggestions:",
-        #     "stream": False
-        # }
-        # try:
-        #     response = requests.post(OLLAMA_API_URL, json=payload, timeout=60)
-        #     data = response.json()
-        #     text = data.get("response", "")
-        #     # Parse numbered list
-        #     suggestions = [s.strip(" .-") for s in text.split("\n") if s.strip() and any(c.isalpha() for s in s)]
-        #     suggestions = [s.split(".", 1)[-1].strip() if s[0].isdigit() else s for s in suggestions]
-        #     return Response({"suggestions": suggestions[:3]})
-        # except Exception as e:
-        #     return Response({"error": str(e)}, status=500)
-        return Response({"suggestions": []})
+        """Load or unload an LLM service"""
+        try:
+            # Handle JSON parsing
+            if hasattr(request, 'data') and request.data:
+                data = request.data
+            else:
+                import json
+                data = json.loads(request.body)
+            
+            action = data.get('action')  # 'load' or 'unload'
+            service_id = data.get('service_id')
+            model_name = data.get('model_name')
+            
+            if not service_id:
+                return JsonResponse({
+                    'error': 'service_id is required',
+                    'status': 'error'
+                }, status=400)
+            
+            if action == 'load':
+                success = llm_manager.load_service(service_id, model_name)
+                if success:
+                    status = llm_manager.get_service_status(service_id)
+                    return JsonResponse({
+                        'message': f'Service {service_id} loaded successfully',
+                        'service_status': status,
+                        'status': 'success'
+                    })
+                else:
+                    return JsonResponse({
+                        'error': f'Failed to load service {service_id}',
+                        'status': 'error'
+                    }, status=500)
+            
+            elif action == 'unload':
+                success = llm_manager.unload_service(service_id)
+                if success:
+                    return JsonResponse({
+                        'message': f'Service {service_id} unloaded successfully',
+                        'status': 'success'
+                    })
+                else:
+                    return JsonResponse({
+                        'error': f'Failed to unload service {service_id}',
+                        'status': 'error'
+                    }, status=500)
+            
+            else:
+                return JsonResponse({
+                    'error': 'Invalid action. Use "load" or "unload"',
+                    'status': 'error'
+                }, status=400)
+                
+        except LLMServiceError as e:
+            return JsonResponse({
+                'error': str(e),
+                'status': 'error'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Internal server error: {str(e)}',
+                'status': 'error'
+            }, status=500)
+    
+    def get(self, request):
+        """Get detailed status of all services"""
+        try:
+            services = llm_manager.list_services()
+            active_service = llm_manager.get_active_service()
+            
+            # Get detailed status for each service
+            detailed_status = {}
+            for service_id in services.keys():
+                detailed_status[service_id] = llm_manager.get_service_status(service_id)
+            
+            return JsonResponse({
+                'services': services,
+                'detailed_status': detailed_status,
+                'active_service': active_service,
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': str(e),
+                'status': 'error'
+            }, status=500)

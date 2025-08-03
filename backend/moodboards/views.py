@@ -1,0 +1,587 @@
+from django.db.models import Q, Count, Prefetch
+from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.contrib.auth.models import User
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
+from rest_framework import viewsets, permissions, status, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.authentication import SessionAuthentication
+from datetime import datetime, timedelta
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """Session authentication that doesn't enforce CSRF for API calls"""
+    def enforce_csrf(self, request):
+        return  # Skip CSRF check
+
+from .models import (
+    Moodboard, 
+    MoodboardImage, 
+    MoodboardShare, 
+    MoodboardComment, 
+    MoodboardTemplate
+)
+from .serializers import (
+    MoodboardListSerializer,
+    MoodboardDetailSerializer,
+    MoodboardCreateUpdateSerializer,
+    MoodboardImageSerializer,
+    MoodboardImageCreateSerializer,
+    MoodboardCommentSerializer,
+    MoodboardTemplateSerializer,
+    MoodboardBulkActionSerializer,
+    ImageBulkActionSerializer
+)
+from .permissions import MoodboardPermission, CanViewMoodboard, CanEditMoodboard
+
+
+class StandardResultsSetPagination(PageNumberPagination):
+    """Standard pagination configuration"""
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+class MoodboardViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Moodboard CRUD operations.
+    
+    Provides:
+    - List moodboards (with filtering and search)
+    - Create new moodboard
+    - Retrieve specific moodboard
+    - Update moodboard
+    - Delete moodboard
+    - Bulk actions
+    - Sharing functionality
+    - Comments
+    - Analytics
+    """
+    
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    permission_classes = [permissions.IsAuthenticated, MoodboardPermission]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'description', 'tags']
+    ordering_fields = ['created_at', 'updated_at', 'title', 'status']
+    ordering = ['-updated_at']
+    
+    def get_queryset(self):
+        """Get moodboards visible to the current user"""
+        user = self.request.user
+        
+        # Base queryset with optimized joins
+        queryset = Moodboard.objects.select_related('user').prefetch_related(
+            'images',
+            'shared_with',
+            'comments__user'
+        ).annotate(
+            total_images=Count('images', distinct=True),
+            total_comments=Count('comments', distinct=True)
+        )
+        
+        # Filter based on action
+        action = self.action
+        
+        if action == 'public':
+            # Public moodboards - ensure they actually exist and are accessible
+            public_queryset = queryset.filter(is_public=True)
+            
+            # Add additional filtering to ensure moodboards are valid
+            public_queryset = public_queryset.filter(
+                user__isnull=False,  # Ensure user still exists
+                title__isnull=False  # Ensure basic fields are not null
+            )
+            
+
+            if public_queryset.exists():
+            return public_queryset
+        elif action == 'shared_with_me':
+            # Moodboards shared with the user
+            return queryset.filter(shared_with=user)
+        else:
+            # User's own moodboards ONLY (not including shared ones)
+            # Debug: Add logging to see what moodboards are being returned
+            user_moodboards = queryset.filter(user=user)
+            
+
+            
+            if user_moodboards.exists():
+            
+            # For retrieve action, include public moodboards from all users
+            if action == 'retrieve':
+
+                accessible_queryset = queryset.filter(
+                    Q(user=user) |  # User's own moodboards
+                    Q(is_public=True)  # Public moodboards from all users
+                )
+                return accessible_queryset
+            
+            # Return only user's own moodboards for list and other actions
+            return queryset.filter(user=user)
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer class based on action"""
+        if self.action == 'list':
+            return MoodboardListSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return MoodboardCreateUpdateSerializer
+        else:
+            return MoodboardDetailSerializer
+    
+    def perform_create(self, serializer):
+        """Set the user when creating a moodboard"""
+        serializer.save(user=self.request.user)
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Custom retrieve method with better error handling"""
+        moodboard_id = kwargs.get('pk')
+
+        
+        try:
+            # Validate UUID format first
+            import uuid
+            try:
+                uuid.UUID(moodboard_id)
+            except (ValueError, TypeError):
+
+                return Response(
+                    {'detail': 'Invalid moodboard ID format.'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Try to get the object using Django REST's method
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+
+            return Response(serializer.data)
+            
+        except (Moodboard.DoesNotExist, Http404) as e:
+
+            return Response(
+                {'detail': 'No Moodboard matches the given query.'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except PermissionDenied as e:
+
+            return Response(
+                {'detail': 'You do not have permission to access this moodboard.'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except Exception as e:
+
+
+
+            import traceback
+
+            return Response(
+                {'detail': 'An error occurred while retrieving the moodboard.'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def public(self, request):
+        """Get public moodboards"""
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = MoodboardListSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = MoodboardListSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def shared_with_me(self, request):
+        """Get moodboards shared with the current user"""
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            # Use SharedMoodboardSerializer to include permission info
+            from .serializers import SharedMoodboardSerializer
+            serializer = SharedMoodboardSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        
+        from .serializers import SharedMoodboardSerializer
+        serializer = SharedMoodboardSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Get recently updated moodboards"""
+        # Get moodboards updated in the last 7 days
+        recent_date = datetime.now() - timedelta(days=7)
+        queryset = self.get_queryset().filter(updated_at__gte=recent_date)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = MoodboardListSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = MoodboardListSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+        """Set user and moodboard when creating a comment"""
+        moodboard_id = self.kwargs.get('moodboard_pk')
+        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
+        serializer.save(user=self.request.user, moodboard=moodboard)
+
+
+class MoodboardTemplateViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardTemplate operations"""
+    
+    serializer_class = MoodboardTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'description']
+    
+    def get_queryset(self):
+        """Get active templates"""
+        return MoodboardTemplate.objects.filter(is_active=True).select_related('created_by')
+    
+    def perform_create(self, serializer):
+        """Set the creator when creating a template"""
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def use_template(self, request, pk=None):
+        """Create a new moodboard from a template"""
+        template = self.get_object()
+        
+        # Create moodboard from template
+        moodboard = Moodboard.objects.create(
+            user=request.user,
+            title=request.data.get('title', f"From {template.title}"),
+            description=request.data.get('description', template.description),
+            category=template.category,
+            tags=template.default_tags,
+            color_palette=template.default_color_palette,
+            status='draft'
+        )
+        
+        # Increment template usage
+        template.increment_usage()
+        
+        serializer = MoodboardDetailSerializer(moodboard, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MoodboardAIViewSet(viewsets.GenericViewSet):
+    """ViewSet for AI-powered moodboard operations"""
+    
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['post'], url_path='start-session')
+    def start_session(self, request):
+        """Start a new AI moodboard session"""
+        try:
+            # Get or create user for development
+            user = request.user
+            if not user.is_authenticated:
+                user, created = User.objects.get_or_create(
+                    username='testuser123',
+                    defaults={'email': 'test@example.com'}
+                )
+
+            else:
+
+            
+            # Create a new moodboard for the session
+            moodboard = Moodboard.objects.create(
+                user=user,
+                title=request.data.get('title', f'AI Moodboard {datetime.now().strftime("%Y-%m-%d %H:%M")}'),
+                description=request.data.get('description', 'AI-generated moodboard session'),
+                category=request.data.get('category', 'gaming'),
+                tags=request.data.get('tags', ''),
+                color_palette=request.data.get('color_palette', []),
+                status='draft'
+            )
+            
+
+            
+            return Response({
+                'session_id': str(moodboard.id),
+                'moodboard': MoodboardDetailSerializer(moodboard, context={'request': request}).data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Failed to start session: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='generate-images')
+    def generate_images(self, request):
+        """Generate AI images for a moodboard"""
+        try:
+            # Get or create user for development
+            user = request.user
+            if not user.is_authenticated:
+                user, created = User.objects.get_or_create(
+                    username='testuser123',
+                    defaults={'email': 'test@example.com'}
+                )
+            
+            data = request.data
+            session_id = data.get('session_id')
+            prompt = data.get('prompt', '')
+            selected_image_ids = data.get('selected_image_ids', [])
+            mode = data.get('mode', 'gaming')
+            
+            if not session_id:
+                return Response({
+                    'error': 'session_id is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+            if not prompt:
+                return Response({
+                    'error': 'prompt is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get the moodboard
+            try:
+                moodboard = Moodboard.objects.get(id=session_id)
+                
+                # Check if current user has permission to modify this moodboard
+                if moodboard.user != user:
+
+                    # For public moodboards, allow anyone to modify them
+                    if moodboard.is_public:
+
+                        # Don't change ownership for public moodboards - keep original owner
+                    # For AI sessions, be more lenient - allow modification if it's a recent session or the user is authenticated
+                    elif moodboard.status in ['draft', 'active', 'generating'] or moodboard.user.username == 'testuser123':
+
+                        # Update the moodboard owner to current user to maintain consistency
+                        moodboard.user = user
+                        moodboard.save()
+                    else:
+                        return Response({
+                            'error': 'You do not have permission to modify this moodboard session'
+                        }, status=status.HTTP_403_FORBIDDEN)
+                        
+            except Moodboard.DoesNotExist:
+                return Response({
+                    'error': 'Moodboard session not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Update moodboard with new prompt info
+            if 'AI-generated moodboard session' in moodboard.description:
+                moodboard.description = prompt
+            else:
+                moodboard.description += f" | {prompt}"
+            moodboard.save()
+            
+            # Import the image generation function
+            from llm.views import generate_gaming_images
+            
+            # Generate new images
+            try:
+                generated_urls = generate_gaming_images(prompt, num_images=3)
+                
+                # Add generated images to moodboard
+                added_images = []
+                for i, image_url in enumerate(generated_urls):
+                    # Create MoodboardImage instance directly instead of using serializer
+                    image = MoodboardImage.objects.create(
+                        moodboard=moodboard,  # Pass the moodboard instance
+                        image_url=image_url,
+                        title=f'Generated Image {i+1}',
+                        prompt=prompt,
+                        source='ai_generated',
+                        is_selected=False,  # New images start as unselected
+                        order_index=i
+                    )
+                    added_images.append({
+                        'id': str(image.id),
+                        'url': image.image_url,
+                        'title': image.title,
+                        'prompt': image.prompt,
+                        'is_selected': image.is_selected
+                    })
+                
+                # Process any selected image IDs (mark them as selected)
+                if selected_image_ids:
+                    MoodboardImage.objects.filter(
+                        id__in=selected_image_ids,
+                        moodboard=moodboard
+                    ).update(is_selected=True)
+                
+                # Get updated moodboard data
+                moodboard.refresh_from_db()
+                all_images = moodboard.images.all()
+                generated_images = [img for img in all_images if not img.is_selected]
+                selected_images = [img for img in all_images if img.is_selected]
+                
+                return Response({
+                    'generated_images': MoodboardImageSerializer(generated_images, many=True).data,
+                    'moodboard': MoodboardImageSerializer(selected_images, many=True).data,
+                    'session_id': str(moodboard.id)
+                }, status=status.HTTP_200_OK)
+                
+            except Exception as e:
+                return Response({
+                    'error': f'Failed to generate images: {str(e)}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            return Response({
+                'error': f'Image generation failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['get'], url_path='session/(?P<session_id>[^/.]+)')
+    def get_session(self, request, session_id=None):
+        """Get current session data"""
+        try:
+            # Get or create user for development
+            user = request.user
+            if not user.is_authenticated:
+                user, created = User.objects.get_or_create(
+                    username='testuser123',
+                    defaults={'email': 'test@example.com'}
+                )
+            
+            try:
+                moodboard = Moodboard.objects.get(id=session_id)
+                
+                # Check if current user has permission to view this moodboard
+                if moodboard.user != user:
+
+                    # For public moodboards, allow anyone to view them
+                    if moodboard.is_public:
+
+                        # Don't change ownership for public moodboards - keep original owner
+                    # For AI sessions, be more lenient - allow viewing if it's a recent session or the user is authenticated
+                    elif moodboard.status in ['draft', 'active', 'generating'] or moodboard.user.username == 'testuser123':
+
+                        # Update the moodboard owner to current user to maintain consistency
+                        moodboard.user = user
+                        moodboard.save()
+                    else:
+                        return Response({
+                            'error': 'You do not have permission to view this moodboard session'
+                        }, status=status.HTTP_403_FORBIDDEN)
+                
+            except Moodboard.DoesNotExist:
+                return Response({
+                    'error': 'Session not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            all_images = moodboard.images.all()
+            
+            generated_images = [img for img in all_images if not img.is_selected]
+            selected_images = [img for img in all_images if img.is_selected]
+            
+            return Response({
+                'images': MoodboardImageSerializer(generated_images, many=True).data,
+                'moodboard': MoodboardImageSerializer(selected_images, many=True).data,
+                'session_id': str(moodboard.id)
+            })
+            
+        except Exception as e:
+            return Response({
+                'error': f'Failed to get session: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='end-session')
+    def end_session(self, request):
+        """End AI moodboard session"""
+        try:
+            # Get or create user for development
+            user = request.user
+            if not user.is_authenticated:
+                user, created = User.objects.get_or_create(
+                    username='testuser123',
+                    defaults={'email': 'test@example.com'}
+                )
+            
+            session_id = request.data.get('session_id')
+            selected_image_ids = request.data.get('selected_image_ids', [])
+            title = request.data.get('title')
+            is_public = request.data.get('public')
+            
+            if not session_id:
+                return Response({
+                    'error': 'session_id is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+
+            
+            # Get the moodboard - try to find it regardless of user first
+            try:
+                moodboard = Moodboard.objects.get(id=session_id)
+
+                
+                # Check if current user has permission to modify this moodboard
+                if moodboard.user != user:
+
+                    # For public moodboards, allow anyone to modify them
+                    if moodboard.is_public:
+
+                        # Don't change ownership for public moodboards - keep original owner
+                    # For AI sessions, be more lenient - allow modification if it's a recent session or the user is authenticated
+                    elif moodboard.status in ['draft', 'active', 'generating'] or moodboard.user.username == 'testuser123':
+
+                        # Update the moodboard owner to current user to maintain consistency
+                        moodboard.user = user
+                        moodboard.save()
+                    else:
+                        return Response({
+                            'error': 'You do not have permission to modify this moodboard session'
+                        }, status=status.HTTP_403_FORBIDDEN)
+                        
+            except Moodboard.DoesNotExist:
+
+                return Response({
+                    'error': 'Moodboard session not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Update moodboard title and public status if provided
+            if title:
+                moodboard.title = title
+            if is_public is not None:
+                moodboard.is_public = is_public
+            
+            # Mark selected images and finalize moodboard
+            if selected_image_ids:
+                MoodboardImage.objects.filter(
+                    id__in=selected_image_ids,
+                    moodboard=moodboard
+                ).update(is_selected=True)
+            
+            # Update moodboard status to published
+            moodboard.status = 'published'
+            moodboard.save()
+            
+            # Get final moodboard state
+            selected_images = moodboard.images.filter(is_selected=True)
+            
+            return Response({
+                'moodboard': MoodboardImageSerializer(selected_images, many=True).data,
+                'session_id': str(moodboard.id),
+                'status': 'completed'
+            })
+            
+        except Exception as e:
+            return Response({
+                'error': f'Failed to end session: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='preload', permission_classes=[permissions.AllowAny])
+    def preload(self, request):
+        """Preload AI services and models"""
+        try:
+            # This is mainly a placeholder for AI service preloading
+            # In a real implementation, this would warm up AI models
+            return Response({
+                'status': 'ready',
+                'message': 'AI services are ready'
+            })
+        except Exception as e:
+            return Response({
+                'error': f'Failed to preload: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

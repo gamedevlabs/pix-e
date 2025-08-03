@@ -23,11 +23,15 @@ const items = ref<NavigationMenuItem[]>([
     label: 'PxComponentsDefinitions',
     icon: 'i-lucide-library-big',
     to: '/pxcomponentdefinitions',
-  },
-  {
+  },  {
     label: 'Pillars',
     icon: 'i-lucide-landmark',
     to: '/pillars',
+  },
+  {
+    label: 'Moodboards',
+    icon: 'i-lucide-layout-grid',
+    to: '/moodboards',
   },
   /*{
     label: 'GitHub',

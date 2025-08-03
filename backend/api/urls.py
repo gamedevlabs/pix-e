@@ -19,22 +19,16 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
-from llm.views import (
-    MoodboardStartView,
-    MoodboardGenerateView,
-    MoodboardGetView,
-    MoodboardEndView,
-    MoodboardSuggestView,
-)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/moodboard/start/", MoodboardStartView.as_view(), name="moodboard_start"),
-    path("api/moodboard/generate/", MoodboardGenerateView.as_view(), name="moodboard_generate"),
-    path("api/moodboard/<uuid:session_id>/", MoodboardGetView.as_view(), name="moodboard_get"),
-    path("api/moodboard/end/", MoodboardEndView.as_view(), name="moodboard_end"),
-    path("api/moodboard/suggest/", MoodboardSuggestView.as_view(), name="moodboard-suggest"),
-    path("llm/", include("llm.urls")),
+    
+    # Moodboard system with integrated AI functionality
+    path("", include("moodboards.urls")),
+    
+    # Other app URLs
+    path("api/llm/", include("llm.urls")),
+    path("llm/", include("llm.urls")),  # Keep both for backward compatibility
     path("accounts/", include("accounts.urls")),
     path("", include("pxnodes.urls")),
 ]
