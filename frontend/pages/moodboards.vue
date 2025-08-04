@@ -69,7 +69,7 @@
             <div class="text-3xl font-bold text-blue-700 dark:text-blue-300">{{ analytics.total_moodboards }}</div>
             <div class="text-sm text-blue-600 dark:text-blue-400 mt-1">Total Moodboards</div>
             <div v-if="analytics.completed_moodboards > 0" class="text-xs text-blue-500 dark:text-blue-500 mt-1">
-              {{ analytics.completed_moodboards }} published
+              {{ analytics.completed_moodboards }} completed
             </div>
           </div>
         </UCard>
@@ -130,7 +130,7 @@
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Status:</span>
             <USelectMenu 
               v-model="selectedStatuses" 
-              :options="statusOptions" 
+              :items="statusOptions" 
               multiple 
               placeholder="All Statuses"
               class="w-48"
@@ -142,7 +142,7 @@
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Visibility:</span>
             <USelectMenu 
               v-model="selectedVisibility" 
-              :options="visibilityOptions" 
+              :items="visibilityOptions" 
               multiple 
               placeholder="All Types"
               class="w-40"
@@ -317,8 +317,8 @@ const loadingUsers = ref(false)
 const isRefreshing = ref(false)
 
 // Additional filter options and computed properties
-const statusOptions = ['Draft', 'Published'].map(item => ({ label: item, value: item }))
-const visibilityOptions = ['Private', 'Public'].map(item => ({ label: item, value: item }))
+const statusOptions = ref(['Draft', 'Completed'])
+const visibilityOptions = ref(['Private', 'Public'])
 
 // Computed for active filters
 const hasActiveFilters = computed(() => {
@@ -352,15 +352,26 @@ const tabs = [
 // Filter helper function
 const applyFilters = (moodboards: Moodboard[]) => {
   return moodboards.filter(moodboard => {
+    // Search query filter
+    const searchMatch = searchQuery.value.trim() === '' || 
+      moodboard.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      moodboard.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      moodboard.category.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      moodboard.tags.toLowerCase().includes(searchQuery.value.toLowerCase())
+    
+    // Status filter
     const statusMatch = selectedStatuses.value.length === 0 || 
       selectedStatuses.value.some(statusLabel => {
-        if (statusLabel === 'Published') {
-          return moodboard.status === 'completed'
+        if (statusLabel === 'Completed') {
+          return moodboard.status === 'completed' || moodboard.status === 'in_progress'
         }
-        const normalizedStatus = statusLabel.toLowerCase().replace(/\s+/g, '_')
-        return moodboard.status === normalizedStatus
+        if (statusLabel === 'Draft') {
+          return moodboard.status === 'draft'
+        }
+        return false
       })
     
+    // Visibility filter
     const visibilityMatch = selectedVisibility.value.length === 0 || 
       selectedVisibility.value.some(visibility => {
         if (visibility === 'Public') return moodboard.is_public
@@ -368,7 +379,7 @@ const applyFilters = (moodboards: Moodboard[]) => {
         return true
       })
     
-    return statusMatch && visibilityMatch
+    return searchMatch && statusMatch && visibilityMatch
   })
 }
 

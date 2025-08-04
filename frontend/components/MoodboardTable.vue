@@ -175,7 +175,9 @@ const getImageUrl = (url: string) => {
 const getStatusColor = (status: string): 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral' | undefined => {
   const colorMap: Record<string, 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'> = {
     'draft': 'warning',
+    'in_progress': 'info',
     'completed': 'success',
+    'archived': 'neutral'
   }
   return colorMap[status] || 'neutral'
 }
@@ -183,7 +185,9 @@ const getStatusColor = (status: string): 'primary' | 'secondary' | 'success' | '
 const formatStatus = (status: string) => {
   const statusMap: Record<string, string> = {
     'draft': 'Draft',
-    'completed': 'Published'
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'archived': 'Archived'
   }
   return statusMap[status] || status
 }

@@ -570,11 +570,6 @@ export const useMoodboards = () => {
     
     if (result) {
       currentMoodboard.value = (result as any).moodboard
-      toast.add({ 
-        title: 'Success', 
-        description: 'AI moodboard session started', 
-        color: 'success' 
-      })
     }
     return result
   }
@@ -634,11 +629,7 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Moodboard session completed', 
-        color: 'success' 
-      })
+      // Session completed successfully
     }
     return result
   }

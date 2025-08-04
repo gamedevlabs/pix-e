@@ -97,24 +97,16 @@ class MoodboardViewSet(viewsets.ModelViewSet):
                 title__isnull=False  # Ensure basic fields are not null
             )
             
-
-            if public_queryset.exists():
             return public_queryset
         elif action == 'shared_with_me':
             # Moodboards shared with the user
             return queryset.filter(shared_with=user)
         else:
             # User's own moodboards ONLY (not including shared ones)
-            # Debug: Add logging to see what moodboards are being returned
             user_moodboards = queryset.filter(user=user)
-            
-
-            
-            if user_moodboards.exists():
             
             # For retrieve action, include public moodboards from all users
             if action == 'retrieve':
-
                 accessible_queryset = queryset.filter(
                     Q(user=user) |  # User's own moodboards
                     Q(is_public=True)  # Public moodboards from all users
@@ -140,7 +132,6 @@ class MoodboardViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         """Custom retrieve method with better error handling"""
         moodboard_id = kwargs.get('pk')
-
         
         try:
             # Validate UUID format first
@@ -148,7 +139,6 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             try:
                 uuid.UUID(moodboard_id)
             except (ValueError, TypeError):
-
                 return Response(
                     {'detail': 'Invalid moodboard ID format.'}, 
                     status=status.HTTP_400_BAD_REQUEST
@@ -157,27 +147,19 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             # Try to get the object using Django REST's method
             instance = self.get_object()
             serializer = self.get_serializer(instance)
-
             return Response(serializer.data)
             
         except (Moodboard.DoesNotExist, Http404) as e:
-
             return Response(
                 {'detail': 'No Moodboard matches the given query.'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-        except PermissionDenied as e:
-
+        except PermissionDenied:
             return Response(
                 {'detail': 'You do not have permission to access this moodboard.'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
-        except Exception as e:
-
-
-
-            import traceback
-
+        except Exception:
             return Response(
                 {'detail': 'An error occurred while retrieving the moodboard.'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -224,7 +206,376 @@ class MoodboardViewSet(viewsets.ModelViewSet):
         serializer = MoodboardListSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
     
+    
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        """Create a duplicate of a moodboard"""
+        moodboard = self.get_object()
+        
+        # Create duplicate
+        duplicate = Moodboard.objects.create(
+            user=request.user,
+            title=f"{moodboard.title} (Copy)",
+            description=moodboard.description,
+            category=moodboard.category,
+            tags=moodboard.tags,
+            color_palette=moodboard.color_palette,
+            status='draft'
+        )
+        
+        # Duplicate images
+        for image in moodboard.images.all():
+            MoodboardImage.objects.create(
+                moodboard=duplicate,
+                image_url=image.image_url,
+                thumbnail_url=image.thumbnail_url,
+                original_filename=image.original_filename,
+                prompt=image.prompt,
+                generation_params=image.generation_params,
+                title=image.title,
+                description=image.description,
+                source=image.source,
+                tags=image.tags,
+                order_index=image.order_index,
+                width=image.width,
+                height=image.height,
+                file_size=image.file_size
+            )
+        
+        serializer = MoodboardDetailSerializer(duplicate, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'], permission_classes=[CanEditMoodboard])
+    def share(self, request, pk=None):
+        """Share a moodboard with other users"""
+        moodboard = self.get_object()
+        user_id = request.data.get('user_id')
+        permission = request.data.get('permission', 'view')
+        
+        if not user_id:
+            return Response(
+                {'error': 'user_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            from django.contrib.auth.models import User
+            user_to_share_with = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Create or update share
+        share, created = MoodboardShare.objects.update_or_create(
+            moodboard=moodboard,
+            user=user_to_share_with,
+            defaults={
+                'permission': permission,
+                'shared_by': request.user
+            }
+        )
+        
+        return Response({
+            'message': 'Moodboard shared successfully',
+            'created': created
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[CanEditMoodboard])
+    def bulk_share(self, request, pk=None):
+        """Share a moodboard with multiple users at once"""
+        moodboard = self.get_object()
+        user_ids = request.data.get('user_ids', [])
+        permission = request.data.get('permission', 'view')
+        
+        if not user_ids or not isinstance(user_ids, list):
+            return Response(
+                {'error': 'user_ids must be a non-empty list'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate permission level
+        if permission not in ['view', 'comment', 'edit']:
+            return Response(
+                {'error': 'Invalid permission level. Must be view, comment, or edit'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        from django.contrib.auth.models import User
+        
+        # Find valid users
+        valid_users = User.objects.filter(id__in=user_ids)
+        valid_user_ids = list(valid_users.values_list('id', flat=True))
+        invalid_user_ids = [uid for uid in user_ids if uid not in valid_user_ids]
+        
+        # Share with valid users
+        shared_count = 0
+        created_count = 0
+        errors = []
+        
+        for user in valid_users:
+            try:
+                share, created = MoodboardShare.objects.update_or_create(
+                    moodboard=moodboard,
+                    user=user,
+                    defaults={
+                        'permission': permission,
+                        'shared_by': request.user
+                    }
+                )
+                shared_count += 1
+                if created:
+                    created_count += 1
+            except Exception as e:
+                errors.append(f'Failed to share with user {user.id}: {str(e)}')
+        
+        response_data = {
+            'message': f'Moodboard shared with {shared_count} user(s)',
+            'shared_count': shared_count,
+            'created_count': created_count,
+            'updated_count': shared_count - created_count,
+            'valid_user_ids': valid_user_ids,
+        }
+        
+        if invalid_user_ids:
+            response_data['invalid_user_ids'] = invalid_user_ids
+            response_data['warning'] = f'{len(invalid_user_ids)} user(s) not found'
+        
+        if errors:
+            response_data['errors'] = errors
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['delete'], permission_classes=[CanEditMoodboard])
+    def unshare(self, request, pk=None):
+        """Remove sharing for a moodboard"""
+        moodboard = self.get_object()
+        user_id = request.query_params.get('user_id')
+        
+        if not user_id:
+            return Response(
+                {'error': 'user_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            share = MoodboardShare.objects.get(moodboard=moodboard, user_id=user_id)
+            share.delete()
+            return Response({'message': 'Sharing removed successfully'})
+        except MoodboardShare.DoesNotExist:
+            return Response(
+                {'error': 'Share not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=False, methods=['post'])
+    def bulk_action(self, request):
+        """Perform bulk actions on moodboards"""
+        serializer = MoodboardBulkActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = serializer.validated_data
+        moodboard_ids = data['moodboard_ids']
+        action = data['action']
+        
+        # Get moodboards user can edit
+        queryset = self.get_queryset().filter(id__in=moodboard_ids, user=request.user)
+        
+        if action == 'delete':
+            count = queryset.count()
+            queryset.delete()
+            return Response({'message': f'{count} moodboards deleted'})
+        
+        elif action == 'archive':
+            count = queryset.update(status='archived')
+            return Response({'message': f'{count} moodboards archived'})
+        
+        elif action == 'unarchive':
+            count = queryset.update(status='draft')
+            return Response({'message': f'{count} moodboards unarchived'})
+        
+        elif action == 'change_status':
+            new_status = data['new_status']
+            count = queryset.update(status=new_status)
+            return Response({'message': f'{count} moodboards updated'})
+        
+        elif action == 'duplicate':
+            duplicates = []
+            for moodboard in queryset:
+                duplicate = Moodboard.objects.create(
+                    user=request.user,
+                    title=f"{moodboard.title} (Copy)",
+                    description=moodboard.description,
+                    category=moodboard.category,
+                    tags=moodboard.tags,
+                    color_palette=moodboard.color_palette,
+                    status='draft'
+                )
+                duplicates.append(duplicate.id)
+            return Response({
+                'message': f'{len(duplicates)} moodboards duplicated',
+                'duplicate_ids': duplicates
+            })
+        
+        elif action in ['add_tags', 'remove_tags']:
+            tags_field = 'tags_to_add' if action == 'add_tags' else 'tags_to_remove'
+            tags = data[tags_field]
+            
+            for moodboard in queryset:
+                if action == 'add_tags':
+                    for tag in tags.split(','):
+                        moodboard.add_tag(tag.strip())
+                else:
+                    for tag in tags.split(','):
+                        moodboard.remove_tag(tag.strip())
+            
+            return Response({'message': f'Tags updated for {queryset.count()} moodboards'})
+        
+        return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=['get'])
+    def analytics(self, request):
+        """Get analytics data for user's moodboards"""
+        queryset = self.get_queryset().filter(user=request.user)
+        
+        # Basic stats
+        total_moodboards = queryset.count()
+        by_status = queryset.values('status').annotate(count=Count('id'))
+        by_category = queryset.values('category').annotate(count=Count('id'))
+        
+        # Images stats - count only selected images that are actually used in moodboards
+        total_images = MoodboardImage.objects.filter(
+            moodboard__user=request.user, 
+            is_selected=True
+        ).count()
+        # Keep selected_images for potential future use, but use total_images for the main count
+        selected_images = total_images
+        
+        # Recent activity
+        recent_date = datetime.now() - timedelta(days=30)
+        recent_moodboards = queryset.filter(created_at__gte=recent_date).count()
+        
+        # Public moodboards count
+        public_moodboards = queryset.filter(is_public=True).count()
+        
+        # Additional useful stats
+        completed_moodboards = queryset.filter(status='completed').count()
+        avg_images_per_moodboard = total_images / total_moodboards if total_moodboards > 0 else 0
+        
+        return Response({
+            'total_moodboards': total_moodboards,
+            'total_images': total_images,
+            'public_moodboards': public_moodboards,
+            'selected_images': selected_images,
+            'recent_moodboards': recent_moodboards,
+            'completed_moodboards': completed_moodboards,
+            'avg_images_per_moodboard': round(avg_images_per_moodboard, 1),
+            'by_status': list(by_status),
+            'by_category': list(by_category),
+        })
+
+
+class MoodboardImageViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardImage CRUD operations within a moodboard"""
+    
+    serializer_class = MoodboardImageSerializer
+    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
+    
+    def get_queryset(self):
+        """Get images for a specific moodboard"""
+        moodboard_id = self.kwargs.get('moodboard_pk')
+        return MoodboardImage.objects.filter(
+            moodboard_id=moodboard_id
+        ).select_related('moodboard')
+    
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action"""
+        if self.action in ['create']:
+            return MoodboardImageCreateSerializer
+        return MoodboardImageSerializer
+    
+    def perform_create(self, serializer):
+        """Set the moodboard when creating an image"""
+        moodboard_id = self.kwargs.get('moodboard_pk')
+        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
+        serializer.save(moodboard=moodboard)
+    
+    @action(detail=False, methods=['post'])
+    def bulk_action(self, request, moodboard_pk=None):
+        """Perform bulk actions on images"""
+        serializer = ImageBulkActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = serializer.validated_data
+        image_ids = data['image_ids']
+        action = data['action']
+        
+        # Get images from this moodboard
+        queryset = self.get_queryset().filter(id__in=image_ids)
+        
+        if action == 'select':
+            count = queryset.update(is_selected=True)
+            return Response({'message': f'{count} images selected'})
+        
+        elif action == 'unselect':
+            count = queryset.update(is_selected=False)
+            return Response({'message': f'{count} images unselected'})
+        
+        elif action == 'delete':
+            count = queryset.count()
+            queryset.delete()
+            return Response({'message': f'{count} images deleted'})
+        
+        elif action == 'reorder':
+            new_order_indices = data['new_order_indices']
+            for i, image_id in enumerate(image_ids):
+                queryset.filter(id=image_id).update(order_index=new_order_indices[i])
+            return Response({'message': f'{len(image_ids)} images reordered'})
+        
+        elif action in ['add_tags', 'remove_tags']:
+            tags_field = 'tags_to_add' if action == 'add_tags' else 'tags_to_remove'
+            tags = data[tags_field]
+            
+            for image in queryset:
+                current_tags = image.tag_list
+                
+                if action == 'add_tags':
+                    for tag in tags.split(','):
+                        tag = tag.strip()
+                        if tag not in current_tags:
+                            current_tags.append(tag)
+                else:
+                    for tag in tags.split(','):
+                        tag = tag.strip()
+                        if tag in current_tags:
+                            current_tags.remove(tag)
+                
+                image.tags = ', '.join(current_tags)
+                image.save()
+            
+            return Response({'message': f'Tags updated for {queryset.count()} images'})
+        
+        return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MoodboardCommentViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardComment operations"""
+    
+    serializer_class = MoodboardCommentSerializer
+    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
+    
+    def get_queryset(self):
+        """Get comments for a specific moodboard"""
+        moodboard_id = self.kwargs.get('moodboard_pk')
+        return MoodboardComment.objects.filter(
+            moodboard_id=moodboard_id
+        ).select_related('user', 'moodboard', 'image').prefetch_related('replies')
+    
+    def perform_create(self, serializer):
         """Set user and moodboard when creating a comment"""
         moodboard_id = self.kwargs.get('moodboard_pk')
         moodboard = get_object_or_404(Moodboard, id=moodboard_id)
@@ -282,14 +633,6 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
         try:
             # Get or create user for development
             user = request.user
-            if not user.is_authenticated:
-                user, created = User.objects.get_or_create(
-                    username='testuser123',
-                    defaults={'email': 'test@example.com'}
-                )
-
-            else:
-
             
             # Create a new moodboard for the session
             moodboard = Moodboard.objects.create(
@@ -301,8 +644,6 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 color_palette=request.data.get('color_palette', []),
                 status='draft'
             )
-            
-
             
             return Response({
                 'session_id': str(moodboard.id),
@@ -320,11 +661,6 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
         try:
             # Get or create user for development
             user = request.user
-            if not user.is_authenticated:
-                user, created = User.objects.get_or_create(
-                    username='testuser123',
-                    defaults={'email': 'test@example.com'}
-                )
             
             data = request.data
             session_id = data.get('session_id')
@@ -348,14 +684,12 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 
                 # Check if current user has permission to modify this moodboard
                 if moodboard.user != user:
-
                     # For public moodboards, allow anyone to modify them
                     if moodboard.is_public:
-
                         # Don't change ownership for public moodboards - keep original owner
+                        pass
                     # For AI sessions, be more lenient - allow modification if it's a recent session or the user is authenticated
                     elif moodboard.status in ['draft', 'active', 'generating'] or moodboard.user.username == 'testuser123':
-
                         # Update the moodboard owner to current user to maintain consistency
                         moodboard.user = user
                         moodboard.save()
@@ -439,25 +773,19 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
         try:
             # Get or create user for development
             user = request.user
-            if not user.is_authenticated:
-                user, created = User.objects.get_or_create(
-                    username='testuser123',
-                    defaults={'email': 'test@example.com'}
-                )
             
             try:
                 moodboard = Moodboard.objects.get(id=session_id)
                 
                 # Check if current user has permission to view this moodboard
                 if moodboard.user != user:
-
                     # For public moodboards, allow anyone to view them
                     if moodboard.is_public:
-
                         # Don't change ownership for public moodboards - keep original owner
+                        pass
                     # For AI sessions, be more lenient - allow viewing if it's a recent session or the user is authenticated
                     elif moodboard.status in ['draft', 'active', 'generating'] or moodboard.user.username == 'testuser123':
-
+                        pass
                         # Update the moodboard owner to current user to maintain consistency
                         moodboard.user = user
                         moodboard.save()
@@ -493,11 +821,6 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
         try:
             # Get or create user for development
             user = request.user
-            if not user.is_authenticated:
-                user, created = User.objects.get_or_create(
-                    username='testuser123',
-                    defaults={'email': 'test@example.com'}
-                )
             
             session_id = request.data.get('session_id')
             selected_image_ids = request.data.get('selected_image_ids', [])
@@ -509,23 +832,14 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                     'error': 'session_id is required'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-
-            
             # Get the moodboard - try to find it regardless of user first
             try:
                 moodboard = Moodboard.objects.get(id=session_id)
-
                 
                 # Check if current user has permission to modify this moodboard
                 if moodboard.user != user:
-
                     # For public moodboards, allow anyone to modify them
-                    if moodboard.is_public:
-
-                        # Don't change ownership for public moodboards - keep original owner
-                    # For AI sessions, be more lenient - allow modification if it's a recent session or the user is authenticated
-                    elif moodboard.status in ['draft', 'active', 'generating'] or moodboard.user.username == 'testuser123':
-
+                    if moodboard.status in ['draft', 'active', 'generating']:
                         # Update the moodboard owner to current user to maintain consistency
                         moodboard.user = user
                         moodboard.save()
@@ -535,7 +849,6 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                         }, status=status.HTTP_403_FORBIDDEN)
                         
             except Moodboard.DoesNotExist:
-
                 return Response({
                     'error': 'Moodboard session not found'
                 }, status=status.HTTP_404_NOT_FOUND)
@@ -553,8 +866,8 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                     moodboard=moodboard
                 ).update(is_selected=True)
             
-            # Update moodboard status to published
-            moodboard.status = 'published'
+            # Update moodboard status to completed
+            moodboard.status = 'completed'
             moodboard.save()
             
             # Get final moodboard state
