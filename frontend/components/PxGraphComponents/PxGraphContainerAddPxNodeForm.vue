@@ -5,22 +5,22 @@ onMounted(() => {
   fetchPxNodes()
 })
 
-const emit = defineEmits<{ close: [number] }>()
+const emit = defineEmits<{ close: [string] }>()
 
-const selectedNodeId = ref(-1)
+const formState = ref({selectedNodeId: ""})
 
 async function onSubmit() {
-  emit('close', selectedNodeId.value)
+  emit('close', formState.value.selectedNodeId)
 }
 </script>
 
 <template>
-  <UModal :title="'Add new Component'">
+  <UModal :title="'Add new PX node'" description="Use this modal to add a PX node to a PX container">
     <template #body>
-      <UForm :state="selectedNodeId" class="space-y-4" @submit="onSubmit">
-        <UFormField label="Node Reference" name="nodeRef" class="max-w-96" required>
+      <UForm :state="formState" class="space-y-4" @submit="onSubmit">
+        <UFormField label="Node Reference" name="selectedNodeId" class="max-w-96" required>
           <USelect
-            v-model="selectedNodeId"
+            v-model="formState.selectedNodeId"
             value-key="id"
             label-key="name"
             :items="pxNodes"
