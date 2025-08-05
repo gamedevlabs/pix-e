@@ -7,7 +7,7 @@ onMounted(() => {
 
 const emit = defineEmits<{ close: [string] }>()
 
-const formState = ref({selectedNodeId: ""})
+const formState = ref({ selectedNodeId: '' })
 
 async function onSubmit() {
   emit('close', formState.value.selectedNodeId)
@@ -15,7 +15,10 @@ async function onSubmit() {
 </script>
 
 <template>
-  <UModal :title="'Add new PX node'" description="Use this modal to add a PX node to a PX container">
+  <UModal
+    :title="'Add new PX node'"
+    description="Use this modal to add a PX node to a PX container"
+  >
     <template #body>
       <UForm :state="formState" class="space-y-4" @submit="onSubmit">
         <UFormField label="Node Reference" name="selectedNodeId" class="max-w-96" required>
