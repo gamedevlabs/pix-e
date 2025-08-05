@@ -1,6 +1,9 @@
 const pxValueTypes = ['none', 'number', 'string', 'boolean'] as const
 type PxValueType = (typeof pxValueTypes)[number]
 
+const pxContainerContentTypes = [null, 'pxnode', 'pxchart'] as const
+type PxContainerContentType = (typeof pxContainerContentTypes)[number]
+
 interface PxComponentDefinition {
   id: string
   name: string
@@ -51,7 +54,8 @@ interface PxChart extends NamedEntity {
 interface PxChartContainer {
   id: string
   name: string
-  content: string | null
+  content_type: string | null
+  content_id: string | null
   px_chart: string
   layout: PxChartContainerLayout
   created_at: string
