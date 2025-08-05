@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from pxnodes.models import PxNode
@@ -32,9 +34,9 @@ class PxChartContainer(models.Model):
         PxChart, on_delete=models.CASCADE, related_name="containers"
     )
     name = models.CharField(max_length=255)
-    content = models.ForeignKey(
-        PxNode, on_delete=models.SET_NULL, blank=True, null=True
-    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
+    content_id = models.UUIDField(null=True, blank=True)
+    content = GenericForeignKey('content_type', 'content_id')
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
