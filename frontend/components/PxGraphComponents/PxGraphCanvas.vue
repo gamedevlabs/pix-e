@@ -26,10 +26,12 @@ const {
   loadGraph,
   addContainer,
   updateContainer,
+  applyDefaultNodeChanges,
   addNodeToContainer,
   removeNodeFromContainer,
   deleteContainer,
   addEdge,
+  applyDefaultEdgeChanges,
   deleteEdge,
 } = usePxChartsCanvasApi(chartId)
 
@@ -43,6 +45,7 @@ onMounted(() => {
 
 async function onNodeDragStop(event: NodeDragEvent) {
   const node = event.node
+
   await updateContainer({
     id: node.id,
     layout: {
@@ -59,7 +62,7 @@ async function onConnect(connection: Connection) {
 }
 
 async function handleDeletePxGraphContainer(containerId: string) {
-  await deleteContainer(containerId)
+  await deleteContainer(containerId, true)
 }
 
 async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxChartContainer>) {
@@ -74,20 +77,47 @@ async function handleDeletePxNode(pxGraphContainerId: string) {
   await removeNodeFromContainer(pxGraphContainerId)
 }
 
+// We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
+// changes either ourselves, or let Vue Flow handle them explicitly
 async function onNodesChange(changes: NodeChange[]) {
+  const defaultChanges: NodeChange[] = []
   for (const change of changes) {
-    if (change.type === 'remove') {
-      await deleteContainer(change.id)
+    switch (change.type) {
+      // Adding nodes is already handled in addNode
+      case 'add':
+        break
+      case 'remove':
+        await deleteContainer(change.id)
+        break
+      case 'position':
+        if (change.dragging) {
+          defaultChanges.push(change)
+        }
+        break
+      case 'dimensions':
+        defaultChanges.push(change)
     }
   }
+
+  applyDefaultNodeChanges(defaultChanges)
 }
 
 async function onEdgesChange(changes: EdgeChange[]) {
+  const defaultChanges: EdgeChange[] = []
   for (const change of changes) {
-    if (change.type === 'remove') {
-      await deleteEdge(change.id)
+    switch (change.type) {
+      // Handled in onConnect
+      case 'add':
+        break
+      case 'select':
+        defaultChanges.push(change)
+        break
+      case 'remove':
+        await deleteEdge(change.id)
     }
   }
+
+  applyDefaultEdgeChanges(defaultChanges)
 }
 
 async function onContextMenu(mouseEvent: MouseEvent) {
@@ -109,6 +139,7 @@ async function onContextMenu(mouseEvent: MouseEvent) {
     v-model:nodes="nodes"
     v-model:edges="edges"
     :edge-types="edgeTypes"
+    :apply-default="false"
     @node-drag-stop="onNodeDragStop"
     @connect="onConnect"
     @nodes-change="onNodesChange"

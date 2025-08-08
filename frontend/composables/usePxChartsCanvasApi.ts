@@ -1,5 +1,5 @@
-﻿import type { Connection, Edge, Node } from '@vue-flow/core'
-import { MarkerType } from '@vue-flow/core'
+﻿import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
+import { useVueFlow, MarkerType  } from '@vue-flow/core'
 import { v4 } from 'uuid'
 import merge from 'lodash.merge'
 
@@ -16,6 +16,8 @@ export function usePxChartsCanvasApi(chartId: string) {
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
   const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+
+  const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
 
   const containerDefaultValues = {
     type: 'pxGraph',
@@ -171,6 +173,10 @@ export function usePxChartsCanvasApi(chartId: string) {
     )
   }
 
+  function applyDefaultNodeChanges(moveChanges: NodeChange[]) {
+    applyNodeChanges(moveChanges)
+  }
+
   async function addNodeToContainer(pxGraphContainerId: string, pxNodeId: string) {
     const updatedPxGraphContainerContent = {
       id: pxGraphContainerId,
@@ -199,7 +205,18 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
   }
 
-  async function deleteContainer(containerId: string) {
+  async function deleteContainer(containerId: string, deleteConnectedEdges: boolean = false) {
+    // We first need to delete edges, as otherwise Vue Flow will throw an error
+    if (deleteConnectedEdges) {
+      // Delete edges in front- and backend that were connected to the deleted container
+      const edgesToDelete = edges.value.filter(
+        (edge) => edge.source === containerId || edge.target === containerId,
+      )
+      for (const edge of edgesToDelete) {
+        await deleteEdge(edge.id)
+      }
+    }
+
     try {
       await deletePxChartContainer(containerId)
     } catch (err) {
@@ -212,14 +229,6 @@ export function usePxChartsCanvasApi(chartId: string) {
       console.warn('Container was already deleted. Skipping... ' + containerId)
     } else {
       nodes.value.splice(nodeIndexToDelete, 1)
-    }
-
-    // Delete edges in backend that were connected to the deleted container
-    const edgesToDelete = edges.value.filter(
-      (edge) => edge.source === containerId || edge.target === containerId,
-    )
-    for (const edge of edgesToDelete) {
-      await deleteEdge(edge.id)
     }
   }
 
@@ -262,6 +271,10 @@ export function usePxChartsCanvasApi(chartId: string) {
     })
   }
 
+  function applyDefaultEdgeChanges(moveChanges: EdgeChange[]) {
+    applyEdgeChanges(moveChanges)
+  }
+
   async function deleteEdge(edgeId: string) {
     try {
       await deletePxEdge(edgeId)
@@ -287,10 +300,12 @@ export function usePxChartsCanvasApi(chartId: string) {
     loadGraph,
     addContainer,
     updateContainer,
+    applyDefaultNodeChanges,
     addNodeToContainer,
     removeNodeFromContainer,
     deleteContainer,
     addEdge,
+    applyDefaultEdgeChanges,
     deleteEdge,
   }
 }
