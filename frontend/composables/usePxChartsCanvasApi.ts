@@ -1,5 +1,5 @@
 ﻿import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
-import { useVueFlow, MarkerType  } from '@vue-flow/core'
+import { useVueFlow, MarkerType } from '@vue-flow/core'
 import { v4 } from 'uuid'
 import merge from 'lodash.merge'
 
@@ -276,18 +276,18 @@ export function usePxChartsCanvasApi(chartId: string) {
   }
 
   async function deleteEdge(edgeId: string) {
-    try {
-      await deletePxEdge(edgeId)
-    } catch (err) {
-      alert('Failed to delete edge' + err.message)
-      error.value = 'Failed to delete edge'
-    }
-
     const edgeIndexToDelete = edges.value.findIndex((edge) => edge.id === edgeId)
     if (edgeIndexToDelete === -1) {
       console.warn('Edge was already deleted. Skipping... ' + edgeId)
     } else {
       edges.value.splice(edgeIndexToDelete, 1)
+    }
+
+    try {
+      await deletePxEdge(edgeId)
+    } catch (err) {
+      alert('Failed to delete edge' + err.message)
+      error.value = 'Failed to delete edge'
     }
   }
 

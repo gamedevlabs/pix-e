@@ -96,6 +96,10 @@ async function onNodesChange(changes: NodeChange[]) {
         break
       case 'dimensions':
         defaultChanges.push(change)
+        break
+      case 'select':
+        defaultChanges.push(change)
+        break
     }
   }
 
@@ -114,6 +118,7 @@ async function onEdgesChange(changes: EdgeChange[]) {
         break
       case 'remove':
         await deleteEdge(change.id)
+        break
     }
   }
 
