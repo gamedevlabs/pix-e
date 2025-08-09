@@ -1,4 +1,4 @@
-﻿from .models import PxNode, PxChart
+﻿from .models import PxChart, PxNode
 
 GENERIC_TYPE_MAP = {
     "pxnode": PxNode,
