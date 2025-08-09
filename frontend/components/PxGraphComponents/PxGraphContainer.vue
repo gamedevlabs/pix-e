@@ -2,24 +2,19 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import {
-  LazyPxGraphComponentsPxGraphContainerAddPxChartForm,
-  LazyPxGraphComponentsPxGraphContainerAddPxNodeForm
-} from '#components'
+import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
   (e: 'edit', updatedNode: Partial<PxChartContainer>): void
   (e: 'delete' | 'deletePxNode', id: string): void
   (e: 'addPxNode', pxGraphContainerId: string, pxNodeId: string): void
-  (e: 'addPxChart', pxGraphContainerId: string, pxChartId: string): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
 
 const overlay = useOverlay()
 const modalAddPxNode = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
-const modalAddPxChart = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxChartForm)
 
 const isBeingEdited = ref(false)
 const editForm = ref({
@@ -83,14 +78,6 @@ async function handleAddPxNode() {
   emit('addPxNode', props.id, nodeId)
 }
 
-async function handleAddPxChart() {
-  const chartId = await modalAddPxChart.open().result
-
-  if (!chartId) return
-
-  emit('addPxChart', props.id, chartId)
-}
-
 function listenToResizing() {
   if (cardRef.value) {
     observer = new ResizeObserver((entries) => {
@@ -116,7 +103,6 @@ function listenToResizing() {
       <template #default>
         <div class="flex flex-wrap justify-end gap-2">
           <UButton color="primary" variant="soft" @click="handleAddPxNode">Add Px Node</UButton>
-          <UButton color="primary" variant="soft" @click="handleAddPxChart">Add Px Chart</UButton>
         </div>
       </template>
 

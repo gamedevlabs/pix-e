@@ -2,7 +2,6 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
@@ -42,11 +41,11 @@ onBeforeUnmount(() => {
 })
 
 async function loadContent() {
-  if (!props.data || !props.data.content_id) {
+  if (!props.data || !props.data.content) {
     return
   }
 
-  pxNode.value = await getPxNode(props.data.content_id!)
+  pxNode.value = await getPxNode(props.data.content!)
 }
 
 async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: ResizeParams }) {
@@ -112,9 +111,7 @@ function listenToResizing() {
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="primary" variant="soft" @click="removePxNode()"
-            >Remove Px Node</UButton
-          >
+          <UButton color="primary" variant="soft" @click="removePxNode()">Remove Px Node</UButton>
           <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>

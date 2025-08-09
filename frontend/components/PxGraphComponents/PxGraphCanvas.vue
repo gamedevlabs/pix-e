@@ -11,6 +11,7 @@ import {
 import { Background } from '@vue-flow/background'
 import PxGraphContainer from '~/components/PxGraphComponents/PxGraphContainer.vue'
 import PxGraphEdge from '~/components/PxGraphComponents/PxGraphEdge.vue'
+import PxGraphContainerNode from '~/components/PxGraphComponents/PxGraphContainerNode.vue'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -155,12 +156,20 @@ async function onContextMenu(mouseEvent: MouseEvent) {
 
     <Background />
 
-    <template #node-pxGraph="customNodeProps">
+    <template #node-pxEmpty="customNodeProps">
       <PxGraphContainer
         v-bind="customNodeProps"
-        @delete-px-node="handleDeletePxNode"
         @delete="handleDeletePxGraphContainer"
         @add-px-node="handleAddPxNode"
+        @edit="handleUpdatePxGraphContainer"
+      />
+    </template>
+
+    <template #node-pxNode="customNodeProps">
+      <PxGraphContainerNode
+        v-bind="customNodeProps"
+        @remove-px-node="handleDeletePxNode"
+        @delete="handleDeletePxGraphContainer"
         @edit="handleUpdatePxGraphContainer"
       />
     </template>

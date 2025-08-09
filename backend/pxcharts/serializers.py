@@ -1,40 +1,8 @@
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
+from pxnodes.serializers import PxNodeSerializer
+
 from .models import PxChart, PxChartContainer, PxChartContainerLayout, PxChartEdge
-from .utils import GENERIC_TYPE_MAP
-
-
-class PxChartContainerSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-
-    content_type = serializers.SerializerMethodField()
-    content_id = serializers.UUIDField(required=False, allow_null=True)
-
-    class Meta:
-        model = PxChartContainer
-        fields = [
-            "id",
-            "name",
-            "content_type",
-            "content_id",
-            "owner",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
-
-    def update(self, instance, validated_data):
-        print("Update in PxChartContainerSerializer")
-        if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError(
-                {"id": "Cannot update ID after creation."}
-            )
-        return super().update(instance, validated_data)
-
-    def get_content_type(self, obj):
-        if not obj.content_type: return None
-        return obj.content_type.model
 
 
 class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
@@ -51,19 +19,40 @@ class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxChartContainerDetailSerializer(serializers.ModelSerializer):
+class PxChartContainerSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
-    layout = PxChartContainerLayoutSerializer()
-    content_type = serializers.SerializerMethodField()
-    content_id = serializers.UUIDField(required=False, allow_null=True)
+    content = PxNodeSerializer(required=False, allow_null=True)
 
     class Meta:
         model = PxChartContainer
         fields = [
             "id",
             "name",
-            "content_type",
-            "content_id",
+            "content",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["owner", "created_at", "updated_at"]
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)
+
+
+class PxChartContainerDetailSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(required=True)
+    layout = PxChartContainerLayoutSerializer()
+
+    class Meta:
+        model = PxChartContainer
+        fields = [
+            "id",
+            "name",
+            "content",
             "layout",
             "px_chart",
             "owner",
@@ -72,6 +61,7 @@ class PxChartContainerDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["owner", "created_at", "updated_at", "px_chart"]
 
+    # Ensures that whenever a container is created, an associated layout is created
     def create(self, validated_data):
         nested_data = validated_data.pop("layout", None)
 
@@ -91,7 +81,6 @@ class PxChartContainerDetailSerializer(serializers.ModelSerializer):
 
         # Update main container fields
         for attr, value in validated_data.items():
-            print(f"{attr}, {value}")
             setattr(instance, attr, value)
         instance.save()
 
@@ -103,10 +92,6 @@ class PxChartContainerDetailSerializer(serializers.ModelSerializer):
             layout.save()
 
         return instance
-
-    def get_content_type(self, obj):
-        if not obj.content_type: return None
-        return obj.content_type.model
 
 
 class PxChartEdgeSerializer(serializers.ModelSerializer):
@@ -146,10 +131,8 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxChartDetailSerializer(serializers.ModelSerializer):
+class PxChartSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
-    containers = PxChartContainerDetailSerializer(many=True, read_only=True)
-    edges = PxChartEdgeSerializer(many=True, read_only=True)
 
     class Meta:
         model = PxChart
@@ -157,11 +140,10 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "associatedNode",
             "owner",
             "created_at",
             "updated_at",
-            "containers",
-            "edges",
         ]
         read_only_fields = ["owner", "created_at", "updated_at"]
 
@@ -173,12 +155,24 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxChartSerializer(serializers.ModelSerializer):
+class PxChartDetailSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
+    containers = PxChartContainerDetailSerializer(many=True, read_only=True)
+    edges = PxChartEdgeSerializer(many=True, read_only=True)
 
     class Meta:
         model = PxChart
-        fields = ["id", "name", "description", "owner", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "associatedNode",
+            "containers",
+            "edges",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["owner", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):

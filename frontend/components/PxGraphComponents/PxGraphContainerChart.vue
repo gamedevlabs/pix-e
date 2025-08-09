@@ -2,7 +2,6 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
@@ -112,9 +111,7 @@ function listenToResizing() {
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="primary" variant="soft" @click="removePxChart()"
-            >Remove Px Chart</UButton
-          >
+          <UButton color="primary" variant="soft" @click="removePxChart()">Remove Px Chart</UButton>
           <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>

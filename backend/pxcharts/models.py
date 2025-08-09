@@ -1,6 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from pxnodes.models import PxNode
@@ -8,12 +6,14 @@ from pxnodes.models import PxNode
 User = get_user_model()
 
 
-# Create your models here.
 class PxChart(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
 
     name = models.CharField(max_length=255)
     description = models.TextField()
+    associatedNode = models.ForeignKey(
+        PxNode, on_delete=models.SET_NULL, null=True, blank=True, related_name="charts"
+    )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,9 +34,9 @@ class PxChartContainer(models.Model):
         PxChart, on_delete=models.CASCADE, related_name="containers"
     )
     name = models.CharField(max_length=255)
-    content_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True, blank=True)
-    content_id = models.UUIDField(null=True, blank=True)
-    content = GenericForeignKey('content_type', 'content_id')
+    content = models.ForeignKey(
+        PxNode, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
