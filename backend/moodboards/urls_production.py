@@ -3,8 +3,9 @@ Production URL Configuration for Moodboards
 Implements unified moodboard-first API endpoints
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views_production
 
 # Create router for ViewSet-based endpoints

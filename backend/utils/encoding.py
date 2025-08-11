@@ -2,8 +2,8 @@
 Encoding utilities to handle Unicode characters safely on different platforms.
 """
 
-import sys
 import os
+import sys
 
 
 def safe_print(*args, **kwargs):

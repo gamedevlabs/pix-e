@@ -1,27 +1,27 @@
+import logging
+import os
+import threading
+import time
+import uuid
+
+import torch
+import webcolors
+from diffusers import StableDiffusionOnnxPipeline, StableDiffusionPipeline
 from django.http import HttpResponse, JsonResponse
-from rest_framework import permissions
+from django.shortcuts import render
+from django.views import View
+from rest_framework import permissions, status
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.authentication import SessionAuthentication
 
 from .gemini.GeminiLink import GeminiLink
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
-from django.shortcuts import render
-from django.views import View
-from rest_framework import status
-import uuid
-from diffusers import StableDiffusionPipeline, StableDiffusionOnnxPipeline
-import torch
-import os
-import webcolors
-from .services.manager import llm_manager
 from .services.base import LLMServiceError
-import threading
-import time
-import logging
+from .services.manager import llm_manager
 
 # Create your views here.
 
@@ -170,7 +170,9 @@ def generate_gaming_images(prompt, num_images=3):
         ).images
 
         # Save generated images
-        import uuid, os
+        import os
+        import uuid
+
         from django.conf import settings
 
         image_urls = []
@@ -187,9 +189,11 @@ def generate_gaming_images(prompt, num_images=3):
     except Exception as e:
         # Stable Diffusion not available, using placeholder images
         # Create placeholder images for testing
-        import uuid, os
-        from PIL import Image, ImageDraw, ImageFont
+        import os
+        import uuid
+
         from django.conf import settings
+        from PIL import Image, ImageDraw, ImageFont
 
         image_urls = []
         for i in range(num_images):

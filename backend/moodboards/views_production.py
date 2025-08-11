@@ -14,26 +14,26 @@ Key Features:
 - Performance optimizations
 """
 
-from django.db.models import Q, Count, Prefetch, F, Max
+import logging
+from datetime import datetime, timedelta
+
+from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models
+from django.db.models import Count, F, Max, Prefetch, Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.contrib.auth.models import User
-from django.http import Http404
-from django.core.exceptions import PermissionDenied, ValidationError
-from django.utils import timezone
-
-from rest_framework import viewsets, status, permissions, filters
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
-from datetime import datetime, timedelta
-import logging
 
 
 # Custom CSRF-exempt authentication for API calls
@@ -47,25 +47,25 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
 # Import models and serializers
 from .models import (
     Moodboard,
+    MoodboardComment,
     MoodboardImage,
     MoodboardShare,
-    MoodboardComment,
     MoodboardTemplate,
 )
+from .permissions import CanEditMoodboard, CanViewMoodboard, MoodboardPermission
 from .serializers_production import (
-    MoodboardListSerializer,
-    MoodboardDetailSerializer,
-    MoodboardCreateSerializer,
-    MoodboardUpdateSerializer,
-    MoodboardImageSerializer,
-    MoodboardImageCreateSerializer,
-    MoodboardImageBulkActionSerializer,
-    MoodboardCommentSerializer,
-    MoodboardTemplateSerializer,
     MoodboardBulkActionSerializer,
+    MoodboardCommentSerializer,
+    MoodboardCreateSerializer,
+    MoodboardDetailSerializer,
+    MoodboardImageBulkActionSerializer,
+    MoodboardImageCreateSerializer,
+    MoodboardImageSerializer,
+    MoodboardListSerializer,
     MoodboardShareSerializer,
+    MoodboardTemplateSerializer,
+    MoodboardUpdateSerializer,
 )
-from .permissions import MoodboardPermission, CanViewMoodboard, CanEditMoodboard
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -670,8 +670,8 @@ class LegacySessionView(viewsets.ViewSet):
             )
 
         # Forward to moodboard generation
-        from django.urls import reverse
         from django.test import RequestFactory
+        from django.urls import reverse
 
         factory = RequestFactory()
         generate_request = factory.post(

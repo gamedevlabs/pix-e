@@ -6,8 +6,8 @@ from .views import (
     MeView,
     RegisterView,
     UsersListView,
-    ai_service_tokens,
     ai_service_token_detail,
+    ai_service_tokens,
 )
 
 app_name = "accounts"

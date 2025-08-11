@@ -1,12 +1,13 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
+from rest_framework import serializers
+
 from .models import (
     Moodboard,
+    MoodboardComment,
     MoodboardImage,
     MoodboardShare,
-    MoodboardComment,
     MoodboardTemplate,
 )
 

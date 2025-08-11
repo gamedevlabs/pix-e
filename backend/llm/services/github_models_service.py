@@ -3,10 +3,11 @@ GitHub Models Service Implementation
 Uses GitHub Models API for text generation
 """
 
-import os
 import logging
+import os
 import sys
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
@@ -174,8 +175,8 @@ Format your response as a numbered list:
             response = None
 
             # Use threading for timeout
-            import threading
             import queue
+            import threading
 
             result_queue = queue.Queue()
             exception_queue = queue.Queue()

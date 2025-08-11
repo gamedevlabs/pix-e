@@ -3,17 +3,17 @@ Text Generation Inference (TGI) Service Implementation - Fixed Version
 Uses Hugging Face's TGI server for high-performance text generation
 """
 
-import os
-import logging
-import sys
-from typing import List, Dict, Any, Optional
 import asyncio
-from huggingface_hub import InferenceClient, AsyncInferenceClient
+import logging
+import os
+import sys
+from typing import Any, Dict, List, Optional
+
 import requests
 from django.conf import settings
+from huggingface_hub import AsyncInferenceClient, InferenceClient
 
 from .base import BaseLLMService, LLMServiceError
-
 
 logger = logging.getLogger(__name__)
 
@@ -227,8 +227,8 @@ class TGIAPIService(BaseLLMService):
                 messages = [{"role": "user", "content": enhanced_prompt}]
 
                 # Use threading for timeout on Windows-compatible approach
-                import threading
                 import queue
+                import threading
 
                 result_queue = queue.Queue()
                 exception_queue = queue.Queue()

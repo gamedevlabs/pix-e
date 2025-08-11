@@ -1,10 +1,11 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
+from rest_framework import serializers
+
 from .models import (
     Moodboard,
+    MoodboardComment,
     MoodboardImage,
     MoodboardShare,
-    MoodboardComment,
     MoodboardTemplate,
 )
 

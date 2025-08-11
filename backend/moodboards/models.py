@@ -1,10 +1,11 @@
-from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import MinLengthValidator, MaxLengthValidator
-from django.utils import timezone
-from django.core.exceptions import ValidationError
-import uuid
 import json
+import uuid
+
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxLengthValidator, MinLengthValidator
+from django.db import models
+from django.utils import timezone
 
 
 class MoodboardManager(models.Manager):
@@ -852,7 +853,7 @@ class MoodboardComment(models.Model):
 
 
 # Signal handlers for automatic cleanup and optimization
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 

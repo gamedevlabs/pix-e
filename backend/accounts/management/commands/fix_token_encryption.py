@@ -4,6 +4,7 @@ Management command to fix token encryption by re-encrypting all tokens
 with the new consistent encryption key
 """
 from django.core.management.base import BaseCommand
+
 from accounts.models import AIServiceToken
 
 
