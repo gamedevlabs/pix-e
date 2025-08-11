@@ -169,15 +169,20 @@ class GroqService(BaseLLMService):
                 context = "visual design, artistic mood, creative composition"
 
             if suggestion_type == "long":
-                instruction = f"""Generate {num_suggestions} detailed creative suggestions to enhance this {context} prompt: "{prompt}"
-
-Each suggestion should be a complete descriptive phrase (8-12 words) that adds depth and creativity.
-Return only the suggestions, one per line, no numbers or bullets:"""
+                instruction = (
+                    f'Generate {num_suggestions} detailed creative suggestions '
+                    f'to enhance this {context} prompt: "{prompt}"\n\n'
+                    f'Each suggestion should be a complete descriptive phrase '
+                    f'(8-12 words) that adds depth and creativity.\n'
+                    f'Return only the suggestions, one per line, no numbers or bullets:'
+                )
             else:
-                instruction = f"""Generate {num_suggestions} short creative additions for this {context} prompt: "{prompt}"
-
-Each suggestion should be 2-4 words that enhance the visual concept.
-Return only the suggestions, one per line, no numbers or bullets:"""
+                instruction = (
+                    f'Generate {num_suggestions} short creative additions for '
+                    f'this {context} prompt: "{prompt}"\n\n'
+                    f'Each suggestion should be 2-4 words that enhance the visual concept.\n'
+                    f'Return only the suggestions, one per line, no numbers or bullets:'
+                )
 
             response_text = self.generate_text(
                 instruction, max_length=150, temperature=0.8

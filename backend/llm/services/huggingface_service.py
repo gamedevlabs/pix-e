@@ -33,19 +33,25 @@ class HuggingFaceLLMService(BaseLLMService):
         },
         "microsoft/DialoGPT-medium": {
             "name": "DialoGPT Medium",
-            "description": "Conversational AI model, excellent for creative suggestions",
+            "description": (
+                "Conversational AI model, excellent for creative suggestions"
+            ),
             "size": "300MB",
             "type": "conversational",
         },
         "gpt2": {
             "name": "GPT-2",
-            "description": "Classic text generation model, reliable for creative writing",
+            "description": (
+                "Classic text generation model, reliable for creative writing"
+            ),
             "size": "500MB",
             "type": "text-generation",
         },
         "gpt2-medium": {
             "name": "GPT-2 Medium",
-            "description": "Higher quality text generation with better creativity and detail",
+            "description": (
+                "Higher quality text generation with better creativity and detail"
+            ),
             "size": "1.5GB",
             "type": "text-generation",
         },

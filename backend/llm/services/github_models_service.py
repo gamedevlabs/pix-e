@@ -158,16 +158,17 @@ class GitHubModelsService(BaseLLMService):
                     "- Creative and descriptive\n"
                     "- Suitable for artistic/visual content"
                 )
-                example_format = "1. [first suggestion]\n2. [second suggestion]\n3. [third suggestion]"
+                example_format = (
+                    "1. [first suggestion]\n2. [second suggestion]\n3. [third suggestion]"
+                )
 
             # Create a single prompt that requests multiple different suggestions
-            enhanced_prompt = f"""Please provide {num_return_sequences} different, creative suggestions to enhance this prompt: "{prompt}"
-
-Each suggestion should be:
-{format_instruction}
-
-Format your response as a numbered list:
-{example_format}"""
+            enhanced_prompt = (
+                f'Please provide {num_return_sequences} different, creative '
+                f'suggestions to enhance this prompt: "{prompt}"\n\n'
+                f'Each suggestion should be:\n{format_instruction}\n\n'
+                f'Format your response as a numbered list:\n{example_format}'
+            )
 
             # Debug: Log the prompt being sent
             prompt_debugger.log_prompt(

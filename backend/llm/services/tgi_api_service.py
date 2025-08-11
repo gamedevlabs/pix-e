@@ -58,8 +58,13 @@ class TGIAPIService(BaseLLMService):
         },
         "google/gemma-7b-it": {
             "name": "Gemma 7B IT (TGI API)",
-            "description": "Google's instruction-tuned model via Hugging Face TGI API - reliable for text suggestions",
-            "endpoint": "https://api-inference.huggingface.co/models/google/gemma-7b-it",
+            "description": (
+                "Google's instruction-tuned model via Hugging Face TGI API "
+                "- reliable for text suggestions"
+            ),
+            "endpoint": (
+                "https://api-inference.huggingface.co/models/google/gemma-7b-it"
+            ),
             "model_url": "https://huggingface.co/google/gemma-7b-it",
             "size": "7B",
             "type": "instruct",
