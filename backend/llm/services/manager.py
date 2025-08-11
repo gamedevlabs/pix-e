@@ -100,7 +100,10 @@ class LLMServiceManager:
         return services_info
 
     def load_service(
-        self, service_id: str, model_name: Optional[str] = None, user_token: Optional[str] = None
+        self,
+        service_id: str,
+        model_name: Optional[str] = None,
+        user_token: Optional[str] = None,
     ) -> Optional[BaseLLMService]:
         """Load a specific service and return the service instance"""
         try:
@@ -493,7 +496,8 @@ class LLMServiceManager:
 
         if AIServiceToken is type(None) or not user or not user.is_authenticated:
             logger.warning(
-                f"Token retrieval failed: AIServiceToken available={AIServiceToken is not type(None)}, "
+                f"Token retrieval failed: "
+                f"AIServiceToken available={AIServiceToken is not type(None)}, "
                 f"user={bool(user)}, "
                 f"authenticated={user.is_authenticated if user else False}"
             )

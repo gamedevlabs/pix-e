@@ -63,7 +63,9 @@ class GitHubModelsService(BaseLLMService):
 
         self.client: Optional[ChatCompletionsClient] = None
         self.is_loaded: bool = False
-        self.user_provided: bool = user_token is not None  # Track if user token was provided
+        self.user_provided: bool = (
+            user_token is not None
+        )  # Track if user token was provided
 
         # Get GitHub token - prioritize user token if provided, but don't fallback
         # to env if user was expected to provide one
@@ -92,7 +94,7 @@ class GitHubModelsService(BaseLLMService):
             # Initialize the GitHub Models client
             if self.github_token is None:
                 raise LLMServiceError("GitHub token is required but not available")
-            
+
             self.client = ChatCompletionsClient(
                 endpoint=self.endpoint, credential=AzureKeyCredential(self.github_token)
             )

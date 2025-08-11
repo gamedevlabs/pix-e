@@ -1,7 +1,5 @@
 """
-Production URL Co    # Health check and status
-    path("api/health/", views_production.health_check, name="health-check"),
-    path("api/status/", views_production.system_status, name="system-status"),or Moodboards
+Production URL Configuration for Moodboards
 Implements unified moodboard-first API endpoints
 """
 
@@ -12,7 +10,9 @@ from . import views_production
 
 # Create router for ViewSet-based endpoints
 router = DefaultRouter()
-router.register(r"moodboards", views_production.MoodboardViewSet, basename="moodboard")
+router.register(
+    r"moodboards", views_production.MoodboardViewSet, basename="moodboard"
+)
 router.register(
     r"images", views_production.MoodboardImageViewSet, basename="moodboard-image"
 )
