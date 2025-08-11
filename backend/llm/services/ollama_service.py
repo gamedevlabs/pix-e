@@ -155,11 +155,23 @@ class OllamaService(BaseLLMService):
                 context = "visual design, artistic mood, creative atmosphere"
 
             if suggestion_type == "long":
-                instruction = f"Generate {num_suggestions} detailed creative suggestions to enhance this {context} prompt: '{prompt}'. Each suggestion should be a complete descriptive phrase (10-15 words)."
+                instruction = (
+                    f"Generate {num_suggestions} detailed creative suggestions "
+                    f"to enhance this {context} prompt: '{prompt}'. Each "
+                    f"suggestion should be a complete descriptive phrase "
+                    f"(10-15 words)."
+                )
             else:
-                instruction = f"Generate {num_suggestions} short creative additions for this {context} prompt: '{prompt}'. Each suggestion should be 2-4 words."
+                instruction = (
+                    f"Generate {num_suggestions} short creative additions for "
+                    f"this {context} prompt: '{prompt}'. Each suggestion "
+                    f"should be 2-4 words."
+                )
 
-            full_prompt = f"{instruction}\\n\\nReturn only the suggestions, one per line, without numbers or bullets:"
+            full_prompt = (
+                f"{instruction}\\n\\nReturn only the suggestions, one per line, "
+                f"without numbers or bullets:"
+            )
 
             response_text = self.generate_text(
                 full_prompt, max_length=200, temperature=0.8

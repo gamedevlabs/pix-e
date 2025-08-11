@@ -37,7 +37,10 @@ class GitHubModelsService(BaseLLMService):
     AVAILABLE_MODELS = {
         "openai/gpt-4.1": {
             "name": "GPT-4.1 (GitHub Models)",
-            "description": "OpenAI GPT-4.1 model via GitHub Models API - excellent for creative text generation with advanced reasoning",
+            "description": (
+                "OpenAI GPT-4.1 model via GitHub Models API - excellent for "
+                "creative text generation with advanced reasoning"
+            ),
             "endpoint": "https://models.github.ai/inference",
             "model_url": "https://github.com/models/openai/gpt-4.1",
             "size": "4.1",
@@ -138,10 +141,23 @@ class GitHubModelsService(BaseLLMService):
         try:
             # Create different prompts based on suggestion type
             if suggestion_type == "long":
-                format_instruction = "- A complete sentence (10-20 words)\n- Descriptive and detailed\n- Suitable for comprehensive artistic descriptions"
-                example_format = "1. [detailed descriptive sentence]\n2. [another detailed descriptive sentence]\n3. [third detailed descriptive sentence]"
+                format_instruction = (
+                    "- A complete sentence (10-20 words)\n"
+                    "- Descriptive and detailed\n"
+                    "- Suitable for comprehensive artistic descriptions"
+                )
+                example_format = (
+                    "1. [detailed descriptive sentence]\n"
+                    "2. [another detailed descriptive sentence]\n"
+                    "3. [third detailed descriptive sentence]"
+                )
             else:  # short
-                format_instruction = "- A short phrase (2-8 words)\n- Unique and different from the others\n- Creative and descriptive\n- Suitable for artistic/visual content"
+                format_instruction = (
+                    "- A short phrase (2-8 words)\n"
+                    "- Unique and different from the others\n"
+                    "- Creative and descriptive\n"
+                    "- Suitable for artistic/visual content"
+                )
                 example_format = "1. [first suggestion]\n2. [second suggestion]\n3. [third suggestion]"
 
             # Create a single prompt that requests multiple different suggestions
