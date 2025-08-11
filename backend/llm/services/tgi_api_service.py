@@ -81,8 +81,8 @@ class TGIAPIService(BaseLLMService):
 
         self.model_id: str = model_id
         self.model_info: Dict[str, Any] = self.AVAILABLE_MODELS[model_id]
-        self.model_name: str = self.model_info["name"]
-        self.endpoint: str = self.model_info["endpoint"]
+        self.model_name: str = str(self.model_info["name"])
+        self.endpoint: str = str(self.model_info["endpoint"])
 
         self.client: Optional[InferenceClient] = None
         self.async_client: Optional[AsyncInferenceClient] = None
@@ -232,12 +232,13 @@ class TGIAPIService(BaseLLMService):
     def generate_text(
         self,
         prompt: str,
-        max_tokens: int = 100,
-        temperature: float = 0.7,
-        num_return_sequences: int = 3,
-        suggestion_type: str = "short",
+        **kwargs: Any,
     ) -> List[str]:
         """Generate text using conversational API with improved error handling"""
+        max_tokens = kwargs.get("max_tokens", 100)
+        temperature = kwargs.get("temperature", 0.7)
+        num_return_sequences = kwargs.get("num_return_sequences", 3)
+        suggestion_type = kwargs.get("suggestion_type", "short")
         if not self.is_loaded or not self.client:
             raise LLMServiceError("TGI model not loaded. Call load_model() first.")
 
@@ -255,8 +256,8 @@ class TGIAPIService(BaseLLMService):
                 import queue
                 import threading
 
-                result_queue = queue.Queue()
-                exception_queue = queue.Queue()
+                result_queue: queue.Queue = queue.Queue()
+                exception_queue: queue.Queue = queue.Queue()
 
                 def api_call():
                     try:
@@ -426,16 +427,21 @@ class TGIAPIService(BaseLLMService):
     def get_suggestions(
         self,
         prompt: str,
-        max_tokens: int = 100,
-        temperature: float = 0.7,
-        num_suggestions: int = 3,
-        **kwargs,
+        **kwargs: Any,
     ) -> List[str]:
         """Get text suggestions (alias for generate_text for compatibility)"""
+        max_tokens = kwargs.get("max_tokens", 100)
+        temperature = kwargs.get("temperature", 0.7)
+        num_suggestions = kwargs.get("num_suggestions", 3)
         # Extract suggestion_type if provided but ignore it for now
         kwargs.get("suggestion_type", "short")
 
-        return self.generate_text(prompt, max_tokens, temperature, num_suggestions)
+        return self.generate_text(
+            prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            num_return_sequences=num_suggestions,
+        )
 
     def is_model_loaded(self) -> bool:
         """Check if model is loaded (alias for is_loaded for compatibility)"""

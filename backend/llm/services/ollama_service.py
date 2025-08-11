@@ -103,10 +103,9 @@ class OllamaService(BaseLLMService):
         self.is_loaded = False
         return True
 
-    def generate_text(
-        self, prompt: str, max_length: int = 100, temperature: float = 0.7
-    ) -> str:
+    def generate_text(self, prompt: str, max_length: int = 100, **kwargs: Any) -> str:
         """Generate text using Ollama"""
+        temperature = kwargs.get("temperature", 0.7)
         if not self.is_loaded:
             raise LLMServiceError("Model not loaded")
 

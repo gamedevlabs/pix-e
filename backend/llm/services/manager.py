@@ -5,7 +5,7 @@ Handles multiple LLM services and provides unified interface
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from django.core.cache import cache
 
@@ -15,10 +15,13 @@ from .github_models_service import GitHubModelsService
 from .tgi_api_service import TGIAPIService
 
 # Import for user token management
+_AIServiceToken: Optional[Type] = None
 try:
     from accounts.models import AIServiceToken
+
+    _AIServiceToken = AIServiceToken
 except ImportError:
-    AIServiceToken = type(None)  # Dummy type for when import fails
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -135,17 +138,21 @@ class LLMServiceManager:
             elif service_id.startswith("github_"):
                 # GitHub Models service
                 model_id = service_id.replace("github_", "")
-                service = GitHubModelsService(model_id, user_token=user_token)
-                success = service.load_model()
+                github_service = GitHubModelsService(model_id, user_token=user_token)
+                success = github_service.load_model()
 
                 if success:
-                    self.register_service(service_id, service)
+                    self.register_service(service_id, github_service)
                     self._active_service = service_id
 
                     # Cache service info
                     cache.set(
-                        f"llm_service_{service_id}", service.get_model_info(), 3600
+                        f"llm_service_{service_id}",
+                        github_service.get_model_info(),
+                        3600,
                     )
+
+                    return github_service
 
                     return service
                 else:
@@ -271,7 +278,12 @@ class LLMServiceManager:
                 else:
                     service = self._services.get(service_id)
                     # Update service with user token if available
-                    if user and hasattr(service, "update_token") and user_token:
+                    if (
+                        user
+                        and service is not None
+                        and hasattr(service, "update_token")
+                        and user_token
+                    ):
                         service.update_token(user_token)
 
                 # Get the service and generate suggestions
@@ -397,7 +409,11 @@ class LLMServiceManager:
                 else:
                     service = self._services.get(service_id)
                     # Update service with user token if available
-                    if user and hasattr(service, "update_token"):
+                    if (
+                        user
+                        and service is not None
+                        and hasattr(service, "update_token")
+                    ):
                         user_token = self._get_user_token(service_id, user)
                         if user_token:
                             service.update_token(user_token)
@@ -460,6 +476,8 @@ class LLMServiceManager:
                 "to generate suggestions."
             )
 
+        return []  # Default empty list if no service can handle the request
+
     def get_active_service(self) -> Optional[str]:
         """Get currently active service ID"""
         return self._active_service
@@ -494,10 +512,10 @@ class LLMServiceManager:
     def _get_user_token(self, service_id: str, user) -> Optional[str]:
         """Get user-specific token for the service"""
 
-        if AIServiceToken is type(None) or not user or not user.is_authenticated:
+        if _AIServiceToken is None or not user or not user.is_authenticated:
             logger.warning(
                 f"Token retrieval failed: "
-                f"AIServiceToken available={AIServiceToken is not type(None)}, "
+                f"AIServiceToken available={_AIServiceToken is not None}, "
                 f"user={bool(user)}, "
                 f"authenticated={user.is_authenticated if user else False}"
             )
@@ -521,7 +539,10 @@ class LLMServiceManager:
 
         # Get user token for this service
         try:
-            tokens = AIServiceToken.objects.filter(
+            if _AIServiceToken is None:
+                return None
+
+            tokens = _AIServiceToken.objects.filter(
                 user=user, service_type=required_service_type, is_active=True
             )
 

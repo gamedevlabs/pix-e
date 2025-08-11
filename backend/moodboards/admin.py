@@ -112,37 +112,31 @@ class MoodboardAdmin(admin.ModelAdmin):
         return "0 images"
 
     @admin.display(description="Selected Images")
+    @admin.display(description="Selected Images")
     def selected_image_count_display(self, obj):
         """Display selected image count"""
         return f"{obj.selected_image_count} selected"
 
+    @admin.action(description="Make selected moodboards public")
     def make_public(self, request, queryset):
         """Action to make moodboards public"""
         updated = queryset.update(is_public=True)
         self.message_user(request, f"{updated} moodboards made public.")
-
-    make_public.short_description = "Make selected moodboards public"
 
     def make_private(self, request, queryset):
         """Action to make moodboards private"""
         updated = queryset.update(is_public=False)
         self.message_user(request, f"{updated} moodboards made private.")
 
-    make_private.short_description = "Make selected moodboards private"
-
     def archive_moodboards(self, request, queryset):
         """Action to archive moodboards"""
         updated = queryset.update(status="archived")
         self.message_user(request, f"{updated} moodboards archived.")
 
-    archive_moodboards.short_description = "Archive selected moodboards"
-
     def activate_moodboards(self, request, queryset):
         """Action to activate moodboards"""
         updated = queryset.update(is_active=True)
         self.message_user(request, f"{updated} moodboards activated.")
-
-    activate_moodboards.short_description = "Activate selected moodboards"
 
 
 @admin.register(MoodboardImage)
@@ -196,8 +190,6 @@ class MoodboardImageAdmin(admin.ModelAdmin):
         """Display title or ID if no title"""
         return obj.title or f"Image {str(obj.id)[:8]}"
 
-    title_or_id.short_description = "Title"
-
     def image_preview(self, obj):
         """Display image preview"""
         if obj.thumbnail_url:
@@ -212,21 +204,15 @@ class MoodboardImageAdmin(admin.ModelAdmin):
             )
         return "No image"
 
-    image_preview.short_description = "Preview"
-
     def select_images(self, request, queryset):
         """Action to select images"""
         updated = queryset.update(is_selected=True)
         self.message_user(request, f"{updated} images selected.")
 
-    select_images.short_description = "Select images"
-
     def unselect_images(self, request, queryset):
         """Action to unselect images"""
         updated = queryset.update(is_selected=False)
         self.message_user(request, f"{updated} images unselected.")
-
-    unselect_images.short_description = "Unselect images"
 
     def move_to_top(self, request, queryset):
         """Action to move images to top"""
@@ -235,16 +221,12 @@ class MoodboardImageAdmin(admin.ModelAdmin):
             obj.save()
         self.message_user(request, f"{queryset.count()} images moved to top.")
 
-    move_to_top.short_description = "Move to top"
-
     def move_to_bottom(self, request, queryset):
         """Action to move images to bottom"""
         for obj in queryset:
             obj.order_index = 9999
             obj.save()
         self.message_user(request, f"{queryset.count()} images moved to bottom.")
-
-    move_to_bottom.short_description = "Move to bottom"
 
 
 @admin.register(MoodboardShare)
@@ -292,8 +274,6 @@ class MoodboardCommentAdmin(admin.ModelAdmin):
             return f"{obj.content[:50]}..."
         return obj.content
 
-    content_preview.short_description = "Content"
-
 
 @admin.register(MoodboardTemplate)
 class MoodboardTemplateAdmin(admin.ModelAdmin):
@@ -335,18 +315,12 @@ class MoodboardTemplateAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=True)
         self.message_user(request, f"{updated} templates activated.")
 
-    activate_templates.short_description = "Activate selected templates"
-
     def deactivate_templates(self, request, queryset):
         """Action to deactivate templates"""
         updated = queryset.update(is_active=False)
         self.message_user(request, f"{updated} templates deactivated.")
 
-    deactivate_templates.short_description = "Deactivate selected templates"
-
     def reset_usage_count(self, request, queryset):
         """Action to reset usage count"""
         updated = queryset.update(usage_count=0)
         self.message_user(request, f"Usage count reset for {updated} templates.")
-
-    reset_usage_count.short_description = "Reset usage count"
