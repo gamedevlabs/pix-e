@@ -7,6 +7,56 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { useRuntimeConfig, useToast, useRequestHeaders } from '#imports'
 
+interface APIError {
+  data?: {
+    detail?: string
+    error?: string
+  }
+  statusMessage?: string
+  message?: string
+  statusCode?: number
+}
+
+interface FetchMoodboardsParams {
+  page?: number
+  page_size?: number
+  category?: string
+  status?: string
+  search?: string
+  tags?: string
+  is_public?: boolean
+  owner?: string
+  _t?: number
+}
+
+interface AISessionResponse {
+  moodboard: Moodboard
+  session_id?: string
+}
+
+interface BulkActionData {
+  new_category?: string
+  tag_names?: string[]
+  [key: string]: unknown
+}
+
+interface SearchFilters {
+  category?: string
+  status?: string
+  tags?: string
+  is_public?: boolean
+  owner?: string
+  page?: number
+  page_size?: number
+}
+
+interface PaginatedResponse<T> {
+  results?: T[]
+  count?: number
+  next?: string
+  previous?: string
+}
+
 export interface Moodboard {
   id: string
   title: string
@@ -92,8 +142,9 @@ export const useMoodboards = () => {
     try {
       error.value = null
       return await apiCall()
-    } catch (err: any) {
-      error.value = err.data?.detail || err.statusMessage || err.message || 'An error occurred'
+    } catch (err: unknown) {
+      const apiError = err as APIError
+      error.value = apiError.data?.detail || apiError.statusMessage || apiError.message || 'An error occurred'
       toast.add({ 
         title: 'Error', 
         description: error.value || undefined, 
@@ -104,7 +155,7 @@ export const useMoodboards = () => {
   }
 
   // Moodboard CRUD Operations
-  const fetchMoodboards = async (params?: any) => {
+  const fetchMoodboards = async (params?: FetchMoodboardsParams) => {
     loading.value = true
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/api/moodboards/`, {
@@ -117,7 +168,7 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      moodboards.value = (result as any).results || result
+      moodboards.value = (result as PaginatedResponse<Moodboard>).results || result as Moodboard[]
     }
     loading.value = false
     return result
@@ -140,22 +191,23 @@ export const useMoodboards = () => {
       currentMoodboard.value = response as Moodboard
       loading.value = false
       return response
-    } catch (err: any) {
-      if (err.statusCode === 404) {
-        error.value = err.data?.detail || 'Moodboard not found'
+    } catch (err: unknown) {
+      const apiError = err as APIError
+      if (apiError.statusCode === 404) {
+        error.value = apiError.data?.detail || 'Moodboard not found'
         loading.value = false
         return null
-      } else if (err.statusCode === 500) {
+      } else if (apiError.statusCode === 500) {
         error.value = 'Server error occurred while loading moodboard'
         loading.value = false
         return null
-      } else if (err.statusCode === 403) {
-        error.value = err.data?.detail || 'Permission denied'
+      } else if (apiError.statusCode === 403) {
+        error.value = apiError.data?.detail || 'Permission denied'
         loading.value = false
         return null
       }
       
-      error.value = err.data?.detail || err.statusMessage || err.message || 'An error occurred'
+      error.value = apiError.data?.detail || apiError.statusMessage || apiError.message || 'An error occurred'
       toast.add({ 
         title: 'Error', 
         description: error.value || undefined, 
@@ -178,11 +230,6 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Moodboard created successfully', 
-        color: 'success' 
-      })
       await fetchMoodboards()
     }
     return result
@@ -200,11 +247,6 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Moodboard updated successfully', 
-        color: 'success' 
-      })
       currentMoodboard.value = result as Moodboard
       await fetchMoodboards()
     }
@@ -222,11 +264,6 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Moodboard deleted successfully', 
-        color: 'success' 
-      })
       await fetchMoodboards()
     }
     return result
@@ -243,11 +280,6 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Moodboard duplicated successfully', 
-        color: 'success' 
-      })
       await fetchMoodboards()
     }
     return result
@@ -318,7 +350,7 @@ export const useMoodboards = () => {
     return result
   }
 
-  const bulkImageAction = async (moodboardId: string, action: string, imageIds: string[], data?: any) => {
+  const bulkImageAction = async (moodboardId: string, action: string, imageIds: string[], data?: BulkActionData) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/api/moodboards/${moodboardId}/images/bulk_action/`, {
         method: 'POST',
@@ -395,7 +427,7 @@ export const useMoodboards = () => {
     return result
   }
 
-  const getSharedMoodboards = async (params?: any) => {
+  const getSharedMoodboards = async (params?: FetchMoodboardsParams) => {
     loading.value = true
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/api/moodboards/shared_with_me/`, {
@@ -410,7 +442,7 @@ export const useMoodboards = () => {
     return result
   }
 
-  const getPublicMoodboards = async (params?: any) => {
+  const getPublicMoodboards = async (params?: FetchMoodboardsParams) => {
     loading.value = true
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/api/moodboards/public/`, {
@@ -536,7 +568,7 @@ export const useMoodboards = () => {
   }
 
   // Search
-  const searchMoodboards = async (query: string, filters?: any) => {
+  const searchMoodboards = async (query: string, filters?: SearchFilters) => {
     loading.value = true
     const result = await handleApiCall(async () => {
       const params = { search: query, ...filters }
@@ -550,7 +582,7 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      moodboards.value = (result as any).results || result
+      moodboards.value = (result as PaginatedResponse<Moodboard>).results || result as Moodboard[]
     }
     loading.value = false
     return result
@@ -569,7 +601,7 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      currentMoodboard.value = (result as any).moodboard
+      currentMoodboard.value = (result as AISessionResponse).moodboard
     }
     return result
   }
@@ -591,11 +623,7 @@ export const useMoodboards = () => {
     })
     
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Images generated successfully!', 
-        color: 'success' 
-      })
+      // Image generation completed successfully
     }
     return result
   }

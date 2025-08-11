@@ -60,7 +60,7 @@ provide('globalLoading', loading)
 
 <template>
   <UApp>
-    <div v-if="loading" class="global-loading-bar"></div>
+    <div v-if="loading" class="global-loading-bar"/>
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
       <header

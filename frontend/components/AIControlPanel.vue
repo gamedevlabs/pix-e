@@ -19,22 +19,22 @@
     <div class="flex items-center gap-2 ml-3">
       <UTooltip text="Regenerate suggestions">
         <UButton 
-          @click="$emit('regenerate')"
           :loading="loading"
           :disabled="!canRegenerate"
-          variant="ghost" 
-          size="sm"
+          variant="ghost"
+          size="sm" 
           icon="i-heroicons-arrow-path-20-solid"
+          @click="$emit('regenerate')"
         />
       </UTooltip>
       
       <UTooltip text="Configure API tokens">
         <UButton 
-          @click="$emit('configure-tokens')"
-          variant="ghost" 
-          size="sm"
+          variant="ghost"
+          size="sm" 
           icon="i-heroicons-key-20-solid"
           :color="hasValidTokens ? 'success' : 'warning'"
+          @click="$emit('configure-tokens')"
         />
       </UTooltip>
     </div>
@@ -48,37 +48,22 @@ interface AIService {
   status: 'available' | 'unavailable' | 'loading'
 }
 
-interface Option {
-  value: string
-  label: string
-  description?: string
-  icon: string
-  iconClass?: string
-  badge?: string
-  badgeColor?: string
-  category: 'service' | 'mode' | 'setting'
-  serviceId?: string
-  mode?: 'default' | 'gaming'
-  suggestionType?: 'short' | 'long'
-}
-
 interface Props {
   services: AIService[]
   servicesLoading: boolean
-  activeService: string | null
-  mode: 'default' | 'gaming'
-  suggestionType: 'short' | 'long'
-  loading: boolean
-  canRegenerate: boolean
-  hasValidTokens: boolean
+  activeService?: string | null
+  mode?: 'default' | 'gaming'
+  suggestionType?: 'short' | 'long'
+  loading?: boolean
+  canRegenerate?: boolean
+  hasValidTokens?: boolean
 }
 
 interface Emits {
   (e: 'service-changed', serviceId: string): void
   (e: 'mode-changed', mode: 'default' | 'gaming'): void
   (e: 'type-changed', type: 'short' | 'long'): void
-  (e: 'regenerate'): void
-  (e: 'configure-tokens'): void
+  (e: 'regenerate' | 'configure-tokens'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -134,105 +119,6 @@ const selectOptions = computed(() => {
   return options
 })
 
-// Generate all options (ChatGPT style)
-const allOptions = computed<Option[]>(() => {
-  const options: Option[] = []
-  
-  // Add service options
-  if (props.services.length > 0) {
-    options.push({
-      value: 'divider-services',
-      label: '━━━━━ AI Models ━━━━━',
-      icon: 'i-heroicons-cpu-chip-20-solid',
-      iconClass: 'text-blue-500',
-      category: 'service'
-    })
-    
-    props.services.forEach(service => {
-      const isActive = service.id === props.activeService
-      options.push({
-        value: `service-${service.id}`,
-        label: service.name,
-        description: service.status === 'available' ? 'Ready to use' : 'Currently unavailable',
-        icon: getServiceIcon(service.name),
-        iconClass: service.status === 'available' ? 'text-green-500' : 'text-gray-400',
-        badge: isActive ? 'Active' : undefined,
-        badgeColor: isActive ? 'green' : undefined,
-        category: 'service',
-        serviceId: service.id
-      })
-    })
-  }
-  
-  // Add mode options
-  options.push({
-    value: 'divider-modes',
-    label: '━━━━━ Generation Modes ━━━━━',
-    icon: 'i-heroicons-adjustments-horizontal-20-solid',
-    iconClass: 'text-purple-500',
-    category: 'mode'
-  })
-  
-  options.push({
-    value: 'mode-default',
-    label: 'Default Mode',
-    description: 'Balanced suggestions for general use',
-    icon: 'i-heroicons-sparkles-20-solid',
-    iconClass: 'text-blue-500',
-    badge: props.mode === 'default' ? 'Active' : undefined,
-    badgeColor: props.mode === 'default' ? 'blue' : undefined,
-    category: 'mode',
-    mode: 'default'
-  })
-  
-  options.push({
-    value: 'mode-gaming',
-    label: 'Gaming Mode',
-    description: 'Specialized suggestions for games',
-    icon: 'i-heroicons-command-line-20-solid',
-    iconClass: 'text-orange-500',
-    badge: props.mode === 'gaming' ? 'Active' : undefined,
-    badgeColor: props.mode === 'gaming' ? 'orange' : undefined,
-    category: 'mode',
-    mode: 'gaming'
-  })
-  
-  // Add suggestion type options
-  options.push({
-    value: 'divider-types',
-    label: '━━━━━ Suggestion Length ━━━━━',
-    icon: 'i-heroicons-document-text-20-solid',
-    iconClass: 'text-green-500',
-    category: 'setting'
-  })
-  
-  options.push({
-    value: 'type-short',
-    label: 'Short Suggestions',
-    description: 'Quick, concise suggestions',
-    icon: 'i-heroicons-minus-20-solid',
-    iconClass: 'text-gray-500',
-    badge: props.suggestionType === 'short' ? 'Active' : undefined,
-    badgeColor: props.suggestionType === 'short' ? 'gray' : undefined,
-    category: 'setting',
-    suggestionType: 'short'
-  })
-  
-  options.push({
-    value: 'type-long',
-    label: 'Detailed Suggestions',
-    description: 'Comprehensive, detailed suggestions',
-    icon: 'i-heroicons-plus-20-solid',
-    iconClass: 'text-green-500',
-    badge: props.suggestionType === 'long' ? 'Active' : undefined,
-    badgeColor: props.suggestionType === 'long' ? 'green' : undefined,
-    category: 'setting',
-    suggestionType: 'long'
-  })
-  
-  return options
-})
-
 // Get service icon based on service name
 function getServiceIcon(serviceName: string): string {
   if (serviceName.toLowerCase().includes('gpt') || serviceName.toLowerCase().includes('github')) {
@@ -276,8 +162,8 @@ function getSelectedIcon(): string {
 }
 
 // Handle selection changes
-function handleSelectionChange(value: any) {
-  const stringValue = typeof value === 'string' ? value : (value?.value || '')
+function handleSelectionChange(value: string | { value: string } | unknown) {
+  const stringValue = typeof value === 'string' ? value : (value && typeof value === 'object' && 'value' in value ? (value as { value: string }).value : '')
   
   if (stringValue.startsWith('service-')) {
     const serviceId = stringValue.replace('service-', '')

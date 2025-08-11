@@ -10,19 +10,19 @@
       <div class="header-actions">
         <UTooltip text="Regenerate suggestions">
           <UButton 
-            @click="handleRegenerate"
             :loading="loading"
             :disabled="!lastPrompt || !currentPrompt || currentPrompt.trim().length < 3"
-            variant="ghost" 
-            size="xs"
+            variant="ghost"
+            size="xs" 
             icon="i-heroicons-arrow-path-20-solid"
+            @click="handleRegenerate"
           />
         </UTooltip>
         <UButton 
-          @click="$emit('toggle')"
-          variant="ghost" 
-          size="xs"
+          variant="ghost"
+          size="xs" 
           icon="i-heroicons-x-mark-20-solid"
+          @click="$emit('toggle')"
         />
       </div>
     </div>
@@ -33,23 +33,23 @@
         <div class="settings-group">
           <label class="settings-label">Mode:</label>
           <UButton 
-            @click="handleModeToggle"
             :label="mode === 'gaming' ? 'Gaming' : 'Default'"
             :color="mode === 'gaming' ? 'warning' : 'primary'"
-            variant="soft" 
-            size="xs"
+            variant="soft"
+            size="xs" 
             :icon="mode === 'gaming' ? 'i-heroicons-command-line-20-solid' : 'i-heroicons-sparkles-20-solid'"
+            @click="handleModeToggle"
           />
         </div>
         <div class="settings-group">
           <label class="settings-label">Length:</label>
           <UButton 
-            @click="handleTypeToggle"
             :label="suggestionType === 'long' ? 'Detailed' : 'Short'"
             :color="suggestionType === 'long' ? 'success' : 'neutral'"
-            variant="soft" 
-            size="xs"
+            variant="soft"
+            size="xs" 
             :icon="suggestionType === 'long' ? 'i-heroicons-bars-3-center-left-20-solid' : 'i-heroicons-bars-2-20-solid'"
+            @click="handleTypeToggle"
           />
         </div>
       </div>
@@ -136,20 +136,20 @@
           <div class="suggestion-actions">
             <UTooltip v-if="!suggestion.applied" text="Apply this suggestion">
               <UButton 
-                @click="$emit('apply-suggestion', index)"
                 size="xs"
                 variant="soft"
                 color="primary"
                 icon="i-heroicons-plus-20-solid"
+                @click="$emit('apply-suggestion', index)"
               />
             </UTooltip>
             <UTooltip v-else text="Suggestion applied">
               <UButton 
-                @click="$emit('unapply-suggestion', index)"
                 size="xs"
                 variant="soft"
                 color="success"
                 icon="i-heroicons-check-20-solid"
+                @click="$emit('unapply-suggestion', index)"
               />
             </UTooltip>
           </div>
@@ -211,26 +211,26 @@
               <div class="token-actions">
                 <UButton
                   v-if="!getTokenForService(serviceType.value)"
-                  @click="showTokenInput(serviceType.value)"
                   size="xs"
                   variant="soft"
                   color="primary"
                   icon="i-heroicons-plus-20-solid"
                   label="Add"
+                  @click="showTokenInput(serviceType.value)"
                 />
                 <div v-else class="token-action-group">
                   <UButton
-                    @click="showTokenInput(serviceType.value)"
                     size="xs"
                     variant="ghost"
                     icon="i-heroicons-pencil-20-solid"
+                    @click="showTokenInput(serviceType.value)"
                   />
                   <UButton
-                    @click="deleteToken(serviceType.value)"
                     size="xs"
                     variant="ghost"
                     color="error"
                     icon="i-heroicons-trash-20-solid"
+                    @click="deleteToken(serviceType.value)"
                   />
                 </div>
               </div>
@@ -242,10 +242,10 @@
             <div class="token-form-header">
               <span class="text-sm font-medium">{{ editingToken ? 'Update' : 'Add' }} {{ getServiceLabel(currentServiceType) }} Token</span>
               <UButton
-                @click="hideTokenInput"
                 size="xs"
                 variant="ghost"
                 icon="i-heroicons-x-mark-20-solid"
+                @click="hideTokenInput"
               />
             </div>
             <div class="token-form-content">
@@ -266,18 +266,18 @@
               </div>
               <div class="token-form-actions">
                 <UButton
-                  @click="hideTokenInput"
                   size="xs"
                   variant="ghost"
                   label="Cancel"
+                  @click="hideTokenInput"
                 />
                 <UButton
-                  @click="saveToken"
                   :loading="isTokenSaving"
                   :disabled="!tokenInput.trim()"
                   size="xs"
                   color="primary"
                   :label="editingToken ? 'Update' : 'Save'"
+                  @click="saveToken"
                 />
               </div>
             </div>
@@ -289,13 +289,13 @@
     <!-- Generate Button Footer -->
     <div v-if="!loading && suggestions.length === 0" class="panel-footer">
       <UButton 
-        @click="handleGenerateFromInput"
         :disabled="!canGenerate || loading || !currentPrompt || currentPrompt.trim().length < 3"
         color="primary"
         variant="solid"
         size="sm"
         block
         icon="i-heroicons-sparkles-20-solid"
+        @click="handleGenerateFromInput"
       >
         {{ !currentPrompt || currentPrompt.trim().length < 3 
           ? 'Enter prompt to generate' 
@@ -325,19 +325,15 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'toggle'): void
-  (e: 'apply-suggestion', index: number): void
-  (e: 'unapply-suggestion', index: number): void
-  (e: 'regenerate'): void
+  (e: 'toggle' | 'regenerate' | 'generate-from-input' | 'fetch-services' | 'clear-error'): void
+  (e: 'apply-suggestion' | 'unapply-suggestion', index: number): void
   (e: 'mode-changed', mode: 'default' | 'gaming'): void
   (e: 'type-changed', type: 'short' | 'long'): void
-  (e: 'generate-from-input'): void
-  (e: 'fetch-services'): void
   (e: 'service-changed', serviceId: string): void
-  (e: 'clear-error'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  currentPrompt: '',
   canGenerate: true,
   services: () => [],
   activeService: undefined

@@ -34,7 +34,7 @@
       const redirectTo = (route.query.redirect as string) || '/'
       await router.push(redirectTo)
       return true
-    } catch (error) {
+    } catch (_error) {
       return false
     }
   }
@@ -51,7 +51,7 @@
       
       user.value = userData
       return true
-    } catch (error) {
+    } catch (_error) {
       user.value = null      // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
       // which would not even remove the console error on the 401 Unauthorized
       // Rules: ESLint: no-explicit-any, vue: catch-only-any-or-unknown
@@ -70,7 +70,7 @@
       user.value = null
       await router.push('/')
       return true
-    } catch (error) {
+    } catch (_error) {
       return false
     }
   }

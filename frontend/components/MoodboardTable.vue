@@ -3,7 +3,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="space-y-4">
       <div v-for="i in 5" :key="i" class="animate-pulse">
-        <div class="bg-gray-200 dark:bg-gray-700 rounded-lg h-20"></div>
+        <div class="bg-gray-200 dark:bg-gray-700 rounded-lg h-20"/>
       </div>
     </div>
 
@@ -97,8 +97,8 @@
               </div>
 
               <!-- Actions -->
-              <div class="flex-shrink-0">
-                <UDropdown :items="getMoodboardActions(moodboard)" @click.stop>
+              <div class="flex-shrink-0" @click.stop>
+                <UDropdownMenu :items="getMoodboardActions(moodboard)">
                   <UButton 
                     color="neutral" 
                     variant="ghost" 
@@ -106,7 +106,13 @@
                     size="sm"
                     class="hover:bg-gray-100 dark:hover:bg-gray-700"
                   />
-                </UDropdown>
+                  <template #item="{ item }">
+                    <div class="dropdown-item" @click="handleActionClick(item.key, moodboard)">
+                      <UIcon :name="item.icon" class="mr-2 w-4 h-4" />
+                      <span>{{ item.label }}</span>
+                    </div>
+                  </template>
+                </UDropdownMenu>
               </div>
             </div>
           </div>
@@ -154,7 +160,7 @@ interface Props {
   emptyDescription?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   loading: false,
   emptyTitle: 'No moodboards found',
   emptyDescription: 'Create your first moodboard to get started'
@@ -223,7 +229,7 @@ const getSelectedImageCount = (moodboard: Moodboard): number => {
     return moodboard.selected_image_count
   }
   
-  const images = moodboard.images as any[]
+  const images = moodboard.images as MoodboardImage[]
   if (images && Array.isArray(images)) {
     return images.filter(img => img.is_selected).length
   }
@@ -231,35 +237,38 @@ const getSelectedImageCount = (moodboard: Moodboard): number => {
   return 0
 }
 
-const getMoodboardActions = (moodboard: Moodboard) => {
+const getMoodboardActions = (_moodboard: Moodboard) => {
   return [
     {
       label: 'Open',
       icon: 'i-heroicons-arrow-top-right-on-square-20-solid',
-      click: () => emit('action', 'open', moodboard)
+      key: 'open'
     }, 
     {
       label: 'Edit',
       icon: 'i-heroicons-pencil-square-20-solid',
-      click: () => emit('action', 'edit', moodboard)
+      key: 'edit'
     },
     {
       label: 'Duplicate',
       icon: 'i-heroicons-document-duplicate-20-solid',
-      click: () => emit('action', 'duplicate', moodboard)
+      key: 'duplicate'
     }, 
     {
       label: 'Share',
       icon: 'i-heroicons-share-20-solid',
-      click: () => emit('action', 'share', moodboard)
+      key: 'share'
     },
     {
       label: 'Delete',
       icon: 'i-heroicons-trash-20-solid',
-      color: 'red' as const,
-      click: () => emit('action', 'delete', moodboard)
+      key: 'delete'
     }
   ]
+}
+
+const handleActionClick = (action: string, moodboard: Moodboard) => {
+  emit('action', action, moodboard)
 }
 
 const handleCardClick = (moodboard: Moodboard) => {
@@ -282,5 +291,21 @@ const handleCardClick = (moodboard: Moodboard) => {
 
 .moodboard-card {
   transition: all 0.2s ease-in-out;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 </style>

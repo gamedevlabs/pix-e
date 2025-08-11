@@ -15,20 +15,20 @@
           </div>
           <div class="flex gap-4">
             <UButton 
-              @click="refreshAll" 
               icon="i-heroicons-arrow-path-20-solid" 
               color="neutral" 
               variant="solid" 
-              size="lg"
+              size="lg" 
               :loading="isRefreshing"
+              @click="refreshAll"
             >
               Refresh
             </UButton>
             <UButton 
-              @click="createNewMoodboard" 
               icon="i-heroicons-plus-20-solid" 
-              size="lg"
+              size="lg" 
               class="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700"
+              @click="createNewMoodboard"
             >
               Create New Moodboard
             </UButton>
@@ -42,11 +42,11 @@
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard Overview</h2>
         <UButton 
-          @click="loadAnalytics" 
           variant="ghost" 
           size="sm" 
-          icon="i-heroicons-arrow-path-20-solid"
+          icon="i-heroicons-arrow-path-20-solid" 
           class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          @click="loadAnalytics"
         >
           Refresh
         </UButton>
@@ -55,7 +55,7 @@
       <!-- Loading skeleton for analytics -->
       <div v-if="!analytics || loadingAnalytics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div v-for="i in 4" :key="i" class="bg-gray-200 dark:bg-gray-700 rounded-lg h-32 animate-pulse flex items-center justify-center">
-          <UIcon name="i-heroicons-arrow-path-20-solid" class="w-8 h-8 text-gray-400 animate-spin" v-if="loadingAnalytics" />
+          <UIcon v-if="loadingAnalytics" name="i-heroicons-arrow-path-20-solid" class="w-8 h-8 text-gray-400 animate-spin" />
         </div>
       </div>
       
@@ -152,10 +152,10 @@
           <!-- Clear filters button -->
           <UButton 
             v-if="hasActiveFilters"
-            @click="clearFilters"
             variant="ghost"
             size="sm"
             color="neutral"
+            @click="clearFilters"
           >
             Clear Filters
           </UButton>
@@ -171,7 +171,7 @@
     <!-- Enhanced UTabs with better styling -->
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
       <UTabs :items="tabs" class="w-full">
-        <template #my="{ item }">
+        <template #my>
           <div class="p-6">
             <MoodboardTable 
               :moodboards="filteredMoodboards"
@@ -183,7 +183,7 @@
           </div>
         </template>
 
-        <template #shared="{ item }">
+        <template #shared>
           <div class="p-6">
             <MoodboardTable 
               :moodboards="filteredSharedMoodboards"
@@ -195,7 +195,7 @@
           </div>
         </template>
 
-        <template #public="{ item }">
+        <template #public>
           <div class="p-6">
             <MoodboardTable 
               :moodboards="filteredPublicMoodboards"
@@ -217,7 +217,7 @@
         title: selectedMoodboardForShare.title,
         description: selectedMoodboardForShare.description,
         is_public: selectedMoodboardForShare.is_public,
-        images: selectedMoodboardForShare.images?.map(img => ({ image_url: img.image_url }))
+        images: selectedMoodboardForShare.images?.map((img: MoodboardImage) => ({ image_url: img.image_url }))
       } : undefined"
       @share="handleShare"
     />
@@ -226,15 +226,15 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  middleware: 'auth',
-})
-
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useMoodboards } from '~/composables/useMoodboards'
 import { useUsers } from '~/composables/useUsers'
 import { useRouter } from '#app'
 import { useToast } from '#imports'
+
+definePageMeta({
+  middleware: 'auth',
+})
 
 // TypeScript interfaces
 interface MoodboardImage {
@@ -402,7 +402,7 @@ const loadData = async () => {
       loadPublicMoodboards(),
       loadAnalytics()
     ])
-  } catch (error) {
+  } catch {
     // Handle error silently for production
   }
 }
@@ -412,9 +412,9 @@ const loadSharedMoodboards = async () => {
   try {
     const result = await getSharedMoodboards()
     if (result) {
-      sharedMoodboards.value = (result as any).results || result
+      sharedMoodboards.value = (result as { results?: Moodboard[] }).results || result as Moodboard[]
     }
-  } catch (error) {
+  } catch {
     // Handle error silently for production
   } finally {
     loadingShared.value = false
@@ -426,9 +426,9 @@ const loadPublicMoodboards = async () => {
   try {
     const result = await refreshPublicMoodboards()
     if (result) {
-      publicMoodboards.value = (result as any).results || result
+      publicMoodboards.value = (result as { results?: Moodboard[] }).results || result as Moodboard[]
     }
-  } catch (error) {
+  } catch {
     // Handle error silently for production
   } finally {
     loadingPublic.value = false
@@ -440,9 +440,9 @@ const loadAnalytics = async () => {
   try {
     const result = await getMoodboardAnalytics()
     if (result) {
-      analytics.value = result as any
+      analytics.value = result as Analytics
     }
-  } catch (error) {
+  } catch {
     // Handle error silently for production
   } finally {
     loadingAnalytics.value = false
@@ -483,7 +483,7 @@ const forceReload = async () => {
     if (publicMoodboards.value) publicMoodboards.value = []
     
     await loadData()
-  } catch (error) {
+  } catch {
     // Handle error silently for production
     loading.value = false
     loadingShared.value = false
@@ -498,7 +498,7 @@ const createAIMoodboard = async () => {
 const openMoodboard = async (id: string) => {
   try {
     await router.push(`/moodboard?id=${id}`)
-  } catch (error) {
+  } catch {
     toast.add({
       title: 'Navigation Error',
       description: 'Failed to open moodboard. Please try again.',
@@ -516,7 +516,7 @@ const duplicateMoodboard = async (id: string) => {
       description: 'Moodboard duplicated successfully',
       color: 'success'
     })
-  } catch (error) {
+  } catch {
     // Handle error silently for production
     toast.add({
       title: 'Error',
@@ -535,7 +535,7 @@ const deleteMoodboard = async (id: string) => {
         description: 'Moodboard deleted successfully',
         color: 'success'
       })
-    } catch (error) {
+    } catch {
       // Handle error silently for production
       toast.add({
         title: 'Error',
@@ -563,7 +563,7 @@ const loadAvailableUsers = async () => {
     loadingUsers.value = true
     const users = await fetchUsers()
     availableUsers.value = users
-  } catch (error) {
+  } catch {
     // Handle error silently for production
     toast.add({
       title: 'Error',
@@ -616,11 +616,12 @@ const handleShare = async () => {
       color: 'success'
     })
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle error silently for production
+    const apiError = error as { message?: string }
     toast.add({
       title: 'Error',
-      description: error.message || 'Failed to share moodboard',
+      description: apiError.message || 'Failed to share moodboard',
       color: 'error'
     })
   } finally {

@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { useRuntimeConfig, useNuxtApp } from '#imports'
+import { useRuntimeConfig } from '#imports'
 
 interface AISuggestion {
   text: string
@@ -20,16 +20,51 @@ interface SuggestionResponse {
   service_used?: string
 }
 
+interface Service {
+  id: string
+  name?: string
+  status: string
+  description?: string
+  available?: boolean
+}
+
 interface ServicesResponse {
   status: string
-  services?: Record<string, any>
+  services?: Record<string, Service>
   active_service?: string
 }
 
+interface UserToken {
+  id: string
+  service_type: string
+  created_at: string
+  updated_at: string
+}
+
+interface APIError {
+  message?: string
+  data?: {
+    error?: string
+    detail?: string
+  }
+  statusCode?: number
+  response?: {
+    data?: {
+      error?: string
+      detail?: string
+    }
+  }
+}
+
 export const useAISuggestions = () => {
-  const { $config } = useNuxtApp()
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBase || 'http://localhost:8000'
+
+  // Helper function to extract error message
+  const getErrorMessage = (error: unknown, fallback: string): string => {
+    const apiError = error as APIError
+    return apiError.data?.error || apiError.message || fallback
+  }
 
   // State
   const suggestions = ref<AISuggestion[]>([])
@@ -39,7 +74,7 @@ export const useAISuggestions = () => {
   const activeService = ref<string | null>(null)
 
   // Token management state
-  const userTokens = ref<any[]>([])
+  const userTokens = ref<UserToken[]>([])
   const isTokensLoading = ref(false)
   const tokenError = ref<string | null>(null)
 
@@ -134,20 +169,23 @@ export const useAISuggestions = () => {
         throw new Error(response.error || 'Failed to generate suggestions')
       }
 
-    } catch (err: any) {
-      console.error('Error generating suggestions:', err)
-      console.error('Error data:', err.data)
-      console.error('Error status:', err.statusCode)
+    } catch (err: unknown) {
+      const apiError = err as APIError
+      
+      // Log error for debugging in development only
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error generating suggestions:', err)
+      }
       
       // Set appropriate error message based on the error type
-      if (err.statusCode === 401 || err.statusCode === 403) {
+      if ((apiError as APIError).statusCode === 401 || (apiError as APIError).statusCode === 403) {
         error.value = 'Authentication required. Please log in to use AI suggestions.'
-      } else if (err.statusCode === 400 && err.data?.error?.includes('token')) {
+      } else if ((apiError as APIError).statusCode === 400 && (apiError as APIError).data?.error?.includes('token')) {
         error.value = 'API token required. Please configure your API tokens in the AI suggestions panel.'
-      } else if (err.data?.error?.includes('service not available')) {
+      } else if ((apiError as APIError).data?.error?.includes('service not available')) {
         error.value = 'AI service is currently unavailable. Please check your API token configuration or try again later.'
       } else {
-        error.value = err.data?.error || err.message || 'AI service failed. Please check your API token configuration.'
+        error.value = (apiError as APIError).data?.error || (apiError as APIError).message || 'AI service failed. Please check your API token configuration.'
       }
       
       // Clear suggestions instead of showing fallback
@@ -203,7 +241,7 @@ export const useAISuggestions = () => {
       })
 
       if (response.status === 'success') {
-        services.value = Object.entries(response.services || {}).map(([id, service]: [string, any]) => ({
+        services.value = Object.entries(response.services || {}).map(([id, service]: [string, Service]) => ({
           id,
           name: service.name || id,
           status: service.available ? 'available' : 'unavailable'
@@ -249,7 +287,7 @@ export const useAISuggestions = () => {
     tokenError.value = null
     
     try {
-      const response = await $fetch<any>(`${apiBase}/api/accounts/ai-tokens/`, {
+      const response = await $fetch<UserToken[]>(`${apiBase}/api/accounts/ai-tokens/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -257,10 +295,12 @@ export const useAISuggestions = () => {
         }
       })
       
-      userTokens.value = response
-    } catch (err: any) {
-      console.error('Error fetching user tokens:', err)
-      tokenError.value = err.data?.error || err.message || 'Failed to fetch tokens'
+      userTokens.value = Array.isArray(response) ? response : []
+    } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching user tokens:', err)
+      }
+      tokenError.value = getErrorMessage(err, 'Failed to fetch tokens')
     } finally {
       isTokensLoading.value = false
     }
@@ -268,9 +308,17 @@ export const useAISuggestions = () => {
 
   const saveUserToken = async (serviceType: string, token: string, isActive: boolean = true) => {
     try {
+      // First check if a token already exists for this service
+      const existingToken = userTokens.value.find(t => t.service_type === serviceType)
+      
+      if (existingToken) {
+        console.log('Token already exists for this service, updating instead...')
+        return await updateUserToken(serviceType, token, isActive)
+      }
+      
       const csrfToken = useCookie('csrftoken').value
       
-      const response = await $fetch<any>(`${apiBase}/api/accounts/ai-tokens/`, {
+      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/api/accounts/ai-tokens/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -288,9 +336,19 @@ export const useAISuggestions = () => {
       // Refresh tokens list
       await fetchUserTokens()
       return response
-    } catch (err: any) {
-      console.error('Error saving token:', err)
-      tokenError.value = err.data?.error || err.message || 'Failed to save token'
+    } catch (err: unknown) {
+      const apiError = err as APIError
+      
+      // Fallback: If token already exists and we missed it above, try updating
+      if (apiError.statusCode === 400 && apiError.data?.error?.includes('already exists')) {
+        console.log('Token already exists (fallback), updating instead...')
+        return await updateUserToken(serviceType, token, isActive)
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error saving token:', err)
+      }
+      tokenError.value = getErrorMessage(err, 'Failed to save token')
       throw err
     }
   }
@@ -298,12 +356,12 @@ export const useAISuggestions = () => {
   const updateUserToken = async (serviceType: string, token: string, isActive?: boolean) => {
     try {
       const csrfToken = useCookie('csrftoken').value
-      const body: any = { token }
+      const body: Record<string, unknown> = { token }
       if (isActive !== undefined) {
         body.is_active = isActive
       }
       
-      const response = await $fetch<any>(`${apiBase}/api/accounts/ai-tokens/${serviceType}/`, {
+      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/api/accounts/ai-tokens/${serviceType}/`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -317,9 +375,11 @@ export const useAISuggestions = () => {
       // Refresh tokens list
       await fetchUserTokens()
       return response
-    } catch (err: any) {
-      console.error('Error updating token:', err)
-      tokenError.value = err.data?.error || err.message || 'Failed to update token'
+    } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error updating token:', err)
+      }
+      tokenError.value = getErrorMessage(err, 'Failed to update token')
       throw err
     }
   }
@@ -339,9 +399,11 @@ export const useAISuggestions = () => {
       
       // Refresh tokens list
       await fetchUserTokens()
-    } catch (err: any) {
-      console.error('Error deleting token:', err)
-      tokenError.value = err.data?.error || err.message || 'Failed to delete token'
+    } catch (err: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting token:', err)
+      }
+      tokenError.value = getErrorMessage(err, 'Failed to delete token')
       throw err
     }
   }

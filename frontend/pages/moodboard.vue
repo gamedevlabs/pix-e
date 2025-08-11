@@ -4,7 +4,7 @@
     <div class="page-header">
       <h1>AI Moodboard</h1>
       <div class="header-actions">
-        <UButton @click="$router.push('/moodboards')" variant="outline" icon="i-heroicons-squares-2x2-20-solid">
+        <UButton variant="outline" icon="i-heroicons-squares-2x2-20-solid" @click="$router.push('/moodboards')">
           Back to Moodboards
         </UButton>
       </div>
@@ -32,9 +32,9 @@
         <UInput 
           v-model="prompt" 
           placeholder="Describe your gaming moodboard..." 
-          @keyup.enter="startSessionWithPrompt" 
-          @input="handlePromptInput"
           class="prompt-input" 
+          @keyup.enter="startSessionWithPrompt"
+          @input="handlePromptInput" 
         />
         
         <!-- Color palette icon and popover -->
@@ -54,7 +54,7 @@
           <template #content>
             <div class="palette-popover-panel">
               <UColorPicker v-model="colorPickerValue" class="p-2" />
-              <UButton v-if="canEdit" @click="addColorToPaletteFromPicker" :disabled="colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)" size="xs" class="ml-1 mt-2">Add</UButton>
+              <UButton v-if="canEdit" :disabled="colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)" size="xs" class="ml-1 mt-2" @click="addColorToPaletteFromPicker">Add</UButton>
               <div class="palette-list mt-2">
                 <span v-for="(color, idx) in colorPalette" :key="color" class="palette-color" :style="{ background: color }">
                   <span v-if="canEdit" class="palette-remove" @click="removeColorFromPalette(idx)">&times;</span>
@@ -66,9 +66,9 @@
         
         <!-- Show palette chips inline for quick reference -->
         <div class="palette-inline-list">
-          <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"></span>
+          <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"/>
         </div>
-        <UButton v-if="canGenerate" @click="startSessionWithPrompt" :disabled="!prompt" class="ml-2">Start Moodboard</UButton>
+        <UButton v-if="canGenerate" :disabled="!prompt" class="ml-2" @click="startSessionWithPrompt">Start Moodboard</UButton>
       </div>
     </div>
     
@@ -84,7 +84,7 @@
           <UCard v-for="img in images" :key="img.id" class="image-item">
             <img :src="getImageUrl(img.url || img.image_url)" :alt="img.prompt" />
             <template #footer>
-              <UCheckbox v-if="canEdit" :model-value="selectedImageIds.includes(img.id)" @update:model-value="(value) => onCheckboxChange(value === true, img.id)" :label="'Select'" />
+              <UCheckbox v-if="canEdit" :model-value="selectedImageIds.includes(img.id)" :label="'Select'" @update:model-value="(value: boolean) => onCheckboxChange(value === true, img.id)" />
             </template>
           </UCard>
         </div>
@@ -100,12 +100,12 @@
               <img :src="getImageUrl(img.url || img.image_url)" :alt="img.prompt" />
               <UButton 
                 v-if="canEdit"
-                @click="removeFromMoodboard(img.id)"
                 class="remove-image-btn"
                 color="error"
                 variant="solid"
                 size="xs"
                 icon="i-heroicons-x-mark-20-solid"
+                @click="removeFromMoodboard(img.id)"
               />
             </div>
           </UCard>
@@ -134,9 +134,9 @@
           v-if="canGenerate" 
           v-model="prompt" 
           placeholder="Describe your gaming moodboard..." 
+          class="prompt-input" 
           @keyup.enter="generateImages" 
           @input="handlePromptInput" 
-          class="prompt-input" 
         />
         <div v-else class="prompt-input-placeholder">
           <span class="text-gray-500">View-only access - Image generation disabled</span>
@@ -159,7 +159,7 @@
           <template #content>
             <div class="palette-popover-panel">
               <UColorPicker v-model="colorPickerValue" class="p-2" />
-              <UButton v-if="canEdit" @click="addColorToPaletteFromPicker" :disabled="colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)" size="xs" class="ml-1 mt-2">Add</UButton>
+              <UButton v-if="canEdit" :disabled="colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)" size="xs" class="ml-1 mt-2" @click="addColorToPaletteFromPicker">Add</UButton>
               <div class="palette-list mt-2">
                 <span v-for="(color, idx) in colorPalette" :key="color" class="palette-color" :style="{ background: color }">
                   <span v-if="canEdit" class="palette-remove" @click="removeColorFromPalette(idx)">&times;</span>
@@ -171,11 +171,11 @@
         
         <!-- Show palette chips inline for quick reference (read-only for view users) -->
         <div class="palette-inline-list" :class="{ 'opacity-60': !canGenerate }">
-          <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"></span>
+          <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"/>
         </div>
         
-        <UButton v-if="canGenerate" @click="generateImages" :disabled="loading || !prompt" color="primary" class="ml-2">Generate Images</UButton>
-        <UButton v-if="canSave" @click="openSaveModal" color="success" class="ml-2 save-btn" :disabled="moodboard.length === 0">
+        <UButton v-if="canGenerate" :disabled="loading || !prompt" color="primary" class="ml-2" @click="generateImages">Generate Images</UButton>
+        <UButton v-if="canSave" color="success" class="ml-2 save-btn" :disabled="moodboard.length === 0" @click="openSaveModal">
           Save Moodboard
         </UButton>
       </div>
@@ -183,8 +183,8 @@
 
     <!-- Save Moodboard Modal -->
     <UModal 
-      v-model:open="showSaveModal" 
-      :key="`modal-${sessionId}`"
+      :key="`modal-${sessionId}`" 
+      v-model:open="showSaveModal"
       title="Save Your Moodboard" 
       description="Give your moodboard a name and set its visibility settings."
       :ui="{ footer: 'justify-end' }"
@@ -240,9 +240,9 @@
         <UButton 
           label="Save Moodboard"
           color="success" 
-          @click="saveMoodboard" 
-          :loading="saving"
+          :loading="saving" 
           :disabled="isSaveDisabled"
+          @click="saveMoodboard"
         />
       </template>
     </UModal>
@@ -277,26 +277,39 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
+import type { Ref } from 'vue'
+import { useRuntimeConfig, useRouter } from '#imports'
+import '@/assets/css/toast-loading-bar.css'
+import { useMoodboards, type Moodboard, type MoodboardImage } from '~/composables/useMoodboards'
+import { useAISuggestions } from '~/composables/useAISuggestions'
+
 definePageMeta({
   middleware: 'auth',
 })
 
-import { ref, computed, onMounted, onUnmounted, watch, inject, nextTick } from 'vue'
-import type { Ref } from 'vue'
-import axios from 'axios'
-import { useRuntimeConfig, useRouter } from '#imports'
-import type { DropdownMenuItem } from '@nuxt/ui'
-import '@/assets/css/toast-loading-bar.css'
-import { useMoodboards } from '~/composables/useMoodboards'
-import { useAISuggestions } from '~/composables/useAISuggestions'
+// Local interfaces
+interface AISessionGetResponse {
+  id: string
+  status: string
+  images: MoodboardImage[]
+  moodboard?: Moodboard
+  user_permission?: string
+  is_owner?: boolean
+}
+
+interface AISessionStartResponse {
+  session_id: string
+  moodboard?: Moodboard
+}
 
 // Core state
 const sessionId = ref<string | null>(null)
 const prompt = ref('')
 const moodboardName = ref('')
-const images = ref<any[]>([])
-const moodboard = ref<any[]>([])
-const selectedImageIds = ref<any[]>([])
+const images = ref<MoodboardImage[]>([])
+const moodboard = ref<MoodboardImage[]>([])
+const selectedImageIds = ref<string[]>([])
 const loading = inject('globalLoading') as Ref<boolean>
 const isInitialLoad = ref(true)
 const existingImageCount = ref(0)
@@ -339,12 +352,12 @@ const {
   createMoodboard,
   addImageToMoodboard,
   updateMoodboardImage,
-  bulkImageAction,
+  bulkImageAction: _bulkImageAction,
   startAISession,
   generateAIImages,
   getAISession,
   endAISession,
-  preloadAI
+  preloadAI: _preloadAI
 } = useMoodboards()
 
 // AI Suggestions
@@ -455,7 +468,7 @@ watch(() => route.query.id, async (newId, oldId) => {
   }
 }, { immediate: false })
 
-function onCheckboxChange(checked: boolean, id: any) {
+function onCheckboxChange(checked: boolean, id: string) {
   if (checked) {
     if (!selectedImageIds.value.includes(id)) {
       selectedImageIds.value.push(id)
@@ -466,30 +479,30 @@ function onCheckboxChange(checked: boolean, id: any) {
       }
       
       // Move the selected image from images to moodboard immediately
-      const selectedImage = images.value.find((img: any) => img.id === id)
+      const selectedImage = images.value.find((img: MoodboardImage) => img.id === id)
       if (selectedImage) {
-        images.value = images.value.filter((img: any) => img.id !== id)
+        images.value = images.value.filter((img: MoodboardImage) => img.id !== id)
         moodboard.value.push(selectedImage)
       }
     }
   } else {
-    selectedImageIds.value = selectedImageIds.value.filter((i: any) => i !== id)
+    selectedImageIds.value = selectedImageIds.value.filter((i: string) => i !== id)
     
     // Move the image back from moodboard to images
-    const deselectedImage = moodboard.value.find((img: any) => img.id === id)
+    const deselectedImage = moodboard.value.find((img: MoodboardImage) => img.id === id)
     if (deselectedImage) {
-      moodboard.value = moodboard.value.filter((img: any) => img.id !== id)
+      moodboard.value = moodboard.value.filter((img: MoodboardImage) => img.id !== id)
       images.value.push(deselectedImage)
     }
   }
 }
 
-function removeFromMoodboard(imageId: any) {
+function removeFromMoodboard(imageId: string) {
   // Find the image to remove from moodboard
-  const imageToRemove = moodboard.value.find((img: any) => img.id === imageId)
+  const imageToRemove = moodboard.value.find((img: MoodboardImage) => img.id === imageId)
   if (imageToRemove) {
     // Remove from moodboard
-    moodboard.value = moodboard.value.filter((img: any) => img.id !== imageId)
+    moodboard.value = moodboard.value.filter((img: MoodboardImage) => img.id !== imageId)
     
     // Track this as a removed image if it was part of the original moodboard
     if (originalMoodboardImageIds.value.includes(imageId)) {
@@ -499,7 +512,7 @@ function removeFromMoodboard(imageId: any) {
     }
     
     // Remove from selectedImageIds if it was recently selected
-    selectedImageIds.value = selectedImageIds.value.filter((id: any) => id !== imageId)
+    selectedImageIds.value = selectedImageIds.value.filter((id: string) => id !== imageId)
     
     // Move it back to the generated images section so user can re-select if needed
     images.value.push(imageToRemove)
@@ -574,7 +587,7 @@ async function generateImages() {
   try {
     // Get current image count before generating new ones
     const preGenResponse = await getAISession(sessionId.value || '')
-    existingImageCount.value = (preGenResponse as any)?.images ? (preGenResponse as any).images.length : 0
+    existingImageCount.value = (preGenResponse as AISessionGetResponse)?.images ? (preGenResponse as AISessionGetResponse).images.length : 0
     
     let fullPrompt = prompt.value
     if (colorPalette.value.length) {
@@ -594,14 +607,13 @@ async function generateImages() {
     prompt.value = ''
     selectedImageIds.value = []
     
-    showToast('Images generated successfully!', 'success')
-    
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const apiError = error as { response?: { data?: { error?: string } } }
     console.error('Error generating images:', error)
     loading.value = false
     clearMoodboardToast()
     
-    const errorMessage = error.response?.data?.error || 'Failed to generate images'
+    const errorMessage = apiError.response?.data?.error || 'Failed to generate images'
     showToast(errorMessage, 'error')
   }
 }
@@ -609,7 +621,7 @@ async function generateImages() {
 async function startSessionWithPrompt() {
   if (!prompt.value) return
   const res = await startAISession()
-  sessionId.value = (res as any)?.session_id
+  sessionId.value = (res as AISessionStartResponse)?.session_id
   isInitialLoad.value = false
   
   // Generate a default moodboard name based on the prompt
@@ -626,10 +638,10 @@ async function fetchMoodboard() {
   if (!sessionId.value) return
   
   try {
-    let res: any
+    let res: AISessionGetResponse | Moodboard | null = null
     if (isInitialLoad.value) {
       // For initial load of existing moodboards, use the regular REST API
-      res = await fetchMoodboardFromAPI(sessionId.value)
+      res = await fetchMoodboardFromAPI(sessionId.value) as Moodboard | null
       if (!res) {
         const toast = useToast()
         toast.add({
@@ -642,7 +654,7 @@ async function fetchMoodboard() {
       }
     } else {
       // For AI session data during generation, use the AI session API
-      res = await getAISession(sessionId.value || '')
+      res = await getAISession(sessionId.value || '') as AISessionGetResponse | null
     }
     
     if (isInitialLoad.value) {
@@ -651,41 +663,70 @@ async function fetchMoodboard() {
       moodboard.value = []
       
       // Use images from API for the moodboard (filter for selected images)
-      const allImages = (res as any)?.images || []
-      const selectedImages = allImages.filter((img: any) => img.is_selected)
+      let allImages: MoodboardImage[] = []
+      if (isInitialLoad.value) {
+        // When loading existing moodboard via REST API, we get a direct Moodboard object
+        const moodboard = res as Moodboard
+        allImages = moodboard?.images || []
+      } else {
+        // AI session response structure
+        const aiSession = res as AISessionGetResponse
+        allImages = aiSession?.images || []
+      }
+      
+      const selectedImages = allImages.filter((img: MoodboardImage) => img.is_selected)
       moodboard.value = selectedImages
       
       // Store the original image IDs for tracking changes
-      originalMoodboardImageIds.value = selectedImages.map((img: any) => img.id)
+      originalMoodboardImageIds.value = selectedImages.map((img: MoodboardImage) => img.id)
       removedImageIds.value = []
       
       // Set moodboard metadata
-      if ((res as any)?.title || (res as any)?.name) {
-        moodboardName.value = (res as any)?.title || (res as any)?.name || ''
-      }
-      if ((res as any)?.is_public !== undefined) {
-        isMoodboardPublic.value = Boolean((res as any).is_public)
-      } else if ((res as any)?.public !== undefined) {
-        isMoodboardPublic.value = Boolean((res as any).public)
+      // Check if this is a direct moodboard response or AI session response
+      if (isInitialLoad.value) {
+        // When loading existing moodboard via REST API, we get a direct Moodboard object
+        const moodboard = res as Moodboard
+        if (moodboard?.title) {
+          moodboardName.value = moodboard.title
+        }
+        if (moodboard?.is_public !== undefined) {
+          isMoodboardPublic.value = Boolean(moodboard.is_public)
+        }
+        // For direct moodboard responses, we need to set default user permissions
+        userPermission.value = 'edit' // Assume user has edit permission for their own moodboards
+        isOwner.value = true // Assume user is owner when accessing via REST API
       } else {
+        // AI session response structure
+        const aiSession = res as AISessionGetResponse
+        if (aiSession?.moodboard?.title) {
+          moodboardName.value = aiSession.moodboard.title
+        }
+        if (aiSession?.moodboard?.is_public !== undefined) {
+          isMoodboardPublic.value = Boolean(aiSession.moodboard.is_public)
+        }
+        
+        if (aiSession?.user_permission) {
+          userPermission.value = aiSession.user_permission as 'view' | 'edit' || 'edit'
+        }
+        if (aiSession?.is_owner !== undefined) {
+          isOwner.value = Boolean(aiSession.is_owner)
+        }
+      }
+      
+      // Set default if no value found
+      if (!isMoodboardPublic.value) {
         isMoodboardPublic.value = false
-      }
-      if ((res as any)?.user_permission) {
-        userPermission.value = (res as any).user_permission
-      }
-      if ((res as any)?.is_owner !== undefined) {
-        isOwner.value = Boolean((res as any).is_owner)
       }
       
       isInitialLoad.value = false
-      existingImageCount.value = (res as any)?.images ? (res as any).images.length : 0
+      existingImageCount.value = allImages.length
     } else {
       // Handle AI session fetch
-      const allImages = (res as any)?.images || []
+      const allImages = res?.images || []
       const newImages = allImages.slice(existingImageCount.value)
-      const existingMoodboardImageIds = moodboard.value.map((img: any) => img.id)
+      const existingMoodboardImageIds = moodboard.value.map((img: MoodboardImage) => img.id)
       
-      const filteredImages = newImages.filter((img: any) => {
+      const filteredImages = newImages.filter((img: MoodboardImage) => {
         const isSelected = img.is_selected
         const isAlreadyInMoodboard = existingMoodboardImageIds.includes(img.id)
         return !isSelected && !isAlreadyInMoodboard
@@ -723,23 +764,24 @@ async function saveMoodboard() {
     const allSelectedImageIds = [...new Set(finalImageIds)]
     
     const hasExistingMoodboard = !!moodboardName.value
-    const nameChanged = tempMoodboardName.value.trim() !== moodboardName.value
+    const isEditingExisting = hasExistingMoodboard && isOwner.value
     
-    // SIMPLE DECISION LOGIC:
-    // 1. Owner + existing moodboard + same name = UPDATE
-    // 2. Everything else = CREATE NEW
+    // IMPROVED DECISION LOGIC:
+    // 1. If editing existing moodboard and owner = UPDATE (regardless of name change)
+    // 2. Otherwise = CREATE NEW
     
-    if (isOwner.value && hasExistingMoodboard && !nameChanged) {
-      // UPDATE existing moodboard
+    if (isEditingExisting) {
+      // UPDATE existing moodboard (allow name changes)
       
       await updateMoodboard(sessionId.value || '', {
+        title: tempMoodboardName.value.trim(),
         is_public: isMoodboardPublic.value
       })
       
       // Update image selection
       const currentData = await fetchMoodboardFromAPI(sessionId.value || '')
-      if (currentData && (currentData as any).images) {
-        const allImages = (currentData as any).images
+      if (currentData && (currentData as Moodboard).images) {
+        const allImages = (currentData as Moodboard).images
         
         for (const image of allImages) {
           const shouldBeSelected = allSelectedImageIds.includes(image.id)
@@ -755,7 +797,8 @@ async function saveMoodboard() {
         }
       }
       
-      showToast('Moodboard updated successfully!', 'success')
+      // Update the moodboard name if it changed
+      moodboardName.value = tempMoodboardName.value.trim()
     } else {
       // CREATE new moodboard
       
@@ -769,7 +812,16 @@ async function saveMoodboard() {
       if (res && allSelectedImageIds.length > 0) {
         for (const imageId of allSelectedImageIds) {
           try {
-            await addImageToMoodboard((res as any).id, imageId)
+            await addImageToMoodboard((res as Moodboard).id, {
+              id: imageId,
+              moodboard: (res as Moodboard).id,
+              image_url: '',
+              title: '',
+              source: 'ai',
+              is_selected: true,
+              order_index: 0,
+              created_at: new Date().toISOString()
+            })
           } catch (error) {
             console.warn('Failed to add image:', error)
           }
@@ -777,16 +829,16 @@ async function saveMoodboard() {
       }
       
       if (res) {
-        showToast('Moodboard created successfully!', 'success')
         await router.push('/moodboards')
       }
     }
     
     showSaveModal.value = false
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const apiError = error as { response?: { data?: { error?: string } } }
     console.error('Error saving moodboard:', error)
-    showToast(error.response?.data?.error || 'Failed to save moodboard', 'error')
+    showToast(apiError.response?.data?.error || 'Failed to save moodboard', 'error')
   } finally {
     saving.value = false
   }

@@ -95,17 +95,17 @@
         <UButton 
           variant="outline" 
           color="neutral"
-          @click="handleCancel"
           :disabled="sharing"
+          @click="handleCancel"
         >
           Cancel
         </UButton>
         <UButton 
           color="primary"
-          @click="handleShare"
           :loading="sharing"
           :disabled="!canShare"
           icon="i-heroicons-share-20-solid"
+          @click="handleShare"
         >
           Share Moodboard
         </UButton>
