@@ -210,17 +210,17 @@ class LLMServiceManager:
         if mode.lower() == "gaming":
             contextual_prompt = (
                 f'Help expand this gaming prompt: "{user_input}"\n\n'
-                f'Provide {num_suggestions} creative suggestions ({word_count}) '
-                f'that could enhance this prompt for game art creation.\n\n'
-                f'{format_instruction}'
+                f"Provide {num_suggestions} creative suggestions ({word_count}) "
+                f"that could enhance this prompt for game art creation.\n\n"
+                f"{format_instruction}"
             )
 
         else:
             contextual_prompt = (
                 f'Help expand this artistic prompt: "{user_input}"\n\n'
-                f'Provide {num_suggestions} creative suggestions ({word_count}) '
-                f'that could enhance this prompt for visual art creation.\n\n'
-                f'{format_instruction}'
+                f"Provide {num_suggestions} creative suggestions ({word_count}) "
+                f"that could enhance this prompt for visual art creation.\n\n"
+                f"{format_instruction}"
             )
 
         return contextual_prompt
