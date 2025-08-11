@@ -22,10 +22,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    
     # Moodboard system with integrated AI functionality
     path("", include("moodboards.urls")),
-    
     # Other app URLs
     path("api/llm/", include("llm.urls")),
     path("llm/", include("llm.urls")),  # Keep both for backward compatibility

@@ -2,10 +2,10 @@ from django.apps import AppConfig
 
 
 class MoodboardsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'moodboards'
-    verbose_name = 'Moodboards'
-    
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "moodboards"
+    verbose_name = "Moodboards"
+
     def ready(self):
         """Import signal handlers when Django starts"""
         try:

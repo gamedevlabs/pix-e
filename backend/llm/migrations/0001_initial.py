@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
                 "unique_together": {("user", "pillar_id")},
             },
         ),
-                migrations.CreateModel(
+        migrations.CreateModel(
             name="MoodboardSession",
             fields=[
                 (

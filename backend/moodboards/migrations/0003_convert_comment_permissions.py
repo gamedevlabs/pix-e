@@ -5,8 +5,8 @@ from django.db import migrations
 
 def convert_comment_to_view(apps, schema_editor):
     """Convert any 'comment' permissions to 'view' permissions"""
-    MoodboardShare = apps.get_model('moodboards', 'MoodboardShare')
-    MoodboardShare.objects.filter(permission='comment').update(permission='view')
+    MoodboardShare = apps.get_model("moodboards", "MoodboardShare")
+    MoodboardShare.objects.filter(permission="comment").update(permission="view")
 
 
 def reverse_convert_comment_to_view(apps, schema_editor):
