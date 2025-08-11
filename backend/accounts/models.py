@@ -1,6 +1,3 @@
-import base64
-import os
-
 from cryptography.fernet import Fernet
 from django.conf import settings
 from django.contrib.auth.models import User

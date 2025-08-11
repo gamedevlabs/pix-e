@@ -3,10 +3,8 @@ Text Generation Inference (TGI) Service Implementation - Fixed Version
 Uses Hugging Face's TGI server for high-performance text generation
 """
 
-import asyncio
 import logging
 import os
-import sys
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -319,7 +317,7 @@ class TGIAPIService(BaseLLMService):
                                         "showing",
                                     ]:
                                         if line.startswith(prefix + " "):
-                                            line = line[len(prefix) + 1 :]
+                                            line = line[len(prefix) + 1:]
                                             break
 
                                     if (
@@ -406,7 +404,7 @@ class TGIAPIService(BaseLLMService):
     ) -> List[str]:
         """Get text suggestions (alias for generate_text for compatibility)"""
         # Extract suggestion_type if provided but ignore it for now
-        suggestion_type = kwargs.get("suggestion_type", "short")
+        kwargs.get("suggestion_type", "short")
 
         return self.generate_text(prompt, max_tokens, temperature, num_suggestions)
 

@@ -13,7 +13,6 @@ def reverse_convert_comment_to_view(apps, schema_editor):
     """Reverse operation - convert 'view' back to 'comment' (not perfect but safe)"""
     # We can't perfectly reverse this since we don't know which 'view' were originally 'comment'
     # So we'll just leave them as 'view' - this is a safe operation
-    pass
 
 
 class Migration(migrations.Migration):

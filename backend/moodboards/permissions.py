@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from .models import Moodboard, MoodboardShare
+from .models import MoodboardShare
 
 
 class MoodboardPermission(permissions.BasePermission):

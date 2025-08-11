@@ -7,7 +7,6 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from django.conf import settings
 from django.core.cache import cache
 
 from ..gemini.GeminiLink import GeminiLink
@@ -330,7 +329,7 @@ Provide {num_suggestions} creative suggestions ({word_count}) that could enhance
                                         prefix.lower()
                                     ):
                                         suggestion_text = suggestion_text[
-                                            len(prefix) :
+                                            len(prefix):
                                         ].strip()
                                         break
 

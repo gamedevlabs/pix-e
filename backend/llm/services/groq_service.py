@@ -3,10 +3,9 @@ Groq LLM Service Implementation
 Free tier with high rate limits and fast inference
 """
 
-import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 

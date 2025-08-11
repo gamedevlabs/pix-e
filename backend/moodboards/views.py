@@ -1,8 +1,26 @@
+from .serializers import (
+    ImageBulkActionSerializer,
+    MoodboardBulkActionSerializer,
+    MoodboardCommentSerializer,
+    MoodboardCreateUpdateSerializer,
+    MoodboardDetailSerializer,
+    MoodboardImageCreateSerializer,
+    MoodboardImageSerializer,
+    MoodboardListSerializer,
+    MoodboardTemplateSerializer,
+)
+from .permissions import CanEditMoodboard, CanViewMoodboard, MoodboardPermission
+from .models import (
+    Moodboard,
+    MoodboardComment,
+    MoodboardImage,
+    MoodboardShare,
+    MoodboardTemplate,
+)
 from datetime import datetime, timedelta
 
-from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -19,27 +37,6 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
 
     def enforce_csrf(self, request):
         return  # Skip CSRF check
-
-
-from .models import (
-    Moodboard,
-    MoodboardComment,
-    MoodboardImage,
-    MoodboardShare,
-    MoodboardTemplate,
-)
-from .permissions import CanEditMoodboard, CanViewMoodboard, MoodboardPermission
-from .serializers import (
-    ImageBulkActionSerializer,
-    MoodboardBulkActionSerializer,
-    MoodboardCommentSerializer,
-    MoodboardCreateUpdateSerializer,
-    MoodboardDetailSerializer,
-    MoodboardImageCreateSerializer,
-    MoodboardImageSerializer,
-    MoodboardListSerializer,
-    MoodboardTemplateSerializer,
-)
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -695,7 +692,7 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
             session_id = data.get("session_id")
             prompt = data.get("prompt", "")
             selected_image_ids = data.get("selected_image_ids", [])
-            mode = data.get("mode", "gaming")
+            data.get("mode", "gaming")
 
             if not session_id:
                 return Response(

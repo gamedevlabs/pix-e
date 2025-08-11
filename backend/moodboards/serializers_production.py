@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
@@ -573,10 +572,8 @@ class MoodboardTemplateSerializer(serializers.ModelSerializer):
 class ImageBulkActionSerializer(MoodboardImageBulkActionSerializer):
     """Legacy alias for backward compatibility"""
 
-    pass
 
 
 class MoodboardCreateUpdateSerializer(MoodboardUpdateSerializer):
     """Legacy alias for backward compatibility"""
 
-    pass

@@ -9,6 +9,6 @@ class MoodboardsConfig(AppConfig):
     def ready(self):
         """Import signal handlers when Django starts"""
         try:
-            import moodboards.signals
+            pass
         except ImportError:
             pass

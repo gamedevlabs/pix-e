@@ -1,4 +1,5 @@
-import json
+from django.dispatch import receiver
+from django.db.models.signals import post_delete, post_save
 import uuid
 
 from django.contrib.auth.models import User
@@ -853,8 +854,6 @@ class MoodboardComment(models.Model):
 
 
 # Signal handlers for automatic cleanup and optimization
-from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
 
 
 @receiver(post_save, sender=MoodboardImage)

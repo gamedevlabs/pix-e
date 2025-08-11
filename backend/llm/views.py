@@ -1,16 +1,9 @@
 import logging
-import os
-import threading
-import time
-import uuid
 
 import torch
-import webcolors
 from diffusers import StableDiffusionOnnxPipeline, StableDiffusionPipeline
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
-from django.views import View
-from rest_framework import permissions, status
+from rest_framework import permissions
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response

@@ -6,7 +6,7 @@ Uses GitHub Models API for text generation
 import logging
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
@@ -276,7 +276,7 @@ Format your response as a numbered list:
                                     "showing",
                                 ]:
                                     if line.startswith(prefix + " "):
-                                        line = line[len(prefix) + 1 :]
+                                        line = line[len(prefix) + 1:]
                                         break
 
                                 if (

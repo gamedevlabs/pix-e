@@ -83,7 +83,10 @@ def ai_service_tokens(request):
             if existing_token:
                 return Response(
                     {
-                        "error": f"Token for {serializer.validated_data['service_type']} already exists. Use PUT to update."
+                        "error": (
+                            f"Token for {serializer.validated_data['service_type']} "
+                            f"already exists. Use PUT to update."
+                        )
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )

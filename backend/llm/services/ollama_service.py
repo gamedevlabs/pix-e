@@ -3,9 +3,8 @@ Ollama Local LLM Service Implementation
 Provides completely free local AI models through Ollama
 """
 
-import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 
