@@ -425,7 +425,8 @@ class LLMServiceManager:
                         return cleaned_suggestions
                     else:
                         raise LLMServiceError(
-                            f"GitHub Models service {service_id} failed to generate valid suggestions"
+                            f"GitHub Models service {service_id} failed to "
+                            f"generate valid suggestions"
                         )
 
             except Exception as e:
@@ -433,11 +434,13 @@ class LLMServiceManager:
                 # Check if it's a timeout or rate limit error
                 if "timed out" in str(e).lower() or "timeout" in str(e).lower():
                     raise LLMServiceError(
-                        "The GitHub Models service timed out after 30 seconds. Please check your GitHub token and try again."
+                        "The GitHub Models service timed out after 30 seconds. "
+                        "Please check your GitHub token and try again."
                     )
                 elif "rate limit" in str(e).lower() or "429" in str(e):
                     raise LLMServiceError(
-                        "Rate limit exceeded for GitHub Models. Please check your GitHub token or try again later."
+                        "Rate limit exceeded for GitHub Models. Please check your "
+                        "GitHub token or try again later."
                     )
                 else:
                     # Don't fall back - user specifically requested this service
@@ -448,7 +451,8 @@ class LLMServiceManager:
         # If no specific service requested, require user to select one
         if not service_id:
             raise LLMServiceError(
-                "Please select an AI service from the dropdown menu to generate suggestions."
+                "Please select an AI service from the dropdown menu "
+                "to generate suggestions."
             )
 
     def get_active_service(self) -> Optional[str]:

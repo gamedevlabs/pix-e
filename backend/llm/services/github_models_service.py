@@ -222,7 +222,9 @@ class GitHubModelsService(BaseLLMService):
 
             if thread.is_alive():
                 # Timeout occurred
-                logger.error("GitHub Models API request timed out after 30 seconds")
+                logger.error(
+                    "GitHub Models API request timed out after 30 seconds"
+                )
                 raise LLMServiceError(
                     "Request timed out. Please check your GitHub token or try again later."
                 )
@@ -232,7 +234,8 @@ class GitHubModelsService(BaseLLMService):
                 exception = exception_queue.get()
                 if hasattr(exception, "status_code") and exception.status_code == 429:
                     raise LLMServiceError(
-                        "Rate limit exceeded. Please check your GitHub token or try again later."
+                        "Rate limit exceeded. Please check your GitHub token "
+                        "or try again later."
                     )
                 raise exception
 
