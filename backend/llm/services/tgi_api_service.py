@@ -238,7 +238,6 @@ class TGIAPIService(BaseLLMService):
         max_tokens = kwargs.get("max_tokens", 100)
         temperature = kwargs.get("temperature", 0.7)
         num_return_sequences = kwargs.get("num_return_sequences", 3)
-        suggestion_type = kwargs.get("suggestion_type", "short")
         if not self.is_loaded or not self.client:
             raise LLMServiceError("TGI model not loaded. Call load_model() first.")
 
