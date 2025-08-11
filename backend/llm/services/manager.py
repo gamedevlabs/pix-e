@@ -84,7 +84,9 @@ class LLMServiceManager:
                 "model_name": "gemini-2.0-flash",
                 "provider": "Google AI",
                 "name": "Gemini 2.0 Flash (Google)",
-                "description": "Google's latest multimodal AI model for text generation",
+                "description": (
+                    "Google's latest multimodal AI model for text generation"
+                ),
                 "status": "available",
             }
 

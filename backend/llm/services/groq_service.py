@@ -71,7 +71,8 @@ class GroqService(BaseLLMService):
         try:
             if not self.api_key:
                 logger.info(
-                    "No GROQ_API_KEY found. Get free API key from: https://console.groq.com/"
+                    "No GROQ_API_KEY found. Get free API key from: "
+                    "https://console.groq.com/"
                 )
                 return False
 

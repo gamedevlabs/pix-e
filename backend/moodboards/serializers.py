@@ -501,7 +501,9 @@ class ImageBulkActionSerializer(serializers.Serializer):
             if len(new_order_indices) != len(image_ids):
                 raise serializers.ValidationError(
                     {
-                        "new_order_indices": "Must provide same number of indices as image IDs"
+                        "new_order_indices": (
+                            "Must provide same number of indices as image IDs"
+                        )
                     }
                 )
 

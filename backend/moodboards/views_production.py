@@ -391,7 +391,8 @@ class MoodboardViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             logger.error(
-                f"Bulk action {action_type} failed for moodboard {moodboard.id}: {str(e)}"
+                f"Bulk action {action_type} failed for moodboard "
+                f"{moodboard.id}: {str(e)}"
             )
             return Response(
                 {"error": f"Bulk action failed: {str(e)}"},
@@ -499,7 +500,8 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             )
 
         logger.info(
-            f"Duplicated moodboard {original.id} to {duplicate.id} for user {request.user.username}"
+            f"Duplicated moodboard {original.id} to {duplicate.id} "
+            f"for user {request.user.username}"
         )
 
         serializer = MoodboardDetailSerializer(duplicate, context={"request": request})

@@ -24,8 +24,14 @@ class TGIAPIService(BaseLLMService):
     AVAILABLE_MODELS = {
         "mistralai/Mistral-7B-Instruct-v0.2": {
             "name": "Mistral 7B Instruct v0.2 (TGI API)",
-            "description": "Mistral AI's instruction-tuned model via Hugging Face TGI API - excellent for creative text generation",
-            "endpoint": "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+            "description": (
+                "Mistral AI's instruction-tuned model via Hugging Face TGI API "
+                "- excellent for creative text generation"
+            ),
+            "endpoint": (
+                "https://api-inference.huggingface.co/models/mistralai/"
+                "Mistral-7B-Instruct-v0.2"
+            ),
             "model_url": "https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2",
             "size": "7B",
             "type": "instruct",
@@ -35,8 +41,14 @@ class TGIAPIService(BaseLLMService):
         },
         "mistralai/Mixtral-8x7B-Instruct-v0.1": {
             "name": "Mixtral 8x7B Instruct (TGI API)",
-            "description": "Mistral AI's mixture of experts model via Hugging Face TGI API - powerful for complex text generation",
-            "endpoint": "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "description": (
+                "Mistral AI's mixture of experts model via Hugging Face TGI API "
+                "- powerful for complex text generation"
+            ),
+            "endpoint": (
+                "https://api-inference.huggingface.co/models/mistralai/"
+                "Mixtral-8x7B-Instruct-v0.1"
+            ),
             "model_url": "https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1",
             "size": "8x7B",
             "type": "instruct",

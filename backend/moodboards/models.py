@@ -719,7 +719,10 @@ class MoodboardShare(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {self.get_permission_display()} on {self.moodboard.title}"
+        return (
+            f"{self.user.username} - {self.get_permission_display()} "
+            f"on {self.moodboard.title}"
+        )
 
     @property
     def is_expired(self):

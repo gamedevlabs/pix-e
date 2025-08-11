@@ -17,12 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceLLMService(BaseLLMService):
-    """Hugging Face model service for text generation"""  # Recommended models for creative text suggestions and game design prompts
+    """
+    Hugging Face model service for text generation.
+    Recommended models for creative text suggestions and game design prompts
+    """
 
     AVAILABLE_MODELS = {
         "distilgpt2": {
             "name": "DistilGPT-2",
-            "description": "Ultra fast, lightweight text generation for quick suggestions",
+            "description": (
+                "Ultra fast, lightweight text generation for quick suggestions"
+            ),
             "size": "80MB",
             "type": "text-generation",
         },

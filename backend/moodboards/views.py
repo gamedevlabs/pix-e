@@ -727,7 +727,10 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                     else:
                         return Response(
                             {
-                                "error": "You do not have permission to modify this moodboard session"
+                                "error": (
+                                    "You do not have permission to modify this "
+                                    "moodboard session"
+                                )
                             },
                             status=status.HTTP_403_FORBIDDEN,
                         )
@@ -844,7 +847,10 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                     else:
                         return Response(
                             {
-                                "error": "You do not have permission to view this moodboard session"
+                                "error": (
+                                    "You do not have permission to view this "
+                                    "moodboard session"
+                                )
                             },
                             status=status.HTTP_403_FORBIDDEN,
                         )
@@ -910,7 +916,10 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                     else:
                         return Response(
                             {
-                                "error": "You do not have permission to modify this moodboard session"
+                                "error": (
+                                    "You do not have permission to modify this "
+                                    "moodboard session"
+                                )
                             },
                             status=status.HTTP_403_FORBIDDEN,
                         )
