@@ -352,7 +352,8 @@ class LLMServiceManager:
                         return cleaned_suggestions
                     else:
                         raise LLMServiceError(
-                            f"TGI service {service_id} failed to generate valid suggestions"
+                            f"TGI service {service_id} failed to generate "
+                            f"valid suggestions"
                         )
 
             except Exception as e:
@@ -360,11 +361,13 @@ class LLMServiceManager:
                 # Check if it's a timeout or rate limit error
                 if "timed out" in str(e).lower() or "timeout" in str(e).lower():
                     raise LLMServiceError(
-                        "The TGI service timed out after 30 seconds. Please check your Hugging Face token and try again."
+                        "The TGI service timed out after 30 seconds. Please "
+                        "check your Hugging Face token and try again."
                     )
                 elif "rate limit" in str(e).lower() or "429" in str(e):
                     raise LLMServiceError(
-                        "Rate limit exceeded for TGI service. Please check your Hugging Face token or try again later."
+                        "Rate limit exceeded for TGI service. Please check your "
+                        "Hugging Face token or try again later."
                     )
                 else:
                     # Don't fall back - user specifically requested this service
