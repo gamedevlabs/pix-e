@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.authentication import SessionAuthentication
 
 from .gemini.GeminiLink import GeminiLink
 from .models import GameDesignDescription, Pillar
@@ -21,9 +22,16 @@ from .services.base import LLMServiceError
 import threading
 import time
 import logging
+
 # Create your views here.
 
 logger = logging.getLogger(__name__)
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """Session authentication that doesn't enforce CSRF for API calls"""
+    def enforce_csrf(self, request):
+        return  # Skip CSRF check
 
 
 class PillarViewSet(ModelViewSet):
@@ -174,7 +182,7 @@ def generate_gaming_images(prompt, num_images=3):
         return image_urls
         
     except Exception as e:
-        print(f"Stable Diffusion not available ({e}), using placeholder images...")
+        # Stable Diffusion not available, using placeholder images
         # Create placeholder images for testing
         import uuid, os
         from PIL import Image, ImageDraw, ImageFont
@@ -221,6 +229,8 @@ def generate_gaming_images(prompt, num_images=3):
 
 class TextSuggestionView(APIView):
     """API for getting text suggestions from LLM models"""
+    authentication_classes = (CsrfExemptSessionAuthentication,)
+    permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
         """Get available LLM services and their status"""
@@ -241,15 +251,11 @@ class TextSuggestionView(APIView):
     def post(self, request):
         """Generate text suggestions based on prompt"""
         try:
-            # Handle JSON parsing
-            if hasattr(request, 'data') and request.data:
-                data = request.data
-            else:
-                import json
-                data = json.loads(request.body)
+            # Use DRF request.data for consistent parsing
+            data = request.data
                 
             prompt = data.get('prompt', '').strip()
-            service_id = data.get('service_id')
+            service_id = data.get('service_id') or data.get('service')  # Check both 'service_id' and 'service' for compatibility
             mode = data.get('mode', 'default').lower()  # Get mode (gaming/default)
             suggestion_type = data.get('suggestion_type', 'short').lower()  # Get suggestion length preference
             num_suggestions = min(int(data.get('num_suggestions', 3)), 5)  # Max 5 suggestions
@@ -272,7 +278,8 @@ class TextSuggestionView(APIView):
                 num_suggestions=num_suggestions,
                 mode=mode,
                 suggestion_type=suggestion_type,
-                temperature=0.8
+                temperature=0.8,
+                user=request.user  # Pass user for token authentication
             )
             
             return JsonResponse({
@@ -296,6 +303,8 @@ class TextSuggestionView(APIView):
 
 class LLMServiceManagementView(APIView):
     """API for managing LLM services (load/unload models)"""
+    authentication_classes = (CsrfExemptSessionAuthentication,)
+    permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
         """Load or unload an LLM service"""

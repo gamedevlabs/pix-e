@@ -174,8 +174,8 @@
           <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"></span>
         </div>
         
-        <UButton v-if="canGenerate" @click="generateImages" :disabled="loading || !prompt" class="ml-2">Generate Images</UButton>
-        <UButton v-if="canSave" @click="openSaveModal" color="primary" class="ml-2 save-btn" :disabled="moodboard.length === 0">
+        <UButton v-if="canGenerate" @click="generateImages" :disabled="loading || !prompt" color="primary" class="ml-2">Generate Images</UButton>
+        <UButton v-if="canSave" @click="openSaveModal" color="success" class="ml-2 save-btn" :disabled="moodboard.length === 0">
           Save Moodboard
         </UButton>
       </div>
@@ -239,13 +239,40 @@
         />
         <UButton 
           label="Save Moodboard"
-          color="primary" 
+          color="success" 
           @click="saveMoodboard" 
           :loading="saving"
           :disabled="isSaveDisabled"
         />
       </template>
     </UModal>
+
+    <!-- AI Suggestions Panel -->
+    <AISuggestionsPanel
+      :is-visible="aiSuggestions.isVisible.value"
+      :suggestions="aiSuggestions.suggestions.value"
+      :loading="aiSuggestions.loading.value"
+      :error="aiSuggestions.error.value"
+      :mode="aiSuggestions.mode.value"
+      :suggestion-type="aiSuggestions.suggestionType.value"
+      :total-suggestions="aiSuggestions.totalSuggestions.value"
+      :applied-suggestions-count="aiSuggestions.appliedSuggestionsCount.value"
+      :last-prompt="aiSuggestions.lastPrompt.value"
+      :current-prompt="prompt"
+      :can-generate="canGenerate"
+      :services="aiSuggestions.services.value"
+      :active-service="aiSuggestions.activeService.value || undefined"
+      @toggle="aiSuggestions.togglePanel"
+      @apply-suggestion="handleApplySuggestion"
+      @unapply-suggestion="handleUnapplySuggestion"
+      @regenerate="handleRegenerateSuggestions"
+      @mode-changed="handleAIModeChanged"
+      @type-changed="handleAITypeChanged"
+      @generate-from-input="handleGenerateAISuggestions"
+      @fetch-services="handleFetchAIServices"
+      @service-changed="handleServiceChanged"
+      @clear-error="handleClearError"
+    />
   </div>
 </template>
 
@@ -261,6 +288,7 @@ import { useRuntimeConfig, useRouter } from '#imports'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import '@/assets/css/toast-loading-bar.css'
 import { useMoodboards } from '~/composables/useMoodboards'
+import { useAISuggestions } from '~/composables/useAISuggestions'
 
 // Core state
 const sessionId = ref<string | null>(null)
@@ -319,6 +347,9 @@ const {
   preloadAI
 } = useMoodboards()
 
+// AI Suggestions
+const aiSuggestions = useAISuggestions()
+
 const dropdownMode = ref('default')
 const colorPalette = ref<string[]>([])
 const maxPaletteColors = 5
@@ -344,6 +375,23 @@ const dropdownItems = computed(() => [
       if (checked) dropdownMode.value = 'gaming'
       else if (dropdownMode.value === 'gaming') dropdownMode.value = 'default'
     }
+  },
+  {
+    label: aiSuggestions.totalSuggestions.value > 0 
+      ? `AI Suggestions (${aiSuggestions.totalSuggestions.value})` 
+      : 'AI Suggestions',
+    icon: 'i-heroicons-cpu-chip-20-solid',
+    type: 'checkbox' as const,
+    checked: aiSuggestions.isVisible.value,
+    onUpdateChecked(checked: boolean) {
+      if (checked) {
+        aiSuggestions.showPanel()
+        // Auto-fetch services when panel is opened
+        aiSuggestions.fetchServices()
+      } else {
+        aiSuggestions.hidePanel()
+      }
+    }
   }
 ])
 
@@ -352,11 +400,6 @@ onMounted(async () => {
   showSaveModal.value = false
   tempMoodboardName.value = ''
   saving.value = false
-  
-  const saved = localStorage.getItem('moodboard-dropdown-mode')
-  if (saved && (saved === 'default' || saved === 'gaming')) {
-    dropdownMode.value = saved
-  }
   
   // Check if we're editing an existing moodboard
   const route = useRoute()
@@ -370,6 +413,9 @@ onMounted(async () => {
     originalMoodboardImageIds.value = []
     removedImageIds.value = []
   }
+
+  // Fetch AI services when component mounts (async, don't wait)
+  aiSuggestions.fetchServices()
 })
 
 onUnmounted(async () => {
@@ -380,10 +426,6 @@ onUnmounted(async () => {
       console.warn('Failed to cleanup session on unmount:', error)
     }
   }
-})
-
-watch(dropdownMode, (val) => {
-  localStorage.setItem('moodboard-dropdown-mode', val)
 })
 
 // Watch for route changes to handle switching between different moodboards
@@ -749,6 +791,71 @@ async function saveMoodboard() {
     saving.value = false
   }
 }
+
+// AI Suggestions Handlers
+const handleApplySuggestion = (index: number) => {
+  const newPrompt = aiSuggestions.applySuggestion(index, prompt.value)
+  prompt.value = newPrompt
+}
+
+const handleUnapplySuggestion = (index: number) => {
+  aiSuggestions.unapplySuggestion(index)
+}
+
+const handleRegenerateSuggestions = () => {
+  aiSuggestions.regenerateSuggestions({
+    numSuggestions: 3
+  })
+}
+
+const handleAIModeChanged = (mode: 'default' | 'gaming') => {
+  aiSuggestions.setMode(mode)
+}
+
+const handleAITypeChanged = (type: 'short' | 'long') => {
+  aiSuggestions.setSuggestionType(type)
+}
+
+const handleGenerateAISuggestions = () => {
+  if (prompt.value.trim().length >= 3) {
+    aiSuggestions.generateSuggestions(prompt.value, {
+      mode: dropdownMode.value as 'default' | 'gaming',
+      numSuggestions: 3
+    })
+  } else if (prompt.value.trim()) {
+    // Let the composable handle the validation error
+    aiSuggestions.generateSuggestions(prompt.value, {
+      mode: dropdownMode.value as 'default' | 'gaming',
+      numSuggestions: 3
+    })
+  } else {
+    console.warn('Cannot generate AI suggestions: prompt is empty')
+  }
+}
+
+const handleFetchAIServices = () => {
+  aiSuggestions.fetchServices()
+}
+
+const handleServiceChanged = (serviceId: string) => {
+  // Update the active service in the AI suggestions composable
+  aiSuggestions.setActiveService(serviceId || null)
+}
+
+const handleClearError = () => {
+  // Clear the error when service changes
+  aiSuggestions.clearError()
+}
+
+// Note: Auto-generation removed - suggestions are only generated when user clicks the Generate button
+// watch([sessionId, prompt], () => {
+//   if (aiSuggestions.isVisible.value && prompt.value.trim().length >= 3 && prompt.value !== aiSuggestions.lastPrompt.value) {
+//     aiSuggestions.generateSuggestions(prompt.value, {
+//       mode: dropdownMode.value as 'default' | 'gaming',
+//       numSuggestions: 3
+//     })
+//   }
+// })
 </script>
 
 <style scoped>

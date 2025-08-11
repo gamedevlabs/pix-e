@@ -29,7 +29,8 @@ urlpatterns = [
     # Other app URLs
     path("api/llm/", include("llm.urls")),
     path("llm/", include("llm.urls")),  # Keep both for backward compatibility
-    path("accounts/", include("accounts.urls")),
+    path("api/accounts/", include("accounts.urls")),
+    path("accounts/", include("accounts.urls")),  # Keep both for backward compatibility
     path("", include("pxnodes.urls")),
 ]
 

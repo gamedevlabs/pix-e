@@ -237,7 +237,6 @@ const getErrorActions = (error: MoodboardError) => {
       variant: 'solid',
       click: () => {
         // Retry logic will be implemented per component
-        console.log('Retry action triggered for error:', error.code)
       }
     })
   }
@@ -266,10 +265,8 @@ const removeFromOfflineQueue = (id: string) => {
 
 const enableOfflineMode = () => {
   // Implementation for offline mode
-  console.log('Offline mode enabled')
 }
 
 const clearMoodboardCache = () => {
   // Clear relevant caches
-  console.log('Moodboard cache cleared')
 }

@@ -58,7 +58,7 @@ class TGIAPIService(BaseLLMService):
         }
     }
     
-    def __init__(self, model_id: str):
+    def __init__(self, model_id: str, user_token: Optional[str] = None):
         """Initialize TGI service with a specific model"""
         if model_id not in self.AVAILABLE_MODELS:
             raise LLMServiceError(f"Unknown model: {model_id}")
@@ -72,13 +72,24 @@ class TGIAPIService(BaseLLMService):
         self.async_client = None
         self.is_loaded = False
         
-        # Get API token - use standard HF_TOKEN environment variable
+        # Prioritize user token, fallback to environment variables
         self.api_token = (
+            user_token or
             os.environ.get('HF_TOKEN') or 
             getattr(settings, 'HF_TOKEN', None)
         )
         
-        logger.info(f"Initialized TGI service for {model_id} at {self.endpoint}")
+        self.user_provided = bool(user_token)
+        
+        logger.info(f"Initialized TGI service for {model_id} at {self.endpoint} (user token: {'provided' if user_token else 'not provided'})")
+    
+    def update_token(self, token: str):
+        """Update the API token"""
+        self.api_token = token
+        self.user_provided = bool(token)
+        # Reinitialize clients with new token
+        if self.is_loaded:
+            self.load_model()
     
     def load_model(self) -> bool:
         """Load TGI model (establish connections)"""
@@ -88,14 +99,14 @@ class TGIAPIService(BaseLLMService):
             if requires_auth and not self.api_token:
                 raise LLMServiceError(
                     "Hugging Face API token required for this model. "
-                    "Please set HF_TOKEN environment variable. "
-                    "Get your token at: https://huggingface.co/settings/tokens"
+                    "Please configure your Hugging Face token in the AI suggestions panel."
                 )
             
-            # Initialize the inference client
+            # Initialize the inference client with timeout
             self.client = InferenceClient(
                 model=self.model_id,  # Use model name directly, not endpoint
-                token=self.api_token
+                token=self.api_token,
+                timeout=30.0  # 30 second timeout
             )
             
             self.async_client = AsyncInferenceClient(
@@ -189,22 +200,9 @@ class TGIAPIService(BaseLLMService):
             raise LLMServiceError("TGI model not loaded. Call load_model() first.")
         
         try:
-            # Create different prompts based on suggestion type
-            if suggestion_type == 'long':
-                format_instruction = "- A complete sentence (10-20 words)\n- Descriptive and detailed\n- Suitable for comprehensive artistic descriptions"
-                example_format = "1. [detailed descriptive sentence]\n2. [another detailed descriptive sentence]\n3. [third detailed descriptive sentence]"
-            else:  # short
-                format_instruction = "- A short phrase (2-8 words)\n- Unique and different from the others\n- Creative and descriptive\n- Suitable for artistic/visual content"
-                example_format = "1. [first suggestion]\n2. [second suggestion]\n3. [third suggestion]"
-            
-            # Create a single prompt that requests multiple different suggestions
-            enhanced_prompt = f"""Please provide {num_return_sequences} different, creative suggestions to enhance this prompt: "{prompt}"
-
-Each suggestion should be:
-{format_instruction}
-
-Format your response as a numbered list:
-{example_format}"""
+            # Use the prompt as-is since it comes from the manager's contextual prompt
+            # The manager already formats it properly with mode and suggestion_type
+            enhanced_prompt = prompt
 
 
             # Use conversational API since these models support that task
@@ -212,12 +210,45 @@ Format your response as a numbered list:
                 # Format as a conversation message
                 messages = [{"role": "user", "content": enhanced_prompt}]
                 
-                response = self.client.chat_completion(
-                    messages=messages,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    stream=False
-                )
+                # Use threading for timeout on Windows-compatible approach
+                import threading
+                import queue
+                
+                result_queue = queue.Queue()
+                exception_queue = queue.Queue()
+                
+                def api_call():
+                    try:
+                        response = self.client.chat_completion(
+                            messages=messages,
+                            max_tokens=max_tokens,
+                            temperature=temperature,
+                            stream=False
+                        )
+                        result_queue.put(response)
+                    except Exception as e:
+                        exception_queue.put(e)
+                
+                # Start the API call in a separate thread
+                thread = threading.Thread(target=api_call)
+                thread.daemon = True
+                thread.start()
+                thread.join(timeout=30.0)  # 30 second timeout
+                
+                if thread.is_alive():
+                    # Timeout occurred
+                    logger.error("API request timed out after 30 seconds")
+                    raise LLMServiceError("Request timed out. Please check your API token or try again later.")
+                
+                # Check if there was an exception
+                if not exception_queue.empty():
+                    raise exception_queue.get()
+                
+                # Get the response
+                if not result_queue.empty():
+                    response = result_queue.get()
+                else:
+                    raise LLMServiceError("No response received from API")
                 
                 if response and response.choices:
                     generated_text = response.choices[0].message.content

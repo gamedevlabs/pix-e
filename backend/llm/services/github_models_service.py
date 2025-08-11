@@ -45,7 +45,7 @@ class GitHubModelsService(BaseLLMService):
         }
     }
     
-    def __init__(self, model_id: str):
+    def __init__(self, model_id: str, user_token: str = None):
         """Initialize GitHub Models service with a specific model"""
         if model_id not in self.AVAILABLE_MODELS:
             raise LLMServiceError(f"Unknown GitHub model: {model_id}")
@@ -57,12 +57,17 @@ class GitHubModelsService(BaseLLMService):
         
         self.client = None
         self.is_loaded = False
+        self.user_provided = user_token is not None  # Track if user token was provided
         
-        # Get GitHub token
-        self.github_token = (
-            os.environ.get('GITHUB_TOKEN') or 
-            getattr(settings, 'GITHUB_TOKEN', None)
-        )
+        # Get GitHub token - prioritize user token if provided, but don't fallback to env if user was expected to provide one
+        if user_token:
+            self.github_token = user_token
+        else:
+            # Only use environment token if no user context
+            self.github_token = (
+                os.environ.get('GITHUB_TOKEN') or 
+                getattr(settings, 'GITHUB_TOKEN', None)
+            )
         
         logger.info(f"Initialized GitHub Models service for {model_id}")
     
@@ -91,6 +96,16 @@ class GitHubModelsService(BaseLLMService):
         except Exception as e:
             logger.error(f"Failed to load GitHub model {self.model_id}: {str(e)}")
             raise LLMServiceError(f"Could not connect to GitHub Models: {str(e)}")
+    
+    def update_token(self, token: str):
+        """Update the GitHub token for this service"""
+        self.github_token = token
+        if self.is_loaded:
+            # Recreate the client with new token
+            self.client = ChatCompletionsClient(
+                endpoint=self.model_info['endpoint'],
+                credential=AzureKeyCredential(self.github_token)
+            )
     
     def unload_model(self) -> bool:
         """Unload GitHub Models client"""
@@ -146,13 +161,51 @@ Format your response as a numbered list:
                 UserMessage(enhanced_prompt)
             ]
             
-            response = self.client.complete(
-                messages=messages,
-                temperature=temperature,
-                top_p=0.9,
-                max_tokens=max_tokens,
-                model=self.model_id
-            )
+            response = None
+            
+            # Use threading for timeout
+            import threading
+            import queue
+            
+            result_queue = queue.Queue()
+            exception_queue = queue.Queue()
+            
+            def api_call():
+                try:
+                    api_response = self.client.complete(
+                        messages=messages,
+                        temperature=temperature,
+                        top_p=0.9,
+                        max_tokens=max_tokens,
+                        model=self.model_id
+                    )
+                    result_queue.put(api_response)
+                except Exception as e:
+                    exception_queue.put(e)
+            
+            # Start the API call in a separate thread
+            thread = threading.Thread(target=api_call)
+            thread.daemon = True
+            thread.start()
+            thread.join(timeout=30.0)  # 30 second timeout
+            
+            if thread.is_alive():
+                # Timeout occurred
+                logger.error("GitHub Models API request timed out after 30 seconds")
+                raise LLMServiceError("Request timed out. Please check your GitHub token or try again later.")
+            
+            # Check if there was an exception
+            if not exception_queue.empty():
+                exception = exception_queue.get()
+                if hasattr(exception, 'status_code') and exception.status_code == 429:
+                    raise LLMServiceError("Rate limit exceeded. Please check your GitHub token or try again later.")
+                raise exception
+            
+            # Get the response
+            if not result_queue.empty():
+                response = result_queue.get()
+            else:
+                raise LLMServiceError("No response received from GitHub Models API")
             
             if response and response.choices:
                 generated_text = response.choices[0].message.content
