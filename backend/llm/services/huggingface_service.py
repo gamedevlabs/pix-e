@@ -290,7 +290,7 @@ class HuggingFaceLLMService(BaseLLMService):
                 result = self.generate_text(simple_prompt, max_length=50)
                 if result:
                     suggestions.append(result)
-            except:
+            except Exception:
                 continue
 
         return suggestions

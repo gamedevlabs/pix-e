@@ -178,7 +178,7 @@ class Moodboard(models.Model):
                         raise ValidationError(
                             {"color_palette": "All colors must be hex strings"}
                         )
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError):
                 raise ValidationError({"color_palette": "Invalid color palette format"})
 
     def save(self, *args, **kwargs):
@@ -521,7 +521,7 @@ class MoodboardImage(models.Model):
                     raise ValidationError(
                         {"generation_params": "Must be a valid JSON object"}
                     )
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError):
                 raise ValidationError({"generation_params": "Invalid JSON format"})
 
         # Validate image dimensions

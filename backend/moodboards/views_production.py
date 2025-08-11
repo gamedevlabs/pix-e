@@ -654,7 +654,7 @@ class LegacySessionView(viewsets.ViewSet):
     def generate(self, request, pk=None):
         """Legacy generation -> Forward to moodboard generation"""
         try:
-            moodboard = Moodboard.objects.get(id=pk, user=request.user)
+            Moodboard.objects.get(id=pk, user=request.user)
         except Moodboard.DoesNotExist:
             return Response(
                 {"error": "Moodboard not found"}, status=status.HTTP_404_NOT_FOUND

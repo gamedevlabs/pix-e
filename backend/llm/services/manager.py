@@ -163,10 +163,6 @@ class LLMServiceManager:
             logger.error(f"Failed to load service {service_id}: {e}")
             raise LLMServiceError(f"Could not load service: {e}")
 
-    def get_service(self, service_id: str):
-        """Get a loaded service instance"""
-        return self._services.get(service_id)
-
     def unload_service(self, service_id: str) -> bool:
         """Unload a specific service"""
         try:
@@ -238,7 +234,8 @@ Provide {num_suggestions} creative suggestions ({word_count}) that could enhance
 
         suggestion_type = kwargs.get("suggestion_type", "short")
 
-        # Check if user has required API tokens for the service when specifically requested
+        # Check if user has required API tokens for the service when specifically
+        # requested
         if user and service_id:
             user_token = self._get_user_token(service_id, user)
             if not user_token:
@@ -285,7 +282,8 @@ Provide {num_suggestions} creative suggestions ({word_count}) that could enhance
                         **kwargs,
                     )
 
-                    # Clean up and validate suggestions based on suggestion_type and mode
+                    # Clean up and validate suggestions based on suggestion_type and
+                    # mode
                     cleaned_suggestions = []
                     for suggestion in suggestions:
                         if suggestion and len(suggestion.strip()) > 3:
@@ -356,11 +354,11 @@ Provide {num_suggestions} creative suggestions ({word_count}) that could enhance
                 # Check if it's a timeout or rate limit error
                 if "timed out" in str(e).lower() or "timeout" in str(e).lower():
                     raise LLMServiceError(
-                        f"The TGI service timed out after 30 seconds. Please check your Hugging Face token and try again."
+                        "The TGI service timed out after 30 seconds. Please check your Hugging Face token and try again."
                     )
                 elif "rate limit" in str(e).lower() or "429" in str(e):
                     raise LLMServiceError(
-                        f"Rate limit exceeded for TGI service. Please check your Hugging Face token or try again later."
+                        "Rate limit exceeded for TGI service. Please check your Hugging Face token or try again later."
                     )
                 else:
                     # Don't fall back - user specifically requested this service
@@ -426,11 +424,11 @@ Provide {num_suggestions} creative suggestions ({word_count}) that could enhance
                 # Check if it's a timeout or rate limit error
                 if "timed out" in str(e).lower() or "timeout" in str(e).lower():
                     raise LLMServiceError(
-                        f"The GitHub Models service timed out after 30 seconds. Please check your GitHub token and try again."
+                        "The GitHub Models service timed out after 30 seconds. Please check your GitHub token and try again."
                     )
                 elif "rate limit" in str(e).lower() or "429" in str(e):
                     raise LLMServiceError(
-                        f"Rate limit exceeded for GitHub Models. Please check your GitHub token or try again later."
+                        "Rate limit exceeded for GitHub Models. Please check your GitHub token or try again later."
                     )
                 else:
                     # Don't fall back - user specifically requested this service

@@ -298,7 +298,8 @@ class TGIAPIService(BaseLLMService):
                                 if clean_line and len(clean_line) > 3:
                                     suggestions.append(clean_line.strip())
 
-                        # If we didn't get enough suggestions from parsing, try to extract from the full text
+                        # If we didn't get enough suggestions from parsing, try to
+                        # extract from the full text
                         if len(suggestions) < num_return_sequences:
                             # Split by common delimiters and try to extract more
                             all_text = (

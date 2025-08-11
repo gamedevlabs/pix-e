@@ -103,9 +103,6 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             # Moodboards shared with the user
             return queryset.filter(shared_with=user)
         else:
-            # User's own moodboards ONLY (not including shared ones)
-            user_moodboards = queryset.filter(user=user)
-
             # For retrieve action, include public moodboards from all users
             if action == "retrieve":
                 accessible_queryset = queryset.filter(
@@ -151,7 +148,7 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 
-        except (Moodboard.DoesNotExist, Http404) as e:
+        except (Moodboard.DoesNotExist, Http404):
             return Response(
                 {"detail": "No Moodboard matches the given query."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -459,7 +456,8 @@ class MoodboardViewSet(viewsets.ModelViewSet):
         total_images = MoodboardImage.objects.filter(
             moodboard__user=request.user, is_selected=True
         ).count()
-        # Keep selected_images for potential future use, but use total_images for the main count
+        # Keep selected_images for potential future use, but use total_images for
+        # the main count
         selected_images = total_images
 
         # Recent activity
@@ -713,14 +711,17 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 if moodboard.user != user:
                     # For public moodboards, allow anyone to modify them
                     if moodboard.is_public:
-                        # Don't change ownership for public moodboards - keep original owner
+                        # Don't change ownership for public moodboards - keep original
+                        # owner
                         pass
-                    # For AI sessions, be more lenient - allow modification if it's a recent session or the user is authenticated
+                    # For AI sessions, be more lenient - allow modification if it's a
+                    # recent session or the user is authenticated
                     elif (
                         moodboard.status in ["draft", "active", "generating"]
                         or moodboard.user.username == "testuser123"
                     ):
-                        # Update the moodboard owner to current user to maintain consistency
+                        # Update the moodboard owner to current user to maintain
+                        # consistency
                         moodboard.user = user
                         moodboard.save()
                     else:
@@ -754,7 +755,8 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 # Add generated images to moodboard
                 added_images = []
                 for i, image_url in enumerate(generated_urls):
-                    # Create MoodboardImage instance directly instead of using serializer
+                    # Create MoodboardImage instance directly instead of using
+                    # serializer
                     image = MoodboardImage.objects.create(
                         moodboard=moodboard,  # Pass the moodboard instance
                         image_url=image_url,
@@ -825,15 +827,18 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 if moodboard.user != user:
                     # For public moodboards, allow anyone to view them
                     if moodboard.is_public:
-                        # Don't change ownership for public moodboards - keep original owner
+                        # Don't change ownership for public moodboards - keep original
+                        # owner
                         pass
-                    # For AI sessions, be more lenient - allow viewing if it's a recent session or the user is authenticated
+                    # For AI sessions, be more lenient - allow viewing if it's a recent
+                    # session or the user is authenticated
                     elif (
                         moodboard.status in ["draft", "active", "generating"]
                         or moodboard.user.username == "testuser123"
                     ):
                         pass
-                        # Update the moodboard owner to current user to maintain consistency
+                        # Update the moodboard owner to current user to maintain
+                        # consistency
                         moodboard.user = user
                         moodboard.save()
                     else:
@@ -898,7 +903,8 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 if moodboard.user != user:
                     # For public moodboards, allow anyone to modify them
                     if moodboard.status in ["draft", "active", "generating"]:
-                        # Update the moodboard owner to current user to maintain consistency
+                        # Update the moodboard owner to current user to maintain
+                        # consistency
                         moodboard.user = user
                         moodboard.save()
                     else:

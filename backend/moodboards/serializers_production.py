@@ -573,7 +573,5 @@ class ImageBulkActionSerializer(MoodboardImageBulkActionSerializer):
     """Legacy alias for backward compatibility"""
 
 
-
 class MoodboardCreateUpdateSerializer(MoodboardUpdateSerializer):
     """Legacy alias for backward compatibility"""
-

@@ -23,7 +23,8 @@ class MoodboardPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         """Check if user has permission to access the specific moodboard"""
-        # Public moodboards can be accessed/viewed/edited by anybody (even unauthenticated)
+        # Public moodboards can be accessed/viewed/edited by anybody (even
+        # unauthenticated)
         if obj.is_public:
             return True
 

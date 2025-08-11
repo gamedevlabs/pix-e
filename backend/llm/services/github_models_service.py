@@ -62,7 +62,8 @@ class GitHubModelsService(BaseLLMService):
         self.is_loaded = False
         self.user_provided = user_token is not None  # Track if user token was provided
 
-        # Get GitHub token - prioritize user token if provided, but don't fallback to env if user was expected to provide one
+        # Get GitHub token - prioritize user token if provided, but don't fallback
+        # to env if user was expected to provide one
         if user_token:
             self.github_token = user_token
         else:
@@ -252,7 +253,8 @@ Format your response as a numbered list:
                             if clean_line and len(clean_line) > 3:
                                 suggestions.append(clean_line.strip())
 
-                    # If we didn't get enough suggestions from parsing, try to extract from the full text
+                    # If we didn't get enough suggestions from parsing, try to extract
+                    # from the full text
                     if len(suggestions) < num_return_sequences:
                         # Split by common delimiters and try to extract more
                         all_text = (

@@ -124,7 +124,8 @@ class PillarFeedbackView(APIView):
             return HttpResponse({"error": e}, status=404)
 
 
-# Load Stable Diffusion model once (for demo, use CPU; for production, use GPU if available)
+# Load Stable Diffusion model once (for demo, use CPU; for production, use
+# GPU if available)
 sd_model = None
 
 
@@ -179,7 +180,7 @@ def generate_gaming_images(prompt, num_images=3):
             image_urls.append(f"/media/moodboard_{img_id}.png")
         return image_urls
 
-    except Exception as e:
+    except Exception:
         # Stable Diffusion not available, using placeholder images
         # Create placeholder images for testing
         import os
@@ -214,7 +215,7 @@ def generate_gaming_images(prompt, num_images=3):
                         fill=(255, 255, 255),
                         font=font,
                     )
-                except:
+                except Exception:
                     # Fallback without font
                     draw.text((100, y_pos), line, fill=(255, 255, 255))
                 y_pos += 30
