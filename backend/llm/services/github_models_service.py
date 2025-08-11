@@ -158,7 +158,10 @@ class GitHubModelsService(BaseLLMService):
                     "- Creative and descriptive\n"
                     "- Suitable for artistic/visual content"
                 )
-                example_format = "1. [first suggestion]\n2. [second suggestion]\n3. [third suggestion]"
+                example_format = (
+                    "1. [first suggestion]\n2. [second suggestion]\n"
+                    "3. [third suggestion]"
+                )
 
             # Create a single prompt that requests multiple different suggestions
             enhanced_prompt = (
@@ -183,7 +186,8 @@ class GitHubModelsService(BaseLLMService):
             # Create messages for the chat completion
             messages = [
                 SystemMessage(
-                    "You are a helpful assistant that provides creative, diverse suggestions for artistic prompts."
+                    "You are a helpful assistant that provides creative, diverse "
+                    "suggestions for artistic prompts."
                 ),
                 UserMessage(enhanced_prompt),
             ]

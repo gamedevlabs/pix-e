@@ -180,7 +180,8 @@ class GroqService(BaseLLMService):
                 instruction = (
                     f"Generate {num_suggestions} short creative additions for "
                     f'this {context} prompt: "{prompt}"\n\n'
-                    f"Each suggestion should be 2-4 words that enhance the visual concept.\n"
+                    f"Each suggestion should be 2-4 words that enhance the "
+                    f"visual concept.\n"
                     f"Return only the suggestions, one per line, no numbers or bullets:"
                 )
 

@@ -245,10 +245,12 @@ class LLMServiceManager:
             if not user_token:
                 service_name = self._get_service_display_name(service_id)
                 logger.error(
-                    f"No token found for service {service_id} ({service_name}) for user {user.username}"
+                    f"No token found for service {service_id} ({service_name}) "
+                    f"for user {user.username}"
                 )
                 raise LLMServiceError(
-                    f"API token required for {service_name}. Please configure your API token in the AI suggestions panel."
+                    f"API token required for {service_name}. Please configure "
+                    f"your API token in the AI suggestions panel."
                 )
 
         # Try TGI models if specifically requested (your original working models)

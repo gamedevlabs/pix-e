@@ -98,7 +98,8 @@ class TGIAPIService(BaseLLMService):
         self.user_provided = bool(user_token)
 
         logger.info(
-            f"Initialized TGI service for {model_id} at {self.endpoint} (user token: {'provided' if user_token else 'not provided'})"
+            f"Initialized TGI service for {model_id} at {self.endpoint} "
+            f"(user token: {'provided' if user_token else 'not provided'})"
         )
 
     def update_token(self, token: str):
@@ -117,7 +118,8 @@ class TGIAPIService(BaseLLMService):
             if requires_auth and not self.api_token:
                 raise LLMServiceError(
                     "Hugging Face API token required for this model. "
-                    "Please configure your Hugging Face token in the AI suggestions panel."
+                    "Please configure your Hugging Face token in the AI "
+                    "suggestions panel."
                 )
 
             # Initialize the inference client with timeout
