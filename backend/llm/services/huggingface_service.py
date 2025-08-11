@@ -244,9 +244,7 @@ class HuggingFaceLLMService(BaseLLMService):
                                         f"{prompt} featuring {suggestion}"
                                     )
                                 elif "image of" in template:
-                                    final_suggestion = (
-                                        f"Create an image of {prompt} that shows {suggestion}"
-                                    )
+                                    final_suggestion = f"Create an image of {prompt} that shows {suggestion}"
                                 else:
                                     final_suggestion = suggestion
 
