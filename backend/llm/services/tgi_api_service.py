@@ -79,14 +79,14 @@ class TGIAPIService(BaseLLMService):
         if model_id not in self.AVAILABLE_MODELS:
             raise LLMServiceError(f"Unknown model: {model_id}")
 
-        self.model_id = model_id
-        self.model_info = self.AVAILABLE_MODELS[model_id]
-        self.model_name = self.model_info["name"]
-        self.endpoint = self.model_info["endpoint"]
+        self.model_id: str = model_id
+        self.model_info: Dict[str, Any] = self.AVAILABLE_MODELS[model_id]
+        self.model_name: str = self.model_info["name"]
+        self.endpoint: str = self.model_info["endpoint"]
 
-        self.client = None
-        self.async_client = None
-        self.is_loaded = False
+        self.client: Optional[InferenceClient] = None
+        self.async_client: Optional[AsyncInferenceClient] = None
+        self.is_loaded: bool = False
 
         # Prioritize user token, fallback to environment variables
         self.api_token = (

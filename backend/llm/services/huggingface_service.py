@@ -5,7 +5,7 @@ Hugging Face LLM Service Implementation
 import gc
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import torch
 from huggingface_hub import login
@@ -59,10 +59,10 @@ class HuggingFaceLLMService(BaseLLMService):
 
     def __init__(self, model_name: str = "distilgpt2"):
         super().__init__(model_name)
-        self.tokenizer = None
-        self.model = None
-        self.generator = None
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.tokenizer: Optional[AutoTokenizer] = None
+        self.model: Optional[AutoModelForCausalLM] = None
+        self.generator: Optional[Any] = None
+        self.device: str = "cuda" if torch.cuda.is_available() else "cpu"
         # Initialize HF Hub login if token available
         hf_token = os.environ.get("HF_TOKEN")
         if hf_token:
@@ -149,6 +149,9 @@ class HuggingFaceLLMService(BaseLLMService):
         if not self.is_loaded:
             raise LLMServiceError("Model not loaded. Call load_model() first.")
 
+        if self.tokenizer is None or self.generator is None:
+            raise LLMServiceError("Model components not properly loaded.")
+
         try:
             # Set generation parameters
             generation_kwargs = {
@@ -177,7 +180,7 @@ class HuggingFaceLLMService(BaseLLMService):
         self, prompt: str, num_suggestions: int = 3, **kwargs
     ) -> List[str]:
         """Generate multiple text suggestions for creative prompts"""
-        if not self.is_loaded:
+        if not self.is_loaded or self.tokenizer is None or self.generator is None:
             raise LLMServiceError("Model not loaded. Call load_model() first.")
 
         try:

@@ -99,6 +99,7 @@ class MoodboardAdmin(admin.ModelAdmin):
         "activate_moodboards",
     ]
 
+    @admin.display(description="Images")
     def image_count_display(self, obj):
         """Display image count with link to images"""
         count = obj.image_count
@@ -110,13 +111,10 @@ class MoodboardAdmin(admin.ModelAdmin):
             return format_html('<a href="{}">{} images</a>', url, count)
         return "0 images"
 
-    image_count_display.short_description = "Images"
-
+    @admin.display(description="Selected Images")
     def selected_image_count_display(self, obj):
         """Display selected image count"""
         return f"{obj.selected_image_count} selected"
-
-    selected_image_count_display.short_description = "Selected Images"
 
     def make_public(self, request, queryset):
         """Action to make moodboards public"""

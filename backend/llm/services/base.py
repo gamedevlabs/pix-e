@@ -25,12 +25,12 @@ class BaseLLMService(ABC):
         """Unload the model from memory"""
 
     @abstractmethod
-    def generate_text(self, prompt: str, max_length: int = 100, **kwargs) -> str:
+    def generate_text(self, prompt: str, max_length: int = 100, **kwargs: Any) -> str:
         """Generate text based on prompt"""
 
     @abstractmethod
     def get_suggestions(
-        self, prompt: str, num_suggestions: int = 3, **kwargs
+        self, prompt: str, num_suggestions: int = 3, **kwargs: Any
     ) -> List[str]:
         """Generate multiple text suggestions"""
 

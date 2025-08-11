@@ -6,7 +6,7 @@ Uses GitHub Models API for text generation
 import logging
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
@@ -51,24 +51,24 @@ class GitHubModelsService(BaseLLMService):
         }
     }
 
-    def __init__(self, model_id: str, user_token: str = None):
+    def __init__(self, model_id: str, user_token: Optional[str] = None):
         """Initialize GitHub Models service with a specific model"""
         if model_id not in self.AVAILABLE_MODELS:
             raise LLMServiceError(f"Unknown GitHub model: {model_id}")
 
-        self.model_id = model_id
-        self.model_info = self.AVAILABLE_MODELS[model_id]
-        self.model_name = self.model_info["name"]
-        self.endpoint = self.model_info["endpoint"]
+        self.model_id: str = model_id
+        self.model_info: Dict[str, Any] = self.AVAILABLE_MODELS[model_id]
+        self.model_name: str = self.model_info["name"]
+        self.endpoint: str = self.model_info["endpoint"]
 
-        self.client = None
-        self.is_loaded = False
-        self.user_provided = user_token is not None  # Track if user token was provided
+        self.client: Optional[ChatCompletionsClient] = None
+        self.is_loaded: bool = False
+        self.user_provided: bool = user_token is not None  # Track if user token was provided
 
         # Get GitHub token - prioritize user token if provided, but don't fallback
         # to env if user was expected to provide one
         if user_token:
-            self.github_token = user_token
+            self.github_token: Optional[str] = user_token
         else:
             # Only use environment token if no user context
             self.github_token = os.environ.get("GITHUB_TOKEN") or getattr(
@@ -90,6 +90,9 @@ class GitHubModelsService(BaseLLMService):
                 )
 
             # Initialize the GitHub Models client
+            if self.github_token is None:
+                raise LLMServiceError("GitHub token is required but not available")
+            
             self.client = ChatCompletionsClient(
                 endpoint=self.endpoint, credential=AzureKeyCredential(self.github_token)
             )
@@ -109,7 +112,7 @@ class GitHubModelsService(BaseLLMService):
             # Recreate the client with new token
             self.client = ChatCompletionsClient(
                 endpoint=self.model_info["endpoint"],
-                credential=AzureKeyCredential(self.github_token),
+                credential=AzureKeyCredential(token),
             )
 
     def unload_model(self) -> bool:

@@ -120,7 +120,7 @@ class Moodboard(models.Model):
         default="view",
         help_text="Permission level for public access",
     )
-    shared_with = models.ManyToManyField(
+    shared_with: models.ManyToManyField = models.ManyToManyField(
         User,
         through="MoodboardShare",
         through_fields=("moodboard", "user"),
@@ -156,7 +156,7 @@ class Moodboard(models.Model):
             models.Index(fields=["is_public", "status"]),
             models.Index(fields=["updated_at"]),
         ]
-        constraints = [
+        constraints: list[models.BaseConstraint] = [
             # Note: Complex constraints can be added later via raw SQL if needed
         ]
 

@@ -1,5 +1,7 @@
 """
-Production URL Configuration for Moodboards
+Production URL Co    # Health check and status
+    path("api/health/", views_production.health_check, name="health-check"),
+    path("api/status/", views_production.system_status, name="system-status"),or Moodboards
 Implements unified moodboard-first API endpoints
 """
 
@@ -13,12 +15,6 @@ router = DefaultRouter()
 router.register(r"moodboards", views_production.MoodboardViewSet, basename="moodboard")
 router.register(
     r"images", views_production.MoodboardImageViewSet, basename="moodboard-image"
-)
-router.register(
-    r"comments", views_production.MoodboardCommentViewSet, basename="moodboard-comment"
-)
-router.register(
-    r"shares", views_production.MoodboardShareViewSet, basename="moodboard-share"
 )
 
 # Production URL patterns

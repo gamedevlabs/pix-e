@@ -18,7 +18,7 @@ from .tgi_api_service import TGIAPIService
 try:
     from accounts.models import AIServiceToken
 except ImportError:
-    AIServiceToken = None
+    AIServiceToken = type(None)  # Dummy type for when import fails
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +100,8 @@ class LLMServiceManager:
         return services_info
 
     def load_service(
-        self, service_id: str, model_name: str = None, user_token: str = None
-    ):
+        self, service_id: str, model_name: Optional[str] = None, user_token: Optional[str] = None
+    ) -> Optional[BaseLLMService]:
         """Load a specific service and return the service instance"""
         try:
             # Check if service is already loaded
@@ -228,7 +228,7 @@ class LLMServiceManager:
     def get_suggestions(
         self,
         prompt: str,
-        service_id: str = None,
+        service_id: Optional[str] = None,
         num_suggestions: int = 3,
         mode: str = "default",
         user=None,
@@ -491,9 +491,9 @@ class LLMServiceManager:
     def _get_user_token(self, service_id: str, user) -> Optional[str]:
         """Get user-specific token for the service"""
 
-        if not AIServiceToken or not user or not user.is_authenticated:
+        if AIServiceToken is type(None) or not user or not user.is_authenticated:
             logger.warning(
-                f"Token retrieval failed: AIServiceToken={bool(AIServiceToken)}, "
+                f"Token retrieval failed: AIServiceToken available={AIServiceToken is not type(None)}, "
                 f"user={bool(user)}, "
                 f"authenticated={user.is_authenticated if user else False}"
             )
