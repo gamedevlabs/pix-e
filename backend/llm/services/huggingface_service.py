@@ -160,7 +160,7 @@ class HuggingFaceLLMService(BaseLLMService):
 
             # Remove the original prompt from output
             if generated_text.startswith(prompt):
-                generated_text = generated_text[len(prompt):].strip()
+                generated_text = generated_text[len(prompt) :].strip()
 
             return generated_text
         except Exception as e:
@@ -220,7 +220,7 @@ class HuggingFaceLLMService(BaseLLMService):
 
                         # Extract only the new generated part
                         if generated_text.startswith(template):
-                            suggestion = generated_text[len(template):].strip()
+                            suggestion = generated_text[len(template) :].strip()
                             suggestion = self._clean_suggestion(suggestion)
 
                             if (

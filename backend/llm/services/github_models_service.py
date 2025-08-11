@@ -294,7 +294,7 @@ Format your response as a numbered list:
                                     "showing",
                                 ]:
                                     if line.startswith(prefix + " "):
-                                        line = line[len(prefix) + 1:]
+                                        line = line[len(prefix) + 1 :]
                                         break
 
                                 if (

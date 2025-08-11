@@ -14,24 +14,6 @@ Key Features:
 - Performance optimizations
 """
 
-from .serializers_production import (
-    MoodboardBulkActionSerializer,
-    MoodboardCreateSerializer,
-    MoodboardDetailSerializer,
-    MoodboardImageBulkActionSerializer,
-    MoodboardImageCreateSerializer,
-    MoodboardImageSerializer,
-    MoodboardListSerializer,
-    MoodboardShareSerializer,
-    MoodboardUpdateSerializer,
-)
-from .permissions import MoodboardPermission
-from .models import (
-    Moodboard,
-    MoodboardComment,
-    MoodboardImage,
-    MoodboardShare,
-)
 import logging
 
 from django.contrib.auth.models import User
@@ -46,6 +28,25 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
+
+from .models import (
+    Moodboard,
+    MoodboardComment,
+    MoodboardImage,
+    MoodboardShare,
+)
+from .permissions import MoodboardPermission
+from .serializers_production import (
+    MoodboardBulkActionSerializer,
+    MoodboardCreateSerializer,
+    MoodboardDetailSerializer,
+    MoodboardImageBulkActionSerializer,
+    MoodboardImageCreateSerializer,
+    MoodboardImageSerializer,
+    MoodboardListSerializer,
+    MoodboardShareSerializer,
+    MoodboardUpdateSerializer,
+)
 
 
 # Custom CSRF-exempt authentication for API calls

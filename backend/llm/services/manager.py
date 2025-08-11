@@ -329,7 +329,7 @@ Provide {num_suggestions} creative suggestions ({word_count}) that could enhance
                                         prefix.lower()
                                     ):
                                         suggestion_text = suggestion_text[
-                                            len(prefix):
+                                            len(prefix) :
                                         ].strip()
                                         break
 
