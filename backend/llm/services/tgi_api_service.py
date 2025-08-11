@@ -146,7 +146,8 @@ class TGIAPIService(BaseLLMService):
             #     else:
             #         # Don't fail completely - model might just be slow to respond
             #         logger.warning(
-            #             "Connection test failed but continuing - model may be slow to respond"
+            #             "Connection test failed but continuing - model may be "
+            #             "slow to respond"
             #         )
             #         self.is_loaded = True
             #         return True
@@ -154,7 +155,9 @@ class TGIAPIService(BaseLLMService):
             #     # For models that don't require auth, skip connection test
             #     # if no token
             #     self.is_loaded = True
-            #     logger.info(f"TGI client initialized for {self.endpoint} (no auth test)")
+            #     logger.info(
+            #         f"TGI client initialized for {self.endpoint} (no auth test)"
+            #     )
             #     return True
 
             # Skip connection test entirely for now

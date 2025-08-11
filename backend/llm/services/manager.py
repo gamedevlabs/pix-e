@@ -372,7 +372,8 @@ class LLMServiceManager:
                 else:
                     # Don't fall back - user specifically requested this service
                     raise LLMServiceError(
-                        f"The TGI service ({service_id}) failed to respond. Please check your Hugging Face token and try again."
+                        f"The TGI service ({service_id}) failed to respond. "
+                        f"Please check your Hugging Face token and try again."
                     )
 
         # Try GitHub Models service if specifically requested
@@ -445,7 +446,8 @@ class LLMServiceManager:
                 else:
                     # Don't fall back - user specifically requested this service
                     raise LLMServiceError(
-                        f"The GitHub Models service ({service_id}) failed to respond. Please check your API token and try again."
+                        f"The GitHub Models service ({service_id}) failed to respond. "
+                        f"Please check your API token and try again."
                     )
 
         # If no specific service requested, require user to select one
@@ -491,7 +493,9 @@ class LLMServiceManager:
 
         if not AIServiceToken or not user or not user.is_authenticated:
             logger.warning(
-                f"Token retrieval failed: AIServiceToken={bool(AIServiceToken)}, user={bool(user)}, authenticated={user.is_authenticated if user else False}"
+                f"Token retrieval failed: AIServiceToken={bool(AIServiceToken)}, "
+                f"user={bool(user)}, "
+                f"authenticated={user.is_authenticated if user else False}"
             )
             return None
 
