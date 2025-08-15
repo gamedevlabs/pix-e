@@ -8,7 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'deleteComponent' | 'addComponent', id: number): void
+  (e: 'delete' | 'deleteComponent' | 'addComponent', id: string): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -37,7 +37,7 @@ function emitDelete() {
   emit('delete', props.node.id)
 }
 
-function emitDeleteComponent(id: number) {
+function emitDeleteComponent(id: string) {
   emit('deleteComponent', id)
 }
 
@@ -61,20 +61,22 @@ async function handleAddComponent() {
       <UTextarea v-else v-model="editForm.name" />
     </template>
 
-    <div v-if="!isBeingEdited">
-      <p>{{ props.node.description }}</p>
-      <br />
-      <section class="grid grid-cols-1 gap-6">
-        <div v-for="component in components" :key="component.id">
-          <PxComponentCard
-            visualization-style="preview"
-            :component="component"
-            @delete="emitDeleteComponent"
-          />
-        </div>
-      </section>
-    </div>
-    <UTextarea v-else v-model="editForm.description" />
+    <template #default>
+      <div v-if="!isBeingEdited">
+        <p>{{ props.node.description }}</p>
+        <br />
+        <section class="grid grid-cols-1 gap-6">
+          <div v-for="component in components" :key="component.id">
+            <PxComponentCard
+              visualization-style="preview"
+              :component="component"
+              @delete="emitDeleteComponent"
+            />
+          </div>
+        </section>
+      </div>
+      <UTextarea v-else v-model="editForm.description" />
+    </template>
 
     <template #footer>
       <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
