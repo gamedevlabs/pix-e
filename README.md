@@ -25,9 +25,9 @@ To get the project up and running, follow these steps:
     ```
 
 3.  **Set local Python version for the project:**
-    Navigate to the root of the `pix-e` directory and set the local Python version. This creates a `.python-version` file.
+    Navigate to the root of the `pix-e` directory and set the local Python version. This creates a `.python-version` file. Note that you should replace `/path/to/your/pix-e` with the actual path to your project.
     ```bash
-    cd /Users/balkis/pix-e/
+    cd /path/to/your/pix-e
     pyenv local 3.10.0
     ```
 
@@ -63,7 +63,7 @@ A new Django app named `sentiments` was created to handle the sentiment data.
     *   `CORS_ALLOWED_ORIGINS` was updated to include `http://localhost:3002` to resolve Cross-Origin Resource Sharing (CORS) issues, allowing the frontend to fetch data from the backend.
 *   **`backend/api/urls.py`**: The `sentiments.urls` were included in the main project URLs.
 *   **`backend/requirements.txt`**: `pandas` was added to this file to enable CSV reading and processing.
-*   **`df_with_sentiments_explicit.csv`**: This data file is expected to be in the root directory of the project (`/Users/balkis/pix-e/`).
+*   **`df_with_sentiments_explicit.csv`**: This data file is expected to be in the root directory of the project.
 
 ### Frontend Implementation
 
@@ -101,7 +101,7 @@ A new Nuxt.js page and associated components were created to display and interac
 1.  **Start the Backend Server:**
     Open a terminal, navigate to the `backend/` directory, activate the virtual environment, and start the Django development server.
     ```bash
-    cd /Users/balkis/pix-e/backend/
+    cd backend/
     source ./.venv/bin/activate
     python3 manage.py runserver
     ```
@@ -110,7 +110,7 @@ A new Nuxt.js page and associated components were created to display and interac
 2.  **Start the Frontend Development Server:**
     Open a **new** terminal, navigate to the `frontend/` directory, and start the Nuxt.js development server.
     ```bash
-    cd /Users/balkis/pix-e/frontend/
+    cd frontend/
     npm run dev
     ```
     *Note the port number in the output (e.g., `http://localhost:3002/`).*

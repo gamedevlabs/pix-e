@@ -1,17 +1,18 @@
 <template>
-  <div class="chart-container">
-  
-    <Doughnut
-      :data="chartData"
-      :options="chartOptions"
-      v-if="chartData.labels.length > 0"
-    />
-    <p v-else>No sentiment data to display.</p>
-  </div>
+  <ChartCard title="Sentiment Distribution">
+    <div class="chart-container">
+      <Doughnut
+        :data="chartData"
+        :options="chartOptions"
+        v-if="chartData.labels.length > 0"
+      />
+      <p v-else>No sentiment data to display.</p>
+    </div>
+  </ChartCard>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -21,14 +22,15 @@ import {
   ArcElement,
   CategoryScale,
 } from 'chart.js'
+import ChartCard from '@/components/ChartCard.vue'
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
 
 const props = defineProps({
   data: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 })
 
 const positiveColor = ref('#27599e')
@@ -94,26 +96,21 @@ const chartOptions = {
     legend: {
       position: 'right',
       labels: {
-        color: 'var(--color-text)' // Use CSS variable for legend text color
-      }
+        color: 'var(--color-text)', // Use CSS variable for legend text color
+      },
     },
     title: {
-      display: true,
+      display: false,
       text: 'Sentiment Distribution',
-      color: 'var(--color-primary)' // Use CSS variable for title color
-    }
-  }
+      color: 'var(--color-primary)', // Use CSS variable for title color
+    },
+  },
 }
 </script>
 
 <style scoped>
 .chart-container {
-  background-color: var(--color-card-background);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
-  height: 300px; /* Fixed height for the chart container */
+  height: 600px; /* Fixed height for the chart container */
   display: flex;
   flex-direction: column;
   justify-content: center;

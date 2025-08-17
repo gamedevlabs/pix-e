@@ -10,6 +10,7 @@ const props = defineProps({
 
 const options = {
   responsive: true,
+  maintainAspectRatio: false,
   interaction: {mode: 'index', intersect: false},
   stacked: false,
   plugins: {
@@ -23,7 +24,7 @@ const options = {
 </script>
 
 <template>
-  <div class="h-64">
+  <div class="h-[600px]">
     <BaseChart
         v-if="chartData?.labels && chartData?.datasets"
         type="line"

@@ -1,6 +1,6 @@
 <template>
   <div class="sentiment-dashboard">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <SentimentFilters
         :selected-dataset="selectedDataset"
         :unique-genres="uniqueGenres"
@@ -15,6 +15,7 @@
         @game-change="onGameChange"
       />
       <SentimentChart :data="filteredData" :key="selectedDataset" />
+      <DominantAnalysis :data="filteredData" :loading="loading" />
     </div>
     <SentimentTable :data="filteredData" :key="selectedDataset" />
   </div>
@@ -26,6 +27,7 @@ import axios from 'axios';
 import SentimentFilters from '@/components/SentimentFilters.vue';
 import SentimentChart from '@/components/SentimentDistributionChart.vue';
 import SentimentTable from '@/components/SentimentTable.vue';
+import DominantAnalysis from '@/components/DominantAnalysis.vue';
 
 // Main data state
 const allSentiments = ref([]);

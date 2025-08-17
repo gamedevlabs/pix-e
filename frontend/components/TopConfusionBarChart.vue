@@ -72,7 +72,7 @@ const chartOptions = {
 
 <style scoped>
 .chart-container {
-  height: 300px; /* Fixed height for the chart container */
+  height: 600px; /* Fixed height for the chart container */
   display: flex;
   flex-direction: column;
   justify-content: center;
