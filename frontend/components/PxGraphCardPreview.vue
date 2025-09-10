@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
-
 const props = defineProps<{
   chart: PxChart
 }>()
@@ -11,15 +9,10 @@ const emit = defineEmits<{
   (event: 'addNode', nodeId: string): void
 }>()
 
-const { updateItem: updatePxChart } = usePxCharts()
-
 const draft = ref({ ...props.chart })
 
 const localChart = ref<PxChart>(props.chart)
 const isBeingEdited = ref(false)
-
-const overlay = useOverlay()
-const modalAddPxNode = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
 
 watch(
   () => isBeingEdited,
@@ -40,26 +33,6 @@ function emitUpdate() {
 
 function emitDelete() {
   emit('delete')
-}
-
-async function emitAddNode() {
-  const nodeId = await modalAddPxNode.open().result
-
-  if (!nodeId) return
-
-  await updatePxChart(localChart.value.id!, { associatedNode: nodeId })
-
-  localChart.value.associatedNode = nodeId
-
-  emit('addNode', nodeId)
-}
-
-async function emitRemoveNode() {
-  await updatePxChart(localChart.value.id!, { associatedNode: null })
-
-  localChart.value.associatedNode = undefined
-
-  emit('removeNode')
 }
 </script>
 

@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
-
 const props = defineProps<{
   pxChart: Partial<PxChart>
   isBeingEdited?: boolean
@@ -9,18 +7,7 @@ const props = defineProps<{
   visualizationStyle?: 'preview' | 'detailed'
 }>()
 
-const emit = defineEmits<{
-  (event: 'update', namedEntityDraft: Partial<PxChart>): void
-  (event: 'edit' | 'delete' | 'removeNode'): void
-  (event: 'addNode', nodeId: string): void
-}>()
-
-const {
-  error: chartError,
-  loading: chartLoading,
-  fetchById: fetchChartById,
-  updateItem: updateChart,
-} = usePxCharts()
+const { error: chartError, loading: chartLoading, fetchById: fetchChartById } = usePxCharts()
 
 const draft = ref({ ...props.pxChart })
 
@@ -43,9 +30,6 @@ async function getChartInformation() {
   }
 }
 
-const overlay = useOverlay()
-const modalAddPxNode = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
-
 watch(
   () => props.isBeingEdited,
   (newVal) => {
@@ -54,38 +38,6 @@ watch(
     }
   },
 )
-
-function emitEdit() {
-  emit('edit')
-}
-
-function emitUpdate() {
-  emit('update', draft.value)
-}
-
-function emitDelete() {
-  emit('delete')
-}
-
-async function emitAddNode() {
-  const nodeId = await modalAddPxNode.open().result
-
-  if (!nodeId) return
-
-  await updateChart(fetchedChart.value.id!, { associatedNode: nodeId })
-
-  fetchedChart.value.associatedNode = nodeId
-
-  emit('addNode', nodeId)
-}
-
-async function emitRemoveNode() {
-  await updateChart(fetchedChart.value.id!, { associatedNode: null })
-
-  fetchedChart.value.associatedNode = undefined
-
-  emit('removeNode')
-}
 </script>
 
 <template>
