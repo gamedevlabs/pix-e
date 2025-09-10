@@ -1,15 +1,16 @@
 ﻿<script setup lang="ts">
+
 const props = defineProps<{
   pxChart: Partial<PxChart>
-  isBeingEdited?: boolean
-  showEdit?: boolean
-  showDelete?: boolean
   visualizationStyle?: 'preview' | 'detailed'
 }>()
 
-const { error: chartError, loading: chartLoading, fetchById: fetchChartById } = usePxCharts()
+const { error: chartError, loading: chartLoading, fetchById: fetchChartById, deleteItem: deleteChart, updateItem: updatePxChart } = usePxCharts()
 
-const draft = ref({ ...props.pxChart })
+const emit = defineEmits<{
+  (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
+  (event: 'edit' | 'delete', graphId: string): void
+}>()
 
 const fetchedChart = ref<PxChart>(null)
 
@@ -30,14 +31,18 @@ async function getChartInformation() {
   }
 }
 
-watch(
-  () => props.isBeingEdited,
-  (newVal) => {
-    if (newVal) {
-      draft.value = { ...props.pxChart }
-    }
-  },
-)
+function emitEdit(graphId: string) {
+  emit('edit', graphId)
+}
+
+async function handleDelete(graphId: string) {
+  emit('delete', graphId)
+}
+
+async function handleUpdate(updatedPxChart: Partial<PxChart>) {
+  await updatePxChart(updatedPxChart.id!, { ...updatedPxChart })
+  await getChartInformation()
+}
 </script>
 
 <template>
@@ -48,8 +53,8 @@ watch(
   </div>
   <div v-else-if="chartLoading || !fetchedChart">Loading Px Chart {{ pxChart.id }}</div>
   <div v-else-if="fetchedChart">
-    <PxGraphCardPreview v-if="visualizationStyle === 'preview'" :chart="fetchedChart" />
-    <PxGraphCardDetailed v-else-if="visualizationStyle === 'detailed'" :chart="fetchedChart" />
+    <PxGraphCardPreview v-if="visualizationStyle === 'preview'" :chart="fetchedChart" @edit="emitEdit" @update="handleUpdate" @delete="handleDelete" />
+    <PxGraphCardDetailed v-else-if="visualizationStyle === 'detailed'" :chart="fetchedChart" @edit="emitEdit" @update="handleUpdate" @delete="handleDelete" />
   </div>
 </template>
 

@@ -7,8 +7,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<PxChart>): void
-  (event: 'edit' | 'delete' | 'removeNode'): void
-  (event: 'addNode', nodeId: string): void
+  (event: 'edit' | 'delete' | 'removeNode', graphId: string): void
+  (event: 'addNode', graphId: string, nodeId: string): void
 }>()
 
 const { updateItem: updatePxChart } = usePxCharts()
@@ -31,7 +31,7 @@ watch(
 )
 
 function emitEdit() {
-  emit('edit')
+  emit('edit', localChart.value.id)
 }
 
 function emitUpdate() {
@@ -39,7 +39,7 @@ function emitUpdate() {
 }
 
 function emitDelete() {
-  emit('delete')
+  emit('delete', localChart.value.id)
 }
 
 async function emitAddNode() {
@@ -51,7 +51,7 @@ async function emitAddNode() {
 
   localChart.value.associatedNode = nodeId
 
-  emit('addNode', nodeId)
+  emit('addNode', localChart.value.id ,nodeId)
 }
 
 async function emitRemoveNode() {
@@ -59,7 +59,7 @@ async function emitRemoveNode() {
 
   localChart.value.associatedNode = undefined
 
-  emit('removeNode')
+  emit('removeNode', localChart.value.id)
 }
 </script>
 
