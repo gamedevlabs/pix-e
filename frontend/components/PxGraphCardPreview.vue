@@ -5,17 +5,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<PxChart>): void
-  (event: 'edit' | 'delete' | 'removeNode'): void
-  (event: 'addNode', nodeId: string): void
+  (event: 'edit' | 'delete'): void
 }>()
 
 const draft = ref({ ...props.chart })
 
-const localChart = ref<PxChart>(props.chart)
 const isBeingEdited = ref(false)
 
 watch(
-  () => isBeingEdited,
+  () => isBeingEdited.value,
   (newVal) => {
     if (newVal) {
       draft.value = { ...props.chart }
@@ -23,12 +21,19 @@ watch(
   },
 )
 
-function emitEdit() {
-  emit('edit')
+function startEdit() {
+  console.log('props value:', props.chart)
+  isBeingEdited.value = true
 }
 
-function emitUpdate() {
-  emit('update', draft.value)
+function confirmEdit() {
+  emit('update', {...props.chart, ...draft.value})
+  isBeingEdited.value = false
+}
+
+function cancelEdit() {
+  isBeingEdited.value = false
+  draft.value.name = props.chart.name
 }
 
 function emitDelete() {
@@ -41,8 +46,8 @@ function emitDelete() {
     <template #header>
       <div v-if="!isBeingEdited" class="header">
         <h2 class="font-semibold text-lg">
-          <NuxtLink :to="{ name: 'pxcharts-id', params: { id: localChart.id } }">
-            {{ localChart.name }}
+          <NuxtLink :to="{ name: 'pxcharts-id', params: { id: props.chart.id } }">
+            {{ props.chart.name }}
           </NuxtLink>
         </h2>
         <div>
@@ -51,7 +56,7 @@ function emitDelete() {
             icon="i-lucide-pencil"
             color="primary"
             variant="ghost"
-            @click="emitEdit"
+            @click="startEdit"
           />
           <UButton
             aria-label="Delete"
@@ -76,24 +81,24 @@ function emitDelete() {
             icon="i-lucide-save"
             color="primary"
             variant="ghost"
-            @click="emitUpdate"
+            @click="confirmEdit"
           />
           <UButton
             aria-label="Cancel"
             icon="i-lucide-x"
             color="error"
             variant="ghost"
-            @click="emitEdit"
+            @click="cancelEdit"
           />
         </div>
       </div>
     </template>
 
     <template #default>
-      <div v-if="'description' in localChart">
+      <div v-if="'description' in props.chart">
         <div v-if="!isBeingEdited">
           <h2>Description</h2>
-          <p>{{ localChart.description }}</p>
+          <p>{{ props.chart.description }}</p>
         </div>
         <UTextarea
           v-else
