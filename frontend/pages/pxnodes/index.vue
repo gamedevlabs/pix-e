@@ -9,7 +9,6 @@ const {
   items: pxNodes,
   fetchAll: fetchPxNodes,
   createItem: createPxNode,
-  updateItem: updatePxNode,
   deleteItem: deletePxNode,
 } = usePxNodes()
 
@@ -27,10 +26,6 @@ async function handleCreate() {
   await createPxNode({ id: newUuid, ...state.value })
   state.value.name = ''
   state.value.description = ''
-}
-
-async function handleUpdate(updatedNode: PxNode) {
-  await updatePxNode(updatedNode.id, updatedNode)
 }
 
 // Not particularly efficient, but works for now.
@@ -65,7 +60,6 @@ async function handleForeignAddComponent() {
         :key="node.id"
         :node-id="node.id"
         :visualization-style="'detailed'"
-        @edit="handleUpdate"
         @delete="deletePxNode"
         @add-foreign-component="handleForeignAddComponent"
       />

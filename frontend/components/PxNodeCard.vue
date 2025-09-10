@@ -12,7 +12,12 @@ const props = defineProps({
   },
 })
 
-const { error: nodeError, loading: nodeLoading, fetchById: fetchNodeById } = usePxNodes()
+const {
+  error: nodeError,
+  loading: nodeLoading,
+  fetchById: fetchNodeById,
+  updateItem: updatePxNode,
+} = usePxNodes()
 
 const { fetchById: fetchComponentById } = usePxComponents()
 
@@ -32,6 +37,11 @@ async function getNodeInformation() {
   } catch (err) {
     console.error(err)
   }
+}
+
+async function handleUpdate(updatedNode: PxNode) {
+  await updatePxNode(updatedNode.id, updatedNode)
+  await getNodeInformation()
 }
 
 async function handleAddComponent(nodeId: string, componentId: string) {
@@ -70,6 +80,7 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
     :node="fetchedNode"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
+    @update="handleUpdate"
   />
 </template>
 
