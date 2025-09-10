@@ -51,7 +51,7 @@ async function emitAddNode() {
 
   localChart.value.associatedNode = nodeId
 
-  emit('addNode', localChart.value.id ,nodeId)
+  emit('addNode', localChart.value.id, nodeId)
 }
 
 async function emitRemoveNode() {

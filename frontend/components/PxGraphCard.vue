@@ -1,11 +1,15 @@
 ﻿<script setup lang="ts">
-
 const props = defineProps<{
   pxChart: Partial<PxChart>
   visualizationStyle?: 'preview' | 'detailed'
 }>()
 
-const { error: chartError, loading: chartLoading, fetchById: fetchChartById, deleteItem: deleteChart, updateItem: updatePxChart } = usePxCharts()
+const {
+  error: chartError,
+  loading: chartLoading,
+  fetchById: fetchChartById,
+  updateItem: updatePxChart,
+} = usePxCharts()
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
@@ -53,8 +57,20 @@ async function handleUpdate(updatedPxChart: Partial<PxChart>) {
   </div>
   <div v-else-if="chartLoading || !fetchedChart">Loading Px Chart {{ pxChart.id }}</div>
   <div v-else-if="fetchedChart">
-    <PxGraphCardPreview v-if="visualizationStyle === 'preview'" :chart="fetchedChart" @edit="emitEdit" @update="handleUpdate" @delete="handleDelete" />
-    <PxGraphCardDetailed v-else-if="visualizationStyle === 'detailed'" :chart="fetchedChart" @edit="emitEdit" @update="handleUpdate" @delete="handleDelete" />
+    <PxGraphCardPreview
+      v-if="visualizationStyle === 'preview'"
+      :chart="fetchedChart"
+      @edit="emitEdit"
+      @update="handleUpdate"
+      @delete="handleDelete"
+    />
+    <PxGraphCardDetailed
+      v-else-if="visualizationStyle === 'detailed'"
+      :chart="fetchedChart"
+      @edit="emitEdit"
+      @update="handleUpdate"
+      @delete="handleDelete"
+    />
   </div>
 </template>
 

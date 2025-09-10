@@ -18,10 +18,6 @@ onMounted(() => {
 
 const newItem = ref<NamedEntity | null>(null)
 
-function handleDelete(chardId: string) {
-  pxCharts.value =
-}
-
 function addItem() {
   newItem.value = { name: '', description: '' }
 }

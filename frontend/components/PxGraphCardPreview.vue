@@ -27,7 +27,7 @@ function startEdit() {
 }
 
 function confirmEdit() {
-  emit('update', {...props.chart, ...draft.value})
+  emit('update', { ...props.chart, ...draft.value })
   isBeingEdited.value = false
 }
 
