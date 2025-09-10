@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'edit', updatedNode: PxNode): void
+  (e: 'update', updatedNode: PxNode): void
   (e: 'delete', nodeId: string): void
   (e: 'deleteComponent' | 'addComponent', nodeId: string, componentId: string): void
 }>()
@@ -22,12 +22,13 @@ const editForm = ref({
 })
 
 function startEdit() {
+  editForm.value = { ...props.node }
   isBeingEdited.value = true
 }
 
 function confirmEdit() {
   isBeingEdited.value = false
-  emit('edit', { ...props.node, ...editForm.value })
+  emit('update', { ...props.node, ...editForm.value })
 }
 
 function cancelEdit() {
