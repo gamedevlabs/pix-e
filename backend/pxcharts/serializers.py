@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from pxnodes.serializers import PxNodeSerializer
-
 from .models import PxChart, PxChartContainer, PxChartContainerLayout, PxChartEdge
 
 
@@ -21,7 +19,7 @@ class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
 
 class PxChartContainerSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
-    content = PxNodeSerializer(required=False, allow_null=True)
+    content = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = PxChartContainer

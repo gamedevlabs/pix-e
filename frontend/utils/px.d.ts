@@ -35,6 +35,8 @@ interface PxNode extends NamedEntity {
   id: string
   name: string
   description: string
+  components: PxComponent[]
+  charts: PxChart[]
   created_at: string
   updated_at: string
   owner: number | null
@@ -44,10 +46,10 @@ interface PxChart extends NamedEntity {
   id: string
   name: string
   description: string
-  associatedNode: string
+  associatedNode?: string | null
   containers: PxChartContainer[]
   edges: PxChartEdge[]
-  owner: number | null
+  owner?: number | null
   created_at: string
   updated_at: string
 }

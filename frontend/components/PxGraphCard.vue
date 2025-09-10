@@ -1,18 +1,50 @@
 ﻿<script setup lang="ts">
+import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
+
 const props = defineProps<{
   pxChart: Partial<PxChart>
   isBeingEdited?: boolean
   showEdit?: boolean
   showDelete?: boolean
-  variant?: 'compact'
+  visualizationStyle?: 'preview' | 'detailed'
 }>()
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<PxChart>): void
-  (event: 'edit' | 'delete'): void
+  (event: 'edit' | 'delete' | 'removeNode'): void
+  (event: 'addNode', nodeId: string): void
 }>()
 
+const {
+  error: chartError,
+  loading: chartLoading,
+  fetchById: fetchChartById,
+  updateItem: updateChart,
+} = usePxCharts()
+
 const draft = ref({ ...props.pxChart })
+
+const fetchedChart = ref<PxChart>(null)
+
+onMounted(() => {
+  getChartInformation()
+})
+
+async function getChartInformation() {
+  if (!props.pxChart.id) {
+    console.error('No ID provided for PxGraphCard... Aborting')
+    return
+  }
+
+  try {
+    fetchedChart.value = await fetchChartById(props.pxChart.id!)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const overlay = useOverlay()
+const modalAddPxNode = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
 
 watch(
   () => props.isBeingEdited,
@@ -34,105 +66,39 @@ function emitUpdate() {
 function emitDelete() {
   emit('delete')
 }
+
+async function emitAddNode() {
+  const nodeId = await modalAddPxNode.open().result
+
+  if (!nodeId) return
+
+  await updateChart(fetchedChart.value.id!, { associatedNode: nodeId })
+
+  fetchedChart.value.associatedNode = nodeId
+
+  emit('addNode', nodeId)
+}
+
+async function emitRemoveNode() {
+  await updateChart(fetchedChart.value.id!, { associatedNode: null })
+
+  fetchedChart.value.associatedNode = undefined
+
+  emit('removeNode')
+}
 </script>
 
 <template>
-  <UCard
-    :class="[
-      'w-72 hover:shadow-lg transition',
-      variant !== null && variant === 'compact' ? 'min-h-35' : 'min-h-55',
-    ]"
-    variant="subtle"
-  >
-    <template #header>
-      <div v-if="!isBeingEdited" class="header">
-        <h2 class="font-semibold text-lg">
-          <NuxtLink :to="{ name: 'pxcharts-id', params: { id: props.pxChart.id } }">
-            {{ props.pxChart.name }}
-          </NuxtLink>
-        </h2>
-        <div>
-          <UButton
-            v-if="showEdit"
-            aria-label="Edit"
-            icon="i-lucide-pencil"
-            color="primary"
-            variant="ghost"
-            @click="emitEdit"
-          />
-          <UButton
-            v-if="showDelete"
-            aria-label="Delete"
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="ghost"
-            @click="emitDelete"
-          />
-        </div>
-      </div>
-
-      <div v-else class="header">
-        <UInput
-          v-model="draft.name"
-          class="max-w-44"
-          variant="subtle"
-          placeholder="Enter name here..."
-        />
-        <div>
-          <UButton
-            aria-label="Update"
-            icon="i-lucide-save"
-            color="primary"
-            variant="ghost"
-            @click="emitUpdate"
-          />
-          <UButton
-            aria-label="Cancel"
-            icon="i-lucide-x"
-            color="error"
-            variant="ghost"
-            @click="emitEdit"
-          />
-        </div>
-      </div>
-    </template>
-
-    <template #default>
-      <div v-if="'description' in pxChart">
-        <p v-if="!isBeingEdited">{{ pxChart.description }}</p>
-        <UTextarea
-          v-else
-          v-model="draft.description"
-          placeholder="Enter description here..."
-          size="lg"
-          variant="subtle"
-          :rows="1"
-          autoresize
-          class="w-full"
-        />
-      </div>
-
-      <div v-if="!isBeingEdited">
-        <slot name="default" />
-      </div>
-      <div v-else>
-        <slot name="defaultEdit" />
-      </div>
-    </template>
-
-    <template v-if="$slots.footerExtra || $slots.footerExtraEdit" #footer>
-      <div v-if="!isBeingEdited">
-        <slot name="footerExtra" />
-      </div>
-      <div v-else>
-        <slot name="footerExtraEdit" />
-      </div>
-    </template>
-  </UCard>
+  <div v-if="chartError">
+    <div v-if="chartError.response?.status === 403">You do not have access to this chart.</div>
+    <div v-else-if="chartError.response?.status === 404">This chart does not exist.</div>
+    <div v-else>Error loading Px Chart {{ pxChart.id }}</div>
+  </div>
+  <div v-else-if="chartLoading || !fetchedChart">Loading Px Chart {{ pxChart.id }}</div>
+  <div v-else-if="fetchedChart">
+    <PxGraphCardPreview v-if="visualizationStyle === 'preview'" :chart="fetchedChart" />
+    <PxGraphCardDetailed v-else-if="visualizationStyle === 'detailed'" :chart="fetchedChart" />
+  </div>
 </template>
 
-<style scoped>
-.header {
-  @apply flex items-center justify-between w-full;
-}
-</style>
+<style scoped></style>

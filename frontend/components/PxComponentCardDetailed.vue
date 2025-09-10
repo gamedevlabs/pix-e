@@ -25,7 +25,11 @@ function emitDelete() {
     </template>
 
     <p>Value: {{ props.component.value }}</p>
-    <p>Associated Node: {{ props.node.name }}, ID: {{ props.node.id }}</p>
+    <br />
+
+    <h2>Associated Node</h2>
+    <PxNodeCard :node-id="props.node.id" :visualization-style="'preview'" />
+
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
         <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
