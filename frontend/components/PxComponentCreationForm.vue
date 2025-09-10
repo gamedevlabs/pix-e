@@ -3,10 +3,13 @@ import { v4 } from 'uuid'
 
 const props = defineProps<{ selectedNodeId: string }>()
 
-const { createItem: createPxComponent } = usePxComponents()
+const {
+  createItem: createPxComponent,
+  items: pxComponents,
+  fetchAll: fetchPxComponents,
+} = usePxComponents()
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
 const { items: pxDefinitions, fetchAll: fetchPxDefinitions } = usePxComponentDefinitions()
-const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 
 onMounted(() => {
   fetchPxNodes()
@@ -14,7 +17,9 @@ onMounted(() => {
   fetchPxDefinitions()
 })
 
-const emit = defineEmits<{ close: [string] }>()
+const emit = defineEmits<{
+  close: (payload: { nodeId: string; componentId: string }) => void
+}>()
 
 const state = ref({
   nodeRef: props.selectedNodeId,
@@ -64,13 +69,14 @@ async function onSubmit() {
 
   if (enteredValue === undefined) return
 
+  const componentId = v4()
   await createPxComponent({
-    id: v4(),
+    id: componentId,
     node: state.value.nodeRef,
     definition: state.value.definitionRef,
     value: enteredValue,
   })
-  emit('close', state.value.nodeRef)
+  emit('close', { nodeId: state.value.nodeRef, componentId })
 }
 </script>
 

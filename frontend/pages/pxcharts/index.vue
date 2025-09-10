@@ -47,6 +47,7 @@ async function handleUpdate(id: string, namedEntityDraft: Partial<NamedEntity>) 
           <PxGraphCard
             :px-chart="chart"
             :is-being-edited="editingId === chart.id"
+            :visualization-style="'detailed'"
             show-edit
             show-delete
             @edit="editingId = editingId === chart.id ? null : chart.id"

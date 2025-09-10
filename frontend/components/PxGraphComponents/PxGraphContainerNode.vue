@@ -105,7 +105,7 @@ function listenToResizing() {
 
       <template #default>
         <div v-if="pxNode">
-          <PxNodeCard :node="pxNode" :visualization-style="'preview'" />
+          <PxNodeCard :node-id="pxNode.id" :visualization-style="'preview'" />
         </div>
       </template>
 

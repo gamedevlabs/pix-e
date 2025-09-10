@@ -48,7 +48,7 @@ async function handleForeignAddComponent() {
     <!-- Create Form -->
     <UForm :state="state" class="mb-6 space-y-4" @submit.prevent="handleCreate">
       <UFormField>
-        <UInput v-model="state.name" type="text" placeholder="Name" />
+        <UInput v-model="state.name" type="text" placeholder="Name" class="w-full xl:w-1/2" />
       </UFormField>
 
       <UFormField>
@@ -59,11 +59,11 @@ async function handleForeignAddComponent() {
     </UForm>
 
     <!-- Cards Section -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       <PxNodeCard
         v-for="node in pxNodes"
         :key="node.id"
-        :node="node"
+        :node-id="node.id"
         :visualization-style="'detailed'"
         @edit="handleUpdate"
         @delete="deletePxNode"

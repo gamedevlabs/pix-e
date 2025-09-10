@@ -3,15 +3,18 @@ import { LazyPxComponentCreationForm } from '#components'
 
 const props = defineProps<{
   node: PxNode
-  components: Array<PxComponent>
 }>()
 
 const emit = defineEmits<{
   (e: 'edit', updatedNode: PxNode): void
-  (e: 'delete' | 'deleteComponent' | 'addComponent', id: string): void
+  (e: 'delete', nodeId: string): void
+  (e: 'deleteComponent' | 'addComponent', nodeId: string, componentId: string): void
 }>()
 
 const isBeingEdited = ref(false)
+
+const overlay = useOverlay()
+const modal = overlay.create(LazyPxComponentCreationForm)
 
 const editForm = ref({
   name: props.node.name,
@@ -37,16 +40,14 @@ function emitDelete() {
   emit('delete', props.node.id)
 }
 
-function emitDeleteComponent(id: string) {
-  emit('deleteComponent', id)
+function handleDeleteComponent(componentId: string) {
+  emit('deleteComponent', props.node.id, componentId)
 }
 
-const overlay = useOverlay()
-const modal = overlay.create(LazyPxComponentCreationForm)
-
 async function handleAddComponent() {
-  const nodeId = await modal.open({ selectedNodeId: props.node.id }).result
-  emit('addComponent', nodeId)
+  const { nodeId, componentId } = await modal.open({ selectedNodeId: props.node.id }).result
+
+  emit('addComponent', nodeId, componentId)
 }
 </script>
 
@@ -63,17 +64,30 @@ async function handleAddComponent() {
 
     <template #default>
       <div v-if="!isBeingEdited">
+        <h2>Description</h2>
         <p>{{ props.node.description }}</p>
         <br />
+        <h2 v-if="node.components.length === 0">This node has no components.</h2>
+        <h2 v-else class="mb-0">Components</h2>
         <section class="grid grid-cols-1 gap-6">
-          <div v-for="component in components" :key="component.id">
+          <div v-for="component in node.components" :key="component.id">
             <PxComponentCard
               visualization-style="preview"
               :component="component"
-              @delete="emitDeleteComponent"
+              @delete="handleDeleteComponent"
             />
           </div>
         </section>
+        <br />
+        <h2 v-if="node.charts.length === 0">This node is not associated to any charts.</h2>
+        <div v-else>
+          <h2>Associated Charts</h2>
+          <section class="grid grid-cols-1 gap-6">
+            <div v-for="chart in node.charts" :key="chart.id">
+              <PxGraphCard :px-chart="chart" :visualization-style="'preview'" />
+            </div>
+          </section>
+        </div>
       </div>
       <UTextarea v-else v-model="editForm.description" />
     </template>
