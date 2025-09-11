@@ -24,11 +24,14 @@ function emitDelete() {
       </h2>
     </template>
 
-    <p>Value: {{ props.component.value }}</p>
-    <br />
+    <template #default>
+      <h2 class="font-semibold text-lg mb-2">Value</h2>
+      <p>{{ props.component.value }}</p>
+      <br />
 
-    <h2>Associated Node</h2>
-    <PxNodeCard :node-id="props.node.id" :visualization-style="'preview'" />
+      <h2 class="font-semibold mb-2">Associated Node</h2>
+      <PxNodeCard :node-id="props.node.id" :visualization-style="'preview'" />
+    </template>
 
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">

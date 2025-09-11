@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import PxGraphCanvas from '~/components/PxGraphComponents/PxGraphCanvas.vue'
+import PxChartCanvas from '~/components/PxChartComponents/PxChartCanvas.vue'
 
 definePageMeta({
   middleware: 'authentication',
@@ -11,7 +11,7 @@ const chartId = route.params.id as string
 
 <template>
   <div class="w-full h-full">
-    <PxGraphCanvas :chart-id="chartId" />
+    <PxChartCanvas :chart-id="chartId" />
   </div>
 </template>
 

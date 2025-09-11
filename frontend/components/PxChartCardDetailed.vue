@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
+import { LazyPxChartComponentsPxChartContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<{
   chart: PxChart
@@ -19,7 +19,7 @@ const localChart = ref<PxChart>(props.chart)
 const isBeingEdited = ref(false)
 
 const overlay = useOverlay()
-const modalAddPxNode = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
+const modalAddPxNode = overlay.create(LazyPxChartComponentsPxChartContainerAddPxNodeForm)
 
 watch(
   () => isBeingEdited,
@@ -30,12 +30,18 @@ watch(
   },
 )
 
-function emitEdit() {
-  emit('edit', localChart.value.id)
+function startEdit() {
+  isBeingEdited.value = true
 }
 
-function emitUpdate() {
-  emit('update', draft.value)
+function confirmEdit() {
+  emit('update', { ...props.chart, ...draft.value })
+  isBeingEdited.value = false
+}
+
+function cancelEdit() {
+  isBeingEdited.value = false
+  draft.value.name = props.chart.name
 }
 
 function emitDelete() {
@@ -69,7 +75,7 @@ async function emitRemoveNode() {
       <div v-if="!isBeingEdited" class="header">
         <h2 class="font-semibold text-lg">
           <NuxtLink :to="{ name: 'pxcharts-id', params: { id: localChart.id } }">
-            {{ localChart.name }}
+            {{ props.chart.name }}
           </NuxtLink>
         </h2>
         <div>
@@ -78,7 +84,7 @@ async function emitRemoveNode() {
             icon="i-lucide-pencil"
             color="primary"
             variant="ghost"
-            @click="emitEdit"
+            @click="startEdit"
           />
           <UButton
             aria-label="Delete"
@@ -103,14 +109,14 @@ async function emitRemoveNode() {
             icon="i-lucide-save"
             color="primary"
             variant="ghost"
-            @click="emitUpdate"
+            @click="confirmEdit"
           />
           <UButton
             aria-label="Cancel"
             icon="i-lucide-x"
             color="error"
             variant="ghost"
-            @click="emitEdit"
+            @click="cancelEdit"
           />
         </div>
       </div>
@@ -119,8 +125,8 @@ async function emitRemoveNode() {
     <template #default>
       <div v-if="'description' in localChart">
         <div v-if="!isBeingEdited">
-          <h2>Description</h2>
-          <p>{{ localChart.description }}</p>
+          <h2 class="font-semibold text-lg mb-2">Description</h2>
+          <p>{{ props.chart.description }}</p>
         </div>
         <UTextarea
           v-else
@@ -136,11 +142,11 @@ async function emitRemoveNode() {
       </div>
 
       <div v-if="localChart.associatedNode">
-        <h2>Associated Node</h2>
+        <h2 class="font-semibold text-lg mb-2">Associated Node</h2>
         <PxNodeCard :node-id="localChart.associatedNode!" :visualization-style="'preview'" />
       </div>
       <div v-else>
-        <h2>No node associated to this chart</h2>
+        <h2 class="italic">No node associated to this chart</h2>
       </div>
 
       <div v-if="!isBeingEdited">
@@ -153,7 +159,7 @@ async function emitRemoveNode() {
 
     <template #footer>
       <slot name="footerExtra">
-        <div v-if="chart.associatedNode">
+        <div v-if="localChart.associatedNode">
           <UButton @click="emitRemoveNode">Remove PxNode</UButton>
         </div>
         <div v-else>

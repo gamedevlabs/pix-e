@@ -10,10 +10,10 @@ function emitDelete() {
 }
 </script>
 <template>
-  <div class="flex flex-wrap justify-normal gap-2">
+  <div class="flex justify-normal gap-2">
     <UButton :to="{ name: 'pxcomponents-id', params: { id: props.component.id } }">
-      {{ props.definition.name }} <br />
-      {{ props.component.value }}</UButton
+      <p class="font-semibold">{{ props.definition.name }}</p>
+      <p>{{ props.component.value }}</p></UButton
     >
     <UButton color="error" icon="i-lucide-trash-2" :on-click="emitDelete" />
   </div>

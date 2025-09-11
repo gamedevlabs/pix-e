@@ -5,7 +5,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<PxChart>): void
-  (event: 'edit' | 'delete'): void
+  (event: 'edit' | 'delete', graphId: string): void
 }>()
 
 const draft = ref({ ...props.chart })
@@ -22,7 +22,6 @@ watch(
 )
 
 function startEdit() {
-  console.log('props value:', props.chart)
   isBeingEdited.value = true
 }
 
@@ -37,7 +36,7 @@ function cancelEdit() {
 }
 
 function emitDelete() {
-  emit('delete')
+  emit('delete', props.chart.id)
 }
 </script>
 
@@ -97,7 +96,7 @@ function emitDelete() {
     <template #default>
       <div v-if="'description' in props.chart">
         <div v-if="!isBeingEdited">
-          <h2>Description</h2>
+          <h2 class="font-semibold text-lg">Description</h2>
           <p>{{ props.chart.description }}</p>
         </div>
         <UTextarea
