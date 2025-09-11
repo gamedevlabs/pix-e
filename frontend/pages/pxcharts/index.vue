@@ -36,9 +36,9 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
 
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="chart in pxCharts" :key="chart.id">
-          <PxGraphCard
+          <PxChartCard
             :px-chart="chart"
-            :visualization-style="'preview'"
+            :visualization-style="'detailed'"
             show-edit
             show-delete
             @delete="deletePxChart(chart.id)"

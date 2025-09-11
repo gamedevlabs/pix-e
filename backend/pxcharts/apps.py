@@ -6,7 +6,7 @@ class PxChartsConfig(AppConfig):
     name = "pxcharts"
 
     # This import actually is used (in some way that I do not 100% understand)
-    # With this import whenever a PxGraphContainer is created,
-    # it also adds an instance in the layout table for that PxGraphContainer
+    # With this import whenever a PxChartContainer is created,
+    # it also adds an instance in the layout table for that PxChartContainer
     def ready(self):
         import pxcharts.signals  # noqa: F401

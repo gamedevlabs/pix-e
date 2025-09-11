@@ -2,22 +2,24 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
+import { LazyPxChartComponentsPxChartContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
   (e: 'edit', updatedNode: Partial<PxChartContainer>): void
-  (e: 'delete' | 'removePxChart', id: string): void
+  (e: 'delete' | 'deletePxNode', id: string): void
+  (e: 'addPxNode', pxGraphContainerId: string, pxNodeId: string): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
-const { fetchById: getPxChart } = usePxCharts()
+
+const overlay = useOverlay()
+const modalAddPxNode = overlay.create(LazyPxChartComponentsPxChartContainerAddPxNodeForm)
 
 const isBeingEdited = ref(false)
 const editForm = ref({
   name: props.data.name,
 })
-
-const pxChart = ref<PxChart | null>(null)
 
 const cardRef = useTemplateRef('cardRef')
 let observer: ResizeObserver
@@ -30,7 +32,6 @@ const cardWidth = ref(0)
 const cardHeight = ref(0)
 
 onMounted(() => {
-  loadContent()
   listenToResizing()
 })
 
@@ -39,14 +40,6 @@ onBeforeUnmount(() => {
     observer.unobserve(cardRef.value)
   }
 })
-
-async function loadContent() {
-  if (!props.data || !props.data.content_id) {
-    return
-  }
-
-  pxChart.value = await getPxChart(props.data.content_id!)
-}
 
 async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: ResizeParams }) {
   await updatePxChartContainer(props.id, {
@@ -73,12 +66,16 @@ function cancelEdit() {
   editForm.value.name = props.data.name
 }
 
-async function removePxChart() {
-  emit('removePxChart', props.id)
-}
-
 async function emitDelete() {
   emit('delete', props.id)
+}
+
+async function handleAddPxNode() {
+  const nodeId = await modalAddPxNode.open().result
+
+  if (!nodeId) return
+
+  emit('addPxNode', props.id, nodeId)
 }
 
 function listenToResizing() {
@@ -104,14 +101,13 @@ function listenToResizing() {
       </template>
 
       <template #default>
-        <div v-if="pxChart">
-          <PxGraphCard :px-chart="pxChart" :visualization-style="'preview'" />
+        <div class="flex flex-wrap justify-end gap-2">
+          <UButton color="primary" variant="soft" @click="handleAddPxNode">Add Px Node</UButton>
         </div>
       </template>
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="primary" variant="soft" @click="removePxChart()">Remove Px Chart</UButton>
           <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>

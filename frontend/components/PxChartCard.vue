@@ -57,14 +57,14 @@ async function handleUpdate(updatedPxChart: Partial<PxChart>) {
   </div>
   <div v-else-if="chartLoading || !fetchedChart">Loading Px Chart {{ pxChart.id }}</div>
   <div v-else-if="fetchedChart">
-    <PxGraphCardPreview
+    <PxChartCardPreview
       v-if="visualizationStyle === 'preview'"
       :chart="fetchedChart"
       @edit="emitEdit"
       @update="handleUpdate"
       @delete="handleDelete"
     />
-    <PxGraphCardDetailed
+    <PxChartCardDetailed
       v-else-if="visualizationStyle === 'detailed'"
       :chart="fetchedChart"
       @edit="emitEdit"

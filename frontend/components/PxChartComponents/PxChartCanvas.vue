@@ -9,9 +9,9 @@ import {
   type NodeChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import PxGraphContainer from '~/components/PxGraphComponents/PxGraphContainer.vue'
-import PxGraphEdge from '~/components/PxGraphComponents/PxGraphEdge.vue'
-import PxGraphContainerNode from '~/components/PxGraphComponents/PxGraphContainerNode.vue'
+import PxChartContainer from '~/components/PxChartComponents/PxChartContainer.vue'
+import PxChartEdge from '~/components/PxChartComponents/PxChartEdge.vue'
+import PxChartContainerNode from '~/components/PxChartComponents/PxChartContainerNode.vue'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -37,7 +37,7 @@ const {
 } = usePxChartsCanvasApi(chartId)
 
 const edgeTypes = {
-  pxGraph: markRaw(PxGraphEdge),
+  pxGraph: markRaw(PxChartEdge),
 }
 
 onMounted(() => {
@@ -157,7 +157,7 @@ async function onContextMenu(mouseEvent: MouseEvent) {
     <Background />
 
     <template #node-pxEmpty="customNodeProps">
-      <PxGraphContainer
+      <PxChartContainer
         v-bind="customNodeProps"
         @delete="handleDeletePxGraphContainer"
         @add-px-node="handleAddPxNode"
@@ -166,7 +166,7 @@ async function onContextMenu(mouseEvent: MouseEvent) {
     </template>
 
     <template #node-pxNode="customNodeProps">
-      <PxGraphContainerNode
+      <PxChartContainerNode
         v-bind="customNodeProps"
         @remove-px-node="handleDeletePxNode"
         @delete="handleDeletePxGraphContainer"

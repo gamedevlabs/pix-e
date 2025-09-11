@@ -40,7 +40,12 @@ function emitDelete() {
       </h2>
       <UTextarea v-else v-model="editForm.name" />
     </template>
-    Type: {{ definition.type }}
+
+    <template #default>
+      <h2 class="font-semibold mb-2">Type</h2>
+      <p>{{ definition.type }}</p>
+    </template>
+
     <template #footer>
       <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
         <UButton color="secondary" variant="soft" @click="startEdit">Rename</UButton>
