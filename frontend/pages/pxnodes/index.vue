@@ -54,7 +54,7 @@ async function handleForeignAddComponent() {
     </UForm>
 
     <!-- Cards Section -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
       <PxNodeCard
         v-for="node in pxNodes"
         :key="node.id"
