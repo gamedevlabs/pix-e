@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import * as z from 'zod'
-// import type { FormSubmitEvent } from '@nuxt/ui'
-import { usePxExport } from '~/composables/usePxExport'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
-const { exportPxData, importPxData } = usePxExport()
-const { downloadJson } = useDownloadJson()
+const { fetchAll: fetchPxComponents, items: pxComponents } = usePxComponents()
 
 definePageMeta({
   middleware: 'authentication',
@@ -41,25 +39,30 @@ const state = reactive<Partial<schema>>({
   file: undefined,
 })
 
-// event: FormSubmitEvent<schema>
-async function onSubmit() {
-  if (!state.file) return
-
-  const file = state.file
-  const text = await file.text()
-  const json = JSON.parse(text)
-
-  console.log(json)
-
-  await importPxData(json)
+async function onSubmit(event: FormSubmitEvent<schema>) {
+  console.log(event.data)
 }
 
 async function onClickExportCurrentData() {
-  const pxdata = await exportPxData()
+  const link =
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Vittala_temple_complex_Rath_MS.jpg/1024px-Vittala_temple_complex_Rath_MS.jpg'
+  const fileName = 'file.jpg' // or any name with actual file extension
 
-  if (!pxdata) return
+  await fetchPxComponents()
 
-  downloadJson(pxdata)
+  // without typescript
+  // const { data } = await useFetch(link, { method: 'get', body: null, responseType: 'blob' })
+
+  if (pxComponents) {
+    const fileURL = '123123'
+    const a = document.createElement('a')
+    a.href = fileURL
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(fileURL) // Clean up
+  }
 }
 </script>
 
@@ -79,7 +82,7 @@ async function onClickExportCurrentData() {
             <NuxtLink to="/pxcharts"> Charts </NuxtLink>
           </h2>
         </template>
-        <p>Use Charts to plan PX for a longer period of playtime using Nodes.</p>
+        <p>Charts contain multiple nodes and model nodes in a graph structure.</p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -87,7 +90,10 @@ async function onClickExportCurrentData() {
             <NuxtLink to="/pxnodes"> Nodes </NuxtLink>
           </h2>
         </template>
-        <p>Describe your planned PX and formalize it using your Components.</p>
+        <p>
+          A Px Node provides formal information about what the player should experience during that
+          part of gameplay.
+        </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -95,7 +101,10 @@ async function onClickExportCurrentData() {
             <NuxtLink to="/pxcomponents"> Components </NuxtLink>
           </h2>
         </template>
-        <p>Use Components to hold values and describe the planned PX for a node.</p>
+        <p>
+          You can attach components to nodes based on component definitions and assign values to
+          them.
+        </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -104,16 +113,10 @@ async function onClickExportCurrentData() {
           </h2>
         </template>
         <p>
-          Component definitions allow you to introduce new values that influence PX and use them.
+          Component definitions allow you to create definitions. Based on these definitions, you can
+          add components to nodes and specify values.
         </p>
       </UCard>
-    </section>
-
-    <section class="text-center">
-      <h1 class="text-4xl font-bold mb-4">Import/Export Player Experience data</h1>
-      <p class="text-gray-500 dark:text-gray-400 mb-6">
-        Using JSON files, you can import and export your PX data.
-      </p>
     </section>
 
     <section class="center">
@@ -125,16 +128,14 @@ async function onClickExportCurrentData() {
             label="Import PX data here"
             :dropzone="true"
             description="JSON File (Max. 8MB)"
+            class="w-96 min-h-48"
           />
         </UFormField>
 
         <UButton type="submit" color="primary" label="Submit" />
       </UForm>
-
-      <br />
-
-      <UButton @click="onClickExportCurrentData"> Export your current data as a JSON. </UButton>
     </section>
+    <UButton @click="onClickExportCurrentData"> Export your current data as a JSON. </UButton>
   </UContainer>
 </template>
 
