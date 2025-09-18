@@ -24,4 +24,5 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("", include("pxnodes.urls")),
     path("api/", include("pxcharts.urls")),
+    path("api/", include("pximportexport.urls")),
 ]
