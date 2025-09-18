@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import * as z from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
+// import type { FormSubmitEvent } from '@nuxt/ui'
+import { usePxExport } from '~/composables/usePxExport'
 
-const { fetchAll: fetchPxComponents, items: pxComponents } = usePxComponents()
+const { exportPxData, importPxData } = usePxExport()
+const { downloadJson } = useDownloadJson()
 
 definePageMeta({
   middleware: 'authentication',
@@ -39,30 +41,25 @@ const state = reactive<Partial<schema>>({
   file: undefined,
 })
 
-async function onSubmit(event: FormSubmitEvent<schema>) {
-  console.log(event.data)
+// event: FormSubmitEvent<schema>
+async function onSubmit() {
+  if (!state.file) return
+
+  const file = state.file
+  const text = await file.text()
+  const json = JSON.parse(text)
+
+  console.log(json)
+
+  await importPxData(json)
 }
 
 async function onClickExportCurrentData() {
-  const link =
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Vittala_temple_complex_Rath_MS.jpg/1024px-Vittala_temple_complex_Rath_MS.jpg'
-  const fileName = 'file.jpg' // or any name with actual file extension
+  const pxdata = await exportPxData()
 
-  await fetchPxComponents()
+  if (!pxdata) return
 
-  // without typescript
-  // const { data } = await useFetch(link, { method: 'get', body: null, responseType: 'blob' })
-
-  if (pxComponents) {
-    const fileURL = '123123'
-    const a = document.createElement('a')
-    a.href = fileURL
-    a.download = fileName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(fileURL) // Clean up
-  }
+  downloadJson(pxdata)
 }
 </script>
 
