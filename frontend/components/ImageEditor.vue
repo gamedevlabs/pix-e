@@ -182,6 +182,9 @@
 </template>
 
 <script setup lang="ts">
+import type { MoodboardImage } from '~/composables/useMoodboards'
+import type { ImageMetadata } from '~/types/moodboard'
+
 interface ImageEditorProps {
   imageId: string
   moodboardId: string
@@ -209,7 +212,7 @@ const props = defineProps<ImageEditorProps>()
 
 const emit = defineEmits<{
   close: []
-  imageEdited: [editedImage: any]
+  imageEdited: [editedImage: MoodboardImage]
 }>()
 
 // Get runtime config
@@ -220,7 +223,7 @@ const isOpen = ref(true)
 const previewUrl = ref<string | null>(null)
 const previewLoading = ref(false)
 const applying = ref(false)
-const imageInfo = ref<any>(null)
+const imageInfo = ref<ImageMetadata | null>(null)
 
 // Default edit values
 const defaultEdits: ImageEdit = {
@@ -270,23 +273,24 @@ async function previewEdits() {
       body: { edits: edits.value },
       credentials: 'include',
       headers: useRequestHeaders(['cookie'])
-    }) as { preview: string; image_info: any }
+    }) as { preview: string; image_info: ImageMetadata }
     
     if (response.preview) {
       previewUrl.value = response.preview
       imageInfo.value = response.image_info
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // More detailed error handling
     let errorMessage = 'Could not generate preview. Please try again.'
-    if (error?.statusCode === 401) {
+    const err = error as { statusCode?: number; data?: { error?: string } }
+    if (err?.statusCode === 401) {
       errorMessage = 'Authentication required. Please log in.'
-    } else if (error?.statusCode === 403) {
+    } else if (err?.statusCode === 403) {
       errorMessage = 'You do not have permission to edit this image.'
-    } else if (error?.statusCode === 404) {
+    } else if (err?.statusCode === 404) {
       errorMessage = 'Image not found.'
-    } else if (error?.data?.error) {
-      errorMessage = error.data.error
+    } else if (err?.data?.error) {
+      errorMessage = err.data.error
     }
     
     useToast().add({
@@ -310,12 +314,12 @@ async function applyEdits() {
       body: { edits: edits.value },
       credentials: 'include',
       headers: useRequestHeaders(['cookie'])
-    }) as { edited_image: any; message: string }
+    }) as { edited_image: MoodboardImage; message: string }
     
     // Emit the edited image (toast will be shown by parent component)
     emit('imageEdited', response.edited_image)
     closeEditor()
-  } catch (error) {
+  } catch {
     useToast().add({
       title: 'Edit Failed',
       description: 'Could not apply changes. Please try again.',
@@ -370,14 +374,14 @@ function closeEditor() {
   emit('close')
 }
 
-function onImageError(event: Event) {
+function onImageError(_event: Event) {
   // Fall back to original image if preview fails
   if (previewUrl.value) {
     previewUrl.value = null
   }
 }
 
-function onImageLoad(event: Event) {
+function onImageLoad(_event: Event) {
   // Image loaded successfully
 }
 

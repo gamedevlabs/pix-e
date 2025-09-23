@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import type { MoodboardImage } from '~/composables/useMoodboards'
 
 interface Props {
@@ -365,8 +365,6 @@ function handleRotationEnd() {
     
 
     emit('update', updatedImage)
-  } else {
-
   }
 }
 

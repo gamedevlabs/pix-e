@@ -13,7 +13,7 @@ export function useUsers() {
         headers: useRequestHeaders(['cookie']),
       })
       
-      return (response as any).users || []
+      return (response as { users: User[] }).users || []
     } catch (error) {
       console.error('❌ Error fetching users:', error)
       throw error

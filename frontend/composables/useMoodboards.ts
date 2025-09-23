@@ -808,7 +808,7 @@ export const useMoodboards = () => {
     })
   }
 
-  const exportCanvas = async (moodboardId: string, format: 'png' | 'jpg' | 'pdf' | 'svg', options: any = {}) => {
+  const exportCanvas = async (moodboardId: string, format: 'png' | 'jpg' | 'pdf' | 'svg', options: Record<string, unknown> = {}) => {
     return await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/canvas/${moodboardId}/export/`, {
         method: 'POST',

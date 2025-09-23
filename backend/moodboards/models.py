@@ -109,37 +109,26 @@ class Moodboard(models.Model):
         null=True,
         help_text="Saved color palette as JSON array of hex colors",
     )
-    
+
     # Canvas settings (NEW)
     canvas_width = models.PositiveIntegerField(
-        default=1920,
-        help_text="Canvas width in pixels"
+        default=1920, help_text="Canvas width in pixels"
     )
     canvas_height = models.PositiveIntegerField(
-        default=1080,
-        help_text="Canvas height in pixels"
+        default=1080, help_text="Canvas height in pixels"
     )
     canvas_background_color = models.CharField(
-        max_length=7,
-        default='#FFFFFF',
-        help_text="Canvas background color (hex)"
+        max_length=7, default="#FFFFFF", help_text="Canvas background color (hex)"
     )
     canvas_background_image = models.CharField(
-        max_length=1000,
-        blank=True,
-        help_text="Optional background image URL"
+        max_length=1000, blank=True, help_text="Optional background image URL"
     )
     grid_enabled = models.BooleanField(
-        default=True,
-        help_text="Show grid lines for alignment"
+        default=True, help_text="Show grid lines for alignment"
     )
-    grid_size = models.PositiveIntegerField(
-        default=20,
-        help_text="Grid size in pixels"
-    )
+    grid_size = models.PositiveIntegerField(default=20, help_text="Grid size in pixels")
     snap_to_grid = models.BooleanField(
-        default=True,
-        help_text="Snap elements to grid when dragging"
+        default=True, help_text="Snap elements to grid when dragging"
     )
 
     # Sharing and permissions
@@ -488,7 +477,7 @@ class MoodboardImage(models.Model):
     order_index = models.PositiveIntegerField(
         default=0, help_text="Order position in the moodboard"
     )
-    
+
     # Canvas positioning and layout (NEW)
     x_position = models.FloatField(
         default=0, help_text="X coordinate on canvas (percentage of canvas width)"
@@ -502,15 +491,11 @@ class MoodboardImage(models.Model):
     canvas_height = models.FloatField(
         default=200, help_text="Height of image on canvas (pixels)"
     )
-    rotation = models.FloatField(
-        default=0, help_text="Rotation angle in degrees"
-    )
+    rotation = models.FloatField(default=0, help_text="Rotation angle in degrees")
     z_index = models.PositiveIntegerField(
         default=1, help_text="Layer order (higher values appear on top)"
     )
-    opacity = models.FloatField(
-        default=1.0, help_text="Opacity level (0.0 to 1.0)"
-    )
+    opacity = models.FloatField(default=1.0, help_text="Opacity level (0.0 to 1.0)")
 
     # Technical metadata
     width = models.PositiveIntegerField(
@@ -712,43 +697,43 @@ class MoodboardImage(models.Model):
 class MoodboardTextElement(models.Model):
     """
     Text elements for moodboards - titles, labels, notes, quotes
-    
+
     Allows designers to add typography and textual content to their moodboards
     with full positioning and styling control.
     """
-    
+
     FONT_FAMILY_CHOICES = [
-        ('Inter', 'Inter'),
-        ('Helvetica', 'Helvetica'),
-        ('Arial', 'Arial'),
-        ('Times New Roman', 'Times New Roman'),
-        ('Georgia', 'Georgia'),
-        ('Courier New', 'Courier New'),
-        ('Roboto', 'Roboto'),
-        ('Open Sans', 'Open Sans'),
-        ('Lato', 'Lato'),
-        ('Montserrat', 'Montserrat'),
+        ("Inter", "Inter"),
+        ("Helvetica", "Helvetica"),
+        ("Arial", "Arial"),
+        ("Times New Roman", "Times New Roman"),
+        ("Georgia", "Georgia"),
+        ("Courier New", "Courier New"),
+        ("Roboto", "Roboto"),
+        ("Open Sans", "Open Sans"),
+        ("Lato", "Lato"),
+        ("Montserrat", "Montserrat"),
     ]
-    
+
     FONT_WEIGHT_CHOICES = [
-        (100, 'Thin'),
-        (200, 'Extra Light'),
-        (300, 'Light'),
-        (400, 'Regular'),
-        (500, 'Medium'),
-        (600, 'Semi Bold'),
-        (700, 'Bold'),
-        (800, 'Extra Bold'),
-        (900, 'Black'),
+        (100, "Thin"),
+        (200, "Extra Light"),
+        (300, "Light"),
+        (400, "Regular"),
+        (500, "Medium"),
+        (600, "Semi Bold"),
+        (700, "Bold"),
+        (800, "Extra Bold"),
+        (900, "Black"),
     ]
-    
+
     TEXT_ALIGN_CHOICES = [
-        ('left', 'Left'),
-        ('center', 'Center'),
-        ('right', 'Right'),
-        ('justify', 'Justify'),
+        ("left", "Left"),
+        ("center", "Center"),
+        ("right", "Right"),
+        ("justify", "Justify"),
     ]
-    
+
     # Primary fields
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     moodboard = models.ForeignKey(
@@ -757,13 +742,10 @@ class MoodboardTextElement(models.Model):
         related_name="text_elements",
         help_text="Parent moodboard",
     )
-    
+
     # Content
-    content = models.TextField(
-        max_length=1000,
-        help_text="Text content"
-    )
-    
+    content = models.TextField(max_length=1000, help_text="Text content")
+
     # Canvas positioning
     x_position = models.FloatField(
         default=0, help_text="X coordinate on canvas (percentage of canvas width)"
@@ -771,95 +753,68 @@ class MoodboardTextElement(models.Model):
     y_position = models.FloatField(
         default=0, help_text="Y coordinate on canvas (percentage of canvas height)"
     )
-    width = models.FloatField(
-        default=200, help_text="Width of text box (pixels)"
-    )
-    height = models.FloatField(
-        default=50, help_text="Height of text box (pixels)"
-    )
-    rotation = models.FloatField(
-        default=0, help_text="Rotation angle in degrees"
-    )
+    width = models.FloatField(default=200, help_text="Width of text box (pixels)")
+    height = models.FloatField(default=50, help_text="Height of text box (pixels)")
+    rotation = models.FloatField(default=0, help_text="Rotation angle in degrees")
     z_index = models.PositiveIntegerField(
         default=1, help_text="Layer order (higher values appear on top)"
     )
-    opacity = models.FloatField(
-        default=1.0, help_text="Opacity level (0.0 to 1.0)"
-    )
-    
+    opacity = models.FloatField(default=1.0, help_text="Opacity level (0.0 to 1.0)")
+
     # Typography
     font_family = models.CharField(
         max_length=50,
         choices=FONT_FAMILY_CHOICES,
-        default='Inter',
-        help_text="Font family"
+        default="Inter",
+        help_text="Font family",
     )
-    font_size = models.PositiveIntegerField(
-        default=16,
-        help_text="Font size in pixels"
-    )
+    font_size = models.PositiveIntegerField(default=16, help_text="Font size in pixels")
     font_weight = models.PositiveIntegerField(
-        choices=FONT_WEIGHT_CHOICES,
-        default=400,
-        help_text="Font weight"
+        choices=FONT_WEIGHT_CHOICES, default=400, help_text="Font weight"
     )
     text_align = models.CharField(
         max_length=10,
         choices=TEXT_ALIGN_CHOICES,
-        default='left',
-        help_text="Text alignment"
+        default="left",
+        help_text="Text alignment",
     )
-    line_height = models.FloatField(
-        default=1.4,
-        help_text="Line height multiplier"
-    )
-    letter_spacing = models.FloatField(
-        default=0,
-        help_text="Letter spacing in pixels"
-    )
-    
+    line_height = models.FloatField(default=1.4, help_text="Line height multiplier")
+    letter_spacing = models.FloatField(default=0, help_text="Letter spacing in pixels")
+
     # Colors
     text_color = models.CharField(
-        max_length=7,
-        default='#000000',
-        help_text="Text color (hex)"
+        max_length=7, default="#000000", help_text="Text color (hex)"
     )
     background_color = models.CharField(
-        max_length=7,
-        blank=True,
-        help_text="Background color (hex, optional)"
+        max_length=7, blank=True, help_text="Background color (hex, optional)"
     )
     border_color = models.CharField(
-        max_length=7,
-        blank=True,
-        help_text="Border color (hex, optional)"
+        max_length=7, blank=True, help_text="Border color (hex, optional)"
     )
     border_width = models.PositiveIntegerField(
-        default=0,
-        help_text="Border width in pixels"
+        default=0, help_text="Border width in pixels"
     )
-    
+
     # State
     is_selected = models.BooleanField(
         default=False,
-        help_text="Whether text element is selected for the final moodboard"
+        help_text="Whether text element is selected for the final moodboard",
     )
     order_index = models.PositiveIntegerField(
-        default=0,
-        help_text="Order position in the moodboard"
+        default=0, help_text="Order position in the moodboard"
     )
-    
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ["order_index", "created_at"]
         indexes = [
             models.Index(fields=["moodboard", "is_selected"]),
             models.Index(fields=["moodboard", "z_index"]),
         ]
-    
+
     def __str__(self):
         content_preview = (
             self.content[:30] + "..." if len(self.content) > 30 else self.content

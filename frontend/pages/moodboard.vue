@@ -199,11 +199,11 @@
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pen:</span>
                 <UButtonGroup>
                   <UButton 
+                    class="pen-btn-pen"
                     :variant="penType === 'pen' ? 'solid' : 'outline'"
                     color="primary"
                     size="xs"
                     @click="setPenType('pen')"
-                    class="pen-btn-pen"
                   >
                     ✏️ Pen
                   </UButton>
@@ -211,8 +211,8 @@
                     :variant="penType === 'marker' ? 'solid' : 'outline'"
                     color="primary"
                     size="xs"
-                    @click="setPenType('marker')"
                     class="pen-btn-marker"
+                    @click="setPenType('marker')"
                   >
                     🖍️ Marker
                   </UButton>
@@ -220,8 +220,8 @@
                     :variant="penType === 'pencil' ? 'solid' : 'outline'"
                     color="primary"
                     size="xs"
-                    @click="setPenType('pencil')"
                     class="pen-btn-pencil"
+                    @click="setPenType('pencil')"
                   >
                     ✏️ Pencil
                   </UButton>
@@ -229,8 +229,8 @@
                     :variant="penType === 'highlighter' ? 'solid' : 'outline'"
                     color="warning"
                     size="xs"
-                    @click="setPenType('highlighter')"
                     class="pen-btn-highlighter"
+                    @click="setPenType('highlighter')"
                   >
                     🖍️ Highlight
                   </UButton>
@@ -238,8 +238,8 @@
                     :variant="penType === 'spray' ? 'solid' : 'outline'"
                     color="secondary"
                     size="xs"
-                    @click="setPenType('spray')"
                     class="pen-btn-spray"
+                    @click="setPenType('spray')"
                   >
                     🎨 Spray
                   </UButton>
@@ -247,8 +247,8 @@
                     :variant="penType === 'watercolor' ? 'solid' : 'outline'"
                     color="info"
                     size="xs"
-                    @click="setPenType('watercolor')"
                     class="pen-btn-watercolor"
+                    @click="setPenType('watercolor')"
                   >
                     🎨 Watercolor
                   </UButton>
@@ -696,7 +696,7 @@ const handleUpdateTextElement = async (updatedText: MoodboardTextElement) => {
       textElements.value[index] = updatedText
     }
 
-  } catch (error) {
+  } catch {
 
     // Reload text elements to sync state
     await loadTextElements(currentMoodboard.value.id)
@@ -714,7 +714,7 @@ const handleDeleteTextElement = async (elementId: string) => {
     // Remove from local state
     textElements.value = textElements.value.filter((te: MoodboardTextElement) => te.id !== elementId)
 
-  } catch (error) {
+  } catch {
 
     // Reload text elements to sync state
     await loadTextElements(currentMoodboard.value.id)
@@ -908,7 +908,7 @@ const saveDrawingAsImage = async () => {
     // Add to local moodboard
     moodboard.value.push(response as MoodboardImage)
     
-  } catch (error) {
+  } catch {
     // Silently handle drawing save errors in production
   }
 }
@@ -969,7 +969,7 @@ const loadDrawingFromImage = async () => {
       drawingImageElement.style.display = 'none'
     }
     
-  } catch (error) {
+  } catch {
     // Silently handle drawing load errors in production
   }
 }
@@ -990,7 +990,7 @@ const handleDeleteElement = async (elementId: string) => {
 const loadTextElements = async (moodboardId: string) => {
   try {
 
-    const response = await getTextElements(moodboardId) as any
+    const response = await getTextElements(moodboardId) as { results?: MoodboardTextElement[] }
     if (response?.results) {
       textElements.value = response.results
 
@@ -998,7 +998,7 @@ const loadTextElements = async (moodboardId: string) => {
       textElements.value = []
 
     }
-  } catch (error) {
+  } catch {
 
     textElements.value = [] // Clear state on error
   }
@@ -1133,15 +1133,15 @@ onUnmounted(async () => {
   if (sessionId.value) {
     try {
       await endAISession(sessionId.value || '', [])
-    } catch (error) {
-
+    } catch {
+      // Silently handle AI session end errors
     }
   }
 })
 
 // Watch for route changes to handle switching between different moodboards
 const route = useRoute()
-watch(() => route.query.id, async (newId: any, oldId: any) => {
+watch(() => route.query.id, async (newId: unknown, oldId: unknown) => {
   if (newId !== oldId) {
     if (newId) {
       sessionId.value = newId as string
@@ -1199,14 +1199,14 @@ async function removeFromMoodboard(imageId: string) {
   // Find the image to remove from moodboard
   const imageToRemove = moodboard.value.find((img: MoodboardImage) => img.id === imageId)
   if (imageToRemove) {
-    let isExistingImage = originalMoodboardImageIds.value.includes(imageId)
+    const isExistingImage = originalMoodboardImageIds.value.includes(imageId)
     
     // If this is an existing image in the database, delete it via API
     if (isExistingImage && sessionId.value) {
       try {
         await removeImageFromMoodboard(sessionId.value, imageId)
         // Note: composable already shows success toast, so we don't show one here
-      } catch (error) {
+      } catch {
         showToast('Failed to remove image', 'error')
         return // Don't remove from UI if API call failed
       }
@@ -1497,8 +1497,8 @@ async function fetchMoodboard() {
       
       images.value = filteredImages
     }
-  } catch (error) {
-
+  } catch {
+    // Silently handle image load errors
   }
 }
 
@@ -1524,7 +1524,7 @@ async function saveMoodboard() {
       ...originalMoodboardImageIds.value.filter((id: string) => !removedImageIds.value.includes(id)),
       ...selectedImageIds.value
     ]
-    const allSelectedImageIds = [...new Set(finalImageIds)]
+    const _allSelectedImageIds = [...new Set(finalImageIds)]
     
     const hasExistingMoodboard = !!moodboardName.value
     const isEditingExisting = hasExistingMoodboard && isOwner.value
@@ -1554,8 +1554,8 @@ async function saveMoodboard() {
             opacity: image.opacity,
             rotation: image.rotation || 0
           })
-        } catch (error) {
-
+        } catch {
+          // Silently handle individual image save errors
         }
       }
       
@@ -1569,8 +1569,8 @@ async function saveMoodboard() {
             // Create new text element (shouldn't happen, but just in case)
             await createTextElement(sessionId.value || '', textElement)
           }
-        } catch (error) {
-
+        } catch {
+          // Silently handle individual text element save errors
         }
       }
       
@@ -1613,8 +1613,8 @@ async function saveMoodboard() {
               order_index: 0,
               created_at: new Date().toISOString()
             })
-          } catch (error) {
-
+          } catch {
+            // Silently handle individual image creation errors
           }
         }
       }
@@ -1624,8 +1624,8 @@ async function saveMoodboard() {
         for (const textElement of textElements.value) {
           try {
             await createTextElement((res as Moodboard).id, textElement)
-          } catch (error) {
-
+          } catch {
+            // Silently handle individual text element creation errors
           }
         }
       }
@@ -1691,7 +1691,7 @@ const handleGenerateAISuggestions = () => {
       numSuggestions: 3
     })
   } else {
-
+    // Handle case when no prompt is provided
   }
 }
 

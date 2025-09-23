@@ -44,7 +44,7 @@ class MoodboardImageSerializer(serializers.ModelSerializer):
             "order_index",
             # Canvas positioning fields
             "x_position",
-            "y_position", 
+            "y_position",
             "canvas_width",
             "canvas_height",
             "rotation",
@@ -68,7 +68,7 @@ class MoodboardImageSerializer(serializers.ModelSerializer):
 
 class MoodboardImageCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating MoodboardImage with minimal required fields"""
-    
+
     image_file = serializers.ImageField(required=False, write_only=True)
 
     class Meta:
@@ -85,7 +85,7 @@ class MoodboardImageCreateSerializer(serializers.ModelSerializer):
             "is_selected",
             "order_index",
             "x_position",
-            "y_position", 
+            "y_position",
             "canvas_width",
             "canvas_height",
             "z_index",
@@ -98,26 +98,26 @@ class MoodboardImageCreateSerializer(serializers.ModelSerializer):
             "description": {"required": False},
             "tags": {"required": False},
         }
-    
+
     def create(self, validated_data):
-        image_file = validated_data.pop('image_file', None)
-        
+        image_file = validated_data.pop("image_file", None)
+
         if image_file:
             # Handle file upload
             import os
-            from django.conf import settings
-            from django.core.files.storage import default_storage
             import uuid
-            
+
+            from django.core.files.storage import default_storage
+
             # Generate unique filename
             ext = os.path.splitext(image_file.name)[1]
             filename = f"moodboard_{uuid.uuid4()}{ext}"
-            
+
             # Save file
             file_path = default_storage.save(filename, image_file)
-            validated_data['image_url'] = f"/media/{file_path}"
-            validated_data['original_filename'] = image_file.name
-            
+            validated_data["image_url"] = f"/media/{file_path}"
+            validated_data["original_filename"] = image_file.name
+
         return super().create(validated_data)
 
 
@@ -225,7 +225,7 @@ class MoodboardSerializer(serializers.ModelSerializer):
             "color_palette",
             # Canvas settings
             "canvas_width",
-            "canvas_height", 
+            "canvas_height",
             "canvas_background_color",
             "canvas_background_image",
             "grid_enabled",

@@ -112,7 +112,7 @@ export interface MoodboardState {
 export interface PendingUpdate {
   id: string
   type: 'metadata' | 'image_selection' | 'image_order'
-  data: any
+  data: Record<string, unknown>
   timestamp: number
   retryCount: number
 }
@@ -121,7 +121,7 @@ export interface MoodboardError {
   code: string
   message: string
   recoverable: boolean
-  context?: Record<string, any>
+  context?: Record<string, unknown>
   timestamp: number
 }
 
@@ -151,7 +151,7 @@ export interface CollaborationEvent {
   type: 'image_added' | 'image_removed' | 'metadata_updated' | 'user_joined' | 'user_left'
   user_id: string
   user_name: string
-  data: any
+  data: Record<string, unknown>
   timestamp: number
 }
 
@@ -182,7 +182,7 @@ export interface APIError {
   code: string
   message: string
   field?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 }
 
 // Configuration interfaces

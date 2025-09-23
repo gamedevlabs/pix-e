@@ -84,38 +84,38 @@
         <h3>Layering</h3>
         <UButtonGroup>
           <UButton 
+            title="Bring to Front"
             icon="i-heroicons-arrow-up-20-solid"
             size="xs"
             :disabled="selectedElements.length !== 1 || !canBringToFront()"
             @click="bringToFront"
-            title="Bring to Front"
           >
             Front
           </UButton>
           <UButton 
+            title="Bring Forward"
             icon="i-heroicons-arrow-up-20-solid"
             size="xs"
             :disabled="selectedElements.length !== 1 || !canBringForward()"
             @click="bringForward"
-            title="Bring Forward"
           >
             Forward
           </UButton>
           <UButton 
+            title="Send Backward"
             icon="i-heroicons-arrow-down-20-solid"
             size="xs"
             :disabled="selectedElements.length !== 1 || !canSendBackward()"
             @click="sendBackward"
-            title="Send Backward"
           >
             Backward
           </UButton>
           <UButton 
+            title="Send to Back"
             icon="i-heroicons-arrow-down-20-solid"
             size="xs"
             :disabled="selectedElements.length !== 1 || !canSendToBack()"
             @click="sendToBack"
-            title="Send to Back"
           >
             Back
           </UButton>
@@ -524,14 +524,8 @@ import { useRuntimeConfig } from '#imports'
 import type { MoodboardImage, MoodboardTextElement, Moodboard } from '~/composables/useMoodboards'
 import { useMoodboards } from '~/composables/useMoodboards'
 
-interface DrawingLayer {
-  id: string
-  name: string
-  canvas: HTMLCanvasElement
-  visible: boolean
-  opacity: number
-  blendMode: string
-}
+// Type alias for canvas elements that can be either images or text
+type CanvasElement = MoodboardImage | MoodboardTextElement
 
 interface Props {
   moodboard: Moodboard
@@ -605,7 +599,7 @@ const showImageUpload = ref(false)
 const imageUrl = ref('')
 
 // Watch for changes to showImageUpload
-watch(showImageUpload, (newValue: boolean) => {
+watch(showImageUpload, (_newValue: boolean) => {
   
 })
 
@@ -645,10 +639,7 @@ const {
   updateImagePosition: apiUpdateImagePosition,
   createTextElement: apiCreateTextElement,
   updateTextElement: apiUpdateTextElement,
-  deleteTextElement: apiDeleteTextElement,
-  exportCanvas: apiExportCanvas,
-  autoLayoutCanvas: apiAutoLayoutCanvas,
-  importImagesToCanvas: apiImportImagesToCanvas
+  deleteTextElement: apiDeleteTextElement
 } = useMoodboards()
 
 // Canvas elements
@@ -690,14 +681,6 @@ const selectedElementData = computed(() => {
   return canvasImages.value.find((img: MoodboardImage) => img.id === selectedId) || 
          canvasTextElements.value.find((text: MoodboardTextElement) => text.id === selectedId)
 })
-
-// Export options
-const exportOptions = [
-  { label: 'PNG', click: () => exportCanvas('png') },
-  { label: 'JPG', click: () => exportCanvas('jpg') },
-  { label: 'PDF', click: () => exportCanvas('pdf') },
-  { label: 'SVG', click: () => exportCanvas('svg') }
-]
 
 // Font options
 const fontOptions = [
@@ -857,7 +840,13 @@ function handleDrop(event: DragEvent) {
   event.preventDefault()
   const files = event.dataTransfer?.files
   if (files && files.length > 0) {
-    handleImageUpload({ target: { files } } as any)
+    // Create a proper event-like object for the file upload handler
+    const fileUploadEvent = new Event('change')
+    Object.defineProperty(fileUploadEvent, 'target', {
+      value: { files },
+      writable: false
+    })
+    handleImageUpload(fileUploadEvent)
   }
 }
 
@@ -888,7 +877,7 @@ async function addTextElement(event: MouseEvent) {
     // Only emit if API call was successful and return the created element with proper ID
     emit('addTextElement', createdTextElement)
     canvasMode.value = 'select'
-  } catch (error) {
+  } catch {
     // Don't emit on error - this prevents adding invalid elements to frontend state
   }
 }
@@ -897,7 +886,7 @@ async function updateImagePosition(updatedImage: MoodboardImage) {
   try {
     await apiUpdateImagePosition(props.moodboard.id, updatedImage.id, updatedImage)
     emit('image-updated', updatedImage)
-  } catch (error) {
+  } catch {
     // Silently handle image update errors in production
   }
 }
@@ -906,7 +895,7 @@ async function updateTextElement(updatedText: MoodboardTextElement) {
   try {
     await apiUpdateTextElement(props.moodboard.id, updatedText.id, updatedText)
     emit('update-text-element', updatedText)
-  } catch (error) {
+  } catch {
     // Silently handle text element update errors in production
   }
 }
@@ -929,18 +918,19 @@ function applyTextStyle(styleName: string) {
     if (preset) {
       // Apply all properties from the preset
       Object.keys(preset).forEach(key => {
-        (textElement as any)[key] = (preset as any)[key]
+        const typedKey = key as keyof typeof preset;
+        (textElement as unknown as Record<string, unknown>)[key] = preset[typedKey]
       })
       updateSelectedElement()
     }
   }
 }
 
-function isTextElement(element: any): element is MoodboardTextElement {
+function isTextElement(element: CanvasElement): element is MoodboardTextElement {
   return element && 'content' in element
 }
 
-function getElementWidth(element: any): number {
+function getElementWidth(element: CanvasElement): number {
   if (isTextElement(element)) {
     return element.width
   } else {
@@ -948,7 +938,7 @@ function getElementWidth(element: any): number {
   }
 }
 
-function getElementHeight(element: any): number {
+function getElementHeight(element: CanvasElement): number {
   if (isTextElement(element)) {
     return element.height
   } else {
@@ -980,10 +970,10 @@ function updateElementHeight(value: number) {
   }
 }
 
-function updateTextProperty(property: string, value: any) {
+function updateTextProperty(property: keyof MoodboardTextElement, value: unknown) {
   if (selectedElementData.value && isTextElement(selectedElementData.value)) {
     const textElement = selectedElementData.value as MoodboardTextElement;
-    (textElement as any)[property] = value
+    (textElement as unknown as Record<string, unknown>)[property] = value
     updateSelectedElement()
   }
 }
@@ -1004,7 +994,7 @@ async function deleteElement(elementId: string) {
     }
     
     selectedElements.value = selectedElements.value.filter((id: string) => id !== elementId)
-  } catch (error) {
+  } catch {
     // Silently handle element deletion errors in production
   }
 }
@@ -1047,7 +1037,7 @@ async function handleImageUpload(event: Event) {
 
       emit('addImage', response as MoodboardImage)
       closeImageModal()
-    } catch (error) {
+    } catch {
       // Silently handle file upload errors and close modal
       closeImageModal()
     }
@@ -1085,7 +1075,7 @@ async function addImageFromUrl() {
       
       emit('addImage', response as Partial<MoodboardImage>)
       closeImageModal()
-    } catch (error) {
+    } catch {
       // Silently handle URL import errors and close modal
       closeImageModal()
     }
@@ -1257,7 +1247,7 @@ function sendToBack() {
 async function exportCanvas(format: string) {
   try {
     await exportCanvasAsImage(format)
-  } catch (error) {
+  } catch {
     // Export failed silently
   }
 }
@@ -1349,7 +1339,7 @@ async function exportCanvasAsImage(format: string) {
           
           try {
             ctx.drawImage(image, x, y, width, height)
-          } catch (drawError) {
+          } catch {
             // Drawing failed silently
           }
           
@@ -1408,7 +1398,7 @@ async function exportCanvasAsImage(format: string) {
               
               try {
                 ctx.drawImage(proxyImage, x, y, width, height)
-              } catch (drawError) {
+              } catch {
                 // Drawing failed silently
               }
               
@@ -1424,7 +1414,7 @@ async function exportCanvasAsImage(format: string) {
             
             proxyImage.src = objectUrl
             
-          } catch (fetchError) {
+          } catch {
             drawPlaceholder()
           }
         }
@@ -1926,7 +1916,14 @@ function handleTouchStart(event: TouchEvent) {
   event.preventDefault()
   if (event.touches.length === 1) {
     const touch = event.touches[0]
-    startDrawing(touch as any)
+    // Convert touch to mouse-like event
+    const mouseEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as MouseEvent
+    startDrawing(mouseEvent)
   }
 }
 
@@ -1934,7 +1931,14 @@ function handleTouchMove(event: TouchEvent) {
   event.preventDefault()
   if (event.touches.length === 1) {
     const touch = event.touches[0]
-    draw(touch as any)
+    // Convert touch to mouse-like event
+    const mouseEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as MouseEvent
+    draw(mouseEvent)
   }
 }
 
@@ -1944,7 +1948,7 @@ function handleTouchEnd(event: TouchEvent) {
 }
 
 // Watch for undo/redo from parent component
-watch(() => props.historyStep, (newStep, oldStep) => {
+watch(() => props.historyStep, (newStep, _oldStep) => {
   if (!drawingCanvas.value || !props.drawingHistory) return
   
   const ctx = drawingCanvas.value.getContext('2d')

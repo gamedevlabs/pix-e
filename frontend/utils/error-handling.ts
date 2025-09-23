@@ -1,13 +1,13 @@
 // Production-ready error handling for moodboards
 
-import type { MoodboardError, APIError } from '~/types/moodboard'
+import type { MoodboardError, APIError as _APIError } from '~/types/moodboard'
 
 export class MoodboardException extends Error {
   constructor(
     message: string,
     public code: string,
     public recoverable: boolean = false,
-    public context?: Record<string, any>
+    public context?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'MoodboardException'
@@ -26,7 +26,7 @@ export class MoodboardException extends Error {
 
 // Specific error types
 export class NetworkError extends MoodboardException {
-  constructor(message: string, context?: Record<string, any>) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message, 'NETWORK_ERROR', true, context)
   }
 }
@@ -56,20 +56,30 @@ export class QuotaExceededError extends MoodboardException {
 }
 
 // Error handler utilities
-export const handleAPIError = (error: any): MoodboardException => {
+export const handleAPIError = (error: unknown): MoodboardException => {
+  const err = error as { 
+    code?: string; 
+    message?: string; 
+    statusCode?: number; 
+    data?: { error?: string };
+    response?: { status: number; data?: { message?: string; max_size?: number; limit?: number } };
+    name?: string;
+    toString?: () => string;
+  }
+  
   // Network errors
   if (!navigator.onLine) {
     return new NetworkError('No internet connection. Please check your network and try again.')
   }
 
-  if (error.code === 'NETWORK_ERR' || error.message === 'Network Error') {
+  if (err.code === 'NETWORK_ERR' || err.message === 'Network Error') {
     return new NetworkError('Network error occurred. Please try again.', { originalError: error })
   }
 
   // HTTP errors
-  if (error.response) {
-    const status = error.response.status
-    const data = error.response.data
+  if (err.response) {
+    const status = err.response.status
+    const data = err.response.data
 
     switch (status) {
       case 400:
@@ -96,20 +106,20 @@ export const handleAPIError = (error: any): MoodboardException => {
   }
 
   // Client-side errors
-  if (error.name === 'AbortError') {
+  if (err.name === 'AbortError') {
     return new MoodboardException('Operation was cancelled', 'CANCELLED', true)
   }
 
-  if (error.name === 'TimeoutError') {
+  if (err.name === 'TimeoutError') {
     return new NetworkError('Request timed out. Please try again.')
   }
 
   // Default fallback
   return new MoodboardException(
-    error.message || 'An unexpected error occurred',
+    err.message || 'An unexpected error occurred',
     'UNKNOWN_ERROR',
     false,
-    { originalError: error.toString() }
+    { originalError: err.toString?.() || String(error) }
   )
 }
 
@@ -164,8 +174,8 @@ export const recoveryStrategies = {
     // Implementation depends on your auth system
     try {
       const { $auth } = useNuxtApp()
-      if ($auth && typeof ($auth as any).refresh === 'function') {
-        await ($auth as any).refresh()
+      if ($auth && typeof ($auth as { refresh?: () => Promise<void> }).refresh === 'function') {
+        await ($auth as { refresh: () => Promise<void> }).refresh()
       }
     } catch (error) {
       console.warn('Failed to refresh auth:', error)
@@ -227,7 +237,7 @@ const getErrorTitle = (code: string): string => {
   return titles[code] || 'Error'
 }
 
-const getErrorActions = (error: MoodboardError) => {
+const _getErrorActions = (error: MoodboardError) => {
   const actions = []
 
   if (error.recoverable) {

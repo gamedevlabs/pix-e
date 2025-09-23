@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework import filters, permissions, status, viewsets, parsers
+from rest_framework import filters, parsers, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -919,121 +919,135 @@ class MoodboardImageViewSet(viewsets.ModelViewSet):
 
         return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, CanEditMoodboard])
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[permissions.IsAuthenticated, CanEditMoodboard],
+    )
     def edit_image(self, request, moodboard_pk=None, pk=None):
         """Apply editing operations to an image"""
         from .image_editor import apply_batch_edits
-        import json
-        
+
         try:
             # Get the image
             image = self.get_object()
-            
+
             # Validate edit parameters
-            edits = request.data.get('edits', {})
+            edits = request.data.get("edits", {})
             if not edits:
                 return Response(
-                    {"error": "No edits specified"}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "No edits specified"}, status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             # Apply edits to the image
             image_path = image.image_url
-            if image_path.startswith('/media/'):
+            if image_path.startswith("/media/"):
                 image_path = image_path[7:]  # Remove /media/ prefix
-            
+
             new_image_path, image_info = apply_batch_edits(image_path, edits)
-            
+
             # Update the existing image instead of creating a new one
-            image.image_url = f'/media/{new_image_path}'
-            image.title = f"{image.title} (Edited)" if image.title and not image.title.endswith("(Edited)") else image.title
-            image.width = image_info.get('width')
-            image.height = image_info.get('height')
-            image.format = image_info.get('format', 'JPEG').upper()
+            image.image_url = f"/media/{new_image_path}"
+            image.title = (
+                f"{image.title} (Edited)"
+                if image.title and not image.title.endswith("(Edited)")
+                else image.title
+            )
+            image.width = image_info.get("width")
+            image.height = image_info.get("height")
+            image.format = image_info.get("format", "JPEG").upper()
             image.save()
-            
+
             # Return the updated image
             serializer = self.get_serializer(image)
-            return Response({
-                "message": "Image edited successfully",
-                "edited_image": serializer.data
-            }, status=status.HTTP_200_OK)
-            
+            return Response(
+                {
+                    "message": "Image edited successfully",
+                    "edited_image": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
         except FileNotFoundError as e:
             return Response(
-                {"error": f"Image file not found: {str(e)}"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"Image file not found: {str(e)}"},
+                status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
             return Response(
-                {"error": f"Failed to edit image: {str(e)}"}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": f"Failed to edit image: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, CanViewMoodboard])
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[permissions.IsAuthenticated, CanViewMoodboard],
+    )
     def preview_edit(self, request, moodboard_pk=None, pk=None):
         """Preview image edits without saving"""
         from .image_editor import ImageEditor
-        
+
         try:
             # Get the image
             image = self.get_object()
-            
+
             # Validate edit parameters
-            edits = request.data.get('edits', {})
+            edits = request.data.get("edits", {})
             if not edits:
                 return Response(
-                    {"error": "No edits specified"}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "No edits specified"}, status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             # Apply edits to create preview
             image_path = image.image_url
-            if image_path.startswith('/media/'):
+            if image_path.startswith("/media/"):
                 image_path = image_path[7:]  # Remove /media/ prefix
-            
+
             editor = ImageEditor(image_path)
-            
+
             # Apply edits for preview in the correct order
             # 1. First apply transformations
-            if 'rotate' in edits and edits['rotate'] != 0:
-                editor.rotate(edits['rotate'])
-            if 'flip_horizontal' in edits and edits['flip_horizontal']:
+            if "rotate" in edits and edits["rotate"] != 0:
+                editor.rotate(edits["rotate"])
+            if "flip_horizontal" in edits and edits["flip_horizontal"]:
                 editor.flip_horizontal()
-            if 'flip_vertical' in edits and edits['flip_vertical']:
+            if "flip_vertical" in edits and edits["flip_vertical"]:
                 editor.flip_vertical()
-            
+
             # 2. Then apply adjustments
-            if 'brightness' in edits:
-                editor.adjust_brightness(edits['brightness'])
-            if 'contrast' in edits:
-                editor.adjust_contrast(edits['contrast'])
-            if 'saturation' in edits:
-                editor.adjust_saturation(edits['saturation'])
-                
+            if "brightness" in edits:
+                editor.adjust_brightness(edits["brightness"])
+            if "contrast" in edits:
+                editor.adjust_contrast(edits["contrast"])
+            if "saturation" in edits:
+                editor.adjust_saturation(edits["saturation"])
+
             # 3. Finally apply filters
-            if 'filters' in edits:
-                for filter_name, intensity in edits['filters'].items():
+            if "filters" in edits:
+                for filter_name, intensity in edits["filters"].items():
                     if intensity > 0:
                         editor.apply_filter(filter_name, intensity)
-            
+
             # Return base64 preview
             preview_base64 = editor.to_base64()
-            
-            return Response({
-                "preview": f"data:image/jpeg;base64,{preview_base64}",
-                "image_info": editor.get_image_info()
-            })
-            
+
+            return Response(
+                {
+                    "preview": f"data:image/jpeg;base64,{preview_base64}",
+                    "image_info": editor.get_image_info(),
+                }
+            )
+
         except FileNotFoundError as e:
             return Response(
-                {"error": f"Image file not found: {str(e)}"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"Image file not found: {str(e)}"},
+                status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
             return Response(
-                {"error": f"Failed to preview image: {str(e)}"}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": f"Failed to preview image: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
@@ -1110,7 +1124,9 @@ class MoodboardTextElementViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Get text elements for a specific moodboard"""
         moodboard_id = self.kwargs.get("moodboard_pk")
-        return MoodboardTextElement.objects.filter(moodboard_id=moodboard_id).select_related("moodboard")
+        return MoodboardTextElement.objects.filter(
+            moodboard_id=moodboard_id
+        ).select_related("moodboard")
 
     def get_permissions(self):
         """Override permissions based on action"""
@@ -1164,7 +1180,7 @@ class MoodboardTextElementViewSet(viewsets.ModelViewSet):
 
 class MoodboardCanvasViewSet(viewsets.ViewSet):
     """Canvas-specific operations like export, auto-layout, import"""
-    
+
     authentication_classes = [CsrfExemptSessionAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1186,47 +1202,54 @@ class MoodboardCanvasViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/export")
     def export_canvas(self, request, moodboard_id=None):
         """Export moodboard canvas as image or PDF"""
-        moodboard = self.get_moodboard(moodboard_id)
-        
         export_format = request.data.get("format", "png")
         resolution = request.data.get("resolution", "1920x1080")
-        include_background = request.data.get("include_background", True)
-        
+
         # In a real implementation, this would:
         # 1. Render the canvas server-side using something like Puppeteer
         # 2. Generate the requested format
         # 3. Return download URL or base64 data
-        
-        return Response({
-            "export_url": f"/media/exports/moodboard_{moodboard_id}.{export_format}",
-            "format": export_format,
-            "resolution": resolution,
-            "message": "Export completed successfully"
-        })
 
-    @action(detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/auto-layout")
+        return Response(
+            {
+                "export_url": (
+                    f"/media/exports/moodboard_{moodboard_id}.{export_format}"
+                ),
+                "format": export_format,
+                "resolution": resolution,
+                "message": "Export completed successfully",
+            }
+        )
+
+    @action(
+        detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/auto-layout"
+    )
     def auto_layout(self, request, moodboard_id=None):
         """Automatically arrange elements on canvas"""
         moodboard = self.get_moodboard(moodboard_id)
-        
-        layout_type = request.data.get("layout_type", "grid")  # grid, masonry, circular, linear
+
+        layout_type = request.data.get(
+            "layout_type", "grid"
+        )  # grid, masonry, circular, linear
         spacing = request.data.get("spacing", 20)
-        
+
         # Get selected images and text elements
         images = MoodboardImage.objects.filter(moodboard=moodboard, is_selected=True)
-        text_elements = MoodboardTextElement.objects.filter(moodboard=moodboard, is_selected=True)
-        
+        text_elements = MoodboardTextElement.objects.filter(
+            moodboard=moodboard, is_selected=True
+        )
+
         if layout_type == "grid":
             # Simple grid layout
             cols = int((len(images) + len(text_elements)) ** 0.5) + 1
             x, y = 50, 50
             col_count = 0
-            
+
             for i, image in enumerate(images):
                 image.x_position = x
                 image.y_position = y
-                image.save(update_fields=['x_position', 'y_position'])
-                
+                image.save(update_fields=["x_position", "y_position"])
+
                 col_count += 1
                 if col_count >= cols:
                     x = 50
@@ -1234,12 +1257,12 @@ class MoodboardCanvasViewSet(viewsets.ViewSet):
                     col_count = 0
                 else:
                     x += image.canvas_width + spacing
-            
+
             for text_element in text_elements:
                 text_element.x_position = x
                 text_element.y_position = y
-                text_element.save(update_fields=['x_position', 'y_position'])
-                
+                text_element.save(update_fields=["x_position", "y_position"])
+
                 col_count += 1
                 if col_count >= cols:
                     x = 50
@@ -1247,35 +1270,41 @@ class MoodboardCanvasViewSet(viewsets.ViewSet):
                     col_count = 0
                 else:
                     x += text_element.width + spacing
-        
-        return Response({
-            "message": f"Auto-layout applied: {layout_type}",
-            "elements_arranged": len(images) + len(text_elements)
-        })
 
-    @action(detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/import-image")
+        return Response(
+            {
+                "message": f"Auto-layout applied: {layout_type}",
+                "elements_arranged": len(images) + len(text_elements),
+            }
+        )
+
+    @action(
+        detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/import-image"
+    )
     def import_image(self, request, moodboard_id=None):
         """Import image from URL or upload"""
         moodboard = self.get_moodboard(moodboard_id)
-        
+
         # Check edit permissions
-        if moodboard.user != request.user and not MoodboardShare.objects.filter(
-            moodboard=moodboard, user=request.user, permission__in=['edit', 'admin']
-        ).exists():
+        if (
+            moodboard.user != request.user
+            and not MoodboardShare.objects.filter(
+                moodboard=moodboard, user=request.user, permission__in=["edit", "admin"]
+            ).exists()
+        ):
             raise PermissionDenied("You don't have edit access to this moodboard")
-        
+
         image_url = request.data.get("image_url")
         x_position = request.data.get("x_position", 100)
         y_position = request.data.get("y_position", 100)
         canvas_width = request.data.get("canvas_width", 200)
         canvas_height = request.data.get("canvas_height", 200)
-        
+
         if not image_url:
             return Response(
-                {"error": "image_url is required"}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "image_url is required"}, status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Create new image element
         image = MoodboardImage.objects.create(
             moodboard=moodboard,
@@ -1288,8 +1317,8 @@ class MoodboardCanvasViewSet(viewsets.ViewSet):
             canvas_height=canvas_height,
             is_selected=True,
             z_index=1,
-            opacity=1.0
+            opacity=1.0,
         )
-        
+
         serializer = MoodboardImageSerializer(image)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

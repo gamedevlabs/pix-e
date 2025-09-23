@@ -205,13 +205,13 @@ async function loadUsers() {
   try {
     const result = await fetchUsers()
     if (result && Array.isArray(result)) {
-      users.value = result.map((user: any) => ({
+      users.value = result.map((user: { id: number; username: string; email?: string }) => ({
         id: String(user.id),
         username: user.username,
         email: user.email
       }))
     }
-  } catch (error) {
+  } catch {
     // Handle error silently for production
   } finally {
     loadingUsers.value = false
