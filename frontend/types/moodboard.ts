@@ -25,6 +25,40 @@ export interface MoodboardImage {
   order_index: number
   created_at: string
   metadata: ImageMetadata
+  // Canvas positioning fields
+  x_position: number
+  y_position: number
+  canvas_width: number
+  canvas_height: number
+  rotation: number
+  z_index: number
+  opacity: number
+}
+
+export interface MoodboardTextElement {
+  id: string
+  content: string
+  x_position: number
+  y_position: number
+  width: number
+  height: number
+  rotation: number
+  z_index: number
+  opacity: number
+  font_family: string
+  font_size: number
+  font_weight: number
+  text_align: 'left' | 'center' | 'right' | 'justify'
+  line_height: number
+  letter_spacing: number
+  text_color: string
+  background_color?: string
+  border_color?: string
+  border_width: number
+  is_selected: boolean
+  order_index: number
+  created_at: string
+  updated_at: string
 }
 
 export interface ImageMetadata {

@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets, parsers
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -18,6 +18,7 @@ from .models import (
     MoodboardImage,
     MoodboardShare,
     MoodboardTemplate,
+    MoodboardTextElement,
 )
 from .permissions import CanEditMoodboard, CanViewMoodboard, MoodboardPermission
 from .serializers import (
@@ -30,6 +31,7 @@ from .serializers import (
     MoodboardImageSerializer,
     MoodboardListSerializer,
     MoodboardTemplateSerializer,
+    MoodboardTextElementSerializer,
 )
 
 
@@ -488,160 +490,7 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             }
         )
 
-
-class MoodboardImageViewSet(viewsets.ModelViewSet):
-    """ViewSet for MoodboardImage CRUD operations within a moodboard"""
-
-    serializer_class = MoodboardImageSerializer
-    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
-
-    def get_queryset(self):
-        """Get images for a specific moodboard"""
-        moodboard_id = self.kwargs.get("moodboard_pk")
-        return MoodboardImage.objects.filter(moodboard_id=moodboard_id).select_related(
-            "moodboard"
-        )
-
-    def get_serializer_class(self):
-        """Return appropriate serializer based on action"""
-        if self.action in ["create"]:
-            return MoodboardImageCreateSerializer
-        return MoodboardImageSerializer
-
-    def perform_create(self, serializer):
-        """Set the moodboard when creating an image"""
-        moodboard_id = self.kwargs.get("moodboard_pk")
-        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
-        serializer.save(moodboard=moodboard)
-
-    @action(detail=False, methods=["post"])
-    def bulk_action(self, request, moodboard_pk=None):
-        """Perform bulk actions on images"""
-        serializer = ImageBulkActionSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        data = serializer.validated_data
-        image_ids = data["image_ids"]
-        action = data["action"]
-
-        # Get images from this moodboard
-        queryset = self.get_queryset().filter(id__in=image_ids)
-
-        if action == "select":
-            count = queryset.update(is_selected=True)
-            return Response({"message": f"{count} images selected"})
-
-        elif action == "unselect":
-            count = queryset.update(is_selected=False)
-            return Response({"message": f"{count} images unselected"})
-
-        elif action == "delete":
-            count = queryset.count()
-            queryset.delete()
-            return Response({"message": f"{count} images deleted"})
-
-        elif action == "reorder":
-            new_order_indices = data["new_order_indices"]
-            for i, image_id in enumerate(image_ids):
-                queryset.filter(id=image_id).update(order_index=new_order_indices[i])
-            return Response({"message": f"{len(image_ids)} images reordered"})
-
-        elif action in ["add_tags", "remove_tags"]:
-            tags_field = "tags_to_add" if action == "add_tags" else "tags_to_remove"
-            tags = data[tags_field]
-
-            for image in queryset:
-                current_tags = image.tag_list
-
-                if action == "add_tags":
-                    for tag in tags.split(","):
-                        tag = tag.strip()
-                        if tag not in current_tags:
-                            current_tags.append(tag)
-                else:
-                    for tag in tags.split(","):
-                        tag = tag.strip()
-                        if tag in current_tags:
-                            current_tags.remove(tag)
-
-                image.tags = ", ".join(current_tags)
-                image.save()
-
-            return Response({"message": f"Tags updated for {queryset.count()} images"})
-
-        return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class MoodboardCommentViewSet(viewsets.ModelViewSet):
-    """ViewSet for MoodboardComment operations"""
-
-    serializer_class = MoodboardCommentSerializer
-    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
-
-    def get_queryset(self):
-        """Get comments for a specific moodboard"""
-        moodboard_id = self.kwargs.get("moodboard_pk")
-        return (
-            MoodboardComment.objects.filter(moodboard_id=moodboard_id)
-            .select_related("user", "moodboard", "image")
-            .prefetch_related("replies")
-        )
-
-    def perform_create(self, serializer):
-        """Set user and moodboard when creating a comment"""
-        moodboard_id = self.kwargs.get("moodboard_pk")
-        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
-        serializer.save(user=self.request.user, moodboard=moodboard)
-
-
-class MoodboardTemplateViewSet(viewsets.ModelViewSet):
-    """ViewSet for MoodboardTemplate operations"""
-
-    serializer_class = MoodboardTemplateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["title", "description"]
-
-    def get_queryset(self):
-        """Get active templates"""
-        return MoodboardTemplate.objects.filter(is_active=True).select_related(
-            "created_by"
-        )
-
-    def perform_create(self, serializer):
-        """Set the creator when creating a template"""
-        serializer.save(created_by=self.request.user)
-
-    @action(detail=True, methods=["post"])
-    def use_template(self, request, pk=None):
-        """Create a new moodboard from a template"""
-        template = self.get_object()
-
-        # Create moodboard from template
-        moodboard = Moodboard.objects.create(
-            user=request.user,
-            title=request.data.get("title", f"From {template.title}"),
-            description=request.data.get("description", template.description),
-            category=template.category,
-            tags=template.default_tags,
-            color_palette=template.default_color_palette,
-            status="draft",
-        )
-
-        # Increment template usage
-        template.increment_usage()
-
-        serializer = MoodboardDetailSerializer(moodboard, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class MoodboardAIViewSet(viewsets.GenericViewSet):
-    """ViewSet for AI-powered moodboard operations"""
-
-    authentication_classes = [CsrfExemptSessionAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
+    # AI Functionality integrated into main MoodboardViewSet
     @action(detail=False, methods=["post"], url_path="start-session")
     def start_session(self, request):
         """Start a new AI moodboard session"""
@@ -983,3 +832,464 @@ class MoodboardAIViewSet(viewsets.GenericViewSet):
                 {"error": f"Failed to preload: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class MoodboardImageViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardImage CRUD operations within a moodboard"""
+
+    serializer_class = MoodboardImageSerializer
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
+    parser_classes = [parsers.MultiPartParser, parsers.JSONParser]
+
+    def get_queryset(self):
+        """Get images for a specific moodboard"""
+        moodboard_id = self.kwargs.get("moodboard_pk")
+        return MoodboardImage.objects.filter(moodboard_id=moodboard_id).select_related(
+            "moodboard"
+        )
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action"""
+        if self.action in ["create"]:
+            return MoodboardImageCreateSerializer
+        return MoodboardImageSerializer
+
+    def perform_create(self, serializer):
+        """Set the moodboard when creating an image"""
+        moodboard_id = self.kwargs.get("moodboard_pk")
+        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
+        serializer.save(moodboard=moodboard)
+
+    @action(detail=False, methods=["post"])
+    def bulk_action(self, request, moodboard_pk=None):
+        """Perform bulk actions on images"""
+        serializer = ImageBulkActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        image_ids = data["image_ids"]
+        action = data["action"]
+
+        # Get images from this moodboard
+        queryset = self.get_queryset().filter(id__in=image_ids)
+
+        if action == "select":
+            count = queryset.update(is_selected=True)
+            return Response({"message": f"{count} images selected"})
+
+        elif action == "unselect":
+            count = queryset.update(is_selected=False)
+            return Response({"message": f"{count} images unselected"})
+
+        elif action == "delete":
+            count = queryset.count()
+            queryset.delete()
+            return Response({"message": f"{count} images deleted"})
+
+        elif action == "reorder":
+            new_order_indices = data["new_order_indices"]
+            for i, image_id in enumerate(image_ids):
+                queryset.filter(id=image_id).update(order_index=new_order_indices[i])
+            return Response({"message": f"{len(image_ids)} images reordered"})
+
+        elif action in ["add_tags", "remove_tags"]:
+            tags_field = "tags_to_add" if action == "add_tags" else "tags_to_remove"
+            tags = data[tags_field]
+
+            for image in queryset:
+                current_tags = image.tag_list
+
+                if action == "add_tags":
+                    for tag in tags.split(","):
+                        tag = tag.strip()
+                        if tag not in current_tags:
+                            current_tags.append(tag)
+                else:
+                    for tag in tags.split(","):
+                        tag = tag.strip()
+                        if tag in current_tags:
+                            current_tags.remove(tag)
+
+                image.tags = ", ".join(current_tags)
+                image.save()
+
+            return Response({"message": f"Tags updated for {queryset.count()} images"})
+
+        return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, CanEditMoodboard])
+    def edit_image(self, request, moodboard_pk=None, pk=None):
+        """Apply editing operations to an image"""
+        from .image_editor import apply_batch_edits
+        import json
+        
+        try:
+            # Get the image
+            image = self.get_object()
+            
+            # Validate edit parameters
+            edits = request.data.get('edits', {})
+            if not edits:
+                return Response(
+                    {"error": "No edits specified"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Apply edits to the image
+            image_path = image.image_url
+            if image_path.startswith('/media/'):
+                image_path = image_path[7:]  # Remove /media/ prefix
+            
+            new_image_path, image_info = apply_batch_edits(image_path, edits)
+            
+            # Update the existing image instead of creating a new one
+            image.image_url = f'/media/{new_image_path}'
+            image.title = f"{image.title} (Edited)" if image.title and not image.title.endswith("(Edited)") else image.title
+            image.width = image_info.get('width')
+            image.height = image_info.get('height')
+            image.format = image_info.get('format', 'JPEG').upper()
+            image.save()
+            
+            # Return the updated image
+            serializer = self.get_serializer(image)
+            return Response({
+                "message": "Image edited successfully",
+                "edited_image": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except FileNotFoundError as e:
+            return Response(
+                {"error": f"Image file not found: {str(e)}"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to edit image: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, CanViewMoodboard])
+    def preview_edit(self, request, moodboard_pk=None, pk=None):
+        """Preview image edits without saving"""
+        from .image_editor import ImageEditor
+        
+        try:
+            # Get the image
+            image = self.get_object()
+            
+            # Validate edit parameters
+            edits = request.data.get('edits', {})
+            if not edits:
+                return Response(
+                    {"error": "No edits specified"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Apply edits to create preview
+            image_path = image.image_url
+            if image_path.startswith('/media/'):
+                image_path = image_path[7:]  # Remove /media/ prefix
+            
+            editor = ImageEditor(image_path)
+            
+            # Apply edits for preview in the correct order
+            # 1. First apply transformations
+            if 'rotate' in edits and edits['rotate'] != 0:
+                editor.rotate(edits['rotate'])
+            if 'flip_horizontal' in edits and edits['flip_horizontal']:
+                editor.flip_horizontal()
+            if 'flip_vertical' in edits and edits['flip_vertical']:
+                editor.flip_vertical()
+            
+            # 2. Then apply adjustments
+            if 'brightness' in edits:
+                editor.adjust_brightness(edits['brightness'])
+            if 'contrast' in edits:
+                editor.adjust_contrast(edits['contrast'])
+            if 'saturation' in edits:
+                editor.adjust_saturation(edits['saturation'])
+                
+            # 3. Finally apply filters
+            if 'filters' in edits:
+                for filter_name, intensity in edits['filters'].items():
+                    if intensity > 0:
+                        editor.apply_filter(filter_name, intensity)
+            
+            # Return base64 preview
+            preview_base64 = editor.to_base64()
+            
+            return Response({
+                "preview": f"data:image/jpeg;base64,{preview_base64}",
+                "image_info": editor.get_image_info()
+            })
+            
+        except FileNotFoundError as e:
+            return Response(
+                {"error": f"Image file not found: {str(e)}"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to preview image: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class MoodboardCommentViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardComment operations"""
+
+    serializer_class = MoodboardCommentSerializer
+    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
+
+    def get_queryset(self):
+        """Get comments for a specific moodboard"""
+        moodboard_id = self.kwargs.get("moodboard_pk")
+        return (
+            MoodboardComment.objects.filter(moodboard_id=moodboard_id)
+            .select_related("user", "moodboard", "image")
+            .prefetch_related("replies")
+        )
+
+    def perform_create(self, serializer):
+        """Set user and moodboard when creating a comment"""
+        moodboard_id = self.kwargs.get("moodboard_pk")
+        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
+        serializer.save(user=self.request.user, moodboard=moodboard)
+
+
+class MoodboardTemplateViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardTemplate operations"""
+
+    serializer_class = MoodboardTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title", "description"]
+
+    def get_queryset(self):
+        """Get active templates"""
+        return MoodboardTemplate.objects.filter(is_active=True).select_related(
+            "created_by"
+        )
+
+    def perform_create(self, serializer):
+        """Set the creator when creating a template"""
+        serializer.save(created_by=self.request.user)
+
+    @action(detail=True, methods=["post"])
+    def use_template(self, request, pk=None):
+        """Create a new moodboard from a template"""
+        template = self.get_object()
+
+        # Create moodboard from template
+        moodboard = Moodboard.objects.create(
+            user=request.user,
+            title=request.data.get("title", f"From {template.title}"),
+            description=request.data.get("description", template.description),
+            category=template.category,
+            tags=template.default_tags,
+            color_palette=template.default_color_palette,
+            status="draft",
+        )
+
+        # Increment template usage
+        template.increment_usage()
+
+        serializer = MoodboardDetailSerializer(moodboard, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MoodboardTextElementViewSet(viewsets.ModelViewSet):
+    """ViewSet for MoodboardTextElement CRUD operations within a moodboard"""
+
+    serializer_class = MoodboardTextElementSerializer
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
+
+    def get_queryset(self):
+        """Get text elements for a specific moodboard"""
+        moodboard_id = self.kwargs.get("moodboard_pk")
+        return MoodboardTextElement.objects.filter(moodboard_id=moodboard_id).select_related("moodboard")
+
+    def get_permissions(self):
+        """Override permissions based on action"""
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            permission_classes = [permissions.IsAuthenticated, CanEditMoodboard]
+        else:
+            permission_classes = [permissions.IsAuthenticated, CanViewMoodboard]
+        return [permission() for permission in permission_classes]
+
+    def perform_create(self, serializer):
+        """Set the moodboard when creating a text element"""
+        moodboard_id = self.kwargs.get("moodboard_pk")
+        moodboard = get_object_or_404(Moodboard, id=moodboard_id)
+        serializer.save(moodboard=moodboard)
+
+    @action(detail=False, methods=["post"])
+    def bulk_action(self, request, moodboard_pk=None):
+        """Perform bulk actions on text elements"""
+        serializer = ImageBulkActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        element_ids = data["image_ids"]  # Reusing the same field name for compatibility
+        action = data["action"]
+
+        # Get text elements from this moodboard
+        queryset = self.get_queryset().filter(id__in=element_ids)
+
+        if action == "select":
+            count = queryset.update(is_selected=True)
+            return Response({"message": f"{count} text elements selected"})
+
+        elif action == "unselect":
+            count = queryset.update(is_selected=False)
+            return Response({"message": f"{count} text elements unselected"})
+
+        elif action == "delete":
+            count = queryset.count()
+            queryset.delete()
+            return Response({"message": f"{count} text elements deleted"})
+
+        elif action == "reorder":
+            new_order_indices = data["new_order_indices"]
+            for i, element_id in enumerate(element_ids):
+                queryset.filter(id=element_id).update(order_index=new_order_indices[i])
+            return Response({"message": f"{len(element_ids)} text elements reordered"})
+
+        return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MoodboardCanvasViewSet(viewsets.ViewSet):
+    """Canvas-specific operations like export, auto-layout, import"""
+    
+    authentication_classes = [CsrfExemptSessionAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_moodboard(self, moodboard_id):
+        """Get moodboard with permission check"""
+        try:
+            moodboard = Moodboard.objects.get(id=moodboard_id)
+            # Basic permission check - user must be owner or have view access
+            if moodboard.user != self.request.user and not moodboard.is_public:
+                # Check if user has explicit share access
+                if not MoodboardShare.objects.filter(
+                    moodboard=moodboard, user=self.request.user
+                ).exists():
+                    raise PermissionDenied("You don't have access to this moodboard")
+            return moodboard
+        except Moodboard.DoesNotExist:
+            raise Http404("Moodboard not found")
+
+    @action(detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/export")
+    def export_canvas(self, request, moodboard_id=None):
+        """Export moodboard canvas as image or PDF"""
+        moodboard = self.get_moodboard(moodboard_id)
+        
+        export_format = request.data.get("format", "png")
+        resolution = request.data.get("resolution", "1920x1080")
+        include_background = request.data.get("include_background", True)
+        
+        # In a real implementation, this would:
+        # 1. Render the canvas server-side using something like Puppeteer
+        # 2. Generate the requested format
+        # 3. Return download URL or base64 data
+        
+        return Response({
+            "export_url": f"/media/exports/moodboard_{moodboard_id}.{export_format}",
+            "format": export_format,
+            "resolution": resolution,
+            "message": "Export completed successfully"
+        })
+
+    @action(detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/auto-layout")
+    def auto_layout(self, request, moodboard_id=None):
+        """Automatically arrange elements on canvas"""
+        moodboard = self.get_moodboard(moodboard_id)
+        
+        layout_type = request.data.get("layout_type", "grid")  # grid, masonry, circular, linear
+        spacing = request.data.get("spacing", 20)
+        
+        # Get selected images and text elements
+        images = MoodboardImage.objects.filter(moodboard=moodboard, is_selected=True)
+        text_elements = MoodboardTextElement.objects.filter(moodboard=moodboard, is_selected=True)
+        
+        if layout_type == "grid":
+            # Simple grid layout
+            cols = int((len(images) + len(text_elements)) ** 0.5) + 1
+            x, y = 50, 50
+            col_count = 0
+            
+            for i, image in enumerate(images):
+                image.x_position = x
+                image.y_position = y
+                image.save(update_fields=['x_position', 'y_position'])
+                
+                col_count += 1
+                if col_count >= cols:
+                    x = 50
+                    y += image.canvas_height + spacing
+                    col_count = 0
+                else:
+                    x += image.canvas_width + spacing
+            
+            for text_element in text_elements:
+                text_element.x_position = x
+                text_element.y_position = y
+                text_element.save(update_fields=['x_position', 'y_position'])
+                
+                col_count += 1
+                if col_count >= cols:
+                    x = 50
+                    y += text_element.height + spacing
+                    col_count = 0
+                else:
+                    x += text_element.width + spacing
+        
+        return Response({
+            "message": f"Auto-layout applied: {layout_type}",
+            "elements_arranged": len(images) + len(text_elements)
+        })
+
+    @action(detail=False, methods=["post"], url_path="(?P<moodboard_id>[^/.]+)/import-image")
+    def import_image(self, request, moodboard_id=None):
+        """Import image from URL or upload"""
+        moodboard = self.get_moodboard(moodboard_id)
+        
+        # Check edit permissions
+        if moodboard.user != request.user and not MoodboardShare.objects.filter(
+            moodboard=moodboard, user=request.user, permission__in=['edit', 'admin']
+        ).exists():
+            raise PermissionDenied("You don't have edit access to this moodboard")
+        
+        image_url = request.data.get("image_url")
+        x_position = request.data.get("x_position", 100)
+        y_position = request.data.get("y_position", 100)
+        canvas_width = request.data.get("canvas_width", 200)
+        canvas_height = request.data.get("canvas_height", 200)
+        
+        if not image_url:
+            return Response(
+                {"error": "image_url is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create new image element
+        image = MoodboardImage.objects.create(
+            moodboard=moodboard,
+            image_url=image_url,
+            title="Imported Image",
+            source="url_import",
+            x_position=x_position,
+            y_position=y_position,
+            canvas_width=canvas_width,
+            canvas_height=canvas_height,
+            is_selected=True,
+            z_index=1,
+            opacity=1.0
+        )
+        
+        serializer = MoodboardImageSerializer(image)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

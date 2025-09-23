@@ -41,10 +41,17 @@ export default defineNuxtConfig({
 
   nitro: {
     devProxy: {
+      '/moodboards': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        cookiePathRewrite: '/',
+        prependPath: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
         cookiePathRewrite: '/',
+        ws: true,
       },
       '/accounts': {
         target: 'http://localhost:8000',

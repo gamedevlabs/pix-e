@@ -149,7 +149,7 @@ export const useAISuggestions = () => {
         suggestion_type: options.suggestionType || suggestionType.value
       }
       
-      const response = await $fetch<SuggestionResponse>(`${apiBase}/api/llm/text-suggestions/`, {
+      const response = await $fetch<SuggestionResponse>(`${apiBase}/llm/text-suggestions/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -173,7 +173,7 @@ export const useAISuggestions = () => {
       const apiError = err as APIError
       
       // Log error for debugging in development only
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.dev) {
         console.error('Error generating suggestions:', err)
       }
       
@@ -232,7 +232,7 @@ export const useAISuggestions = () => {
   // Get available AI services
   const fetchServices = async () => {
     try {
-      const response = await $fetch<ServicesResponse>(`${apiBase}/api/llm/llm-services/`, {
+      const response = await $fetch<ServicesResponse>(`${apiBase}/llm/llm-services/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -287,7 +287,7 @@ export const useAISuggestions = () => {
     tokenError.value = null
     
     try {
-      const response = await $fetch<UserToken[]>(`${apiBase}/api/accounts/ai-tokens/`, {
+      const response = await $fetch<UserToken[]>(`${apiBase}/accounts/ai-tokens/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -297,7 +297,7 @@ export const useAISuggestions = () => {
       
       userTokens.value = Array.isArray(response) ? response : []
     } catch (err: unknown) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.dev) {
         console.error('Error fetching user tokens:', err)
       }
       tokenError.value = getErrorMessage(err, 'Failed to fetch tokens')
@@ -312,13 +312,13 @@ export const useAISuggestions = () => {
       const existingToken = userTokens.value.find(t => t.service_type === serviceType)
       
       if (existingToken) {
-        console.log('Token already exists for this service, updating instead...')
+
         return await updateUserToken(serviceType, token, isActive)
       }
       
       const csrfToken = useCookie('csrftoken').value
       
-      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/api/accounts/ai-tokens/`, {
+      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/accounts/ai-tokens/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -341,11 +341,11 @@ export const useAISuggestions = () => {
       
       // Fallback: If token already exists and we missed it above, try updating
       if (apiError.statusCode === 400 && apiError.data?.error?.includes('already exists')) {
-        console.log('Token already exists (fallback), updating instead...')
+
         return await updateUserToken(serviceType, token, isActive)
       }
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.dev) {
         console.error('Error saving token:', err)
       }
       tokenError.value = getErrorMessage(err, 'Failed to save token')
@@ -361,7 +361,7 @@ export const useAISuggestions = () => {
         body.is_active = isActive
       }
       
-      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/api/accounts/ai-tokens/${serviceType}/`, {
+      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/accounts/ai-tokens/${serviceType}/`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -376,7 +376,7 @@ export const useAISuggestions = () => {
       await fetchUserTokens()
       return response
     } catch (err: unknown) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.dev) {
         console.error('Error updating token:', err)
       }
       tokenError.value = getErrorMessage(err, 'Failed to update token')
@@ -388,7 +388,7 @@ export const useAISuggestions = () => {
     try {
       const csrfToken = useCookie('csrftoken').value
       
-      await $fetch(`${apiBase}/api/accounts/ai-tokens/${serviceType}/`, {
+      await $fetch(`${apiBase}/accounts/ai-tokens/${serviceType}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -400,7 +400,7 @@ export const useAISuggestions = () => {
       // Refresh tokens list
       await fetchUserTokens()
     } catch (err: unknown) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.dev) {
         console.error('Error deleting token:', err)
       }
       tokenError.value = getErrorMessage(err, 'Failed to delete token')

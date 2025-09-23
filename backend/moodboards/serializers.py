@@ -7,6 +7,7 @@ from .models import (
     MoodboardImage,
     MoodboardShare,
     MoodboardTemplate,
+    MoodboardTextElement,
 )
 
 
@@ -41,6 +42,15 @@ class MoodboardImageSerializer(serializers.ModelSerializer):
             "tag_list",
             "is_selected",
             "order_index",
+            # Canvas positioning fields
+            "x_position",
+            "y_position", 
+            "canvas_width",
+            "canvas_height",
+            "rotation",
+            "z_index",
+            "opacity",
+            # Technical metadata
             "width",
             "height",
             "file_size",
@@ -58,11 +68,15 @@ class MoodboardImageSerializer(serializers.ModelSerializer):
 
 class MoodboardImageCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating MoodboardImage with minimal required fields"""
+    
+    image_file = serializers.ImageField(required=False, write_only=True)
 
     class Meta:
         model = MoodboardImage
         fields = [
+            "id",
             "image_url",
+            "image_file",
             "prompt",
             "title",
             "description",
@@ -70,13 +84,79 @@ class MoodboardImageCreateSerializer(serializers.ModelSerializer):
             "tags",
             "is_selected",
             "order_index",
+            "x_position",
+            "y_position", 
+            "canvas_width",
+            "canvas_height",
+            "z_index",
+            "opacity",
         ]
         extra_kwargs = {
+            "image_url": {"required": False},
             "prompt": {"required": False},
             "title": {"required": False},
             "description": {"required": False},
             "tags": {"required": False},
         }
+    
+    def create(self, validated_data):
+        image_file = validated_data.pop('image_file', None)
+        
+        if image_file:
+            # Handle file upload
+            import os
+            from django.conf import settings
+            from django.core.files.storage import default_storage
+            import uuid
+            
+            # Generate unique filename
+            ext = os.path.splitext(image_file.name)[1]
+            filename = f"moodboard_{uuid.uuid4()}{ext}"
+            
+            # Save file
+            file_path = default_storage.save(filename, image_file)
+            validated_data['image_url'] = f"/media/{file_path}"
+            validated_data['original_filename'] = image_file.name
+            
+        return super().create(validated_data)
+
+
+class MoodboardTextElementSerializer(serializers.ModelSerializer):
+    """Serializer for MoodboardTextElement"""
+
+    class Meta:
+        model = MoodboardTextElement
+        fields = [
+            "id",
+            "moodboard",
+            "content",
+            # Canvas positioning
+            "x_position",
+            "y_position",
+            "width",
+            "height",
+            "rotation",
+            "z_index",
+            "opacity",
+            # Typography
+            "font_family",
+            "font_size",
+            "font_weight",
+            "text_align",
+            "line_height",
+            "letter_spacing",
+            # Colors
+            "text_color",
+            "background_color",
+            "border_color",
+            "border_width",
+            # State
+            "is_selected",
+            "order_index",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "moodboard", "created_at", "updated_at"]
 
 
 class MoodboardCommentSerializer(serializers.ModelSerializer):
@@ -125,6 +205,7 @@ class MoodboardSerializer(serializers.ModelSerializer):
 
     user = UserSerializer(read_only=True)
     images = MoodboardImageSerializer(many=True, read_only=True)
+    text_elements = MoodboardTextElementSerializer(many=True, read_only=True)
     image_count = serializers.ReadOnlyField()
     selected_image_count = serializers.ReadOnlyField()
     tag_list = serializers.ReadOnlyField()
@@ -142,7 +223,17 @@ class MoodboardSerializer(serializers.ModelSerializer):
             "tag_list",
             "is_public",
             "color_palette",
+            # Canvas settings
+            "canvas_width",
+            "canvas_height", 
+            "canvas_background_color",
+            "canvas_background_image",
+            "grid_enabled",
+            "grid_size",
+            "snap_to_grid",
+            # Related objects
             "images",
+            "text_elements",
             "image_count",
             "selected_image_count",
             "created_at",
@@ -152,6 +243,7 @@ class MoodboardSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "images",
+            "text_elements",
             "image_count",
             "selected_image_count",
             "tag_list",
