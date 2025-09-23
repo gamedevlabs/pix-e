@@ -23,7 +23,8 @@ const items = ref<NavigationMenuItem[]>([
     label: 'PxComponentsDefinitions',
     icon: 'i-lucide-library-big',
     to: '/pxcomponentdefinitions',
-  },  {
+  },
+  {
     label: 'PxCharts',
     icon: 'i-lucide-chart-network',
     to: '/pxcharts',
@@ -65,7 +66,7 @@ provide('globalLoading', loading)
 
 <template>
   <UApp>
-    <div v-if="loading" class="global-loading-bar"/>
+    <div v-if="loading" class="global-loading-bar" />
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
       <header

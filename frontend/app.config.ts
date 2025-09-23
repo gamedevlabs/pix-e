@@ -7,7 +7,7 @@ export default defineAppConfig({
       chevronRight: 'i-heroicons-chevron-right-20-solid',
       chevronDown: 'i-heroicons-chevron-down-20-solid',
       ellipsisHorizontal: 'i-heroicons-ellipsis-horizontal-20-solid',
-      ellipsisVertical: 'i-heroicons-ellipsis-vertical-20-solid'
-    }
-  }
+      ellipsisVertical: 'i-heroicons-ellipsis-vertical-20-solid',
+    },
+  },
 })

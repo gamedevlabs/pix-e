@@ -1,7 +1,8 @@
 <script setup lang="ts"></script>
 
 <template>
-  <UContainer class="py-10 space-y-10">    <!-- Hero Section -->
+  <UContainer class="py-10 space-y-10">
+    <!-- Hero Section -->
     <section class="text-center">
       <h1 class="text-4xl font-bold mb-4">Welcome to pix:e 🎉</h1>
       <p class="text-gray-500 dark:text-gray-400 mb-6">Design your game with research.</p>

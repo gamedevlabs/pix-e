@@ -1,5 +1,8 @@
 <template>
-  <div class="moodboard-container" :class="{ 'canvas-mode': viewMode === 'canvas', 'grid-mode': viewMode === 'grid' }">
+  <div
+    class="moodboard-container"
+    :class="{ 'canvas-mode': viewMode === 'canvas', 'grid-mode': viewMode === 'grid' }"
+  >
     <!-- Header with back to moodboards -->
     <div class="page-header">
       <h1>AI Moodboard</h1>
@@ -7,7 +10,7 @@
         <!-- Mode Toggle for Canvas vs Grid -->
         <div v-if="sessionId" class="mode-toggle-container">
           <UButtonGroup>
-            <UButton 
+            <UButton
               :variant="viewMode === 'grid' ? 'solid' : 'outline'"
               :color="viewMode === 'grid' ? 'primary' : 'neutral'"
               icon="i-heroicons-squares-2x2-20-solid"
@@ -15,7 +18,7 @@
             >
               Grid View
             </UButton>
-            <UButton 
+            <UButton
               :variant="viewMode === 'canvas' ? 'solid' : 'outline'"
               :color="viewMode === 'canvas' ? 'primary' : 'neutral'"
               icon="i-heroicons-paint-brush-20-solid"
@@ -25,12 +28,16 @@
             </UButton>
           </UButtonGroup>
         </div>
-        <UButton variant="outline" icon="i-heroicons-squares-2x2-20-solid" @click="$router.push('/moodboards')">
+        <UButton
+          variant="outline"
+          icon="i-heroicons-squares-2x2-20-solid"
+          @click="$router.push('/moodboards')"
+        >
           Back to Moodboards
         </UButton>
       </div>
     </div>
-    
+
     <div v-if="!sessionId">
       <div class="prompt-bar">
         <UButtonGroup>
@@ -44,20 +51,24 @@
               <div :class="['dropdown-item', { 'dropdown-item-selected': item.checked }]">
                 <UIcon :name="item.icon || ''" class="mr-2 w-4 h-4" />
                 <span>{{ item.label }}</span>
-                <UIcon v-if="item.checked" name="i-heroicons-check-20-solid" class="dropdown-item-check ml-auto w-4 h-4" />
+                <UIcon
+                  v-if="item.checked"
+                  name="i-heroicons-check-20-solid"
+                  class="dropdown-item-check ml-auto w-4 h-4"
+                />
               </div>
             </template>
           </UDropdownMenu>
         </UButtonGroup>
 
-        <UInput 
-          v-model="prompt" 
-          placeholder="Describe your gaming moodboard..." 
-          class="prompt-input" 
+        <UInput
+          v-model="prompt"
+          placeholder="Describe your gaming moodboard..."
+          class="prompt-input"
           @keyup.enter="startSessionWithPrompt"
-          @input="handlePromptInput" 
+          @input="handlePromptInput"
         />
-        
+
         <!-- Color palette icon and popover -->
         <UPopover>
           <span
@@ -75,28 +86,54 @@
           <template #content>
             <div class="palette-popover-panel">
               <UColorPicker v-model="colorPickerValue" class="p-2" />
-              <UButton v-if="canEdit" :disabled="colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)" size="xs" class="ml-1 mt-2" @click="addColorToPaletteFromPicker">Add</UButton>
+              <UButton
+                v-if="canEdit"
+                :disabled="
+                  colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)
+                "
+                size="xs"
+                class="ml-1 mt-2"
+                @click="addColorToPaletteFromPicker"
+                >Add</UButton
+              >
               <div class="palette-list mt-2">
-                <span v-for="(color, idx) in colorPalette" :key="color" class="palette-color" :style="{ background: color }">
-                  <span v-if="canEdit" class="palette-remove" @click="removeColorFromPalette(idx)">&times;</span>
+                <span
+                  v-for="(color, idx) in colorPalette"
+                  :key="color"
+                  class="palette-color"
+                  :style="{ background: color }"
+                >
+                  <span v-if="canEdit" class="palette-remove" @click="removeColorFromPalette(idx)"
+                    >&times;</span
+                  >
                 </span>
               </div>
             </div>
           </template>
         </UPopover>
-        
+
         <!-- Show palette chips inline for quick reference -->
         <div class="palette-inline-list">
-          <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"/>
+          <span
+            v-for="color in colorPalette"
+            :key="color"
+            class="palette-inline-color"
+            :style="{ background: color }"
+          />
         </div>
-        <UButton v-if="canGenerate" :disabled="!prompt" class="ml-2" @click="startSessionWithPrompt">Start Moodboard</UButton>
+        <UButton v-if="canGenerate" :disabled="!prompt" class="ml-2" @click="startSessionWithPrompt"
+          >Start Moodboard</UButton
+        >
       </div>
     </div>
-    
+
     <div v-else>
       <!-- Divider replaced with simple HR -->
-      <hr v-if="(loading || images.length || moodboard.length) && viewMode !== 'canvas'" class="my-6 border-gray-200 dark:border-gray-700" />
-      
+      <hr
+        v-if="(loading || images.length || moodboard.length) && viewMode !== 'canvas'"
+        class="my-6 border-gray-200 dark:border-gray-700"
+      />
+
       <div v-if="images.length && viewMode !== 'canvas'" class="section-card">
         <div class="section-header">
           <h2>Generated Images</h2>
@@ -106,7 +143,7 @@
             <div class="image-container">
               <img :src="getImageUrl(img.image_url)" :alt="img.prompt" />
               <div v-if="canEdit" class="image-overlay">
-                <UButton 
+                <UButton
                   class="edit-image-btn"
                   color="primary"
                   variant="solid"
@@ -117,24 +154,33 @@
               </div>
             </div>
             <template #footer>
-              <UCheckbox v-if="canEdit" :model-value="selectedImageIds.includes(img.id)" :label="'Select'" @update:model-value="(value: any) => onCheckboxChange(value === true, img.id)" />
+              <UCheckbox
+                v-if="canEdit"
+                :model-value="selectedImageIds.includes(img.id)"
+                :label="'Select'"
+                @update:model-value="(value: any) => onCheckboxChange(value === true, img.id)"
+              />
             </template>
           </UCard>
         </div>
       </div>
-      
+
       <div v-if="moodboard.length" class="section-card">
         <div class="section-header">
           <h2>Your Moodboard</h2>
         </div>
-        
+
         <!-- Grid View -->
-        <div v-if="viewMode === 'grid'" class="images-list" :class="{ 'full-width': viewMode === 'grid' }">
+        <div
+          v-if="viewMode === 'grid'"
+          class="images-list"
+          :class="{ 'full-width': viewMode === 'grid' }"
+        >
           <UCard v-for="img in moodboard" :key="img.id" class="image-item moodboard-image-item">
             <div class="image-container">
               <img :src="getImageUrl(img.image_url)" :alt="img.prompt" />
               <div v-if="canEdit" class="image-overlay">
-                <UButton 
+                <UButton
                   class="edit-image-btn"
                   color="primary"
                   variant="solid"
@@ -142,7 +188,7 @@
                   icon="i-heroicons-pencil-square-20-solid"
                   @click="openImageEditor(img)"
                 />
-                <UButton 
+                <UButton
                   class="remove-image-btn"
                   color="error"
                   variant="solid"
@@ -154,17 +200,20 @@
             </div>
           </UCard>
         </div>
-        
+
         <!-- Canvas View -->
         <div v-if="viewMode === 'canvas'" class="canvas-container">
           <!-- Drawing Tools Toolbar -->
-          <div v-if="canEdit" class="drawing-tools-toolbar mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div
+            v-if="canEdit"
+            class="drawing-tools-toolbar mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+          >
             <div class="flex items-center gap-4 flex-wrap">
               <!-- Drawing Mode Toggle -->
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mode:</span>
                 <UButtonGroup>
-                  <UButton 
+                  <UButton
                     :variant="drawingMode === 'move' ? 'solid' : 'outline'"
                     color="neutral"
                     size="xs"
@@ -173,7 +222,7 @@
                   >
                     Move
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="drawingMode === 'draw' ? 'solid' : 'outline'"
                     color="primary"
                     size="xs"
@@ -182,7 +231,7 @@
                   >
                     Draw
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="drawingMode === 'erase' ? 'solid' : 'outline'"
                     color="error"
                     size="xs"
@@ -198,7 +247,7 @@
               <div v-if="drawingMode === 'draw'" class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pen:</span>
                 <UButtonGroup>
-                  <UButton 
+                  <UButton
                     class="pen-btn-pen"
                     :variant="penType === 'pen' ? 'solid' : 'outline'"
                     color="primary"
@@ -207,7 +256,7 @@
                   >
                     ✏️ Pen
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="penType === 'marker' ? 'solid' : 'outline'"
                     color="primary"
                     size="xs"
@@ -216,7 +265,7 @@
                   >
                     🖍️ Marker
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="penType === 'pencil' ? 'solid' : 'outline'"
                     color="primary"
                     size="xs"
@@ -225,7 +274,7 @@
                   >
                     ✏️ Pencil
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="penType === 'highlighter' ? 'solid' : 'outline'"
                     color="warning"
                     size="xs"
@@ -234,7 +283,7 @@
                   >
                     🖍️ Highlight
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="penType === 'spray' ? 'solid' : 'outline'"
                     color="secondary"
                     size="xs"
@@ -243,7 +292,7 @@
                   >
                     🎨 Spray
                   </UButton>
-                  <UButton 
+                  <UButton
                     :variant="penType === 'watercolor' ? 'solid' : 'outline'"
                     color="info"
                     size="xs"
@@ -260,7 +309,7 @@
                 <!-- Brush Size -->
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Size:</span>
-                  <input 
+                  <input
                     v-model="brushSize"
                     type="range"
                     :min="getBrushSizeRange().min"
@@ -272,8 +321,10 @@
 
                 <!-- Brush Hardness (for applicable pen types) -->
                 <div v-if="showBrushHardness()" class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Hardness:</span>
-                  <input 
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Hardness:</span
+                  >
+                  <input
                     v-model="brushHardness"
                     type="range"
                     min="0"
@@ -286,7 +337,7 @@
                 <!-- Flow Rate (for watercolor and spray) -->
                 <div v-if="showFlowRate()" class="flex items-center gap-2">
                   <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Flow:</span>
-                  <input 
+                  <input
                     v-model="flowRate"
                     type="range"
                     min="1"
@@ -299,7 +350,7 @@
                 <!-- Brush Color (only for drawing) -->
                 <div v-if="drawingMode === 'draw'" class="flex items-center gap-2">
                   <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Color:</span>
-                  <input 
+                  <input
                     v-model="brushColor"
                     type="color"
                     class="w-8 h-8 border border-gray-300 rounded cursor-pointer"
@@ -309,7 +360,7 @@
                 <!-- Brush Opacity -->
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Opacity:</span>
-                  <input 
+                  <input
                     v-model="brushOpacity"
                     type="range"
                     min="0.1"
@@ -317,13 +368,15 @@
                     step="0.1"
                     class="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                   />
-                  <span class="text-xs text-gray-500 min-w-[30px]">{{ Math.round(brushOpacity * 100) }}%</span>
+                  <span class="text-xs text-gray-500 min-w-[30px]"
+                    >{{ Math.round(brushOpacity * 100) }}%</span
+                  >
                 </div>
 
                 <!-- Blend Mode (for advanced pen types) -->
                 <div v-if="showBlendMode()" class="flex items-center gap-2">
                   <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Blend:</span>
-                  <select 
+                  <select
                     v-model="blendMode"
                     class="text-xs border border-gray-300 rounded px-2 py-1 bg-white dark:bg-gray-700 dark:border-gray-600"
                   >
@@ -343,7 +396,7 @@
 
               <!-- Drawing Actions -->
               <div class="flex items-center gap-2 ml-auto">
-                <UButton 
+                <UButton
                   variant="outline"
                   color="neutral"
                   size="xs"
@@ -353,7 +406,7 @@
                 >
                   Undo
                 </UButton>
-                <UButton 
+                <UButton
                   variant="outline"
                   color="neutral"
                   size="xs"
@@ -363,7 +416,7 @@
                 >
                   Redo
                 </UButton>
-                <UButton 
+                <UButton
                   variant="outline"
                   color="error"
                   size="xs"
@@ -376,7 +429,7 @@
             </div>
           </div>
 
-          <MoodboardCanvas 
+          <MoodboardCanvas
             v-if="currentMoodboard"
             :moodboard="currentMoodboard"
             :images="moodboard"
@@ -403,7 +456,7 @@
           />
         </div>
       </div>
-      
+
       <div v-if="viewMode !== 'canvas'" class="prompt-bar">
         <UButtonGroup>
           <UButton color="neutral" variant="subtle">
@@ -416,24 +469,28 @@
               <div :class="['dropdown-item', { 'dropdown-item-selected': item.checked }]">
                 <UIcon :name="item.icon || ''" class="mr-2 w-4 h-4" />
                 <span>{{ item.label }}</span>
-                <UIcon v-if="item.checked" name="i-heroicons-check-20-solid" class="dropdown-item-check ml-auto w-4 h-4" />
+                <UIcon
+                  v-if="item.checked"
+                  name="i-heroicons-check-20-solid"
+                  class="dropdown-item-check ml-auto w-4 h-4"
+                />
               </div>
             </template>
           </UDropdownMenu>
         </UButtonGroup>
-        
-        <UInput 
-          v-if="canGenerate" 
-          v-model="prompt" 
-          placeholder="Describe your gaming moodboard..." 
-          class="prompt-input" 
-          @keyup.enter="generateImages" 
-          @input="handlePromptInput" 
+
+        <UInput
+          v-if="canGenerate"
+          v-model="prompt"
+          placeholder="Describe your gaming moodboard..."
+          class="prompt-input"
+          @keyup.enter="generateImages"
+          @input="handlePromptInput"
         />
         <div v-else class="prompt-input-placeholder">
           <span class="text-gray-500">View-only access - Image generation disabled</span>
         </div>
-        
+
         <!-- Color palette icon and popover -->
         <UPopover v-if="canGenerate">
           <span
@@ -451,33 +508,67 @@
           <template #content>
             <div class="palette-popover-panel">
               <UColorPicker v-model="colorPickerValue" class="p-2" />
-              <UButton v-if="canEdit" :disabled="colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)" size="xs" class="ml-1 mt-2" @click="addColorToPaletteFromPicker">Add</UButton>
+              <UButton
+                v-if="canEdit"
+                :disabled="
+                  colorPalette.length >= maxPaletteColors || colorPalette.includes(colorPickerValue)
+                "
+                size="xs"
+                class="ml-1 mt-2"
+                @click="addColorToPaletteFromPicker"
+                >Add</UButton
+              >
               <div class="palette-list mt-2">
-                <span v-for="(color, idx) in colorPalette" :key="color" class="palette-color" :style="{ background: color }">
-                  <span v-if="canEdit" class="palette-remove" @click="removeColorFromPalette(idx)">&times;</span>
+                <span
+                  v-for="(color, idx) in colorPalette"
+                  :key="color"
+                  class="palette-color"
+                  :style="{ background: color }"
+                >
+                  <span v-if="canEdit" class="palette-remove" @click="removeColorFromPalette(idx)"
+                    >&times;</span
+                  >
                 </span>
               </div>
             </div>
           </template>
         </UPopover>
-        
+
         <!-- Show palette chips inline for quick reference (read-only for view users) -->
         <div class="palette-inline-list" :class="{ 'opacity-60': !canGenerate }">
-          <span v-for="color in colorPalette" :key="color" class="palette-inline-color" :style="{ background: color }"/>
+          <span
+            v-for="color in colorPalette"
+            :key="color"
+            class="palette-inline-color"
+            :style="{ background: color }"
+          />
         </div>
-        
-        <UButton v-if="canGenerate" :disabled="loading || !prompt" color="primary" class="ml-2" @click="generateImages">Generate Images</UButton>
-        <UButton v-if="canSave" color="success" class="ml-2 save-btn" :disabled="moodboard.length === 0" @click="openSaveModal">
+
+        <UButton
+          v-if="canGenerate"
+          :disabled="loading || !prompt"
+          color="primary"
+          class="ml-2"
+          @click="generateImages"
+          >Generate Images</UButton
+        >
+        <UButton
+          v-if="canSave"
+          color="success"
+          class="ml-2 save-btn"
+          :disabled="moodboard.length === 0"
+          @click="openSaveModal"
+        >
           Save Moodboard
         </UButton>
       </div>
     </div>
 
     <!-- Save Moodboard Modal -->
-    <UModal 
-      :key="`modal-${sessionId}`" 
+    <UModal
+      :key="`modal-${sessionId}`"
       v-model:open="showSaveModal"
-      title="Save Your Moodboard" 
+      title="Save Your Moodboard"
       description="Give your moodboard a name and set its visibility settings."
       :ui="{ footer: 'justify-end' }"
     >
@@ -487,13 +578,16 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Moodboard Name
             </label>
-            <UInput 
-              v-model="tempMoodboardName" 
+            <UInput
+              v-model="tempMoodboardName"
               placeholder="Enter a name for your moodboard..."
               size="lg"
               icon="i-heroicons-identification-20-solid"
             />
-            <p v-if="!isOwner && moodboardName" class="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+            <p
+              v-if="!isOwner && moodboardName"
+              class="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium"
+            >
               ⚠️ You must change the name to create your own copy of this moodboard
             </p>
             <p v-else class="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -502,8 +596,8 @@
           </div>
 
           <div>
-            <UCheckbox 
-              v-model="isMoodboardPublic" 
+            <UCheckbox
+              v-model="isMoodboardPublic"
               label="Make Public"
               help="Public moodboards can be viewed by other users in the gallery"
             />
@@ -514,7 +608,10 @@
               <UIcon name="i-heroicons-photo-20-solid" />
               <span>{{ moodboard.length }} images selected</span>
             </div>
-            <div v-if="!isOwner && moodboardName" class="mt-2 text-xs text-blue-600 dark:text-blue-400">
+            <div
+              v-if="!isOwner && moodboardName"
+              class="mt-2 text-xs text-blue-600 dark:text-blue-400"
+            >
               <UIcon name="i-heroicons-information-circle-20-solid" class="inline mr-1" />
               This will create a new copy. The original moodboard will remain unchanged.
             </div>
@@ -523,16 +620,11 @@
       </template>
 
       <template #footer>
-        <UButton 
-          label="Cancel" 
-          color="neutral" 
-          variant="outline" 
-          @click="showSaveModal = false" 
-        />
-        <UButton 
+        <UButton label="Cancel" color="neutral" variant="outline" @click="showSaveModal = false" />
+        <UButton
           label="Save Moodboard"
-          color="success" 
-          :loading="saving" 
+          color="success"
+          :loading="saving"
           :disabled="isSaveDisabled"
           @click="saveMoodboard"
         />
@@ -567,7 +659,7 @@
     />
 
     <!-- Image Editor Modal -->
-    <ImageEditor 
+    <ImageEditor
       v-if="showImageEditor && currentEditingImage"
       :image-id="currentEditingImage.id"
       :moodboard-id="sessionId || ''"
@@ -584,7 +676,12 @@ import { ref, computed, onMounted, onUnmounted, watch, inject, nextTick } from '
 import type { Ref } from 'vue'
 import { useRuntimeConfig, useRouter } from '#imports'
 import '@/assets/css/toast-loading-bar.css'
-import { useMoodboards, type Moodboard, type MoodboardImage, type MoodboardTextElement } from '~/composables/useMoodboards'
+import {
+  useMoodboards,
+  type Moodboard,
+  type MoodboardImage,
+  type MoodboardTextElement,
+} from '~/composables/useMoodboards'
 import { useAISuggestions } from '~/composables/useAISuggestions'
 import ImageEditor from '~/components/ImageEditor.vue'
 import MoodboardCanvas from '~/components/MoodboardCanvas.vue'
@@ -634,7 +731,18 @@ const brushColor = ref('#000000')
 const brushOpacity = ref(1)
 const brushHardness = ref(80)
 const flowRate = ref(50)
-const blendMode = ref<'source-over' | 'multiply' | 'screen' | 'overlay' | 'soft-light' | 'hard-light' | 'color-dodge' | 'color-burn' | 'difference' | 'exclusion'>('source-over')
+const blendMode = ref<
+  | 'source-over'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'soft-light'
+  | 'hard-light'
+  | 'color-dodge'
+  | 'color-burn'
+  | 'difference'
+  | 'exclusion'
+>('source-over')
 const drawingHistory = ref<ImageData[]>([])
 const historyStep = ref(-1)
 
@@ -666,7 +774,6 @@ const handleAddTextElement = async (textElement: MoodboardTextElement) => {
   // Add the text element returned from the API (which already has the correct ID)
   if (currentMoodboard.value) {
     textElements.value.push(textElement)
-
   }
 }
 
@@ -676,7 +783,6 @@ const handleAddImage = async (imageData: Partial<MoodboardImage>) => {
   if (currentMoodboard.value) {
     if (imageData.id) {
       moodboard.value.push(imageData as MoodboardImage)
-
     }
   }
 }
@@ -684,20 +790,19 @@ const handleAddImage = async (imageData: Partial<MoodboardImage>) => {
 // Handle text element updates
 const handleUpdateTextElement = async (updatedText: MoodboardTextElement) => {
   if (!currentMoodboard.value) {
-
     return
   }
-  
+
   try {
     await updateTextElement(currentMoodboard.value.id, updatedText.id, updatedText)
     // Update local state
-    const index = textElements.value.findIndex((te: MoodboardTextElement) => te.id === updatedText.id)
+    const index = textElements.value.findIndex(
+      (te: MoodboardTextElement) => te.id === updatedText.id,
+    )
     if (index !== -1) {
       textElements.value[index] = updatedText
     }
-
   } catch {
-
     // Reload text elements to sync state
     await loadTextElements(currentMoodboard.value.id)
   }
@@ -706,16 +811,15 @@ const handleUpdateTextElement = async (updatedText: MoodboardTextElement) => {
 // Handle text element deletion
 const handleDeleteTextElement = async (elementId: string) => {
   if (!currentMoodboard.value) {
-
     return
   }
-  
+
   try {
     // Remove from local state
-    textElements.value = textElements.value.filter((te: MoodboardTextElement) => te.id !== elementId)
-
+    textElements.value = textElements.value.filter(
+      (te: MoodboardTextElement) => te.id !== elementId,
+    )
   } catch {
-
     // Reload text elements to sync state
     await loadTextElements(currentMoodboard.value.id)
   }
@@ -744,16 +848,16 @@ const clearDrawing = () => {
   // Clear drawing history and notify canvas component
   drawingHistory.value = []
   historyStep.value = -1
-  
+
   // Remove the saved drawing image from moodboard
-  const drawingImage = moodboard.value.find((img: MoodboardImage) => 
-    img.title === '__moodboard_drawing__'
+  const drawingImage = moodboard.value.find(
+    (img: MoodboardImage) => img.title === '__moodboard_drawing__',
   )
-  
+
   if (drawingImage && drawingImage.id) {
     removeFromMoodboard(drawingImage.id)
   }
-  
+
   // The canvas component will handle the actual clear
 }
 
@@ -767,7 +871,7 @@ const saveDrawingState = (imageData: ImageData) => {
 // Advanced drawing functions
 const setPenType = (type: 'pen' | 'marker' | 'pencil' | 'highlighter' | 'spray' | 'watercolor') => {
   penType.value = type
-  
+
   // Auto-adjust brush settings based on pen type
   switch (type) {
     case 'pen':
@@ -832,30 +936,32 @@ const showFlowRate = () => {
 }
 
 const showBlendMode = () => {
-  return penType.value === 'watercolor' || penType.value === 'marker' || penType.value === 'highlighter'
+  return (
+    penType.value === 'watercolor' || penType.value === 'marker' || penType.value === 'highlighter'
+  )
 }
 
 // Save drawing as an image in the moodboard
 const saveDrawingAsImage = async () => {
   if (!currentMoodboard.value) return
-  
+
   // Get the drawing canvas from the child component
   const canvasContainer = document.querySelector('.moodboard-canvas')
   const drawingCanvas = canvasContainer?.querySelector('.drawing-canvas') as HTMLCanvasElement
-  
+
   if (!drawingCanvas) return
-  
+
   const ctx = drawingCanvas.getContext('2d')
   if (!ctx) return
-  
+
   // Check if there's actually any drawing content
   const imageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)
   const hasDrawing = imageData.data.some((value, index) => {
-    return index % 4 === 3 && value > 0  // Check alpha channel
+    return index % 4 === 3 && value > 0 // Check alpha channel
   })
-  
-  if (!hasDrawing) return  // No drawing to save
-  
+
+  if (!hasDrawing) return // No drawing to save
+
   try {
     // Convert canvas to blob
     const blob = await new Promise<Blob>((resolve, reject) => {
@@ -864,50 +970,52 @@ const saveDrawingAsImage = async () => {
         else reject(new Error('Failed to create blob'))
       }, 'image/png')
     })
-    
+
     // Remove any existing drawing image (to replace it)
-    const existingDrawingImage = moodboard.value.find((img: MoodboardImage) => 
-      img.title === '__moodboard_drawing__'
+    const existingDrawingImage = moodboard.value.find(
+      (img: MoodboardImage) => img.title === '__moodboard_drawing__',
     )
-    
+
     if (existingDrawingImage) {
       await removeFromMoodboard(existingDrawingImage.id || '')
     }
-    
+
     // Create form data to upload the drawing
     const formData = new FormData()
     formData.append('image_file', blob, 'moodboard_drawing.png')
-    formData.append('title', '__moodboard_drawing__')  // Special marker for drawings
+    formData.append('title', '__moodboard_drawing__') // Special marker for drawings
     formData.append('source', 'drawing')
     formData.append('x_position', '0')
     formData.append('y_position', '0')
     formData.append('canvas_width', drawingCanvas.width.toString())
     formData.append('canvas_height', drawingCanvas.height.toString())
     formData.append('is_selected', 'false')
-    formData.append('z_index', '999')  // Keep drawings on top
+    formData.append('z_index', '999') // Keep drawings on top
     formData.append('opacity', '1')
-    
+
     const config = useRuntimeConfig()
     const csrfToken = useCookie('csrftoken').value
-    
+
     const headers: Record<string, string> = {
-      ...useRequestHeaders(['cookie'])
+      ...useRequestHeaders(['cookie']),
     }
-    
+
     if (csrfToken) {
       headers['X-CSRFToken'] = csrfToken
     }
-    
-    const response = await $fetch(`${config.public.apiBase}/moodboards/${currentMoodboard.value.id}/images/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers,
-      body: formData
-    })
-    
+
+    const response = await $fetch(
+      `${config.public.apiBase}/moodboards/${currentMoodboard.value.id}/images/`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: formData,
+      },
+    )
+
     // Add to local moodboard
     moodboard.value.push(response as MoodboardImage)
-    
   } catch {
     // Silently handle drawing save errors in production
   }
@@ -916,45 +1024,45 @@ const saveDrawingAsImage = async () => {
 // Load drawing from saved image
 const loadDrawingFromImage = async () => {
   if (!currentMoodboard.value) return
-  
+
   // Find the drawing image
-  const drawingImage = moodboard.value.find((img: MoodboardImage) => 
-    img.title === '__moodboard_drawing__'
+  const drawingImage = moodboard.value.find(
+    (img: MoodboardImage) => img.title === '__moodboard_drawing__',
   )
-  
+
   if (!drawingImage || !drawingImage.image_url) return
-  
+
   // Wait for canvas to be ready
   await nextTick()
-  
+
   const canvasContainer = document.querySelector('.moodboard-canvas')
   const drawingCanvas = canvasContainer?.querySelector('.drawing-canvas') as HTMLCanvasElement
-  
+
   if (!drawingCanvas) return
-  
+
   const ctx = drawingCanvas.getContext('2d')
   if (!ctx) return
-  
+
   try {
     // Load the drawing image
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    
+
     await new Promise<void>((resolve, reject) => {
       img.onload = () => {
         // Clear canvas and draw the saved drawing
         ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height)
         ctx.drawImage(img, 0, 0)
-        
+
         // Save initial state to drawing history
         const imageData = ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)
         drawingHistory.value = [imageData]
         historyStep.value = 0
-        
+
         resolve()
       }
       img.onerror = reject
-      
+
       let imageUrl = drawingImage.image_url
       if (imageUrl?.startsWith('/')) {
         const config = useRuntimeConfig()
@@ -962,13 +1070,14 @@ const loadDrawingFromImage = async () => {
       }
       img.src = imageUrl || ''
     })
-    
+
     // Hide the drawing image element so it doesn't show as a regular image
-    const drawingImageElement = document.querySelector(`[data-image-id="${drawingImage.id}"]`) as HTMLElement
+    const drawingImageElement = document.querySelector(
+      `[data-image-id="${drawingImage.id}"]`,
+    ) as HTMLElement
     if (drawingImageElement) {
       drawingImageElement.style.display = 'none'
     }
-    
   } catch {
     // Silently handle drawing load errors in production
   }
@@ -989,17 +1098,13 @@ const handleDeleteElement = async (elementId: string) => {
 // Load text elements for canvas view
 const loadTextElements = async (moodboardId: string) => {
   try {
-
-    const response = await getTextElements(moodboardId) as { results?: MoodboardTextElement[] }
+    const response = (await getTextElements(moodboardId)) as { results?: MoodboardTextElement[] }
     if (response?.results) {
       textElements.value = response.results
-
     } else {
       textElements.value = []
-
     }
   } catch {
-
     textElements.value = [] // Clear state on error
   }
 }
@@ -1029,7 +1134,11 @@ const canSave = computed(() => userPermission.value === 'edit')
 const isSaveDisabled = computed(() => {
   if (!tempMoodboardName.value.trim()) return true
   // Non-owners must change the name when editing existing moodboards
-  if (!isOwner.value && moodboardName.value && tempMoodboardName.value.trim() === moodboardName.value) {
+  if (
+    !isOwner.value &&
+    moodboardName.value &&
+    tempMoodboardName.value.trim() === moodboardName.value
+  ) {
     return true
   }
   return false
@@ -1040,7 +1149,7 @@ const apiBase = config.public.apiBase
 const router = useRouter()
 
 // Composable for API calls
-const { 
+const {
   fetchMoodboard: fetchMoodboardFromAPI,
   updateMoodboard,
   createMoodboard,
@@ -1055,7 +1164,7 @@ const {
   preloadAI: _preloadAI,
   getTextElements,
   updateTextElement,
-  createTextElement
+  createTextElement,
 } = useMoodboards()
 
 // AI Suggestions
@@ -1075,7 +1184,7 @@ const dropdownItems = computed(() => [
     onUpdateChecked(checked: boolean) {
       if (checked) dropdownMode.value = 'default'
       else if (dropdownMode.value === 'default') dropdownMode.value = 'gaming'
-    }
+    },
   },
   {
     label: 'Gaming',
@@ -1085,12 +1194,13 @@ const dropdownItems = computed(() => [
     onUpdateChecked(checked: boolean) {
       if (checked) dropdownMode.value = 'gaming'
       else if (dropdownMode.value === 'gaming') dropdownMode.value = 'default'
-    }
+    },
   },
   {
-    label: aiSuggestions.totalSuggestions.value > 0 
-      ? `AI Suggestions (${aiSuggestions.totalSuggestions.value})` 
-      : 'AI Suggestions',
+    label:
+      aiSuggestions.totalSuggestions.value > 0
+        ? `AI Suggestions (${aiSuggestions.totalSuggestions.value})`
+        : 'AI Suggestions',
     icon: 'i-heroicons-cpu-chip-20-solid',
     type: 'checkbox' as const,
     checked: aiSuggestions.isVisible.value,
@@ -1102,8 +1212,8 @@ const dropdownItems = computed(() => [
       } else {
         aiSuggestions.hidePanel()
       }
-    }
-  }
+    },
+  },
 ])
 
 onMounted(async () => {
@@ -1111,11 +1221,11 @@ onMounted(async () => {
   showSaveModal.value = false
   tempMoodboardName.value = ''
   saving.value = false
-  
+
   // Check if we're editing an existing moodboard
   const route = useRoute()
   const moodboardId = route.query.id as string
-  
+
   if (moodboardId) {
     sessionId.value = moodboardId
     await fetchMoodboard()
@@ -1141,41 +1251,47 @@ onUnmounted(async () => {
 
 // Watch for route changes to handle switching between different moodboards
 const route = useRoute()
-watch(() => route.query.id, async (newId: unknown, oldId: unknown) => {
-  if (newId !== oldId) {
-    if (newId) {
-      sessionId.value = newId as string
-      isInitialLoad.value = true
-      images.value = []
-      moodboard.value = []
-      moodboardName.value = ''
-      isMoodboardPublic.value = false
-      originalMoodboardImageIds.value = []
-      removedImageIds.value = []
-      await fetchMoodboard()
-    } else {
-      sessionId.value = null
-      isMoodboardPublic.value = false
-      moodboardName.value = ''
-      images.value = []
-      moodboard.value = []
-      isInitialLoad.value = true
-      originalMoodboardImageIds.value = []
-      removedImageIds.value = []
+watch(
+  () => route.query.id,
+  async (newId: unknown, oldId: unknown) => {
+    if (newId !== oldId) {
+      if (newId) {
+        sessionId.value = newId as string
+        isInitialLoad.value = true
+        images.value = []
+        moodboard.value = []
+        moodboardName.value = ''
+        isMoodboardPublic.value = false
+        originalMoodboardImageIds.value = []
+        removedImageIds.value = []
+        await fetchMoodboard()
+      } else {
+        sessionId.value = null
+        isMoodboardPublic.value = false
+        moodboardName.value = ''
+        images.value = []
+        moodboard.value = []
+        isInitialLoad.value = true
+        originalMoodboardImageIds.value = []
+        removedImageIds.value = []
+      }
     }
-  }
-}, { immediate: false })
+  },
+  { immediate: false },
+)
 
 function onCheckboxChange(checked: boolean, id: string) {
   if (checked) {
     if (!selectedImageIds.value.includes(id)) {
       selectedImageIds.value.push(id)
-      
+
       // If this image was previously removed, remove it from the removed list
       if (removedImageIds.value.includes(id)) {
-        removedImageIds.value = removedImageIds.value.filter((removedId: string) => removedId !== id)
+        removedImageIds.value = removedImageIds.value.filter(
+          (removedId: string) => removedId !== id,
+        )
       }
-      
+
       // Move the selected image from images to moodboard immediately
       const selectedImage = images.value.find((img: MoodboardImage) => img.id === id)
       if (selectedImage) {
@@ -1185,7 +1301,7 @@ function onCheckboxChange(checked: boolean, id: string) {
     }
   } else {
     selectedImageIds.value = selectedImageIds.value.filter((i: string) => i !== id)
-    
+
     // Move the image back from moodboard to images
     const deselectedImage = moodboard.value.find((img: MoodboardImage) => img.id === id)
     if (deselectedImage) {
@@ -1200,7 +1316,7 @@ async function removeFromMoodboard(imageId: string) {
   const imageToRemove = moodboard.value.find((img: MoodboardImage) => img.id === imageId)
   if (imageToRemove) {
     const isExistingImage = originalMoodboardImageIds.value.includes(imageId)
-    
+
     // If this is an existing image in the database, delete it via API
     if (isExistingImage && sessionId.value) {
       try {
@@ -1214,20 +1330,20 @@ async function removeFromMoodboard(imageId: string) {
       // For newly added images that aren't in the database yet
       showToast('Image removed from moodboard', 'info')
     }
-    
+
     // Remove from moodboard UI
     moodboard.value = moodboard.value.filter((img: MoodboardImage) => img.id !== imageId)
-    
+
     // Track this as a removed image if it was part of the original moodboard
     if (isExistingImage) {
       if (!removedImageIds.value.includes(imageId)) {
         removedImageIds.value.push(imageId)
       }
     }
-    
+
     // Remove from selectedImageIds if it was recently selected
     selectedImageIds.value = selectedImageIds.value.filter((id: string) => id !== imageId)
-    
+
     // Move it back to the generated images section so user can re-select if needed
     images.value.push(imageToRemove)
   }
@@ -1250,20 +1366,24 @@ function onImageEdited(editedImage: MoodboardImage) {
   // Update the existing image instead of adding a new one
   if (currentEditingImage.value) {
     // Find and update in moodboard list
-    const moodboardIndex = moodboard.value.findIndex((img: MoodboardImage) => img.id === currentEditingImage.value!.id)
+    const moodboardIndex = moodboard.value.findIndex(
+      (img: MoodboardImage) => img.id === currentEditingImage.value!.id,
+    )
     if (moodboardIndex !== -1) {
       moodboard.value[moodboardIndex] = editedImage
     }
-    
+
     // Find and update in images list
-    const imagesIndex = images.value.findIndex((img: MoodboardImage) => img.id === currentEditingImage.value!.id)
+    const imagesIndex = images.value.findIndex(
+      (img: MoodboardImage) => img.id === currentEditingImage.value!.id,
+    )
     if (imagesIndex !== -1) {
       images.value[imagesIndex] = editedImage
     }
-    
+
     showToast('Image edited successfully!', 'success')
   }
-  
+
   closeImageEditor()
 }
 
@@ -1283,13 +1403,13 @@ function clearMoodboardToast() {
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
   const colors = {
     success: 'success' as const,
-    error: 'error' as const, 
-    info: 'primary' as const
+    error: 'error' as const,
+    info: 'primary' as const,
   }
-  
+
   toast.add({
     title: message,
-    color: colors[type]
+    color: colors[type],
   })
 }
 
@@ -1327,36 +1447,37 @@ async function generateImages() {
   if (!sessionId.value || !prompt.value) return
   loading.value = true
   showMoodboardToast()
-  
+
   try {
     // Get current image count before generating new ones
     const preGenResponse = await getAISession(sessionId.value || '')
-    existingImageCount.value = (preGenResponse as AISessionGetResponse)?.images ? (preGenResponse as AISessionGetResponse).images.length : 0
-    
+    existingImageCount.value = (preGenResponse as AISessionGetResponse)?.images
+      ? (preGenResponse as AISessionGetResponse).images.length
+      : 0
+
     let fullPrompt = prompt.value
     if (colorPalette.value.length) {
       fullPrompt += `, color palette: ${colorPalette.value.join(', ')}`
     }
-    
+
     await generateAIImages(
       sessionId.value || '',
       fullPrompt,
       selectedImageIds.value,
-      dropdownMode.value
+      dropdownMode.value,
     )
-    
+
     await fetchMoodboard()
     loading.value = false
     clearMoodboardToast()
     prompt.value = ''
     selectedImageIds.value = []
-    
   } catch (error: unknown) {
     const apiError = error as { response?: { data?: { error?: string } } }
 
     loading.value = false
     clearMoodboardToast()
-    
+
     const errorMessage = apiError.response?.data?.error || 'Failed to generate images'
     showToast(errorMessage, 'error')
   }
@@ -1367,45 +1488,45 @@ async function startSessionWithPrompt() {
   const res = await startAISession()
   sessionId.value = (res as AISessionStartResponse)?.session_id
   isInitialLoad.value = false
-  
+
   // Generate a default moodboard name based on the prompt
   if (!moodboardName.value) {
     const promptWords = prompt.value.split(' ').slice(0, 4).join(' ')
     moodboardName.value = promptWords.charAt(0).toUpperCase() + promptWords.slice(1) + ' Moodboard'
   }
-  
+
   await fetchMoodboard()
   await generateImages()
 }
 
 async function fetchMoodboard() {
   if (!sessionId.value) return
-  
+
   try {
     let res: AISessionGetResponse | Moodboard | null = null
     if (isInitialLoad.value) {
       // For initial load of existing moodboards, use the regular REST API
-      res = await fetchMoodboardFromAPI(sessionId.value) as Moodboard | null
+      res = (await fetchMoodboardFromAPI(sessionId.value)) as Moodboard | null
       if (!res) {
         const toast = useToast()
         toast.add({
           title: 'Moodboard Not Found',
           description: 'The requested moodboard could not be loaded.',
-          color: 'error'
+          color: 'error',
         })
         await router.push('/moodboards')
         return
       }
     } else {
       // For AI session data during generation, use the AI session API
-      res = await getAISession(sessionId.value || '') as AISessionGetResponse | null
+      res = (await getAISession(sessionId.value || '')) as AISessionGetResponse | null
     }
-    
+
     if (isInitialLoad.value) {
       // Clear existing data before loading fresh data
       images.value = []
       moodboard.value = []
-      
+
       // Use images from API for the moodboard (filter for selected images)
       let allImages: MoodboardImage[] = []
       if (isInitialLoad.value) {
@@ -1417,14 +1538,14 @@ async function fetchMoodboard() {
         const aiSession = res as AISessionGetResponse
         allImages = aiSession?.images || []
       }
-      
+
       const selectedImages = allImages.filter((img: MoodboardImage) => img.is_selected)
       moodboard.value = selectedImages
-      
+
       // Store the original image IDs for tracking changes
       originalMoodboardImageIds.value = selectedImages.map((img: MoodboardImage) => img.id)
       removedImageIds.value = []
-      
+
       // Set moodboard metadata
       // Check if this is a direct moodboard response or AI session response
       if (isInitialLoad.value) {
@@ -1438,14 +1559,14 @@ async function fetchMoodboard() {
         }
         // Set current moodboard for canvas view
         currentMoodboard.value = moodboard
-        
+
         // Load text elements for canvas view
         if (moodboard?.id) {
           await loadTextElements(moodboard.id)
           // Load drawing data
           await loadDrawingFromImage()
         }
-        
+
         // For direct moodboard responses, we need to set default user permissions
         userPermission.value = 'edit' // Assume user has edit permission for their own moodboards
         isOwner.value = true // Assume user is owner when accessing via REST API
@@ -1460,27 +1581,27 @@ async function fetchMoodboard() {
         }
         // Set current moodboard for canvas view
         currentMoodboard.value = aiSession?.moodboard || null
-        
+
         // Load text elements for canvas view
         if (aiSession?.moodboard?.id) {
           await loadTextElements(aiSession.moodboard.id)
           // Load drawing data
           await loadDrawingFromImage()
         }
-        
+
         if (aiSession?.user_permission) {
-          userPermission.value = aiSession.user_permission as 'view' | 'edit' || 'edit'
+          userPermission.value = (aiSession.user_permission as 'view' | 'edit') || 'edit'
         }
         if (aiSession?.is_owner !== undefined) {
           isOwner.value = Boolean(aiSession.is_owner)
         }
       }
-      
+
       // Set default if no value found
       if (!isMoodboardPublic.value) {
         isMoodboardPublic.value = false
       }
-      
+
       isInitialLoad.value = false
       existingImageCount.value = allImages.length
     } else {
@@ -1488,13 +1609,13 @@ async function fetchMoodboard() {
       const allImages = res?.images || []
       const newImages = allImages.slice(existingImageCount.value)
       const existingMoodboardImageIds = moodboard.value.map((img: MoodboardImage) => img.id)
-      
+
       const filteredImages = newImages.filter((img: MoodboardImage) => {
         const isSelected = img.is_selected
         const isAlreadyInMoodboard = existingMoodboardImageIds.includes(img.id)
         return !isSelected && !isAlreadyInMoodboard
       })
-      
+
       images.value = filteredImages
     }
   } catch {
@@ -1510,37 +1631,39 @@ function openSaveModal() {
 // ENHANCED SAVE FUNCTION - HANDLES CANVAS CHANGES
 async function saveMoodboard() {
   if (!sessionId.value) return
-  
+
   if (!tempMoodboardName.value.trim()) {
     showToast('Please enter a moodboard name', 'error')
     return
   }
-  
+
   saving.value = true
-  
+
   try {
     // Calculate current image selection
     const finalImageIds = [
-      ...originalMoodboardImageIds.value.filter((id: string) => !removedImageIds.value.includes(id)),
-      ...selectedImageIds.value
+      ...originalMoodboardImageIds.value.filter(
+        (id: string) => !removedImageIds.value.includes(id),
+      ),
+      ...selectedImageIds.value,
     ]
     const _allSelectedImageIds = [...new Set(finalImageIds)]
-    
+
     const hasExistingMoodboard = !!moodboardName.value
     const isEditingExisting = hasExistingMoodboard && isOwner.value
-    
+
     // IMPROVED DECISION LOGIC:
     // 1. If editing existing moodboard and owner = UPDATE (regardless of name change)
     // 2. Otherwise = CREATE NEW
-    
+
     if (isEditingExisting) {
       // UPDATE existing moodboard (allow name changes)
-      
+
       await updateMoodboard(sessionId.value || '', {
         title: tempMoodboardName.value.trim(),
-        is_public: isMoodboardPublic.value
+        is_public: isMoodboardPublic.value,
       })
-      
+
       // Save all canvas images with their current properties (position, size, etc.)
       for (const image of moodboard.value) {
         try {
@@ -1552,13 +1675,13 @@ async function saveMoodboard() {
             canvas_height: image.canvas_height,
             z_index: image.z_index,
             opacity: image.opacity,
-            rotation: image.rotation || 0
+            rotation: image.rotation || 0,
           })
         } catch {
           // Silently handle individual image save errors
         }
       }
-      
+
       // Save all text elements
       for (const textElement of textElements.value) {
         try {
@@ -1573,25 +1696,24 @@ async function saveMoodboard() {
           // Silently handle individual text element save errors
         }
       }
-      
+
       // Save drawing data
       await saveDrawingAsImage()
-      
+
       // Update the moodboard name if it changed
       moodboardName.value = tempMoodboardName.value.trim()
-      
+
       // Redirect to the moodboards list
       await router.push('/moodboards')
-      
     } else {
       // CREATE new moodboard
-      
+
       const res = await createMoodboard({
         title: tempMoodboardName.value.trim(),
         is_public: isMoodboardPublic.value,
-        color_palette: colorPalette.value
+        color_palette: colorPalette.value,
       })
-      
+
       // Add canvas images to new moodboard with their positions
       if (res && moodboard.value.length > 0) {
         for (const image of moodboard.value) {
@@ -1611,14 +1733,14 @@ async function saveMoodboard() {
               opacity: image.opacity,
               rotation: image.rotation || 0,
               order_index: 0,
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
             })
           } catch {
             // Silently handle individual image creation errors
           }
         }
       }
-      
+
       // Add text elements to new moodboard
       if (res && textElements.value.length > 0) {
         for (const textElement of textElements.value) {
@@ -1629,22 +1751,21 @@ async function saveMoodboard() {
           }
         }
       }
-      
+
       // Set current moodboard for drawing save
       if (res) {
         currentMoodboard.value = res as Moodboard
         // Save drawing data
         await saveDrawingAsImage()
       }
-      
+
       if (res) {
         await router.push('/moodboards')
       }
     }
-    
+
     showSaveModal.value = false
     showToast('Moodboard saved successfully!', 'success')
-    
   } catch (error: unknown) {
     const apiError = error as { response?: { data?: { error?: string } } }
 
@@ -1666,7 +1787,7 @@ const handleUnapplySuggestion = (index: number) => {
 
 const handleRegenerateSuggestions = () => {
   aiSuggestions.regenerateSuggestions({
-    numSuggestions: 3
+    numSuggestions: 3,
   })
 }
 
@@ -1682,13 +1803,13 @@ const handleGenerateAISuggestions = () => {
   if (prompt.value.trim().length >= 3) {
     aiSuggestions.generateSuggestions(prompt.value, {
       mode: dropdownMode.value as 'default' | 'gaming',
-      numSuggestions: 3
+      numSuggestions: 3,
     })
   } else if (prompt.value.trim()) {
     // Let the composable handle the validation error
     aiSuggestions.generateSuggestions(prompt.value, {
       mode: dropdownMode.value as 'default' | 'gaming',
-      numSuggestions: 3
+      numSuggestions: 3,
     })
   } else {
     // Handle case when no prompt is provided
@@ -1743,7 +1864,8 @@ const handleClearError = () => {
   --moodboard-section-text: var(--ui-primary, #8b5cf6);
 }
 
-html[data-theme="dark"], .dark {
+html[data-theme='dark'],
+.dark {
   --moodboard-header-bg: linear-gradient(90deg, #2e1065 0%, #4c1d95 100%);
   --moodboard-header-text: #ede9fe;
   --moodboard-section-bg: #18181b;
@@ -1755,11 +1877,13 @@ html[data-theme="dark"], .dark {
   border-radius: 1.25rem;
   padding: 2.5rem 2rem 2rem 2rem;
   margin-bottom: 2.5rem;
-  box-shadow: 0 4px 24px 0 rgba(139,92,246,0.10);
+  box-shadow: 0 4px 24px 0 rgba(139, 92, 246, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background 0.3s, color 0.3s;
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 .page-header h1 {
@@ -1828,9 +1952,11 @@ html[data-theme="dark"], .dark {
   align-items: center;
   background: var(--prompt-bar-bg, #fff);
   padding: 1rem 2rem;
-  box-shadow: 0 -2px 16px 0 rgba(0,0,0,0.08);
+  box-shadow: 0 -2px 16px 0 rgba(0, 0, 0, 0.08);
   border-top: 1px solid #e5e7eb;
-  transition: background 0.3s, color 0.3s;
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 @media (max-width: 900px) {
@@ -1847,8 +1973,10 @@ html[data-theme="dark"], .dark {
   border-radius: 1.25rem;
   padding: 2rem 2rem 2.5rem 2rem;
   margin-bottom: 2.5rem;
-  box-shadow: 0 4px 24px 0 rgba(139,92,246,0.08);
-  transition: background 0.3s, color 0.3s;
+  box-shadow: 0 4px 24px 0 rgba(139, 92, 246, 0.08);
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 .section-header {
@@ -1887,12 +2015,14 @@ html[data-theme="dark"], .dark {
   color: var(--ui-primary, #8b5cf6);
 }
 
-html[data-theme="dark"] .dropdown-item-selected, .dark .dropdown-item-selected {
+html[data-theme='dark'] .dropdown-item-selected,
+.dark .dropdown-item-selected {
   background: var(--ui-color-primary-900, #4c1d95);
   color: var(--ui-color-primary-100, #ede9fe);
 }
 
-html[data-theme="dark"] .prompt-bar, .dark .prompt-bar {
+html[data-theme='dark'] .prompt-bar,
+.dark .prompt-bar {
   --prompt-bar-bg: #18181b;
   border-top: 1px solid #23272f;
 }
@@ -1921,12 +2051,14 @@ html[data-theme="dark"] .prompt-bar, .dark .prompt-bar {
   color: #6b7280;
 }
 
-html[data-theme="dark"] .prompt-input-placeholder, .dark .prompt-input-placeholder {
+html[data-theme='dark'] .prompt-input-placeholder,
+.dark .prompt-input-placeholder {
   background: #1f2937;
   border-color: #374151;
 }
 
-html[data-theme="dark"] .prompt-input-placeholder span, .dark .prompt-input-placeholder span {
+html[data-theme='dark'] .prompt-input-placeholder span,
+.dark .prompt-input-placeholder span {
   color: #9ca3af;
 }
 
@@ -2006,11 +2138,13 @@ html[data-theme="dark"] .prompt-input-placeholder span, .dark .prompt-input-plac
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
-:root, html[data-theme="light"] {
+:root,
+html[data-theme='light'] {
   --image-card-bg: #fafafa;
 }
 
-html[data-theme="dark"], .dark {
+html[data-theme='dark'],
+.dark {
   --image-card-bg: #23272f;
 }
 
@@ -2018,7 +2152,7 @@ html[data-theme="dark"], .dark {
   padding: 0.5rem 1rem 1rem 1rem;
   background: var(--moodboard-section-bg);
   border-radius: 1rem;
-  box-shadow: 0 4px 24px 0 rgba(139,92,246,0.10);
+  box-shadow: 0 4px 24px 0 rgba(139, 92, 246, 0.1);
 }
 
 .palette-list {
@@ -2037,7 +2171,7 @@ html[data-theme="dark"], .dark {
   justify-content: center;
   position: relative;
   margin-right: 0.15rem;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: border 0.2s;
 }
@@ -2059,7 +2193,7 @@ html[data-theme="dark"], .dark {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.1);
   cursor: pointer;
   border: 1px solid #e5e7eb;
   z-index: 2;
@@ -2082,7 +2216,7 @@ html[data-theme="dark"], .dark {
   height: 18px;
   border-radius: 50%;
   border: 2px solid #e5e7eb;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.08);
   margin-right: 0.1rem;
 }
 
@@ -2096,23 +2230,27 @@ html[data-theme="dark"], .dark {
   justify-content: center;
 }
 
-html[data-theme="dark"] .palette-color, .dark .palette-color {
+html[data-theme='dark'] .palette-color,
+.dark .palette-color {
   border: 2px solid #23272f;
   background: #23272f;
 }
 
-html[data-theme="dark"] .palette-remove, .dark .palette-remove {
+html[data-theme='dark'] .palette-remove,
+.dark .palette-remove {
   background: #18181b;
   color: #a1a1aa;
   border: 1px solid #23272f;
 }
 
-html[data-theme="dark"] .palette-remove:hover, .dark .palette-remove:hover {
+html[data-theme='dark'] .palette-remove:hover,
+.dark .palette-remove:hover {
   color: #ef4444;
   background: #2e1065;
 }
 
-html[data-theme="dark"] .palette-inline-color, .dark .palette-inline-color {
+html[data-theme='dark'] .palette-inline-color,
+.dark .palette-inline-color {
   border: 2px solid #23272f;
   background: #23272f;
 }
@@ -2148,7 +2286,8 @@ html[data-theme="dark"] .palette-inline-color, .dark .palette-inline-color {
   background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
 }
 
-html[data-theme="dark"] .drawing-tools-toolbar, .dark .drawing-tools-toolbar {
+html[data-theme='dark'] .drawing-tools-toolbar,
+.dark .drawing-tools-toolbar {
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   border: 1px solid #374151;
 }

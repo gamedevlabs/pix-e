@@ -7,7 +7,7 @@ export class MoodboardException extends Error {
     message: string,
     public code: string,
     public recoverable: boolean = false,
-    public context?: Record<string, unknown>
+    public context?: Record<string, unknown>,
   ) {
     super(message)
     this.name = 'MoodboardException'
@@ -19,7 +19,7 @@ export class MoodboardException extends Error {
       message: this.message,
       recoverable: this.recoverable,
       context: this.context,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
   }
 }
@@ -57,16 +57,16 @@ export class QuotaExceededError extends MoodboardException {
 
 // Error handler utilities
 export const handleAPIError = (error: unknown): MoodboardException => {
-  const err = error as { 
-    code?: string; 
-    message?: string; 
-    statusCode?: number; 
-    data?: { error?: string };
-    response?: { status: number; data?: { message?: string; max_size?: number; limit?: number } };
-    name?: string;
-    toString?: () => string;
+  const err = error as {
+    code?: string
+    message?: string
+    statusCode?: number
+    data?: { error?: string }
+    response?: { status: number; data?: { message?: string; max_size?: number; limit?: number } }
+    name?: string
+    toString?: () => string
   }
-  
+
   // Network errors
   if (!navigator.onLine) {
     return new NetworkError('No internet connection. Please check your network and try again.')
@@ -95,12 +95,16 @@ export const handleAPIError = (error: unknown): MoodboardException => {
       case 429:
         return new QuotaExceededError('rate_limit', data?.limit || 0)
       case 500:
-        return new MoodboardException('Server error occurred. Please try again later.', 'SERVER_ERROR', true)
+        return new MoodboardException(
+          'Server error occurred. Please try again later.',
+          'SERVER_ERROR',
+          true,
+        )
       default:
         return new MoodboardException(
           data?.message || 'An unexpected error occurred',
           'UNKNOWN_ERROR',
-          status < 500
+          status < 500,
         )
     }
   }
@@ -119,7 +123,7 @@ export const handleAPIError = (error: unknown): MoodboardException => {
     err.message || 'An unexpected error occurred',
     'UNKNOWN_ERROR',
     false,
-    { originalError: err.toString?.() || String(error) }
+    { originalError: err.toString?.() || String(error) },
   )
 }
 
@@ -131,13 +135,13 @@ export const withRetry = async <T>(
     baseDelay?: number
     maxDelay?: number
     retryCondition?: (error: MoodboardException) => boolean
-  } = {}
+  } = {},
 ): Promise<T> => {
   const {
     maxRetries = 3,
     baseDelay = 1000,
     maxDelay = 10000,
-    retryCondition = (error: MoodboardException) => error.recoverable
+    retryCondition = (error: MoodboardException) => error.recoverable,
   } = options
 
   let lastError: MoodboardException
@@ -154,13 +158,13 @@ export const withRetry = async <T>(
       }
 
       // Calculate delay with exponential backoff and jitter
-      const delay = Math.min(
-        baseDelay * Math.pow(2, attempt) + Math.random() * 1000,
-        maxDelay
-      )
+      const delay = Math.min(baseDelay * Math.pow(2, attempt) + Math.random() * 1000, maxDelay)
 
-      console.warn(`Operation failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`, lastError)
-      await new Promise(resolve => setTimeout(resolve, delay))
+      console.warn(
+        `Operation failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`,
+        lastError,
+      )
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
   }
 
@@ -205,7 +209,7 @@ export const recoveryStrategies = {
   clearCacheAndReload: (): void => {
     clearMoodboardCache()
     window.location.reload()
-  }
+  },
 }
 
 // Error notification system
@@ -218,7 +222,7 @@ export const showErrorNotification = (error: MoodboardError): void => {
     title: getErrorTitle(error.code),
     description: error.message,
     color,
-    timeout: error.recoverable ? 5000 : 0
+    timeout: error.recoverable ? 5000 : 0,
   }
 
   toast.add(notification)
@@ -232,7 +236,7 @@ const getErrorTitle = (code: string): string => {
     NOT_FOUND: 'Not Found',
     QUOTA_EXCEEDED: 'Limit Exceeded',
     SERVER_ERROR: 'Server Error',
-    UNKNOWN_ERROR: 'Unexpected Error'
+    UNKNOWN_ERROR: 'Unexpected Error',
   }
   return titles[code] || 'Error'
 }
@@ -247,7 +251,7 @@ const _getErrorActions = (error: MoodboardError) => {
       variant: 'solid',
       click: () => {
         // Retry logic will be implemented per component
-      }
+      },
     })
   }
 
@@ -258,7 +262,7 @@ const _getErrorActions = (error: MoodboardError) => {
       variant: 'outline',
       click: () => {
         enableOfflineMode()
-      }
+      },
     })
   }
 
@@ -270,7 +274,7 @@ let offlineQueue: Array<{ id: string; execute: () => Promise<void> }> = []
 
 const getOfflineQueue = () => offlineQueue
 const removeFromOfflineQueue = (id: string) => {
-  offlineQueue = offlineQueue.filter(op => op.id !== id)
+  offlineQueue = offlineQueue.filter((op) => op.id !== id)
 }
 
 const enableOfflineMode = () => {

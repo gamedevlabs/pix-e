@@ -21,29 +21,21 @@
       backgroundColor: textElement.background_color || 'transparent',
       borderColor: textElement.border_color || 'transparent',
       borderWidth: `${textElement.border_width}px`,
-      borderStyle: textElement.border_width > 0 ? 'solid' : 'none'
+      borderStyle: textElement.border_width > 0 ? 'solid' : 'none',
     }"
     @mousedown="handleMouseDown"
     @click="handleClick"
   >
-    <div
-      v-if="!isEditing"
-      class="text-content"
-      @dblclick="startEditing"
-    >
+    <div v-if="!isEditing" class="text-content" @dblclick="startEditing">
       {{ textElement.content }}
     </div>
-    
+
     <!-- Simple text editing -->
     <div v-else class="text-editing-container">
       <div class="text-editing-toolbar">
         <span class="editing-hint">Double-click to edit • Enter to save • Esc to cancel</span>
-        <button title="Save" class="save-button" @click="finishEditing">
-          ✓
-        </button>
-        <button title="Cancel" class="cancel-button" @click="cancelEditing">
-          ✕
-        </button>
+        <button title="Save" class="save-button" @click="finishEditing">✓</button>
+        <button title="Cancel" class="cancel-button" @click="cancelEditing">✕</button>
       </div>
       <textarea
         ref="textInput"
@@ -55,21 +47,21 @@
         @keydown.escape="cancelEditing"
       />
     </div>
-    
+
     <!-- Selection handles -->
     <div v-if="selected && !isEditing" class="selection-handles">
-      <div class="handle handle-nw" @mousedown="handleResize($event, 'nw')"/>
-      <div class="handle handle-ne" @mousedown="handleResize($event, 'ne')"/>
-      <div class="handle handle-sw" @mousedown="handleResize($event, 'sw')"/>
-      <div class="handle handle-se" @mousedown="handleResize($event, 'se')"/>
-      <div class="handle handle-n" @mousedown="handleResize($event, 'n')"/>
-      <div class="handle handle-s" @mousedown="handleResize($event, 's')"/>
-      <div class="handle handle-w" @mousedown="handleResize($event, 'w')"/>
-      <div class="handle handle-e" @mousedown="handleResize($event, 'e')"/>
+      <div class="handle handle-nw" @mousedown="handleResize($event, 'nw')" />
+      <div class="handle handle-ne" @mousedown="handleResize($event, 'ne')" />
+      <div class="handle handle-sw" @mousedown="handleResize($event, 'sw')" />
+      <div class="handle handle-se" @mousedown="handleResize($event, 'se')" />
+      <div class="handle handle-n" @mousedown="handleResize($event, 'n')" />
+      <div class="handle handle-s" @mousedown="handleResize($event, 's')" />
+      <div class="handle handle-w" @mousedown="handleResize($event, 'w')" />
+      <div class="handle handle-e" @mousedown="handleResize($event, 'e')" />
     </div>
 
     <!-- Delete button -->
-    <button 
+    <button
       v-if="selected && !isEditing"
       class="delete-button"
       title="Delete"
@@ -115,15 +107,18 @@ function handleClick(event: MouseEvent) {
 
 function handleMouseDown(event: MouseEvent) {
   if (isEditing.value) return
-  
-  if (event.target === event.currentTarget || (event.target as Element).classList.contains('text-content')) {
+
+  if (
+    event.target === event.currentTarget ||
+    (event.target as Element).classList.contains('text-content')
+  ) {
     isDragging.value = true
     dragStart.value = { x: event.clientX, y: event.clientY }
     originalBounds.value = {
       x: props.textElement.x_position,
       y: props.textElement.y_position,
       width: props.textElement.width,
-      height: props.textElement.height
+      height: props.textElement.height,
     }
     document.addEventListener('mousemove', handleDrag)
     document.addEventListener('mouseup', handleDragEnd)
@@ -149,7 +144,7 @@ function handleDrag(event: MouseEvent) {
   const updatedText: MoodboardTextElement = {
     ...props.textElement,
     x_position: Math.max(0, newX),
-    y_position: Math.max(0, newY)
+    y_position: Math.max(0, newY),
   }
 
   emit('update', updatedText)
@@ -170,7 +165,7 @@ function handleResize(event: MouseEvent, handle: string) {
     x: props.textElement.x_position,
     y: props.textElement.y_position,
     width: props.textElement.width,
-    height: props.textElement.height
+    height: props.textElement.height,
   }
   document.addEventListener('mousemove', handleResizeMove)
   document.addEventListener('mouseup', handleResizeEnd)
@@ -227,7 +222,7 @@ function handleResizeMove(event: MouseEvent) {
     x_position: newBounds.x,
     y_position: newBounds.y,
     width: newBounds.width,
-    height: newBounds.height
+    height: newBounds.height,
   }
 
   emit('update', updatedText)
@@ -242,10 +237,10 @@ function handleResizeEnd() {
 
 function startEditing() {
   if (!props.selected) return
-  
+
   isEditing.value = true
   editingContent.value = props.textElement.content
-  
+
   nextTick(() => {
     if (textInput.value) {
       textInput.value.focus()
@@ -256,12 +251,12 @@ function startEditing() {
 
 function finishEditing() {
   if (!isEditing.value) return
-  
+
   const updatedText: MoodboardTextElement = {
     ...props.textElement,
-    content: editingContent.value.trim() || 'New Text'
+    content: editingContent.value.trim() || 'New Text',
   }
-  
+
   emit('update', updatedText)
   isEditing.value = false
 }
@@ -351,14 +346,50 @@ onUnmounted(() => {
   pointer-events: all;
 }
 
-.handle-nw { top: 0; left: 0; cursor: nw-resize; }
-.handle-ne { top: 0; right: 0; cursor: ne-resize; }
-.handle-sw { bottom: 0; left: 0; cursor: sw-resize; }
-.handle-se { bottom: 0; right: 0; cursor: se-resize; }
-.handle-n { top: 0; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.handle-s { bottom: 0; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.handle-w { top: 50%; left: 0; transform: translateY(-50%); cursor: w-resize; }
-.handle-e { top: 50%; right: 0; transform: translateY(-50%); cursor: e-resize; }
+.handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+}
+.handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+}
+.handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+}
+.handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.handle-n {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: n-resize;
+}
+.handle-s {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: s-resize;
+}
+.handle-w {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  cursor: w-resize;
+}
+.handle-e {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  cursor: e-resize;
+}
 
 .delete-button {
   position: absolute;
@@ -413,7 +444,8 @@ onUnmounted(() => {
   flex: 1;
 }
 
-.save-button, .cancel-button {
+.save-button,
+.cancel-button {
   background: none;
   border: none;
   cursor: pointer;

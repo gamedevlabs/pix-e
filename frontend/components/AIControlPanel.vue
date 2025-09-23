@@ -18,20 +18,20 @@
     <!-- Quick Action Buttons -->
     <div class="flex items-center gap-2 ml-3">
       <UTooltip text="Regenerate suggestions">
-        <UButton 
+        <UButton
           :loading="loading"
           :disabled="!canRegenerate"
           variant="ghost"
-          size="sm" 
+          size="sm"
           icon="i-heroicons-arrow-path-20-solid"
           @click="$emit('regenerate')"
         />
       </UTooltip>
-      
+
       <UTooltip text="Configure API tokens">
-        <UButton 
+        <UButton
           variant="ghost"
-          size="sm" 
+          size="sm"
           icon="i-heroicons-key-20-solid"
           :color="hasValidTokens ? 'success' : 'warning'"
           @click="$emit('configure-tokens')"
@@ -72,7 +72,7 @@ const props = withDefaults(defineProps<Props>(), {
   suggestionType: 'short',
   loading: false,
   canRegenerate: false,
-  hasValidTokens: false
+  hasValidTokens: false,
 })
 
 const emit = defineEmits<Emits>()
@@ -83,39 +83,39 @@ const selectedOption = ref<string>('')
 // Generate select options (simplified for USelect)
 const selectOptions = computed(() => {
   const options: { value: string; label: string }[] = []
-  
+
   // Add services
   if (props.services.length > 0) {
-    props.services.forEach(service => {
+    props.services.forEach((service) => {
       options.push({
         value: `service-${service.id}`,
-        label: `${service.name} ${service.id === props.activeService ? '(Active)' : ''}`
+        label: `${service.name} ${service.id === props.activeService ? '(Active)' : ''}`,
       })
     })
   }
-  
+
   // Add mode options
   options.push({
     value: 'mode-default',
-    label: `Default Mode ${props.mode === 'default' ? '(Active)' : ''}`
+    label: `Default Mode ${props.mode === 'default' ? '(Active)' : ''}`,
   })
-  
+
   options.push({
-    value: 'mode-gaming', 
-    label: `Gaming Mode ${props.mode === 'gaming' ? '(Active)' : ''}`
+    value: 'mode-gaming',
+    label: `Gaming Mode ${props.mode === 'gaming' ? '(Active)' : ''}`,
   })
-  
+
   // Add type options
   options.push({
     value: 'type-short',
-    label: `Short Suggestions ${props.suggestionType === 'short' ? '(Active)' : ''}`
+    label: `Short Suggestions ${props.suggestionType === 'short' ? '(Active)' : ''}`,
   })
-  
+
   options.push({
     value: 'type-long',
-    label: `Detailed Suggestions ${props.suggestionType === 'long' ? '(Active)' : ''}`
+    label: `Detailed Suggestions ${props.suggestionType === 'long' ? '(Active)' : ''}`,
   })
-  
+
   return options
 })
 
@@ -140,7 +140,7 @@ function getServiceIcon(serviceName: string): string {
 function getSelectedIcon(): string {
   if (selectedOption.value.startsWith('service-')) {
     const serviceId = selectedOption.value.replace('service-', '')
-    const service = props.services.find(s => s.id === serviceId)
+    const service = props.services.find((s) => s.id === serviceId)
     if (service) return getServiceIcon(service.name)
   } else if (selectedOption.value === 'mode-gaming') {
     return 'i-heroicons-command-line-20-solid'
@@ -151,20 +151,25 @@ function getSelectedIcon(): string {
   } else if (selectedOption.value === 'type-short') {
     return 'i-heroicons-minus-20-solid'
   }
-  
+
   // Default based on current active service
   if (props.activeService) {
-    const activeServiceObj = props.services.find(s => s.id === props.activeService)
+    const activeServiceObj = props.services.find((s) => s.id === props.activeService)
     if (activeServiceObj) return getServiceIcon(activeServiceObj.name)
   }
-  
+
   return 'i-heroicons-sparkles-20-solid'
 }
 
 // Handle selection changes
 function handleSelectionChange(value: string | { value: string } | unknown) {
-  const stringValue = typeof value === 'string' ? value : (value && typeof value === 'object' && 'value' in value ? (value as { value: string }).value : '')
-  
+  const stringValue =
+    typeof value === 'string'
+      ? value
+      : value && typeof value === 'object' && 'value' in value
+        ? (value as { value: string }).value
+        : ''
+
   if (stringValue.startsWith('service-')) {
     const serviceId = stringValue.replace('service-', '')
     emit('service-changed', serviceId)
@@ -178,9 +183,13 @@ function handleSelectionChange(value: string | { value: string } | unknown) {
 }
 
 // Update selected option when props change
-watch([() => props.activeService, () => props.mode, () => props.suggestionType], () => {
-  updateSelectedOption()
-}, { immediate: true })
+watch(
+  [() => props.activeService, () => props.mode, () => props.suggestionType],
+  () => {
+    updateSelectedOption()
+  },
+  { immediate: true },
+)
 
 function updateSelectedOption() {
   // Priority: active service > mode > suggestion type

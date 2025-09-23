@@ -3,14 +3,17 @@
     <!-- Loading State -->
     <div v-if="loading" class="space-y-4">
       <div v-for="i in 5" :key="i" class="animate-pulse">
-        <div class="bg-gray-200 dark:bg-gray-700 rounded-lg h-20"/>
+        <div class="bg-gray-200 dark:bg-gray-700 rounded-lg h-20" />
       </div>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="!moodboards.length" class="empty-state">
       <div class="text-center py-16">
-        <UIcon name="i-heroicons-squares-2x2-20-solid" class="w-16 h-16 text-gray-400 mx-auto mb-6" />
+        <UIcon
+          name="i-heroicons-squares-2x2-20-solid"
+          class="w-16 h-16 text-gray-400 mx-auto mb-6"
+        />
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ emptyTitle }}</h3>
         <p class="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">{{ emptyDescription }}</p>
       </div>
@@ -18,8 +21,8 @@
 
     <!-- Moodboards List -->
     <div v-else class="space-y-4">
-      <UCard 
-        v-for="moodboard in moodboards" 
+      <UCard
+        v-for="moodboard in moodboards"
         :key="moodboard.id"
         class="moodboard-card hover:shadow-lg transition-all duration-200 cursor-pointer border border-gray-200 dark:border-gray-700"
         @click="handleCardClick(moodboard)"
@@ -27,8 +30,10 @@
         <div class="flex items-start gap-4 p-2">
           <!-- Thumbnail -->
           <div class="flex-shrink-0">
-            <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <img 
+            <div
+              class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+            >
+              <img
                 v-if="moodboard.images?.length > 0"
                 :src="getImageUrl(moodboard.images[0]?.image_url || '')"
                 :alt="moodboard.title"
@@ -48,36 +53,47 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate mb-1">
                   {{ moodboard.title }}
                 </h3>
-                
-                <p v-if="moodboard.description" class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+
+                <p
+                  v-if="moodboard.description"
+                  class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"
+                >
                   {{ moodboard.description }}
                 </p>
-                
+
                 <!-- Metadata Row -->
                 <div class="flex items-center gap-3 mb-2">
                   <!-- Status Badge -->
-                  <UBadge 
+                  <UBadge
                     :color="getStatusColor(moodboard.status)"
                     variant="subtle"
                     size="sm"
                     class="flex items-center gap-1"
                   >
-                    <UIcon 
-                      :name="moodboard.status === 'completed' ? 'i-heroicons-check-circle-20-solid' : 'i-heroicons-clock-20-solid'" 
+                    <UIcon
+                      :name="
+                        moodboard.status === 'completed'
+                          ? 'i-heroicons-check-circle-20-solid'
+                          : 'i-heroicons-clock-20-solid'
+                      "
                       class="w-3 h-3"
                     />
                     {{ formatStatus(moodboard.status) }}
                   </UBadge>
 
                   <!-- Visibility Badge -->
-                  <UBadge 
+                  <UBadge
                     :color="moodboard.is_public ? 'success' : 'neutral'"
                     variant="subtle"
                     size="sm"
                     class="flex items-center gap-1"
                   >
-                    <UIcon 
-                      :name="moodboard.is_public ? 'i-heroicons-globe-alt-20-solid' : 'i-heroicons-lock-closed-20-solid'" 
+                    <UIcon
+                      :name="
+                        moodboard.is_public
+                          ? 'i-heroicons-globe-alt-20-solid'
+                          : 'i-heroicons-lock-closed-20-solid'
+                      "
                       class="w-3 h-3"
                     />
                     {{ moodboard.is_public ? 'Public' : 'Private' }}
@@ -99,9 +115,9 @@
               <!-- Actions -->
               <div class="flex-shrink-0" @click.stop>
                 <UDropdownMenu :items="getMoodboardActions(moodboard)">
-                  <UButton 
-                    color="neutral" 
-                    variant="ghost" 
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
                     icon="i-heroicons-ellipsis-vertical-20-solid"
                     size="sm"
                     class="hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -163,7 +179,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   loading: false,
   emptyTitle: 'No moodboards found',
-  emptyDescription: 'Create your first moodboard to get started'
+  emptyDescription: 'Create your first moodboard to get started',
 })
 
 const emit = defineEmits<{
@@ -178,39 +194,44 @@ const getImageUrl = (url: string) => {
   return url.startsWith('http') ? url : `${$config.public.apiBase}${url}`
 }
 
-const getStatusColor = (status: string): 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral' | undefined => {
-  const colorMap: Record<string, 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'> = {
-    'draft': 'warning',
-    'in_progress': 'info',
-    'completed': 'success',
-    'archived': 'neutral'
+const getStatusColor = (
+  status: string,
+): 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral' | undefined => {
+  const colorMap: Record<
+    string,
+    'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+  > = {
+    draft: 'warning',
+    in_progress: 'info',
+    completed: 'success',
+    archived: 'neutral',
   }
   return colorMap[status] || 'neutral'
 }
 
 const formatStatus = (status: string) => {
   const statusMap: Record<string, string> = {
-    'draft': 'Draft',
-    'in_progress': 'In Progress',
-    'completed': 'Completed',
-    'archived': 'Archived'
+    draft: 'Draft',
+    in_progress: 'In Progress',
+    completed: 'Completed',
+    archived: 'Archived',
   }
   return statusMap[status] || status
 }
 
 const formatRelativeDate = (date: string) => {
   if (!date) return 'unknown'
-  
+
   try {
     const dateObj = new Date(date)
     if (isNaN(dateObj.getTime())) return 'invalid date'
-    
+
     const now = new Date()
     const diffMs = now.getTime() - dateObj.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     const diffMinutes = Math.floor(diffMs / (1000 * 60))
-    
+
     if (diffMinutes < 1) return 'just now'
     if (diffMinutes < 60) return `${diffMinutes}m ago`
     if (diffHours < 24) return `${diffHours}h ago`
@@ -228,12 +249,12 @@ const getSelectedImageCount = (moodboard: Moodboard): number => {
   if (typeof moodboard.selected_image_count === 'number') {
     return moodboard.selected_image_count
   }
-  
+
   const images = moodboard.images as MoodboardImage[]
   if (images && Array.isArray(images)) {
-    return images.filter(img => img.is_selected).length
+    return images.filter((img) => img.is_selected).length
   }
-  
+
   return 0
 }
 
@@ -242,28 +263,28 @@ const getMoodboardActions = (_moodboard: Moodboard) => {
     {
       label: 'Open',
       icon: 'i-heroicons-arrow-top-right-on-square-20-solid',
-      key: 'open'
-    }, 
+      key: 'open',
+    },
     {
       label: 'Edit',
       icon: 'i-heroicons-pencil-square-20-solid',
-      key: 'edit'
+      key: 'edit',
     },
     {
       label: 'Duplicate',
       icon: 'i-heroicons-document-duplicate-20-solid',
-      key: 'duplicate'
-    }, 
+      key: 'duplicate',
+    },
     {
       label: 'Share',
       icon: 'i-heroicons-share-20-solid',
-      key: 'share'
+      key: 'share',
     },
     {
       label: 'Delete',
       icon: 'i-heroicons-trash-20-solid',
-      key: 'delete'
-    }
+      key: 'delete',
+    },
   ]
 }
 

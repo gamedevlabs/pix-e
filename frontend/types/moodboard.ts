@@ -92,7 +92,7 @@ export interface MoodboardState {
   metadata: MoodboardMetadata | null
   images: MoodboardImage[]
   permissions: UserPermissions
-  
+
   // UI state
   ui: {
     loading: boolean
@@ -104,7 +104,7 @@ export interface MoodboardState {
     sortBy: 'created_at' | 'title' | 'updated_at'
     sortOrder: 'asc' | 'desc'
   }
-  
+
   // Optimistic updates
   pendingUpdates: PendingUpdate[]
 }

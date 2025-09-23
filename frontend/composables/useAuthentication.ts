@@ -24,8 +24,9 @@
         method: 'POST',
         body: { username: username, password: password },
         credentials: 'include',
-        headers: useRequestHeaders(['cookie']),      })
-      
+        headers: useRequestHeaders(['cookie']),
+      })
+
       const success = await checkAuthentication()
       if (!success) {
         return false
@@ -42,17 +43,17 @@
   async function checkAuthentication(): Promise<boolean> {
     try {
       checkedLogin.value = true
-      
+
       const userData = await $fetch<User>(`${config.public.apiBase}/accounts/me/`, {
         method: 'GET',
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
-      
+
       user.value = userData
       return true
     } catch {
-      user.value = null      // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
+      user.value = null // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
       // which would not even remove the console error on the 401 Unauthorized
       // Rules: ESLint: no-explicit-any, vue: catch-only-any-or-unknown
       return false
@@ -66,7 +67,7 @@
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
-      
+
       user.value = null
       await router.push('/')
       return true

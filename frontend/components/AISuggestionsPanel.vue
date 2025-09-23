@@ -5,22 +5,28 @@
       <div class="header-left">
         <UIcon name="i-heroicons-sparkles-20-solid" class="text-purple-600 dark:text-purple-400" />
         <h3>AI Suggestions</h3>
-        <UBadge v-if="totalSuggestions > 0" :label="totalSuggestions.toString()" color="primary" variant="soft" size="xs" />
+        <UBadge
+          v-if="totalSuggestions > 0"
+          :label="totalSuggestions.toString()"
+          color="primary"
+          variant="soft"
+          size="xs"
+        />
       </div>
       <div class="header-actions">
         <UTooltip text="Regenerate suggestions">
-          <UButton 
+          <UButton
             :loading="loading"
             :disabled="!lastPrompt || !currentPrompt || currentPrompt.trim().length < 3"
             variant="ghost"
-            size="xs" 
+            size="xs"
             icon="i-heroicons-arrow-path-20-solid"
             @click="handleRegenerate"
           />
         </UTooltip>
-        <UButton 
+        <UButton
           variant="ghost"
-          size="xs" 
+          size="xs"
           icon="i-heroicons-x-mark-20-solid"
           @click="$emit('toggle')"
         />
@@ -32,23 +38,31 @@
       <div class="settings-grid">
         <div class="settings-group">
           <label class="settings-label">Mode:</label>
-          <UButton 
+          <UButton
             :label="mode === 'gaming' ? 'Gaming' : 'Default'"
             :color="mode === 'gaming' ? 'warning' : 'primary'"
             variant="soft"
-            size="xs" 
-            :icon="mode === 'gaming' ? 'i-heroicons-command-line-20-solid' : 'i-heroicons-sparkles-20-solid'"
+            size="xs"
+            :icon="
+              mode === 'gaming'
+                ? 'i-heroicons-command-line-20-solid'
+                : 'i-heroicons-sparkles-20-solid'
+            "
             @click="handleModeToggle"
           />
         </div>
         <div class="settings-group">
           <label class="settings-label">Length:</label>
-          <UButton 
+          <UButton
             :label="suggestionType === 'long' ? 'Detailed' : 'Short'"
             :color="suggestionType === 'long' ? 'success' : 'neutral'"
             variant="soft"
-            size="xs" 
-            :icon="suggestionType === 'long' ? 'i-heroicons-bars-3-center-left-20-solid' : 'i-heroicons-bars-2-20-solid'"
+            size="xs"
+            :icon="
+              suggestionType === 'long'
+                ? 'i-heroicons-bars-3-center-left-20-solid'
+                : 'i-heroicons-bars-2-20-solid'
+            "
             @click="handleTypeToggle"
           />
         </div>
@@ -56,7 +70,7 @@
       <div class="service-selector">
         <label class="settings-label">AI Service:</label>
         <div class="service-dropdown-wrapper">
-          <USelectMenu 
+          <USelectMenu
             v-model="selectedServiceItem"
             :items="serviceItems"
             :icon="selectedServiceItem?.icon"
@@ -64,9 +78,14 @@
             size="sm"
             class="service-select"
           />
-          <div v-if="selectedServiceItem && selectedServiceItem.value" class="selected-service-info">
+          <div
+            v-if="selectedServiceItem && selectedServiceItem.value"
+            class="selected-service-info"
+          >
             <UIcon :name="selectedServiceItem.icon" class="service-info-icon" />
-            <span class="service-info-text">{{ getProviderFromValue(selectedServiceItem.value) }}</span>
+            <span class="service-info-text">{{
+              getProviderFromValue(selectedServiceItem.value)
+            }}</span>
           </div>
         </div>
       </div>
@@ -77,21 +96,33 @@
       <!-- Loading State -->
       <div v-if="loading" class="loading-state">
         <div class="flex items-center justify-center py-8">
-          <UIcon name="i-heroicons-arrow-path-20-solid" class="w-6 h-6 animate-spin text-purple-600" />
-          <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Generating suggestions...</span>
+          <UIcon
+            name="i-heroicons-arrow-path-20-solid"
+            class="w-6 h-6 animate-spin text-purple-600"
+          />
+          <span class="ml-2 text-sm text-gray-600 dark:text-gray-400"
+            >Generating suggestions...</span
+          >
         </div>
       </div>
 
       <!-- Error State -->
       <div v-else-if="error" class="error-state">
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-3">
+        <div
+          class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg p-3"
+        >
           <div class="flex items-start">
-            <UIcon name="i-heroicons-exclamation-triangle-20-solid" class="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5" />
+            <UIcon
+              name="i-heroicons-exclamation-triangle-20-solid"
+              class="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5"
+            />
             <div class="ml-2 flex-1">
               <p class="text-xs text-red-800 dark:text-red-200 font-medium">AI Service Error</p>
               <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ error }}</p>
               <div v-if="error.includes('token') || error.includes('API')" class="mt-2">
-                <p class="text-xs text-red-700 dark:text-red-300 mb-1">To use AI suggestions, you need to:</p>
+                <p class="text-xs text-red-700 dark:text-red-300 mb-1">
+                  To use AI suggestions, you need to:
+                </p>
                 <ul class="text-xs text-red-600 dark:text-red-400 list-disc list-inside space-y-1">
                   <li>Configure API tokens below</li>
                   <li>Ensure tokens are valid and active</li>
@@ -106,9 +137,17 @@
       <!-- Empty State -->
       <div v-else-if="suggestions.length === 0" class="empty-state">
         <div class="text-center py-8">
-          <UIcon name="i-heroicons-light-bulb-20-solid" class="w-8 h-8 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">No suggestions yet</p>
-          <div v-if="!currentPrompt || currentPrompt.trim().length < 3" class="text-xs text-gray-500 dark:text-gray-500 space-y-1">
+          <UIcon
+            name="i-heroicons-light-bulb-20-solid"
+            class="w-8 h-8 text-gray-400 dark:text-gray-600 mx-auto mb-3"
+          />
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">
+            No suggestions yet
+          </p>
+          <div
+            v-if="!currentPrompt || currentPrompt.trim().length < 3"
+            class="text-xs text-gray-500 dark:text-gray-500 space-y-1"
+          >
             <p>Enter a prompt to get AI-powered suggestions:</p>
             <ul class="list-disc list-inside space-y-1 mt-2 text-left max-w-xs mx-auto">
               <li>At least 3 characters long</li>
@@ -135,7 +174,7 @@
           </div>
           <div class="suggestion-actions">
             <UTooltip v-if="!suggestion.applied" text="Apply this suggestion">
-              <UButton 
+              <UButton
                 size="xs"
                 variant="soft"
                 color="primary"
@@ -144,7 +183,7 @@
               />
             </UTooltip>
             <UTooltip v-else text="Suggestion applied">
-              <UButton 
+              <UButton
                 size="xs"
                 variant="soft"
                 color="success"
@@ -173,28 +212,33 @@
           <UIcon name="i-heroicons-information-circle-20-solid" class="text-gray-400 w-3 h-3" />
         </UTooltip>
       </div>
-      
+
       <div class="token-content">
         <div v-if="isTokensLoading" class="token-loading">
           <UIcon name="i-heroicons-arrow-path-20-solid" class="w-4 h-4 animate-spin" />
           <span class="text-xs ml-2">Loading tokens...</span>
         </div>
-        
+
         <div v-else-if="tokenError" class="token-error">
-          <UAlert 
-            color="error" 
+          <UAlert
+            color="error"
             variant="soft"
             :title="tokenError"
-            :close-button="{ icon: 'i-heroicons-x-mark-20-solid', color: 'gray', variant: 'link', padded: false }"
+            :close-button="{
+              icon: 'i-heroicons-x-mark-20-solid',
+              color: 'gray',
+              variant: 'link',
+              padded: false,
+            }"
             @close="tokenError = null"
           />
         </div>
-        
+
         <div v-else class="token-list">
           <div class="token-services">
-            <div 
-              v-for="serviceType in availableServiceTypes" 
-              :key="serviceType.value" 
+            <div
+              v-for="serviceType in availableServiceTypes"
+              :key="serviceType.value"
               class="token-service-item"
             >
               <div class="service-info">
@@ -207,7 +251,7 @@
                   <span v-else class="token-status inactive">Not configured</span>
                 </div>
               </div>
-              
+
               <div class="token-actions">
                 <UButton
                   v-if="!getTokenForService(serviceType.value)"
@@ -236,11 +280,14 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Token Input Modal/Form -->
           <div v-if="showTokenForm" class="token-input-form">
             <div class="token-form-header">
-              <span class="text-sm font-medium">{{ editingToken ? 'Update' : 'Add' }} {{ getServiceLabel(currentServiceType) }} Token</span>
+              <span class="text-sm font-medium"
+                >{{ editingToken ? 'Update' : 'Add' }}
+                {{ getServiceLabel(currentServiceType) }} Token</span
+              >
               <UButton
                 size="xs"
                 variant="ghost"
@@ -265,12 +312,7 @@
                 />
               </div>
               <div class="token-form-actions">
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  label="Cancel"
-                  @click="hideTokenInput"
-                />
+                <UButton size="xs" variant="ghost" label="Cancel" @click="hideTokenInput" />
                 <UButton
                   :loading="isTokenSaving"
                   :disabled="!tokenInput.trim()"
@@ -288,7 +330,7 @@
 
     <!-- Generate Button Footer -->
     <div v-if="!loading && suggestions.length === 0" class="panel-footer">
-      <UButton 
+      <UButton
         :disabled="!canGenerate || loading || !currentPrompt || currentPrompt.trim().length < 3"
         color="primary"
         variant="solid"
@@ -297,9 +339,11 @@
         icon="i-heroicons-sparkles-20-solid"
         @click="handleGenerateFromInput"
       >
-        {{ !currentPrompt || currentPrompt.trim().length < 3 
-          ? 'Enter prompt to generate' 
-          : 'Generate' }}
+        {{
+          !currentPrompt || currentPrompt.trim().length < 3
+            ? 'Enter prompt to generate'
+            : 'Generate'
+        }}
       </UButton>
     </div>
   </div>
@@ -336,48 +380,50 @@ const props = withDefaults(defineProps<Props>(), {
   currentPrompt: '',
   canGenerate: true,
   services: () => [],
-  activeService: undefined
+  activeService: undefined,
 })
 
 const emit = defineEmits<Emits>()
 
 // Convert services to SelectMenuItem format
 const serviceItems = computed(() => {
-  const items: Array<{ label: string, value: string, icon: string }> = []
-  
+  const items: Array<{ label: string; value: string; icon: string }> = []
+
   if (props.services) {
-    items.push(...props.services.map(service => {
-      // Extract provider from service name or ID and create better labels
-      let shortName = service.name || service.id
-      let fullLabel = shortName
-      let icon = 'i-heroicons-cpu-chip-20-solid'
-      
-      if (service.id.includes('github_')) {
-        shortName = shortName.replace(/^.*?\//, '').replace(/\s*\(.*?\)/, '')
-        fullLabel = `${shortName} (GitHub)`
-        icon = 'i-simple-icons-github'
-      } else if (service.id.includes('tgi_')) {
-        shortName = shortName.replace(/^.*?\//, '').replace(/\s*\(.*?\)/, '')
-        fullLabel = `${shortName} (HF TGI)`
-        icon = 'i-simple-icons-huggingface'
-      } else if (service.id.includes('gemini')) {
-        fullLabel = `${shortName} (Gemini)`
-        icon = 'i-simple-icons-google'
-      } else if (service.id.includes('openai') || service.id.includes('gpt')) {
-        shortName = shortName.replace(/^.*?\//, '').replace(/\s*\(.*?\)/, '')
-        fullLabel = `${shortName} (OpenAI)`
-        icon = 'i-simple-icons-openai'
-      }
-      
-      return {
-        label: fullLabel,
-        value: service.id,
-        icon: icon,
-        status: service.status
-      }
-    }))
+    items.push(
+      ...props.services.map((service) => {
+        // Extract provider from service name or ID and create better labels
+        let shortName = service.name || service.id
+        let fullLabel = shortName
+        let icon = 'i-heroicons-cpu-chip-20-solid'
+
+        if (service.id.includes('github_')) {
+          shortName = shortName.replace(/^.*?\//, '').replace(/\s*\(.*?\)/, '')
+          fullLabel = `${shortName} (GitHub)`
+          icon = 'i-simple-icons-github'
+        } else if (service.id.includes('tgi_')) {
+          shortName = shortName.replace(/^.*?\//, '').replace(/\s*\(.*?\)/, '')
+          fullLabel = `${shortName} (HF TGI)`
+          icon = 'i-simple-icons-huggingface'
+        } else if (service.id.includes('gemini')) {
+          fullLabel = `${shortName} (Gemini)`
+          icon = 'i-simple-icons-google'
+        } else if (service.id.includes('openai') || service.id.includes('gpt')) {
+          shortName = shortName.replace(/^.*?\//, '').replace(/\s*\(.*?\)/, '')
+          fullLabel = `${shortName} (OpenAI)`
+          icon = 'i-simple-icons-openai'
+        }
+
+        return {
+          label: fullLabel,
+          value: service.id,
+          icon: icon,
+          status: service.status,
+        }
+      }),
+    )
   }
-  
+
   return items
 })
 
@@ -385,11 +431,11 @@ const serviceItems = computed(() => {
 const selectedServiceItem = computed({
   get: () => {
     const activeValue = props.activeService || ''
-    return serviceItems.value.find(item => item.value === activeValue) || serviceItems.value[0]
+    return serviceItems.value.find((item) => item.value === activeValue) || serviceItems.value[0]
   },
   set: (item) => {
     emit('service-changed', item?.value || '')
-  }
+  },
 })
 
 // Helper function to get service icon based on service ID or value
@@ -397,7 +443,7 @@ const getServiceIcon = (serviceValue: string) => {
   if (!serviceValue || serviceValue === '') {
     return 'i-heroicons-cpu-chip-20-solid' // Default icon when no service selected
   }
-  
+
   if (serviceValue.includes('github_')) {
     return 'i-simple-icons-github' // GitHub icon
   } else if (serviceValue.includes('tgi_')) {
@@ -407,14 +453,14 @@ const getServiceIcon = (serviceValue: string) => {
   } else if (serviceValue.includes('openai') || serviceValue.includes('gpt')) {
     return 'i-simple-icons-openai' // OpenAI icon
   }
-  
+
   return 'i-heroicons-cpu-chip-20-solid' // Default AI icon
 }
 
 // Helper function to get selected service provider info
 const getProviderFromValue = (value: string) => {
   if (!value) return 'Auto'
-  
+
   if (value.includes('github_')) {
     return 'GitHub Models'
   } else if (value.includes('tgi_')) {
@@ -424,25 +470,28 @@ const getProviderFromValue = (value: string) => {
   } else if (value.includes('openai') || value.includes('gpt')) {
     return 'OpenAI'
   }
-  
+
   return 'Custom'
 }
 
 // Token management logic
-const { 
-  userTokens, 
-  isTokensLoading, 
-  tokenError, 
-  fetchUserTokens, 
-  saveUserToken, 
-  updateUserToken, 
-  deleteUserToken
+const {
+  userTokens,
+  isTokensLoading,
+  tokenError,
+  fetchUserTokens,
+  saveUserToken,
+  updateUserToken,
+  deleteUserToken,
 } = useAISuggestions()
 
 // Watch for active service changes and clear errors
-watch(() => props.activeService, () => {
-  emit('clear-error')
-})
+watch(
+  () => props.activeService,
+  () => {
+    emit('clear-error')
+  },
+)
 
 // Token management state
 const showTokenForm = ref(false)
@@ -454,17 +503,17 @@ const isTokenSaving = ref(false)
 // Available service types that require tokens
 const availableServiceTypes = computed(() => [
   { value: 'github', label: 'GitHub Models' },
-  { value: 'huggingface', label: 'Hugging Face' }
+  { value: 'huggingface', label: 'Hugging Face' },
 ])
 
 // Get token for a specific service
 const getTokenForService = (serviceType: string) => {
-  return userTokens.value.find(token => token.service_type === serviceType)
+  return userTokens.value.find((token) => token.service_type === serviceType)
 }
 
 // Get service label from service type
 const getServiceLabel = (serviceType: string) => {
-  const service = availableServiceTypes.value.find(s => s.value === serviceType)
+  const service = availableServiceTypes.value.find((s) => s.value === serviceType)
   return service?.label || serviceType
 }
 
@@ -489,10 +538,10 @@ const hideTokenInput = () => {
 // Save or update token
 const saveToken = async () => {
   if (!tokenInput.value.trim() || !currentServiceType.value) return
-  
+
   isTokenSaving.value = true
   tokenError.value = null
-  
+
   try {
     if (editingToken.value) {
       await updateUserToken(currentServiceType.value, tokenInput.value.trim())
@@ -550,7 +599,9 @@ const handleGenerateFromInput = () => {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   display: flex;

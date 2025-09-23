@@ -1,16 +1,11 @@
 <template>
-  <UModal 
-    v-model:open="isOpen"
-    :title="modalTitle"
-    :description="modalDescription"
-    size="lg"
-  >
+  <UModal v-model:open="isOpen" :title="modalTitle" :description="modalDescription" size="lg">
     <template #body>
       <div v-if="moodboard" class="modal-content">
         <!-- Moodboard Preview -->
         <div class="moodboard-preview">
           <div class="preview-image">
-            <img 
+            <img
               v-if="moodboard.images?.length"
               :src="getImageUrl(moodboard.images[0]?.image_url)"
               :alt="moodboard.title"
@@ -30,7 +25,7 @@
                 <UIcon name="i-heroicons-photo-20-solid" class="meta-icon" />
                 {{ getImageCount(moodboard) }} images
               </span>
-              <UBadge 
+              <UBadge
                 :color="moodboard.is_public ? 'success' : 'neutral'"
                 variant="subtle"
                 size="sm"
@@ -48,7 +43,7 @@
               <UIcon name="i-heroicons-user-20-solid" class="label-icon" />
               Select User
             </label>
-            <USelectMenu 
+            <USelectMenu
               v-model="selectedUserId"
               :options="userOptions"
               :loading="loadingUsers"
@@ -63,7 +58,7 @@
               <UIcon name="i-heroicons-shield-check-20-solid" class="label-icon" />
               Permission Level
             </label>
-            <USelect 
+            <USelect
               v-model="selectedPermission"
               :options="permissionOptions"
               class="permission-select"
@@ -92,15 +87,10 @@
 
     <template #footer>
       <div class="modal-footer">
-        <UButton 
-          variant="outline" 
-          color="neutral"
-          :disabled="sharing"
-          @click="handleCancel"
-        >
+        <UButton variant="outline" color="neutral" :disabled="sharing" @click="handleCancel">
           Cancel
         </UButton>
-        <UButton 
+        <UButton
           color="primary"
           :loading="sharing"
           :disabled="!canShare"
@@ -160,7 +150,7 @@ const sharing = ref<boolean>(false)
 // Computed
 const isOpen = computed({
   get: () => props.open,
-  set: (value) => emit('update:open', value)
+  set: (value) => emit('update:open', value),
 })
 
 const modalTitle = computed(() => {
@@ -172,15 +162,15 @@ const modalDescription = computed(() => {
 })
 
 const userOptions = computed(() => {
-  return users.value.map(user => ({
+  return users.value.map((user) => ({
     value: user.id,
-    label: user.username
+    label: user.username,
   }))
 })
 
 const permissionOptions = computed(() => [
   { value: 'view', label: 'View Only' },
-  { value: 'edit', label: 'Edit Access' }
+  { value: 'edit', label: 'Edit Access' },
 ])
 
 const canShare = computed(() => {
@@ -200,7 +190,7 @@ function getImageCount(moodboard: Moodboard): number {
 
 async function loadUsers() {
   if (users.value.length > 0) return
-  
+
   loadingUsers.value = true
   try {
     const result = await fetchUsers()
@@ -208,7 +198,7 @@ async function loadUsers() {
       users.value = result.map((user: { id: number; username: string; email?: string }) => ({
         id: String(user.id),
         username: user.username,
-        email: user.email
+        email: user.email,
       }))
     }
   } catch {
@@ -225,11 +215,11 @@ function handleCancel() {
 
 function handleShare() {
   if (!canShare.value) return
-  
+
   sharing.value = true
   emit('share', {
     userId: selectedUserId.value,
-    permission: selectedPermission.value
+    permission: selectedPermission.value,
   })
 }
 
@@ -240,19 +230,25 @@ function resetForm() {
 }
 
 // Watchers
-watch(() => props.open, (isOpen) => {
-  if (isOpen) {
-    loadUsers()
-  } else {
-    resetForm()
-  }
-})
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      loadUsers()
+    } else {
+      resetForm()
+    }
+  },
+)
 
-watch(() => props.open, (isOpen, wasOpen) => {
-  if (wasOpen && !isOpen && sharing.value) {
-    sharing.value = false
-  }
-})
+watch(
+  () => props.open,
+  (isOpen, wasOpen) => {
+    if (wasOpen && !isOpen && sharing.value) {
+      sharing.value = false
+    }
+  },
+)
 </script>
 
 <style scoped>
@@ -478,17 +474,17 @@ watch(() => props.open, (isOpen, wasOpen) => {
     flex-direction: column;
     gap: 0.875rem;
   }
-  
+
   .preview-image {
     width: 100%;
     height: 8rem;
   }
-  
+
   .modal-footer {
     flex-direction: column-reverse;
     gap: 0.625rem;
   }
-  
+
   .modal-footer button {
     width: 100%;
   }

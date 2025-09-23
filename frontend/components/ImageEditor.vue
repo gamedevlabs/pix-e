@@ -5,9 +5,9 @@
         <!-- Image Preview Section -->
         <div class="image-preview-section">
           <div class="image-container">
-            <img 
-              v-if="previewUrl || originalImageUrl" 
-              :src="previewUrl || originalImageUrl" 
+            <img
+              v-if="previewUrl || originalImageUrl"
+              :src="previewUrl || originalImageUrl"
               :alt="imageTitle"
               class="preview-image"
               @error="onImageError"
@@ -18,7 +18,7 @@
               <p class="text-gray-500">No image loaded</p>
             </div>
           </div>
-          
+
           <!-- Image Info -->
           <div v-if="imageInfo" class="image-info">
             <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -32,45 +32,45 @@
           <!-- Basic Adjustments -->
           <div class="control-section">
             <h3 class="section-title">Adjustments</h3>
-            
+
             <div class="control-group">
               <label class="control-label">Brightness</label>
               <div class="slider-group">
-                <input 
-                  v-model.number="edits.brightness" 
+                <input
+                  v-model.number="edits.brightness"
                   type="range"
-                  :min="0" 
-                  :max="2" 
+                  :min="0"
+                  :max="2"
                   :step="0.1"
                   class="range-slider"
                 />
                 <span class="value-display">{{ Number(edits.brightness).toFixed(1) }}</span>
               </div>
             </div>
-            
+
             <div class="control-group">
               <label class="control-label">Contrast</label>
               <div class="slider-group">
-                <input 
-                  v-model.number="edits.contrast" 
+                <input
+                  v-model.number="edits.contrast"
                   type="range"
-                  :min="0" 
-                  :max="2" 
+                  :min="0"
+                  :max="2"
                   :step="0.1"
                   class="range-slider"
                 />
                 <span class="value-display">{{ Number(edits.contrast).toFixed(1) }}</span>
               </div>
             </div>
-            
+
             <div class="control-group">
               <label class="control-label">Saturation</label>
               <div class="slider-group">
-                <input 
-                  v-model.number="edits.saturation" 
+                <input
+                  v-model.number="edits.saturation"
                   type="range"
-                  :min="0" 
-                  :max="2" 
+                  :min="0"
+                  :max="2"
                   :step="0.1"
                   class="range-slider"
                 />
@@ -82,10 +82,10 @@
           <!-- Filters -->
           <div class="control-section">
             <h3 class="section-title">Filters</h3>
-            
+
             <div class="filter-grid">
-              <div 
-                v-for="filter in availableFilters" 
+              <div
+                v-for="filter in availableFilters"
                 :key="filter.key"
                 class="filter-item"
                 :class="{ 'filter-active': edits.filters[filter.key] > 0 }"
@@ -98,20 +98,26 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Filter intensity sliders for all active filters -->
-            <div v-for="filter in availableFilters.filter(f => edits.filters[f.key] > 0)" :key="filter.key" class="control-group mt-4">
+            <div
+              v-for="filter in availableFilters.filter((f) => edits.filters[f.key] > 0)"
+              :key="filter.key"
+              class="control-group mt-4"
+            >
               <label class="control-label">{{ filter.name }} Intensity</label>
               <div class="slider-group">
-                <input 
-                  v-model.number="edits.filters[filter.key]" 
+                <input
+                  v-model.number="edits.filters[filter.key]"
                   type="range"
-                  :min="0" 
-                  :max="1" 
+                  :min="0"
+                  :max="1"
                   :step="0.1"
                   class="range-slider"
                 />
-                <span class="value-display">{{ Math.round(Number(edits.filters[filter.key]) * 100) }}%</span>
+                <span class="value-display"
+                  >{{ Math.round(Number(edits.filters[filter.key]) * 100) }}%</span
+                >
               </div>
             </div>
           </div>
@@ -119,42 +125,34 @@
           <!-- Transform -->
           <div class="control-section">
             <h3 class="section-title">Transform</h3>
-            
+
             <div class="transform-controls">
-              <UButton 
-                variant="outline" 
-                icon="i-heroicons-arrow-path"
-                @click="rotateImage(90)"
-              >
+              <UButton variant="outline" icon="i-heroicons-arrow-path" @click="rotateImage(90)">
                 Rotate 90°
               </UButton>
-              
-              <UButton 
-                variant="outline" 
+
+              <UButton
+                variant="outline"
                 icon="i-heroicons-arrows-right-left"
                 @click="flipHorizontal"
               >
                 Flip H
               </UButton>
-              
-              <UButton 
-                variant="outline" 
-                icon="i-heroicons-arrows-up-down"
-                @click="flipVertical"
-              >
+
+              <UButton variant="outline" icon="i-heroicons-arrows-up-down" @click="flipVertical">
                 Flip V
               </UButton>
             </div>
-            
+
             <!-- Rotation angle -->
             <div class="control-group">
               <label class="control-label">Rotation Angle</label>
               <div class="slider-group">
-                <input 
-                  v-model.number="edits.rotate" 
+                <input
+                  v-model.number="edits.rotate"
                   type="range"
-                  :min="0" 
-                  :max="360" 
+                  :min="0"
+                  :max="360"
                   :step="1"
                   class="range-slider"
                 />
@@ -165,9 +163,7 @@
 
           <!-- Action Buttons -->
           <div class="action-buttons">
-            <UButton variant="outline" @click="resetEdits">
-              Reset
-            </UButton>
+            <UButton variant="outline" @click="resetEdits"> Reset </UButton>
             <UButton variant="outline" :loading="previewLoading" @click="previewEdits">
               Preview
             </UButton>
@@ -239,8 +235,8 @@ const defaultEdits: ImageEdit = {
     edge_enhance: 0,
     emboss: 0,
     sepia: 0,
-    vintage: 0
-  }
+    vintage: 0,
+  },
 }
 
 const edits = ref<ImageEdit>({ ...defaultEdits })
@@ -252,7 +248,7 @@ const availableFilters: FilterOption[] = [
   { key: 'edge_enhance', name: 'Edge Enhance', icon: 'i-heroicons-square-3-stack-3d' },
   { key: 'emboss', name: 'Emboss', icon: 'i-heroicons-cube' },
   { key: 'sepia', name: 'Sepia', icon: 'i-heroicons-sun' },
-  { key: 'vintage', name: 'Vintage', icon: 'i-heroicons-camera' }
+  { key: 'vintage', name: 'Vintage', icon: 'i-heroicons-camera' },
 ]
 
 // Active filter (for intensity slider)
@@ -268,13 +264,16 @@ onMounted(() => {
 async function previewEdits() {
   previewLoading.value = true
   try {
-    const response = await $fetch(`${config.public.apiBase}/moodboards/${props.moodboardId}/images/${props.imageId}/preview-edit/`, {
-      method: 'POST',
-      body: { edits: edits.value },
-      credentials: 'include',
-      headers: useRequestHeaders(['cookie'])
-    }) as { preview: string; image_info: ImageMetadata }
-    
+    const response = (await $fetch(
+      `${config.public.apiBase}/moodboards/${props.moodboardId}/images/${props.imageId}/preview-edit/`,
+      {
+        method: 'POST',
+        body: { edits: edits.value },
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      },
+    )) as { preview: string; image_info: ImageMetadata }
+
     if (response.preview) {
       previewUrl.value = response.preview
       imageInfo.value = response.image_info
@@ -292,13 +291,13 @@ async function previewEdits() {
     } else if (err?.data?.error) {
       errorMessage = err.data.error
     }
-    
+
     useToast().add({
       title: 'Preview Failed',
       description: errorMessage,
-      color: 'error'
+      color: 'error',
     })
-    
+
     // Reset to original image on error
     previewUrl.value = null
   } finally {
@@ -309,13 +308,16 @@ async function previewEdits() {
 async function applyEdits() {
   applying.value = true
   try {
-    const response = await $fetch(`${config.public.apiBase}/moodboards/${props.moodboardId}/images/${props.imageId}/edit/`, {
-      method: 'POST',
-      body: { edits: edits.value },
-      credentials: 'include',
-      headers: useRequestHeaders(['cookie'])
-    }) as { edited_image: MoodboardImage; message: string }
-    
+    const response = (await $fetch(
+      `${config.public.apiBase}/moodboards/${props.moodboardId}/images/${props.imageId}/edit/`,
+      {
+        method: 'POST',
+        body: { edits: edits.value },
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      },
+    )) as { edited_image: MoodboardImage; message: string }
+
     // Emit the edited image (toast will be shown by parent component)
     emit('imageEdited', response.edited_image)
     closeEditor()
@@ -323,7 +325,7 @@ async function applyEdits() {
     useToast().add({
       title: 'Edit Failed',
       description: 'Could not apply changes. Please try again.',
-      color: 'error'
+      color: 'error',
     })
   } finally {
     applying.value = false
@@ -338,9 +340,9 @@ function resetEdits() {
 }
 
 function toggleFilter(filterKey: string) {
-  const filter = availableFilters.find(f => f.key === filterKey)
+  const filter = availableFilters.find((f) => f.key === filterKey)
   if (!filter) return
-  
+
   if (edits.value.filters[filterKey] > 0) {
     // Turn off filter
     edits.value.filters[filterKey] = 0
@@ -395,9 +397,13 @@ function triggerPreview() {
 
 // Watch for changes to auto-preview
 let previewTimeout: ReturnType<typeof setTimeout> | null = null
-watch(() => edits.value, () => {
-  triggerPreview()
-}, { deep: true })
+watch(
+  () => edits.value,
+  () => {
+    triggerPreview()
+  },
+  { deep: true },
+)
 
 // Close modal handler
 watch(isOpen, (newValue) => {
@@ -644,12 +650,12 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .editor-controls {
     max-height: none;
     overflow-y: visible;
   }
-  
+
   .filter-grid {
     grid-template-columns: repeat(3, 1fr);
   }

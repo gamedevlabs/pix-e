@@ -21,7 +21,7 @@ export default defineNuxtConfig({
   ],
 
   css: ['~/assets/css/main.css'],
-  
+
   icon: {
     mode: 'svg',
     collections: ['heroicons', 'lucide'],
@@ -30,9 +30,9 @@ export default defineNuxtConfig({
       sizeLimitKb: 512,
     },
     serverBundle: false,
-    provider: 'iconify'
+    provider: 'iconify',
   },
-  
+
   runtimeConfig: {
     public: {
       apiBase: 'http://localhost:8000',
@@ -67,7 +67,7 @@ export default defineNuxtConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         prependPath: true,
-      }
-    }
+      },
+    },
   },
 })

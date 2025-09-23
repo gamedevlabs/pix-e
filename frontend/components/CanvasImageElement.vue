@@ -1,11 +1,11 @@
 <template>
   <div
     class="canvas-image-element"
-    :class="{ 
-      selected, 
-      dragging: isDragging, 
+    :class="{
+      selected,
+      dragging: isDragging,
       resizing: isResizing,
-      rotating: isRotating
+      rotating: isRotating,
     }"
     :style="elementStyle"
     :data-image-id="image.id"
@@ -19,37 +19,26 @@
       draggable="false"
       @load="handleImageLoad"
     />
-    
+
     <!-- Selection handles -->
     <div v-if="selected" class="selection-handles">
-      <div class="handle handle-nw" @mousedown="handleResize($event, 'nw')"/>
-      <div class="handle handle-ne" @mousedown="handleResize($event, 'ne')"/>
-      <div class="handle handle-sw" @mousedown="handleResize($event, 'sw')"/>
-      <div class="handle handle-se" @mousedown="handleResize($event, 'se')"/>
-      <div class="handle handle-n" @mousedown="handleResize($event, 'n')"/>
-      <div class="handle handle-s" @mousedown="handleResize($event, 's')"/>
-      <div class="handle handle-w" @mousedown="handleResize($event, 'w')"/>
-      <div class="handle handle-e" @mousedown="handleResize($event, 'e')"/>
+      <div class="handle handle-nw" @mousedown="handleResize($event, 'nw')" />
+      <div class="handle handle-ne" @mousedown="handleResize($event, 'ne')" />
+      <div class="handle handle-sw" @mousedown="handleResize($event, 'sw')" />
+      <div class="handle handle-se" @mousedown="handleResize($event, 'se')" />
+      <div class="handle handle-n" @mousedown="handleResize($event, 'n')" />
+      <div class="handle handle-s" @mousedown="handleResize($event, 's')" />
+      <div class="handle handle-w" @mousedown="handleResize($event, 'w')" />
+      <div class="handle handle-e" @mousedown="handleResize($event, 'e')" />
     </div>
 
     <!-- Delete button -->
-    <button 
-      v-if="selected"
-      class="delete-button"
-      title="Delete"
-      @click.stop="handleDelete"
-    >
+    <button v-if="selected" class="delete-button" title="Delete" @click.stop="handleDelete">
       ×
     </button>
 
     <!-- Rotation handle -->
-    <div 
-      v-if="selected"
-      class="rotation-handle"
-      @mousedown="handleRotationStart"
-    >
-      ↻
-    </div>
+    <div v-if="selected" class="rotation-handle" @mousedown="handleRotationStart">↻</div>
   </div>
 </template>
 
@@ -92,10 +81,10 @@ const elementStyle = computed(() => ({
   top: `${isDragging.value || isResizing.value ? localPosition.value.y : props.image.y_position}px`,
   width: `${isDragging.value || isResizing.value ? localSize.value.width : props.image.canvas_width}px`,
   height: `${isDragging.value || isResizing.value ? localSize.value.height : props.image.canvas_height}px`,
-  transform: `rotate(${isRotating.value ? localRotation.value : (props.image.rotation || 0)}deg)`,
+  transform: `rotate(${isRotating.value ? localRotation.value : props.image.rotation || 0}deg)`,
   // Give dragged/resized images temporary highest z-index for better UX
   zIndex: isDragging.value || isResizing.value || isRotating.value ? 9999 : props.image.z_index,
-  opacity: props.image.opacity
+  opacity: props.image.opacity,
 }))
 
 // Get runtime config for API base URL
@@ -113,27 +102,30 @@ function handleClick(event: MouseEvent) {
 }
 
 function handleMouseDown(event: MouseEvent) {
-  if (event.target === event.currentTarget || (event.target as Element).classList.contains('element-image')) {
+  if (
+    event.target === event.currentTarget ||
+    (event.target as Element).classList.contains('element-image')
+  ) {
     // First, ensure this image is selected (this will trigger auto bring-to-front)
     if (!props.selected) {
       emit('select', props.image.id, event.ctrlKey || event.metaKey)
     }
-    
+
     // Emit drag start event to bring image to front
     emit('dragStart', props.image.id)
-    
+
     isDragging.value = true
     dragStart.value = { x: event.clientX, y: event.clientY }
     originalBounds.value = {
       x: props.image.x_position,
       y: props.image.y_position,
       width: props.image.canvas_width,
-      height: props.image.canvas_height
+      height: props.image.canvas_height,
     }
     // Initialize local state
     localPosition.value = { x: props.image.x_position, y: props.image.y_position }
     localSize.value = { width: props.image.canvas_width, height: props.image.canvas_height }
-    
+
     document.addEventListener('mousemove', handleDrag)
     document.addEventListener('mouseup', handleDragEnd)
     event.preventDefault()
@@ -158,7 +150,7 @@ function handleDrag(event: MouseEvent) {
   // Update local state for smooth visual feedback
   localPosition.value = {
     x: Math.max(0, newX),
-    y: Math.max(0, newY)
+    y: Math.max(0, newY),
   }
 
   // Don't emit updates during dragging - only update visually
@@ -166,7 +158,7 @@ function handleDrag(event: MouseEvent) {
 
 function handleDragEnd() {
   if (!isDragging.value) return
-  
+
   isDragging.value = false
   document.removeEventListener('mousemove', handleDrag)
   document.removeEventListener('mouseup', handleDragEnd)
@@ -175,7 +167,7 @@ function handleDragEnd() {
   const updatedImage: MoodboardImage = {
     ...props.image,
     x_position: localPosition.value.x,
-    y_position: localPosition.value.y
+    y_position: localPosition.value.y,
   }
 
   emit('update', updatedImage)
@@ -190,12 +182,12 @@ function handleResize(event: MouseEvent, handle: string) {
     x: props.image.x_position,
     y: props.image.y_position,
     width: props.image.canvas_width,
-    height: props.image.canvas_height
+    height: props.image.canvas_height,
   }
   // Initialize local state
   localPosition.value = { x: props.image.x_position, y: props.image.y_position }
   localSize.value = { width: props.image.canvas_width, height: props.image.canvas_height }
-  
+
   document.addEventListener('mousemove', handleResizeMove)
   document.addEventListener('mouseup', handleResizeEnd)
   event.preventDefault()
@@ -255,7 +247,7 @@ function handleResizeMove(event: MouseEvent) {
 
 function handleResizeEnd() {
   if (!isResizing.value) return
-  
+
   isResizing.value = false
   resizeHandle.value = ''
   document.removeEventListener('mousemove', handleResizeMove)
@@ -267,7 +259,7 @@ function handleResizeEnd() {
     x_position: localPosition.value.x,
     y_position: localPosition.value.y,
     canvas_width: localSize.value.width,
-    canvas_height: localSize.value.height
+    canvas_height: localSize.value.height,
   }
 
   emit('update', updatedImage)
@@ -277,92 +269,76 @@ function handleRotationStart(event: MouseEvent) {
   event.stopPropagation()
   event.preventDefault()
 
-  
   // Set rotating state immediately
   isRotating.value = true
   rotationStarted.value = false // Reset the actual rotation started flag
-  
+
   // Simple approach: just store mouse start position and current rotation
   const currentRotation = props.image.rotation || 0
-  
 
-
-  
   dragStart.value = { x: event.clientX, y: event.clientY }
   originalBounds.value = { x: 0, y: 0, width: 0, height: currentRotation } // Store rotation in height field
   localRotation.value = currentRotation
-  
+
   // Add event listeners to document to ensure they work even if mouse leaves element
   document.addEventListener('mousemove', handleRotationMove, { passive: false })
   document.addEventListener('mouseup', handleRotationEnd, { passive: false })
-  
-
 }
 
 function handleRotationMove(event: MouseEvent) {
   if (!isRotating.value) {
-
     return
   }
-  
+
   event.preventDefault()
   event.stopPropagation()
-  
 
-  
   // Check if we've moved enough to start rotating (prevent accidental clicks)
   const deltaX = event.clientX - dragStart.value.x
   const deltaY = event.clientY - dragStart.value.y
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-  
-  if (!rotationStarted.value && distance < 5) {
 
+  if (!rotationStarted.value && distance < 5) {
     return // Need at least 5px movement to start rotating
   }
-  
+
   if (!rotationStarted.value) {
     rotationStarted.value = true
-
   }
-  
+
   // Simple rotation: horizontal movement = rotation change
   const rotationSpeed = 2 // 2 degrees per pixel for more responsive feel
-  
-  let newRotation = originalBounds.value.height + (deltaX * rotationSpeed) // height field stores initial rotation
-  
+
+  let newRotation = originalBounds.value.height + deltaX * rotationSpeed // height field stores initial rotation
+
   // Normalize rotation to 0-360 range
   newRotation = ((newRotation % 360) + 360) % 360
-  
+
   // Snap to 15-degree increments if shift is held
   if (event.shiftKey) {
     newRotation = Math.round(newRotation / 15) * 15
   }
-  
 
   localRotation.value = newRotation
 }
 
 function handleRotationEnd() {
-
-  
   if (!isRotating.value) return
-  
 
-  
   isRotating.value = false
   rotationStarted.value = false
   document.removeEventListener('mousemove', handleRotationMove)
   document.removeEventListener('mouseup', handleRotationEnd)
-  
+
   // Only emit if rotation actually changed significantly
   const rotationChange = Math.abs(localRotation.value - (props.image.rotation || 0))
-  if (rotationChange > 1) { // At least 1 degree change
+  if (rotationChange > 1) {
+    // At least 1 degree change
     // Emit the final rotation
     const updatedImage: MoodboardImage = {
       ...props.image,
-      rotation: localRotation.value
+      rotation: localRotation.value,
     }
-    
 
     emit('update', updatedImage)
   }
@@ -374,20 +350,20 @@ function handleDelete() {
 
 function handleImageLoad(event: Event) {
   const img = event.target as HTMLImageElement
-  
-  // If canvas dimensions are small (like 200x200 thumbnails) but actual image is larger, 
+
+  // If canvas dimensions are small (like 200x200 thumbnails) but actual image is larger,
   // auto-resize to a reasonable size based on the actual image
   if (props.image.canvas_width <= 250 || props.image.canvas_height <= 250) {
     const aspectRatio = img.naturalWidth / img.naturalHeight
     const idealWidth = Math.min(400, Math.max(300, img.naturalWidth * 0.6))
     const idealHeight = idealWidth / aspectRatio
-    
+
     const updatedImage: MoodboardImage = {
       ...props.image,
       canvas_width: idealWidth,
-      canvas_height: idealHeight
+      canvas_height: idealHeight,
     }
-    
+
     emit('update', updatedImage)
   }
 }
@@ -464,14 +440,50 @@ onUnmounted(() => {
   pointer-events: all;
 }
 
-.handle-nw { top: 0; left: 0; cursor: nw-resize; }
-.handle-ne { top: 0; right: 0; cursor: ne-resize; }
-.handle-sw { bottom: 0; left: 0; cursor: sw-resize; }
-.handle-se { bottom: 0; right: 0; cursor: se-resize; }
-.handle-n { top: 0; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.handle-s { bottom: 0; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.handle-w { top: 50%; left: 0; transform: translateY(-50%); cursor: w-resize; }
-.handle-e { top: 50%; right: 0; transform: translateY(-50%); cursor: e-resize; }
+.handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+}
+.handle-ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+}
+.handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+}
+.handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.handle-n {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: n-resize;
+}
+.handle-s {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: s-resize;
+}
+.handle-w {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  cursor: w-resize;
+}
+.handle-e {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  cursor: e-resize;
+}
 
 .delete-button {
   position: absolute;

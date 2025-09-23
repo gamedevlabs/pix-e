@@ -85,17 +85,11 @@ export const useAISuggestions = () => {
   const lastPrompt = ref('')
 
   // Computed
-  const hasUntriedSuggestions = computed(() => 
-    suggestions.value.some(s => !s.applied)
-  )
+  const hasUntriedSuggestions = computed(() => suggestions.value.some((s) => !s.applied))
 
-  const appliedSuggestionsCount = computed(() =>
-    suggestions.value.filter(s => s.applied).length
-  )
+  const appliedSuggestionsCount = computed(() => suggestions.value.filter((s) => s.applied).length)
 
-  const totalSuggestions = computed(() =>
-    suggestions.value.length
-  )
+  const totalSuggestions = computed(() => suggestions.value.length)
 
   // Clear error state
   const clearError = () => {
@@ -115,20 +109,22 @@ export const useAISuggestions = () => {
   }
 
   // Generate AI suggestions
-  const generateSuggestions = async (prompt: string, options: {
-    numSuggestions?: number
-    serviceId?: string
-    mode?: 'default' | 'gaming'
-    suggestionType?: 'short' | 'long'
-    skipValidation?: boolean
-  } = {}) => {
-    
+  const generateSuggestions = async (
+    prompt: string,
+    options: {
+      numSuggestions?: number
+      serviceId?: string
+      mode?: 'default' | 'gaming'
+      suggestionType?: 'short' | 'long'
+      skipValidation?: boolean
+    } = {},
+  ) => {
     if (!options.skipValidation) {
       if (!prompt?.trim()) {
         error.value = 'Please enter a prompt to generate suggestions'
         return
       }
-      
+
       if (prompt.trim().length < 3) {
         error.value = 'Prompt must be at least 3 characters long'
         return
@@ -146,48 +142,55 @@ export const useAISuggestions = () => {
         service: options.serviceId || activeService.value,
         num_suggestions: options.numSuggestions || 3,
         mode: options.mode || mode.value,
-        suggestion_type: options.suggestionType || suggestionType.value
+        suggestion_type: options.suggestionType || suggestionType.value,
       }
-      
+
       const response = await $fetch<SuggestionResponse>(`${apiBase}/llm/text-suggestions/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...(csrfToken && { 'X-CSRFToken': csrfToken }),
-          ...useRequestHeaders(['cookie'])
+          ...useRequestHeaders(['cookie']),
         },
-        body: requestBody
+        body: requestBody,
       })
 
       if (response.status === 'success' && response.suggestions) {
         suggestions.value = response.suggestions.map((text: string) => ({
           text: text.trim(),
-          applied: false
+          applied: false,
         }))
       } else {
         throw new Error(response.error || 'Failed to generate suggestions')
       }
-
     } catch (err: unknown) {
       const apiError = err as APIError
-      
+
       // Log error for debugging in development only
       if (import.meta.dev) {
         console.error('Error generating suggestions:', err)
       }
-      
+
       // Set appropriate error message based on the error type
       if ((apiError as APIError).statusCode === 401 || (apiError as APIError).statusCode === 403) {
         error.value = 'Authentication required. Please log in to use AI suggestions.'
-      } else if ((apiError as APIError).statusCode === 400 && (apiError as APIError).data?.error?.includes('token')) {
-        error.value = 'API token required. Please configure your API tokens in the AI suggestions panel.'
+      } else if (
+        (apiError as APIError).statusCode === 400 &&
+        (apiError as APIError).data?.error?.includes('token')
+      ) {
+        error.value =
+          'API token required. Please configure your API tokens in the AI suggestions panel.'
       } else if ((apiError as APIError).data?.error?.includes('service not available')) {
-        error.value = 'AI service is currently unavailable. Please check your API token configuration or try again later.'
+        error.value =
+          'AI service is currently unavailable. Please check your API token configuration or try again later.'
       } else {
-        error.value = (apiError as APIError).data?.error || (apiError as APIError).message || 'AI service failed. Please check your API token configuration.'
+        error.value =
+          (apiError as APIError).data?.error ||
+          (apiError as APIError).message ||
+          'AI service failed. Please check your API token configuration.'
       }
-      
+
       // Clear suggestions instead of showing fallback
       suggestions.value = []
     } finally {
@@ -236,16 +239,18 @@ export const useAISuggestions = () => {
         method: 'GET',
         credentials: 'include',
         headers: {
-          ...useRequestHeaders(['cookie'])
-        }
+          ...useRequestHeaders(['cookie']),
+        },
       })
 
       if (response.status === 'success') {
-        services.value = Object.entries(response.services || {}).map(([id, service]: [string, Service]) => ({
-          id,
-          name: service.name || id,
-          status: service.available ? 'available' : 'unavailable'
-        }))
+        services.value = Object.entries(response.services || {}).map(
+          ([id, service]: [string, Service]) => ({
+            id,
+            name: service.name || id,
+            status: service.available ? 'available' : 'unavailable',
+          }),
+        )
         activeService.value = response.active_service || services.value[0]?.id || null
       }
     } catch (err) {
@@ -285,16 +290,16 @@ export const useAISuggestions = () => {
   const fetchUserTokens = async () => {
     isTokensLoading.value = true
     tokenError.value = null
-    
+
     try {
       const response = await $fetch<UserToken[]>(`${apiBase}/accounts/ai-tokens/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
-          ...useRequestHeaders(['cookie'])
-        }
+          ...useRequestHeaders(['cookie']),
+        },
       })
-      
+
       userTokens.value = Array.isArray(response) ? response : []
     } catch (err: unknown) {
       if (import.meta.dev) {
@@ -309,42 +314,43 @@ export const useAISuggestions = () => {
   const saveUserToken = async (serviceType: string, token: string, isActive: boolean = true) => {
     try {
       // First check if a token already exists for this service
-      const existingToken = userTokens.value.find(t => t.service_type === serviceType)
-      
-      if (existingToken) {
+      const existingToken = userTokens.value.find((t) => t.service_type === serviceType)
 
+      if (existingToken) {
         return await updateUserToken(serviceType, token, isActive)
       }
-      
+
       const csrfToken = useCookie('csrftoken').value
-      
-      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/accounts/ai-tokens/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken && { 'X-CSRFToken': csrfToken }),
-          ...useRequestHeaders(['cookie'])
+
+      const response = await $fetch<{ success: boolean; token?: UserToken }>(
+        `${apiBase}/accounts/ai-tokens/`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken && { 'X-CSRFToken': csrfToken }),
+            ...useRequestHeaders(['cookie']),
+          },
+          body: {
+            service_type: serviceType,
+            token: token,
+            is_active: isActive,
+          },
         },
-        body: {
-          service_type: serviceType,
-          token: token,
-          is_active: isActive
-        }
-      })
-      
+      )
+
       // Refresh tokens list
       await fetchUserTokens()
       return response
     } catch (err: unknown) {
       const apiError = err as APIError
-      
+
       // Fallback: If token already exists and we missed it above, try updating
       if (apiError.statusCode === 400 && apiError.data?.error?.includes('already exists')) {
-
         return await updateUserToken(serviceType, token, isActive)
       }
-      
+
       if (import.meta.dev) {
         console.error('Error saving token:', err)
       }
@@ -360,18 +366,21 @@ export const useAISuggestions = () => {
       if (isActive !== undefined) {
         body.is_active = isActive
       }
-      
-      const response = await $fetch<{ success: boolean; token?: UserToken }>(`${apiBase}/accounts/ai-tokens/${serviceType}/`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken && { 'X-CSRFToken': csrfToken }),
-          ...useRequestHeaders(['cookie'])
+
+      const response = await $fetch<{ success: boolean; token?: UserToken }>(
+        `${apiBase}/accounts/ai-tokens/${serviceType}/`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken && { 'X-CSRFToken': csrfToken }),
+            ...useRequestHeaders(['cookie']),
+          },
+          body,
         },
-        body
-      })
-      
+      )
+
       // Refresh tokens list
       await fetchUserTokens()
       return response
@@ -387,16 +396,16 @@ export const useAISuggestions = () => {
   const deleteUserToken = async (serviceType: string) => {
     try {
       const csrfToken = useCookie('csrftoken').value
-      
+
       await $fetch(`${apiBase}/accounts/ai-tokens/${serviceType}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
           ...(csrfToken && { 'X-CSRFToken': csrfToken }),
-          ...useRequestHeaders(['cookie'])
-        }
+          ...useRequestHeaders(['cookie']),
+        },
       })
-      
+
       // Refresh tokens list
       await fetchUserTokens()
     } catch (err: unknown) {
@@ -417,7 +426,7 @@ export const useAISuggestions = () => {
       await generateSuggestions(lastPrompt.value, {
         ...options,
         mode: mode.value,
-        suggestionType: suggestionType.value
+        suggestionType: suggestionType.value,
       })
     }
   }
@@ -429,23 +438,23 @@ export const useAISuggestions = () => {
     error,
     services,
     activeService,
-    
+
     // Token management state
     userTokens,
     isTokensLoading,
     tokenError,
-    
+
     // UI State
     isVisible,
     mode,
     suggestionType,
     lastPrompt,
-    
+
     // Computed
     hasUntriedSuggestions,
     appliedSuggestionsCount,
     totalSuggestions,
-    
+
     // Methods
     generateSuggestions,
     applySuggestion,
@@ -455,21 +464,21 @@ export const useAISuggestions = () => {
     fetchServices,
     regenerateSuggestions,
     isValidPrompt,
-    
+
     // Token management methods
     fetchUserTokens,
     saveUserToken,
     updateUserToken,
     deleteUserToken,
-    
+
     // Panel control
     togglePanel,
     showPanel,
     hidePanel,
-    
+
     // Settings
     setMode,
     setSuggestionType,
-    setActiveService
+    setActiveService,
   }
 }

@@ -19,8 +19,12 @@
   border-radius: 2px;
 }
 @keyframes toast-bar-infinite {
-  0% { left: -40%; }
-  100% { left: 100%; }
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 .global-loading-bar {
   position: fixed;
@@ -41,8 +45,12 @@
   animation: global-bar-infinite 1.2s linear infinite;
 }
 @keyframes global-bar-infinite {
-  0% { margin-left: -30vw; }
-  100% { margin-left: 100vw; }
+  0% {
+    margin-left: -30vw;
+  }
+  100% {
+    margin-left: 100vw;
+  }
 }
 /* Add theme-fitting toast style */
 .moodboard-toast {
@@ -50,9 +58,10 @@
   color: #4c1d95;
   font-weight: 600;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px 0 rgba(139,92,246,0.10);
+  box-shadow: 0 4px 24px 0 rgba(139, 92, 246, 0.1);
 }
-html[data-theme="dark"] .moodboard-toast, .dark .moodboard-toast {
+html[data-theme='dark'] .moodboard-toast,
+.dark .moodboard-toast {
   background: linear-gradient(90deg, #2e1065 0%, #4c1d95 100%);
   color: #ede9fe;
 }

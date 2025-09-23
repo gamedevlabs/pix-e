@@ -7,9 +7,9 @@ export default <Partial<Config>>{
     './pages/**/*.vue',
     './plugins/**/*.{js,ts}',
     './app.vue',
-    './error.vue'
+    './error.vue',
   ],
   theme: {
-    extend: {}
-  }
+    extend: {},
+  },
 }

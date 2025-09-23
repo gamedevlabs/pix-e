@@ -184,7 +184,7 @@ export const useMoodboards = () => {
       ...useRequestHeaders(['cookie']),
       'Content-Type': 'application/json',
       ...(csrfToken && { 'X-CSRFToken': csrfToken }),
-      ...additionalHeaders
+      ...additionalHeaders,
     }
   }
 
@@ -195,11 +195,12 @@ export const useMoodboards = () => {
       return await apiCall()
     } catch (err: unknown) {
       const apiError = err as APIError
-      error.value = apiError.data?.detail || apiError.statusMessage || apiError.message || 'An error occurred'
-      toast.add({ 
-        title: 'Error', 
-        description: error.value || undefined, 
-        color: 'error' 
+      error.value =
+        apiError.data?.detail || apiError.statusMessage || apiError.message || 'An error occurred'
+      toast.add({
+        title: 'Error',
+        description: error.value || undefined,
+        color: 'error',
       })
       return null
     }
@@ -213,13 +214,13 @@ export const useMoodboards = () => {
         method: 'GET',
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
-        query: params
+        query: params,
       })
       return response
     })
-    
+
     if (result) {
-      moodboards.value = (result as PaginatedResponse<Moodboard>).results || result as Moodboard[]
+      moodboards.value = (result as PaginatedResponse<Moodboard>).results || (result as Moodboard[])
     }
     loading.value = false
     return result
@@ -227,7 +228,7 @@ export const useMoodboards = () => {
 
   const fetchMoodboard = async (id: string) => {
     loading.value = true
-    
+
     try {
       error.value = null
       const response = await $fetch(`${apiBase}/moodboards/${id}/`, {
@@ -235,10 +236,10 @@ export const useMoodboards = () => {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
         query: {
-          _t: Date.now()
-        }
+          _t: Date.now(),
+        },
       })
-      
+
       currentMoodboard.value = response as Moodboard
       loading.value = false
       return response
@@ -257,12 +258,13 @@ export const useMoodboards = () => {
         loading.value = false
         return null
       }
-      
-      error.value = apiError.data?.detail || apiError.statusMessage || apiError.message || 'An error occurred'
-      toast.add({ 
-        title: 'Error', 
-        description: error.value || undefined, 
-        color: 'error' 
+
+      error.value =
+        apiError.data?.detail || apiError.statusMessage || apiError.message || 'An error occurred'
+      toast.add({
+        title: 'Error',
+        description: error.value || undefined,
+        color: 'error',
       })
       loading.value = false
       return null
@@ -275,11 +277,11 @@ export const useMoodboards = () => {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: data
+        body: data,
       })
       return response
     })
-    
+
     if (result) {
       await fetchMoodboards()
     }
@@ -292,11 +294,11 @@ export const useMoodboards = () => {
         method: 'PATCH',
         credentials: 'include',
         headers: createHeaders(),
-        body: data
+        body: data,
       })
       return response
     })
-    
+
     if (result) {
       currentMoodboard.value = result as Moodboard
       await fetchMoodboards()
@@ -313,7 +315,7 @@ export const useMoodboards = () => {
       })
       return true
     })
-    
+
     if (result) {
       await fetchMoodboards()
     }
@@ -329,7 +331,7 @@ export const useMoodboards = () => {
       })
       return response
     })
-    
+
     if (result) {
       await fetchMoodboards()
     }
@@ -343,16 +345,16 @@ export const useMoodboards = () => {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: imageData
+        body: imageData,
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Image added to moodboard', 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: 'Image added to moodboard',
+        color: 'success',
       })
       if (currentMoodboard.value?.id === moodboardId) {
         await fetchMoodboard(moodboardId)
@@ -361,17 +363,21 @@ export const useMoodboards = () => {
     return result
   }
 
-  const updateMoodboardImage = async (moodboardId: string, imageId: string, imageData: Partial<MoodboardImage>) => {
+  const updateMoodboardImage = async (
+    moodboardId: string,
+    imageId: string,
+    imageData: Partial<MoodboardImage>,
+  ) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/images/${imageId}/`, {
         method: 'PATCH',
         credentials: 'include',
         headers: createHeaders(),
-        body: imageData
+        body: imageData,
       })
       return response
     })
-    
+
     if (result && currentMoodboard.value?.id === moodboardId) {
       await fetchMoodboard(moodboardId)
     }
@@ -387,12 +393,12 @@ export const useMoodboards = () => {
       })
       return true
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Image removed from moodboard', 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: 'Image removed from moodboard',
+        color: 'success',
       })
       if (currentMoodboard.value?.id === moodboardId) {
         await fetchMoodboard(moodboardId)
@@ -401,7 +407,12 @@ export const useMoodboards = () => {
     return result
   }
 
-  const bulkImageAction = async (moodboardId: string, action: string, imageIds: string[], data?: BulkActionData) => {
+  const bulkImageAction = async (
+    moodboardId: string,
+    action: string,
+    imageIds: string[],
+    data?: BulkActionData,
+  ) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/images/bulk_action/`, {
         method: 'POST',
@@ -410,17 +421,17 @@ export const useMoodboards = () => {
         body: {
           action,
           image_ids: imageIds,
-          data
-        }
+          data,
+        },
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: `${action.charAt(0).toUpperCase() + action.slice(1)} applied to images`, 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: `${action.charAt(0).toUpperCase() + action.slice(1)} applied to images`,
+        color: 'success',
       })
       if (currentMoodboard.value?.id === moodboardId) {
         await fetchMoodboard(moodboardId)
@@ -438,23 +449,27 @@ export const useMoodboards = () => {
         headers: createHeaders(),
         body: {
           shared_with_email: email,
-          permission
-        }
+          permission,
+        },
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: `Moodboard shared with ${email}`, 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: `Moodboard shared with ${email}`,
+        color: 'success',
       })
     }
     return result
   }
 
-  const shareMoodboardWithMultipleUsers = async (moodboardId: string, emails: string[], permission: string) => {
+  const shareMoodboardWithMultipleUsers = async (
+    moodboardId: string,
+    emails: string[],
+    permission: string,
+  ) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/share_multiple/`, {
         method: 'POST',
@@ -462,17 +477,17 @@ export const useMoodboards = () => {
         headers: createHeaders(),
         body: {
           emails,
-          permission
-        }
+          permission,
+        },
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: `Moodboard shared with ${emails.length} users`, 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: `Moodboard shared with ${emails.length} users`,
+        color: 'success',
       })
     }
     return result
@@ -485,7 +500,7 @@ export const useMoodboards = () => {
         method: 'GET',
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
-        query: params
+        query: params,
       })
       return response
     })
@@ -500,7 +515,7 @@ export const useMoodboards = () => {
         method: 'GET',
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
-        query: params
+        query: params,
       })
       return response
     })
@@ -527,7 +542,12 @@ export const useMoodboards = () => {
   }
 
   // Comments
-  const addComment = async (moodboardId: string, content: string, imageId?: string, parentId?: string) => {
+  const addComment = async (
+    moodboardId: string,
+    content: string,
+    imageId?: string,
+    parentId?: string,
+  ) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/comments/`, {
         method: 'POST',
@@ -536,17 +556,17 @@ export const useMoodboards = () => {
         body: {
           content,
           ...(imageId && { image: imageId }),
-          ...(parentId && { parent: parentId })
-        }
+          ...(parentId && { parent: parentId }),
+        },
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Comment added successfully', 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: 'Comment added successfully',
+        color: 'success',
       })
     }
     return result
@@ -583,16 +603,16 @@ export const useMoodboards = () => {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: data
+        body: data,
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Template created successfully', 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: 'Template created successfully',
+        color: 'success',
       })
     }
     return result
@@ -607,12 +627,12 @@ export const useMoodboards = () => {
       })
       return response
     })
-    
+
     if (result) {
-      toast.add({ 
-        title: 'Success', 
-        description: 'Template applied successfully', 
-        color: 'success' 
+      toast.add({
+        title: 'Success',
+        description: 'Template applied successfully',
+        color: 'success',
       })
     }
     return result
@@ -627,13 +647,13 @@ export const useMoodboards = () => {
         method: 'GET',
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
-        query: params
+        query: params,
       })
       return response
     })
-    
+
     if (result) {
-      moodboards.value = (result as PaginatedResponse<Moodboard>).results || result as Moodboard[]
+      moodboards.value = (result as PaginatedResponse<Moodboard>).results || (result as Moodboard[])
     }
     loading.value = false
     return result
@@ -646,18 +666,23 @@ export const useMoodboards = () => {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: sessionData || {}
+        body: sessionData || {},
       })
       return response
     })
-    
+
     if (result) {
       currentMoodboard.value = (result as AISessionResponse).moodboard
     }
     return result
   }
 
-  const generateAIImages = async (sessionId: string, prompt: string, selectedImageIds: string[] = [], mode: string = 'gaming') => {
+  const generateAIImages = async (
+    sessionId: string,
+    prompt: string,
+    selectedImageIds: string[] = [],
+    mode: string = 'gaming',
+  ) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/generate-images/`, {
         method: 'POST',
@@ -667,12 +692,12 @@ export const useMoodboards = () => {
           session_id: sessionId,
           prompt,
           selected_image_ids: selectedImageIds,
-          mode
-        }
+          mode,
+        },
       })
       return response
     })
-    
+
     if (result) {
       // Image generation completed successfully
     }
@@ -691,7 +716,12 @@ export const useMoodboards = () => {
     return result
   }
 
-  const endAISession = async (sessionId: string, selectedImageIds: string[] = [], title?: string, isPublic?: boolean) => {
+  const endAISession = async (
+    sessionId: string,
+    selectedImageIds: string[] = [],
+    title?: string,
+    isPublic?: boolean,
+  ) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/end-session/`, {
         method: 'POST',
@@ -701,12 +731,12 @@ export const useMoodboards = () => {
           session_id: sessionId,
           selected_image_ids: selectedImageIds,
           ...(title && { title }),
-          ...(isPublic !== undefined && { public: isPublic })
-        }
+          ...(isPublic !== undefined && { public: isPublic }),
+        },
       })
       return response
     })
-    
+
     if (result) {
       // Session completed successfully
     }
@@ -719,7 +749,7 @@ export const useMoodboards = () => {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: {}
+        body: {},
       })
       return response
     })
@@ -731,7 +761,12 @@ export const useMoodboards = () => {
     return await startAISession()
   }
 
-  const legacyGenerateImages = async (sessionId: string, prompt: string, selectedImageIds: string[] = [], mode: string = 'gaming') => {
+  const legacyGenerateImages = async (
+    sessionId: string,
+    prompt: string,
+    selectedImageIds: string[] = [],
+    mode: string = 'gaming',
+  ) => {
     return await generateAIImages(sessionId, prompt, selectedImageIds, mode)
   }
 
@@ -739,7 +774,12 @@ export const useMoodboards = () => {
     return await getAISession(sessionId)
   }
 
-  const legacyEndSession = async (sessionId: string, selectedImageIds: string[] = [], title?: string, isPublic?: boolean) => {
+  const legacyEndSession = async (
+    sessionId: string,
+    selectedImageIds: string[] = [],
+    title?: string,
+    isPublic?: boolean,
+  ) => {
     return await endAISession(sessionId, selectedImageIds, title, isPublic)
   }
 
@@ -748,51 +788,67 @@ export const useMoodboards = () => {
   }
 
   // Canvas Operations
-  const updateImagePosition = async (moodboardId: string, imageId: string, positionData: Partial<MoodboardImage>) => {
+  const updateImagePosition = async (
+    moodboardId: string,
+    imageId: string,
+    positionData: Partial<MoodboardImage>,
+  ) => {
     return await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/images/${imageId}/`, {
         method: 'PATCH',
         credentials: 'include',
         headers: createHeaders(),
-        body: positionData
+        body: positionData,
       })
       return response
     })
   }
 
-  const createTextElement = async (moodboardId: string, textData: Partial<MoodboardTextElement>) => {
+  const createTextElement = async (
+    moodboardId: string,
+    textData: Partial<MoodboardTextElement>,
+  ) => {
     return await handleApiCall(async () => {
-
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/text-elements/`, {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: textData
+        body: textData,
       })
 
       return response
     })
   }
 
-  const updateTextElement = async (moodboardId: string, textElementId: string, textData: Partial<MoodboardTextElement>) => {
+  const updateTextElement = async (
+    moodboardId: string,
+    textElementId: string,
+    textData: Partial<MoodboardTextElement>,
+  ) => {
     return await handleApiCall(async () => {
-      const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/text-elements/${textElementId}/`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: createHeaders(),
-        body: textData
-      })
+      const response = await $fetch(
+        `${apiBase}/moodboards/${moodboardId}/text-elements/${textElementId}/`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: createHeaders(),
+          body: textData,
+        },
+      )
       return response
     })
   }
 
   const deleteTextElement = async (moodboardId: string, textElementId: string) => {
     return await handleApiCall(async () => {
-      const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/text-elements/${textElementId}/`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: createHeaders()
-      })
+      const response = await $fetch(
+        `${apiBase}/moodboards/${moodboardId}/text-elements/${textElementId}/`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: createHeaders(),
+        },
+      )
       return response
     })
   }
@@ -802,31 +858,38 @@ export const useMoodboards = () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/text-elements/`, {
         method: 'GET',
         credentials: 'include',
-        headers: createHeaders()
+        headers: createHeaders(),
       })
       return response
     })
   }
 
-  const exportCanvas = async (moodboardId: string, format: 'png' | 'jpg' | 'pdf' | 'svg', options: Record<string, unknown> = {}) => {
+  const exportCanvas = async (
+    moodboardId: string,
+    format: 'png' | 'jpg' | 'pdf' | 'svg',
+    options: Record<string, unknown> = {},
+  ) => {
     return await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/canvas/${moodboardId}/export/`, {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: { format, ...options }
+        body: { format, ...options },
       })
       return response
     })
   }
 
-  const autoLayoutCanvas = async (moodboardId: string, layoutType: 'grid' | 'masonry' | 'scattered' | 'centered') => {
+  const autoLayoutCanvas = async (
+    moodboardId: string,
+    layoutType: 'grid' | 'masonry' | 'scattered' | 'centered',
+  ) => {
     return await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/canvas/${moodboardId}/auto-layout/`, {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
-        body: { layout_type: layoutType }
+        body: { layout_type: layoutType },
       })
       return response
     })
@@ -838,11 +901,11 @@ export const useMoodboards = () => {
       files.forEach((file, index) => {
         formData.append(`images[${index}]`, file)
       })
-      
+
       const response = await $fetch(`${apiBase}/moodboards/canvas/${moodboardId}/import-image/`, {
         method: 'POST',
         credentials: 'include',
-        body: formData
+        body: formData,
       })
       return response
     })
@@ -854,7 +917,7 @@ export const useMoodboards = () => {
     currentMoodboard,
     loading,
     error,
-    
+
     // Moodboard Operations
     fetchMoodboards,
     fetchMoodboard,
@@ -862,49 +925,49 @@ export const useMoodboards = () => {
     updateMoodboard,
     deleteMoodboard,
     duplicateMoodboard,
-    
+
     // Image Operations
     addImageToMoodboard,
     updateMoodboardImage,
     removeImageFromMoodboard,
     bulkImageAction,
-    
+
     // Sharing
     shareMoodboard,
     shareMoodboardWithMultipleUsers,
     getSharedMoodboards,
     getPublicMoodboards,
     refreshPublicMoodboards,
-    
+
     // Analytics
     getMoodboardAnalytics,
-    
+
     // Comments
     addComment,
     getComments,
-    
+
     // Templates
     getTemplates,
     createTemplate,
     useTemplate,
-    
+
     // Search
     searchMoodboards,
-    
+
     // AI Moodboard Playground (New Integrated Methods)
     startAISession,
     generateAIImages,
     getAISession,
     endAISession,
     preloadAI,
-    
+
     // Backward Compatibility (Legacy API Endpoints)
     legacyStartSession,
     legacyGenerateImages,
     legacyGetSession,
     legacyEndSession,
     legacyPreload,
-    
+
     // Canvas Operations
     updateImagePosition,
     createTextElement,
