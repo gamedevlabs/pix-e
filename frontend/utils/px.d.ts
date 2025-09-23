@@ -2,7 +2,7 @@ const pxValueTypes = ['none', 'number', 'string', 'boolean'] as const
 type PxValueType = (typeof pxValueTypes)[number]
 
 interface PxComponentDefinition {
-  id: number
+  id: string
   name: string
   type: PxValueType
   created_at: string
@@ -11,12 +11,12 @@ interface PxComponentDefinition {
 }
 
 interface PxComponent {
-  id: number
+  id: string
   value: PxValueType
   created_at: string
   updated_at: string
-  node: number
-  definition: number
+  node: string
+  definition: string
 }
 
 /*
@@ -29,9 +29,50 @@ interface PXNode {
  */
 
 interface PxNode extends NamedEntity {
-  id: number
+  id: string
   name: string
   description: string
+  created_at: string
+  updated_at: string
+  owner: number | null
+}
+
+interface PxChart extends NamedEntity {
+  id: string
+  name: string
+  description: string
+  created_at: string
+  updated_at: string
+  owner: number | null
+  containers: PxChartContainer[]
+  edges: PxChartEdge[]
+}
+
+interface PxChartContainer {
+  id: string
+  name: string
+  content: string | null
+  px_chart: string
+  layout: PxChartContainerLayout
+  created_at: string
+  updated_at: string
+  owner: number | null
+}
+
+interface PxChartContainerLayout {
+  position_x: number
+  position_y: number
+  width: number
+  height: number
+}
+
+interface PxChartEdge {
+  id: string
+  px_chart: string
+  source: string
+  sourceHandle: string
+  target: string
+  targetHandle: string
   created_at: string
   updated_at: string
   owner: number | null

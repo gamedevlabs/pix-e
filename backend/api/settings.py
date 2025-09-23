@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "pxnodes",
     "llm",
     "accounts",
+    "pxcharts",
     "moodboards",  # Our new comprehensive moodboard app
 ]
 

@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'delete', id: number): void
+  (e: 'delete', id: string): void
 }>()
 
 const { deleteItem: deletePxComponent } = usePxComponents()
@@ -40,7 +40,7 @@ async function getNode() {
   associatedNode.value = await fetchPxNodeById(props.component.node)
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   await deletePxComponent(id)
 
   emit('delete', id)

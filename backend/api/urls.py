@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/accounts/", include("accounts.urls")),
     path("accounts/", include("accounts.urls")),  # Keep both for backward compatibility
     path("", include("pxnodes.urls")),
+    path("api/", include("pxcharts.urls")),
 ]
 
 if settings.DEBUG:

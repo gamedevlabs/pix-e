@@ -2,7 +2,7 @@
 const props = defineProps<{ component: PxComponent; definition: PxComponentDefinition }>()
 
 const emit = defineEmits<{
-  (e: 'delete', id: number): void
+  (e: 'delete', id: string): void
 }>()
 
 function emitDelete() {
