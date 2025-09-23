@@ -16,6 +16,7 @@ const props = defineProps<{
 
     <template #default>
       <div>
+        <h2 class="font-semibold text-lg mb-2">Description</h2>
         <p>{{ props.node.description }}</p>
       </div>
     </template>

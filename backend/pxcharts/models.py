@@ -6,12 +6,14 @@ from pxnodes.models import PxNode
 User = get_user_model()
 
 
-# Create your models here.
 class PxChart(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
 
     name = models.CharField(max_length=255)
     description = models.TextField()
+    associatedNode = models.ForeignKey(
+        PxNode, on_delete=models.SET_NULL, null=True, blank=True, related_name="charts"
+    )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -33,7 +35,7 @@ class PxChartContainer(models.Model):
     )
     name = models.CharField(max_length=255)
     content = models.ForeignKey(
-        PxNode, on_delete=models.SET_NULL, blank=True, null=True
+        PxNode, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)

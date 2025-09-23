@@ -4,7 +4,6 @@ from django.db import models
 User = get_user_model()
 
 
-# Create your models here.
 class PxNode(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
     name = models.CharField(max_length=255)

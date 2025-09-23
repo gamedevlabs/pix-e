@@ -2,20 +2,15 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import { LazyPxGraphComponentsPxGraphContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
   (e: 'edit', updatedNode: Partial<PxChartContainer>): void
-  (e: 'delete' | 'deletePxNode', id: string): void
-  (e: 'addPxNode', pxGraphContainerId: string, pxNodeId: string): void
+  (e: 'delete' | 'removePxNode', id: string): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
 const { fetchById: getPxNode } = usePxNodes()
-
-const overlay = useOverlay()
-const modal = overlay.create(LazyPxGraphComponentsPxGraphContainerAddPxNodeForm)
 
 const isBeingEdited = ref(false)
 const editForm = ref({
@@ -34,14 +29,6 @@ const minHeightGivenContent = computed(() => {
 const cardWidth = ref(0)
 const cardHeight = ref(0)
 
-const containsPxNodeData = computed(() => {
-  return props.data.content
-})
-
-watch(containsPxNodeData, () => {
-  loadContent()
-})
-
 onMounted(() => {
   loadContent()
   listenToResizing()
@@ -54,11 +41,6 @@ onBeforeUnmount(() => {
 })
 
 async function loadContent() {
-  if (!containsPxNodeData.value) {
-    pxNode.value = null
-    return
-  }
-
   if (!props.data || !props.data.content) {
     return
   }
@@ -95,16 +77,8 @@ async function emitDelete() {
   emit('delete', props.id)
 }
 
-async function handleAddPxNode() {
-  const nodeId = await modal.open().result
-
-  if (!nodeId) return
-
-  emit('addPxNode', props.id, nodeId)
-}
-
 async function removePxNode() {
-  emit('deletePxNode', props.id)
+  emit('removePxNode', props.id)
 }
 
 function listenToResizing() {
@@ -131,24 +105,13 @@ function listenToResizing() {
 
       <template #default>
         <div v-if="pxNode">
-          <PxNodeCard :node="pxNode" :visualization-style="'preview'" />
-        </div>
-        <div class="flex flex-wrap justify-end gap-2">
-          <UButton
-            v-if="!containsPxNodeData"
-            color="primary"
-            variant="soft"
-            @click="handleAddPxNode"
-            >Add Px Node</UButton
-          >
+          <PxNodeCard :node-id="pxNode.id" :visualization-style="'preview'" />
         </div>
       </template>
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton v-if="containsPxNodeData" color="primary" variant="soft" @click="removePxNode()"
-            >Remove Px Node</UButton
-          >
+          <UButton color="primary" variant="soft" @click="removePxNode()">Remove Px Node</UButton>
           <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>

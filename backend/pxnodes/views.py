@@ -6,6 +6,7 @@ from .permissions import IsOwnerPermission
 from .serializers import (
     PxComponentDefinitionSerializer,
     PxComponentSerializer,
+    PxNodeDetailSerializer,
     PxNodeSerializer,
 )
 
@@ -19,14 +20,13 @@ class PxNodeViewSet(viewsets.ModelViewSet):
             return PxNode.objects.filter(owner=self.request.user)
         return PxNode.objects.order_by("created_at")
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return PxNodeDetailSerializer
+        return super().get_serializer_class()
 
-    """
-    permission_classes = [IsAuthenticatedOrReadOnly]
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
-    """
 
 
 class PxComponentDefinitionViewSet(viewsets.ModelViewSet):

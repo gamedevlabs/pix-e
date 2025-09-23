@@ -20,7 +20,7 @@ export function usePxChartsCanvasApi(chartId: string) {
   const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
 
   const containerDefaultValues = {
-    type: 'pxGraph',
+    type: 'pxEmpty',
     name: 'New Container',
     content: null,
     layout: {
@@ -63,7 +63,7 @@ export function usePxChartsCanvasApi(chartId: string) {
 
     nodes.value = data.containers.map((n: PxChartContainer) => ({
       id: n.id,
-      type: containerDefaultValues.type,
+      type: n.content ? 'pxNode' : containerDefaultValues.type,
       position: {
         x: n.layout.position_x ?? containerDefaultValues.layout.position_x,
         y: n.layout.position_y ?? containerDefaultValues.layout.position_y,
@@ -179,6 +179,7 @@ export function usePxChartsCanvasApi(chartId: string) {
 
   async function addNodeToContainer(pxGraphContainerId: string, pxNodeId: string) {
     const updatedPxGraphContainerContent = {
+      type: 'pxNode' as PxContainerContentType,
       id: pxGraphContainerId,
       content: pxNodeId,
     }
@@ -193,6 +194,7 @@ export function usePxChartsCanvasApi(chartId: string) {
 
   async function removeNodeFromContainer(pxGraphContainerId: string) {
     const updatedPxGraphContainerContent = {
+      type: 'pxEmpty' as PxContainerContentType,
       id: pxGraphContainerId,
       content: null,
     }

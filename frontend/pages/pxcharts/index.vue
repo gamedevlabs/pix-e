@@ -9,15 +9,12 @@ const {
   items: pxCharts,
   fetchAll: fetchPxCharts,
   createItem: createPxChart,
-  updateItem: updatePxChart,
   deleteItem: deletePxChart,
 } = usePxCharts()
 
 onMounted(() => {
   fetchPxCharts()
 })
-
-const editingId = ref<string | null>(null)
 
 const newItem = ref<NamedEntity | null>(null)
 
@@ -30,11 +27,6 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
   await createPxChart({ id: newUuid, ...newEntityDraft })
   newItem.value = null
 }
-
-async function handleUpdate(id: string, namedEntityDraft: Partial<NamedEntity>) {
-  await updatePxChart(id, { ...namedEntityDraft })
-  editingId.value = null
-}
 </script>
 
 <template>
@@ -44,13 +36,11 @@ async function handleUpdate(id: string, namedEntityDraft: Partial<NamedEntity>) 
 
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="chart in pxCharts" :key="chart.id">
-          <PxGraphCard
+          <PxChartCard
             :px-chart="chart"
-            :is-being-edited="editingId === chart.id"
+            :visualization-style="'detailed'"
             show-edit
             show-delete
-            @edit="editingId = editingId === chart.id ? null : chart.id"
-            @update="(namedEntityDraft) => handleUpdate(chart.id, namedEntityDraft)"
             @delete="deletePxChart(chart.id)"
           />
         </div>

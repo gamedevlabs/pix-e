@@ -2,13 +2,9 @@
 import PxNodeCardPreview from '~/components/PxNodeCardPreview.vue'
 
 const props = defineProps({
-  node: {
-    type: Object as PropType<PxNode>,
+  nodeId: {
+    type: String as PropType<string>,
     required: true,
-  },
-  components: {
-    type: Array as PropType<Array<PxComponent>>,
-    default: null,
   },
   visualizationStyle: {
     type: String as PropType<'preview' | 'detailed'>,
@@ -16,63 +12,76 @@ const props = defineProps({
   },
 })
 
-onMounted(() => {
-  getComponents()
-})
-
 const {
-  items: pxComponents,
-  fetchAll: fetchPxComponents,
-  loading: loadingPxComponents,
-  error: errorPxComponents,
-} = usePxComponents()
+  error: nodeError,
+  loading: nodeLoading,
+  fetchById: fetchNodeById,
+  updateItem: updatePxNode,
+} = usePxNodes()
+
+const { fetchById: fetchComponentById } = usePxComponents()
 
 const emit = defineEmits<{
-  (e: 'addForeignComponent', id: string): void
+  (e: 'addForeignComponent', nodeId: string, componentId: string): void
 }>()
 
-const associatedComponents = ref<Array<PxComponent> | undefined>(props.components)
+onMounted(() => {
+  getNodeInformation()
+})
 
-async function getComponents() {
-  if (associatedComponents.value || props.visualizationStyle === 'preview') {
-    return
+const fetchedNode = ref<PxNode>(null)
+
+async function getNodeInformation() {
+  try {
+    fetchedNode.value = await fetchNodeById(props.nodeId)
+  } catch (err) {
+    console.error(err)
   }
-  await fetchPxComponents()
-  associatedComponents.value = pxComponents.value.filter(
-    (component) => component.node === props.node.id,
-  )
 }
 
-async function updateComponents(id: string) {
-  if (id !== props.node.id) {
-    emit('addForeignComponent', id)
-    return
-  }
-  await fetchPxComponents()
-  associatedComponents.value = pxComponents.value.filter(
-    (component) => component.node === props.node.id,
-  )
+async function handleUpdate(updatedNode: PxNode) {
+  await updatePxNode(updatedNode.id, updatedNode)
+  await getNodeInformation()
 }
 
-async function handleDeleteComponent(id: string) {
-  const index = associatedComponents.value!.findIndex((component) => component.id === id)
+async function handleAddComponent(nodeId: string, componentId: string) {
+  if (nodeId !== fetchedNode.value.id) {
+    emit('addForeignComponent', nodeId, componentId)
+    return
+  }
+
+  let addedComponent
+  try {
+    addedComponent = await fetchComponentById(componentId)
+  } catch (err) {
+    console.error(err)
+  }
+  fetchedNode.value.components.push(addedComponent!)
+}
+
+async function handleDeleteComponent(nodeId: string, componentId: string) {
+  const index = fetchedNode.value.components.findIndex((component) => component.id === componentId)
   if (index > -1) {
-    associatedComponents.value!.splice(index, 1)
+    fetchedNode.value.components.splice(index, 1)
   }
 }
 </script>
 
 <template>
-  <div v-if="errorPxComponents">Error loading Px Node {{ node.name }}</div>
-  <PxNodeCardPreview v-else-if="visualizationStyle === 'preview'" :node="node" />
+  <div v-if="nodeError">
+    <div v-if="nodeError.response?.status === 403">You do not have access to this node.</div>
+    <div v-else-if="nodeError.response?.status === 404">This node does not exist.</div>
+    <div v-else>Error loading Px Node {{ props.nodeId }}</div>
+  </div>
+  <div v-else-if="nodeLoading || !fetchedNode">Loading PxNode {{ props.nodeId }}</div>
+  <PxNodeCardPreview v-else-if="visualizationStyle === 'preview'" :node="fetchedNode" />
   <PxNodeCardDetailed
-    v-else-if="associatedComponents && visualizationStyle === 'detailed'"
-    :node="node"
-    :components="associatedComponents"
+    v-else-if="fetchedNode?.components && visualizationStyle === 'detailed'"
+    :node="fetchedNode"
     @delete-component="handleDeleteComponent"
-    @add-component="updateComponents"
+    @add-component="handleAddComponent"
+    @update="handleUpdate"
   />
-  <div v-else-if="loadingPxComponents">Loading PxNode {{ node.name }}</div>
 </template>
 
 <style scoped></style>
