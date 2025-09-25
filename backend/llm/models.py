@@ -18,7 +18,6 @@ class Pillar(models.Model):
         return f"ID: ({self.id}), {self.name}:\n {self.description}"
 
 
-
 class GameDesignDescription(models.Model):
     user = models.OneToOneField(
         "auth.User",

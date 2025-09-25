@@ -3,9 +3,9 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     DesignView,
+    LLMFeedbackView,
     PillarFeedbackView,
     PillarViewSet,
-    LLMFeedbackView,
 )
 
 app_name = "llm"

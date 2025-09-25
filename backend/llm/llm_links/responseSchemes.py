@@ -24,10 +24,12 @@ class LLMPillar(BaseModel):
     name: str
     description: str
 
+
 class CompletenessAnswer(BaseModel):
-    pillarId: int  # Massive Security Risk, no time to worry about it
+    pillarId: int  # Security Risk, letting AI inject IDs
     name: str
     reasoning: str
+
 
 class ContradictionIssue(BaseModel):
     pillarOneId: int
@@ -49,7 +51,8 @@ class PillarContradictionResponse(BaseModel):
 
 
 class PillarAdditionsFeedback(BaseModel):
-    additions: list[LLMPillar] # ignore given pillarId, needs to be created by DB
+    additions: list[LLMPillar]  # ignore given pillarId, needs to be created by DB
+
 
 class PillarsInContextResponse(BaseModel):
     coverage: PillarCompletenessResponse
@@ -59,8 +62,9 @@ class PillarsInContextResponse(BaseModel):
 
 class ContextInPillarsResponse(BaseModel):
     rating: int = Field(
-        ge=1, le=5,
-        description="Rating of how good the context fits, from 1 (bad) to 5 (good)"
+        ge=1,
+        le=5,
+        description="Rating of how good the context fits, from 1 (bad) to 5 (good)",
     )
     feedback: str = Field(
         description="Feedback on how the context fits with the pillars"

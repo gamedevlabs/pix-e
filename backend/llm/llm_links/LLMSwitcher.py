@@ -7,6 +7,7 @@ class LLMSwitcher:
     """
     Manager class holding references to different LLMs.
     """
+
     def __init__(self):
         self.gemini = GeminiLink()
         self.openai = OpenAILink()

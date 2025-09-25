@@ -1,18 +1,32 @@
 import os
 
 from google import genai
-from google.genai.types import GenerateContentConfigDict
 
-from .LLMLink import LLMLink
 from ..models import Pillar
-from .prompts import *
-from .responseSchemes import *
+from .LLMLink import LLMLink
+from .prompts import (
+    ContextInPillarsPrompt,
+    ImprovePillarPrompt,
+    PillarAdditionPrompt,
+    PillarCompletenessPrompt,
+    PillarContradictionPrompt,
+    ValidationPrompt,
+)
+from .responseSchemes import (
+    ContextInPillarsResponse,
+    LLMPillar,
+    PillarAdditionsFeedback,
+    PillarCompletenessResponse,
+    PillarContradictionResponse,
+    PillarResponse,
+)
 
 
 class GeminiLink(LLMLink):
     """
     Class to interact with the Gemini API.
     """
+
     MODELNAME = "gemini-2.0-flash"  # Exchange as needed
 
     def __init__(self):
@@ -51,9 +65,9 @@ class GeminiLink(LLMLink):
         pillar.save()
         return pillar
 
-
-    def evaluate_context_with_pillars(self, pillars: list[Pillar],
-                                      context: str) -> ContextInPillarsResponse:
+    def evaluate_context_with_pillars(
+        self, pillars: list[Pillar], context: str
+    ) -> ContextInPillarsResponse:
         prompt = ContextInPillarsPrompt % (
             context,
             "\n".join([pillar.__str__() for pillar in pillars]),
@@ -69,9 +83,9 @@ class GeminiLink(LLMLink):
         )
         return response.parsed
 
-    def evaluate_pillar_completeness(self,
-                                     pillars: list[Pillar],
-                                     designIdea: str) -> PillarCompletenessResponse:
+    def evaluate_pillar_completeness(
+        self, pillars: list[Pillar], designIdea: str
+    ) -> PillarCompletenessResponse:
         prompt = PillarCompletenessPrompt % (
             designIdea,
             "\n".join([pillar.__str__() for pillar in pillars]),
@@ -87,9 +101,9 @@ class GeminiLink(LLMLink):
         )
         return response.parsed
 
-    def evaluate_pillar_contradictions(self,
-                                       pillars: list[Pillar],
-                                       context: str) -> PillarContradictionResponse:
+    def evaluate_pillar_contradictions(
+        self, pillars: list[Pillar], context: str
+    ) -> PillarContradictionResponse:
         prompt = PillarContradictionPrompt % (
             context,
             "\n".join([pillar.__str__() for pillar in pillars]),
@@ -105,9 +119,9 @@ class GeminiLink(LLMLink):
         )
         return response.parsed
 
-    def suggest_pillar_additions(self,
-                                 pillars: list[Pillar],
-                                 context: str) -> PillarAdditionsFeedback:
+    def suggest_pillar_additions(
+        self, pillars: list[Pillar], context: str
+    ) -> PillarAdditionsFeedback:
         prompt = PillarAdditionPrompt % (
             context,
             "\n".join([pillar.__str__() for pillar in pillars]),

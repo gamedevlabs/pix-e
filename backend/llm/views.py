@@ -5,14 +5,12 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .llm_links.LLMSwitcher import LLMSwitcher
 from .llm_links.responseSchemes import PillarsInContextResponse
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
-
 
 # Create your views here.
 
@@ -91,7 +89,8 @@ class LLMFeedbackView(ViewSet):
     def overall_feedback(self, request):
         try:
             design = GameDesignDescription.objects.filter(
-                user=self.request.user).first()
+                user=self.request.user
+            ).first()
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
 
             answer: PillarsInContextResponse = None
@@ -99,8 +98,9 @@ class LLMFeedbackView(ViewSet):
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_pillars_in_context(pillars, design.description)
 
-            return HttpResponse(answer.model_dump_json(),
-                                content_type="application/json", status=200)
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 
@@ -108,14 +108,17 @@ class LLMFeedbackView(ViewSet):
     def completeness(self, request):
         try:
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
-            design = GameDesignDescription.objects.filter(user=self.request.user).first()
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
 
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_pillar_completeness(pillars, design.description)
 
-            return HttpResponse(answer.model_dump_json(),
-                                content_type="application/json", status=200)
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 
@@ -123,14 +126,17 @@ class LLMFeedbackView(ViewSet):
     def contradictions(self, request):
         try:
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
-            design = GameDesignDescription.objects.filter(user=self.request.user).first()
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
 
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_pillar_contradictions(pillars, design.description)
 
-            return HttpResponse(answer.model_dump_json(),
-                                content_type="application/json", status=200)
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 
@@ -138,14 +144,17 @@ class LLMFeedbackView(ViewSet):
     def additions(self, request):
         try:
             pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
-            design = GameDesignDescription.objects.filter(user=self.request.user).first()
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
 
             model = request.data["model"]
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.suggest_pillar_additions(pillars, design.description)
 
-            return HttpResponse(answer.model_dump_json(),
-                                content_type="application/json", status=200)
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 
@@ -159,7 +168,8 @@ class LLMFeedbackView(ViewSet):
             llm = self.llmSwitcher.get_llm(model)
             answer = llm.evaluate_context_with_pillars(pillars, context)
 
-            return HttpResponse(answer.model_dump_json(),
-                                content_type="application/json", status=200)
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
