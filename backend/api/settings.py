@@ -11,6 +11,27 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+# Set console encoding to UTF-8 for Windows compatibility
+if os.name == "nt":  # Windows
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+    # Try to set console code page to UTF-8
+    try:
+        import subprocess
+
+        subprocess.run(["chcp", "65001"], shell=True, capture_output=True)
+    except:
+        pass
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, ".env"))
+except ImportError:
+    # If python-dotenv is not installed, skip loading .env file
+    pass
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,6 +42,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-wxqcjs8ufub1x#x)nwi-y4k+sv@$r@9-=&dp!8r=sp8ee=#lh%"
+
+# AI Token encryption key - keep this secret and consistent
+AI_TOKEN_ENCRYPTION_KEY = b"k1oPJi8KXW3iqR-xK-iZ2XtHXEzKiPkuHglLUpu1PEY="
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -42,6 +66,7 @@ INSTALLED_APPS = [
     "llm",
     "accounts",
     "pxcharts",
+    "moodboards",  # Our new comprehensive moodboard app
 ]
 
 REST_FRAMEWORK = {
@@ -63,17 +88,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
-
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "api.urls"
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-]
 
 TEMPLATES = [
     {
@@ -140,8 +157,110 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+MEDIA_URL = "/media/"
+
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# CORS settings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Frontend app URL (Nuxt.js default)
+    "http://localhost:3001",  # Backup port
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Additional CORS settings for better compatibility
+CORS_ALLOW_ALL_ORIGINS = False  # Keep false for security
+CORS_ALLOWED_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+# Session settings for cross-origin requests
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SAMESITE = None
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+
+# Make sure CSRF trusted origins match CORS origins
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+]
+
+# Hugging Face API Token Configuration
+HF_TOKEN = os.environ.get("HF_TOKEN")
+
+# Ensure token is available for the application
+if not HF_TOKEN:
+    import warnings
+
+    warnings.warn(
+        "HF_TOKEN not found in environment variables. LLM services may not work properly."
+    )
+
+# GitHub Models API Token Configuration
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+
+# Ensure GitHub token is available for GitHub Models service
+if not GITHUB_TOKEN:
+    import warnings
+
+    warnings.warn(
+        "GITHUB_TOKEN not found in environment variables. GitHub Models service will not work properly. Get your token at: https://github.com/settings/tokens"
+    )
+
+# Logging configuration to handle Unicode properly
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{levelname}] {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",  # Explicitly use stdout
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

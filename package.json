@@ -5,7 +5,7 @@
   "main": "install.js",
   "scripts": {
     "install-all": "node install.js",
-    "start-backend": "cd backend && (.venv\\Scripts\\python.exe manage.py runserver || ./.venv/bin/python manage.py runserver)",
+    "start-backend": "cd backend && python manage.py runserver",
     "start-frontend": "cd frontend && npm run dev",
     "start-all": "concurrently \"npm run start-backend\" \"npm run start-frontend\""
   },

@@ -1,3 +1,6 @@
+import uuid
+
+from django.contrib.auth.models import User
 from django.db import models
 
 # Create your models here.
@@ -36,3 +39,44 @@ class GameDesignDescription(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+# Legacy models for backward compatibility - DEPRECATED
+# These models are deprecated in favor of the new moodboards app
+# They will be removed in a future version
+class MoodboardSession(models.Model):
+    """
+    DEPRECATED: Legacy model for backward compatibility.
+    Use the Moodboard model in the moodboards app instead.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "DEPRECATED: Legacy Moodboard Session"
+        verbose_name_plural = "DEPRECATED: Legacy Moodboard Sessions"
+
+
+class MoodboardImage(models.Model):
+    """
+    DEPRECATED: Legacy model for backward compatibility.
+    Use the MoodboardImage model in the moodboards app instead.
+    """
+
+    session = models.ForeignKey(
+        MoodboardSession, on_delete=models.CASCADE, related_name="images"
+    )
+    image_url = models.CharField(
+        max_length=512
+    )  # Changed from URLField to CharField for local/media paths
+    prompt = models.TextField()
+    is_selected = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "DEPRECATED: Legacy Moodboard Image"
+        verbose_name_plural = "DEPRECATED: Legacy Moodboard Images"

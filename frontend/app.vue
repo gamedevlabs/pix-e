@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref, provide } from 'vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { useAuthentication } from '@/composables/useAuthentication'
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -32,6 +34,11 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-landmark',
     to: '/pillars',
   },
+  {
+    label: 'Moodboards',
+    icon: 'i-lucide-layout-grid',
+    to: '/moodboards',
+  },
   /*{
     label: 'GitHub',
     icon: 'i-simple-icons-github',
@@ -51,10 +58,15 @@ authentication.checkAuthentication()
 async function handleLogout() {
   await authentication.logout()
 }
+
+const loading = ref(false)
+// Provide loading as a global property
+provide('globalLoading', loading)
 </script>
 
 <template>
   <UApp>
+    <div v-if="loading" class="global-loading-bar" />
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
       <header
@@ -110,5 +122,24 @@ async function handleLogout() {
 .page-leave-to {
   opacity: 0;
   filter: blur(1rem);
+}
+
+.global-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+  animation: loading 2s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: -200%;
+  }
+  100% {
+    background-position: 200%;
+  }
 }
 </style>

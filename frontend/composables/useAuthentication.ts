@@ -26,6 +26,7 @@
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
+
       const success = await checkAuthentication()
       if (!success) {
         return false
@@ -42,15 +43,17 @@
   async function checkAuthentication(): Promise<boolean> {
     try {
       checkedLogin.value = true
-      user.value = await $fetch<User>(`${config.public.apiBase}/accounts/me/`, {
+
+      const userData = await $fetch<User>(`${config.public.apiBase}/accounts/me/`, {
         method: 'GET',
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
+
+      user.value = userData
       return true
     } catch {
-      user.value = null
-      // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
+      user.value = null // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
       // which would not even remove the console error on the 401 Unauthorized
       // Rules: ESLint: no-explicit-any, vue: catch-only-any-or-unknown
       return false
@@ -62,10 +65,9 @@
       await $fetch(`${config.public.apiBase}/accounts/logout/`, {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
+        headers: useRequestHeaders(['cookie']),
       })
+
       user.value = null
       await router.push('/')
       return true

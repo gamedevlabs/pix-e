@@ -2,6 +2,9 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
+  "imports": {
+    "#internal/nuxt/paths": "./node_modules/nuxt/dist/core/runtime/nitro/paths.js"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -14,6 +17,10 @@
     "format-check": "prettier . --check"
   },
   "dependencies": {
+    "@iconify-json/heroicons": "^1.2.2",
+    "@iconify-json/lucide": "^1.2.58",
+    "@iconify/json": "^2.2.282",
+    "@iconify/utils": "^2.3.0",
     "@dagrejs/dagre": "^1.1.5",
     "@nuxt/content": "^3.4.0",
     "@nuxt/eslint": "^1.4.0",
@@ -38,5 +45,11 @@
   "devDependencies": {
     "@vue/eslint-config-prettier": "^10.2.0",
     "prettier": "^3.5.3"
+  },
+  "optionalDependencies": {
+    "@oxc-parser/binding-linux-x64-gnu": "^0.39.0",
+    "@oxc-parser/binding-win32-x64-msvc": "^0.39.0",
+    "@oxc-parser/binding-darwin-x64": "^0.39.0",
+    "@oxc-parser/binding-darwin-arm64": "^0.39.0"
   }
 }
