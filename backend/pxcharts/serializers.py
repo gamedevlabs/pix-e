@@ -64,12 +64,10 @@ class PxChartContainerDetailSerializer(serializers.ModelSerializer):
         nested_data = validated_data.pop("layout", None)
 
         container = PxChartContainer.objects.create(**validated_data)
-        print(f"Created {container}")
         PxChartContainerLayout.objects.filter(container=container).update(**nested_data)
         return container
 
     def update(self, instance, validated_data):
-        print("Update in PxChartContainerDetailSerializer")
         if "id" in validated_data and validated_data["id"] != instance.id:
             raise serializers.ValidationError(
                 {"id": "Cannot update ID after creation."}
