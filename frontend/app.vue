@@ -54,6 +54,8 @@ const items = ref<NavigationMenuItem[][]>([
   },*/
   ],
 ])
+const collapsedSidebar = ref(false)
+
 const authentication = useAuthentication()
 authentication.checkAuthentication()
 
@@ -95,9 +97,16 @@ async function handleLogout() {
       <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
         <aside
-          class="w-64 border-r border-gray-200 dark:border-gray-800 p-4 overflow-y-auto flex flex-col items-stretch"
+          class="border-r border-gray-200 dark:border-gray-800 p-4 overflow-y-auto flex flex-col items-stretch transition-all duration-300"
+          :class="[collapsedSidebar ? 'w-16' : 'w-64']"
         >
-          <UNavigationMenu orientation="vertical" :items="items" />
+          <UNavigationMenu orientation="vertical" :items="items" :collapsed="collapsedSidebar" />
+          <UButton
+            variant="ghost"
+            color="secondary"
+            :icon="collapsedSidebar ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'"
+            @click="collapsedSidebar = !collapsedSidebar"
+          />
         </aside>
 
         <!-- Page Content -->

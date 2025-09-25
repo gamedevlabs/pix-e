@@ -79,7 +79,7 @@ async function onClickExportCurrentData() {
             <NuxtLink to="/pxcharts"> Charts </NuxtLink>
           </h2>
         </template>
-        <p>Charts contain multiple nodes and model nodes in a graph structure.</p>
+        <p>Use Charts to plan PX for a longer period of playtime using Nodes.</p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -87,10 +87,7 @@ async function onClickExportCurrentData() {
             <NuxtLink to="/pxnodes"> Nodes </NuxtLink>
           </h2>
         </template>
-        <p>
-          A Px Node provides formal information about what the player should experience during that
-          part of gameplay.
-        </p>
+        <p>Describe your planned PX and formalize it using your Components.</p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -98,10 +95,7 @@ async function onClickExportCurrentData() {
             <NuxtLink to="/pxcomponents"> Components </NuxtLink>
           </h2>
         </template>
-        <p>
-          You can attach components to nodes based on component definitions and assign values to
-          them.
-        </p>
+        <p>Use Components to hold values and describe the planned PX for a node.</p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -110,10 +104,16 @@ async function onClickExportCurrentData() {
           </h2>
         </template>
         <p>
-          Component definitions allow you to create definitions. Based on these definitions, you can
-          add components to nodes and specify values.
+          Component definitions allow you to introduce new values that influence PX and use them.
         </p>
       </UCard>
+    </section>
+
+    <section class="text-center">
+      <h1 class="text-4xl font-bold mb-4">Import/Export Player Experience data</h1>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">
+        Using JSON files, you can import and export your PX data.
+      </p>
     </section>
 
     <section class="center">
@@ -125,14 +125,16 @@ async function onClickExportCurrentData() {
             label="Import PX data here"
             :dropzone="true"
             description="JSON File (Max. 8MB)"
-            class="w-96 min-h-48"
           />
         </UFormField>
 
         <UButton type="submit" color="primary" label="Submit" />
       </UForm>
+
+      <br />
+
+      <UButton @click="onClickExportCurrentData"> Export your current data as a JSON. </UButton>
     </section>
-    <UButton @click="onClickExportCurrentData"> Export your current data as a JSON. </UButton>
   </UContainer>
 </template>
 
