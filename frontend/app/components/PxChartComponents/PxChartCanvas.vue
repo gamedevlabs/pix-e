@@ -45,17 +45,17 @@ onMounted(() => {
 })
 
 async function onNodeDragStop(event: NodeDragEvent) {
-  const node = event.node
-
-  await updateContainer({
-    id: node.id,
-    layout: {
-      position_x: node.position.x,
-      position_y: node.position.y,
-      width: node.width as number,
-      height: node.height as number,
-    },
-  })
+  for (const node of event.nodes) {
+    await updateContainer({
+      id: node.id,
+      layout: {
+        position_x: node.position.x,
+        position_y: node.position.y,
+        width: node.width as number,
+        height: node.height as number,
+      },
+    })
+  }
 }
 
 async function onConnect(connection: Connection) {
