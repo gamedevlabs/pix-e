@@ -1,18 +1,14 @@
 <script setup lang="ts">
-import BaseChart from '~/components/diagrams/BaseChart.vue'
+import type { ChartData, ChartOptions } from 'chart.js'
 
-const props = defineProps({
-  chartData: {
-    type: Object,
-    required: true,
-  },
-})
+// ✅ Strongly typed props
+const props = defineProps<{ chartData: ChartData<'line'> }>()
 
-const options = {
+// ✅ Typed chart options for a line chart
+const options: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: false,
   interaction: { mode: 'index', intersect: false },
-  stacked: false,
   plugins: {
     title: { display: false },
   },
@@ -26,11 +22,13 @@ const options = {
 <template>
   <div class="h-[600px]">
     <BaseChart
-      v-if="chartData?.labels && chartData?.datasets"
-      type="line"
-      :chart-data="chartData"
-      :chart-options="options"
+        v-if="props.chartData?.labels && props.chartData?.datasets"
+        type="line"
+        :chart-data="props.chartData"
+        :chart-options="options"
     />
-    <div v-else class="text-sm text-gray-500 p-4">Loading chart data...</div>
+    <div v-else class="text-sm text-gray-500 p-4">
+      Loading chart data...
+    </div>
   </div>
 </template>

@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import BaseChart from '~/components/diagrams/BaseChart.vue'
+import type { ChartData, ChartOptions } from 'chart.js'
 
-defineProps(['chartData'])
+// Define props with types
+const props = defineProps<{
+  chartData: ChartData
+}>()
 
-const options = {
+// Define your chart options (fully typed)
+const options: ChartOptions = {
   responsive: true,
   plugins: {
     legend: { display: false },
@@ -13,5 +17,9 @@ const options = {
 </script>
 
 <template>
-  <BaseChart type="bar" :chart-data="chartData" :chart-options="options" />
+  <BaseChart
+      type="bar"
+      :chart-data="props.chartData"
+      :chart-options="options"
+  />
 </template>

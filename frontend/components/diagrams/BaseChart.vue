@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, type Component } from 'vue'
 import { Bar, Line, Pie } from 'vue-chartjs'
 import type { ChartData, ChartOptions } from 'chart.js'
 

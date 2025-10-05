@@ -1,37 +1,17 @@
-<template>
-  <div class="chart-container">
-    <Bar
-      v-if="chartData && chartData.labels && chartData.labels.length > 0"
-      :data="chartData"
-      :options="chartOptions"
-    />
-    <p v-else>No confusion data to display.</p>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed } from 'vue'
+import type { ChartData, ChartOptions } from 'chart.js'
 import { Bar } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-} from 'chart.js'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
+// ✅ Define typed props
+const props = withDefaults(
+    defineProps<{ chartData: ChartData<'bar'> }>(),
+    {
+      chartData: () => ({ labels: [], datasets: [] }),
+    }
+)
 
-const props = defineProps({
-  chartData: {
-    type: Object,
-    default: () => ({ labels: [], datasets: [] }),
-  },
-})
-
-const chartOptions = {
+// ✅ Strongly typed chart options
+const chartOptions: ChartOptions<'bar'> = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -40,39 +20,40 @@ const chartOptions = {
       labels: {
         color: 'var(--color-text)',
         usePointStyle: true,
-        pointStyle: 'rect', // Use a rectangle for consistency, but it will be hidden by usePointStyle
-        boxWidth: 0, // Hide the color box
+        pointStyle: 'rect', // stylistic only
+        boxWidth: 0,        // hide color box
       },
     },
-    title: {
-      display: false,
-    },
+    title: { display: false },
   },
   scales: {
     x: {
-      ticks: {
-        color: 'var(--color-text)',
-      },
-      grid: {
-        color: 'rgba(255, 255, 255, 0.1)',
-      },
+      ticks: { color: 'var(--color-text)' },
+      grid: { color: 'rgba(255, 255, 255, 0.1)' },
     },
     y: {
       beginAtZero: true,
-      ticks: {
-        color: 'var(--color-text)',
-      },
-      grid: {
-        color: 'rgba(255, 255, 255, 0.1)',
-      },
+      ticks: { color: 'var(--color-text)' },
+      grid: { color: 'rgba(255, 255, 255, 0.1)' },
     },
   },
 }
 </script>
 
+<template>
+  <div class="chart-container">
+    <Bar
+        v-if="props.chartData?.labels?.length"
+        :data="props.chartData"
+        :options="chartOptions"
+    />
+    <p v-else>No confusion data to display.</p>
+  </div>
+</template>
+
 <style scoped>
 .chart-container {
-  height: 600px; /* Fixed height for the chart container */
+  height: 600px;
   display: flex;
   flex-direction: column;
   justify-content: center;
