@@ -1,5 +1,4 @@
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
 import SentimentFilters from '@/components/SentimentFilters.vue'
 import SentimentChart from '@/components/SentimentDistributionChart.vue'
 import SentimentTable from '@/components/SentimentTable.vue'
