@@ -4,8 +4,8 @@ import { ref, watchEffect } from 'vue'
 const props = defineProps({
   heatmapData: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const aspects = ref([])
@@ -20,9 +20,7 @@ watchEffect(() => {
   const firstAspect = aspects.value[0]
   years.value = Object.keys(props.heatmapData[firstAspect] || {}).sort()
 
-  const allValues = Object.values(props.heatmapData).flatMap(row =>
-    Object.values(row)
-  )
+  const allValues = Object.values(props.heatmapData).flatMap((row) => Object.values(row))
   maxValue.value = Math.max(...allValues, 1)
 })
 
@@ -50,11 +48,7 @@ const getIntensity = (value, max) => {
       <tbody>
         <tr v-for="aspect in aspects" :key="aspect">
           <td class="border px-2 py-1 font-medium">{{ aspect }}</td>
-          <td
-            v-for="year in years"
-            :key="year"
-            class="border px-2 py-1 text-center"
-          >
+          <td v-for="year in years" :key="year" class="border px-2 py-1 text-center">
             <span
               :class="getIntensity(props.heatmapData[aspect]?.[year] || 0, maxValue)"
               class="block w-full rounded py-0.5"

@@ -9,7 +9,7 @@ import {
   PointElement,
   CategoryScale,
   LinearScale,
-  ArcElement
+  ArcElement,
 } from 'chart.js'
 import { Bar, Line, Pie } from 'vue-chartjs'
 
@@ -22,39 +22,37 @@ ChartJS.register(
   PointElement,
   ArcElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
 )
 
 const props = defineProps({
   type: {
     type: String,
-    required: true
+    required: true,
   },
   chartData: {
     type: Object,
-    required: true
+    required: true,
   },
   chartOptions: {
     type: Object,
-    default: () => ({})
-  }
+    default: () => ({}),
+  },
 })
 
 const chartTypes = {
   bar: Bar,
   line: Line,
-  pie: Pie
+  pie: Pie,
 }
 </script>
 
 <template>
   <component
-      v-if="chartData?.labels && chartData?.datasets"
-      :is="chartTypes[type]"
-      :data="chartData"
-      :options="chartOptions"
+    :is="chartTypes[type]"
+    v-if="chartData?.labels && chartData?.datasets"
+    :data="chartData"
+    :options="chartOptions"
   />
-  <div v-else class="text-gray-500 text-sm p-4 text-center">
-    Chart data not available.
-  </div>
+  <div v-else class="text-gray-500 text-sm p-4 text-center">Chart data not available.</div>
 </template>

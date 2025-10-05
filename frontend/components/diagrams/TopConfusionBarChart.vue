@@ -1,9 +1,9 @@
 <template>
   <div class="chart-container">
     <Bar
+      v-if="chartData && chartData.labels && chartData.labels.length > 0"
       :data="chartData"
       :options="chartOptions"
-      v-if="chartData && chartData.labels && chartData.labels.length > 0"
     />
     <p v-else>No confusion data to display.</p>
   </div>
@@ -27,8 +27,8 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 const props = defineProps({
   chartData: {
     type: Object,
-    default: () => ({ labels: [], datasets: [] })
-  }
+    default: () => ({ labels: [], datasets: [] }),
+  },
 })
 
 const chartOptions = {
@@ -42,31 +42,31 @@ const chartOptions = {
         usePointStyle: true,
         pointStyle: 'rect', // Use a rectangle for consistency, but it will be hidden by usePointStyle
         boxWidth: 0, // Hide the color box
-      }
+      },
     },
     title: {
       display: false,
-    }
+    },
   },
   scales: {
     x: {
       ticks: {
-        color: 'var(--color-text)'
+        color: 'var(--color-text)',
       },
       grid: {
-        color: 'rgba(255, 255, 255, 0.1)'
-      }
+        color: 'rgba(255, 255, 255, 0.1)',
+      },
     },
     y: {
       beginAtZero: true,
       ticks: {
-        color: 'var(--color-text)'
+        color: 'var(--color-text)',
       },
       grid: {
-        color: 'rgba(255, 255, 255, 0.1)'
-      }
-    }
-  }
+        color: 'rgba(255, 255, 255, 0.1)',
+      },
+    },
+  },
 }
 </script>
 
