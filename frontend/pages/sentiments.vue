@@ -1,29 +1,5 @@
-<template>
-  <div class="sentiment-dashboard">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <SentimentFilters
-        :selected-dataset="selectedDataset"
-        :unique-genres="uniqueGenres"
-        :selected-genres="selectedGenres"
-        :unique-sentiments="uniqueSentiments"
-        :selected-sentiment="selectedSentiment"
-        :unique-games="uniqueGames"
-        :selected-games="selectedGames"
-        @dataset-change="onDatasetChange"
-        @genre-change="onGenreChange"
-        @sentiment-change="onSentimentChange"
-        @game-change="onGameChange"
-      />
-      <SentimentChart :key="selectedDataset" :data="filteredData" />
-      <DominantAnalysis :data="filteredData" :loading="loading" />
-    </div>
-    <SentimentTable :key="selectedDataset" :data="filteredData" />
-  </div>
-</template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
 import SentimentFilters from '@/components/SentimentFilters.vue'
 import SentimentChart from '@/components/SentimentDistributionChart.vue'
 import SentimentTable from '@/components/SentimentTable.vue'
@@ -45,10 +21,9 @@ const fetchSentiments = async () => {
   loading.value = true
   error.value = null
   try {
-    const response = await axios.get(
-      `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
+    allSentiments.value = await $fetch(
+        `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
     )
-    allSentiments.value = response.data
   } catch (err) {
     console.error(err)
     error.value = 'Failed to load sentiment data.'
@@ -144,6 +119,29 @@ const onGameChange = (games) => {
   selectedGames.value = games
 }
 </script>
+
+<template>
+  <div class="sentiment-dashboard">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <SentimentFilters
+        :selected-dataset="selectedDataset"
+        :unique-genres="uniqueGenres"
+        :selected-genres="selectedGenres"
+        :unique-sentiments="uniqueSentiments"
+        :selected-sentiment="selectedSentiment"
+        :unique-games="uniqueGames"
+        :selected-games="selectedGames"
+        @dataset-change="onDatasetChange"
+        @genre-change="onGenreChange"
+        @sentiment-change="onSentimentChange"
+        @game-change="onGameChange"
+      />
+      <SentimentChart :key="selectedDataset" :data="filteredData" />
+      <DominantAnalysis :data="filteredData" :loading="loading" />
+    </div>
+    <SentimentTable :key="selectedDataset" :data="filteredData" />
+  </div>
+</template>
 
 <style scoped>
 .sentiment-dashboard {
