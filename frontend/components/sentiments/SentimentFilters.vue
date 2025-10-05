@@ -2,15 +2,15 @@
 import { ref, watch } from 'vue'
 import MultiSelectFilter from './MultiSelectFilter.vue'
 
-const props = defineProps({
-  selectedDataset: String,
-  uniqueGenres: Array,
-  selectedGenres: Array,
-  uniqueSentiments: Array,
-  selectedSentiment: String,
-  uniqueGames: Array,
-  selectedGames: Array,
-})
+const props = defineProps<{
+  selectedDataset: string,
+  uniqueGenres: [],
+  selectedGenres: [],
+  uniqueSentiments: [],
+  selectedSentiment: string,
+  uniqueGames: [],
+  selectedGames: [],
+}>()
 
 const emit = defineEmits(['dataset-change', 'genre-change', 'sentiment-change', 'game-change'])
 
@@ -20,6 +20,8 @@ const datasetOptions = [
   'Implicit Expectations',
   'Not Assigned',
 ]
+
+type DatasetKey = keyof typeof datasetMapping
 
 const datasetMapping = {
   'All Expectations': 'all',
@@ -43,7 +45,7 @@ const selectedGame = ref(props.selectedGames)
 
 // Watchers to emit changes
 watch(selectedDatasetArray, (newVal) => {
-  const selectedValue = newVal[0] || 'All Expectations'
+  const selectedValue = (newVal[0] || 'All Expectations') as DatasetKey
   const datasetValue = datasetMapping[selectedValue] || 'all'
   emit('dataset-change', datasetValue)
 })

@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js'
-import ChartCard from '@/components/ChartCard.vue'
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
 
@@ -89,12 +88,15 @@ const chartOptions = {
 </script>
 
 <template>
-  <ChartCard title="Sentiment Distribution">
+  <UCard>
+    <template #header>
+      Sentiment Distribution
+    </template>
     <div class="chart-container">
       <Doughnut v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
       <p v-else>No sentiment data to display.</p>
     </div>
-  </ChartCard>
+  </UCard>
 </template>
 
 <style scoped>

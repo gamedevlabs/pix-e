@@ -10,7 +10,6 @@ import {
   CategoryScale,
   LinearScale,
 } from 'chart.js'
-import ChartCard from '@/components/ChartCard.vue'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
@@ -85,7 +84,10 @@ const chartOptions = {
 </script>
 
 <template>
-  <ChartCard title="Dominant Aspect Analysis">
+  <UCard>
+    <template #header>
+      Dominant Aspect Analysis
+    </template>
     <div class="chart-container">
       <Bar
         v-if="!loading && chartData.labels.length > 0"
@@ -95,7 +97,7 @@ const chartOptions = {
       <p v-if="!loading && chartData.labels.length === 0">No dominant aspect data to display.</p>
       <p v-if="loading">Loading...</p>
     </div>
-  </ChartCard>
+  </UCard>
 </template>
 
 <style scoped>
