@@ -23,14 +23,21 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pxcomponentdefinitions',
   },
   {
-    label: 'Player Expectations Dashboard',
+    label: 'Player Expectations',
     icon: 'i-lucide-book-open',
     to: '/player-expectations',
-  },
-  {
-    label: 'Sentiment Analysis',
-    icon: 'i-lucide-library-big',
-    to: '/sentiments',
+    children: [
+      {
+        label: 'Dashboard',
+        icon: 'i-lucide-book-open',
+        to: '/player-expectations',
+      },
+      {
+        label: 'Sentiment Analysis',
+        icon: 'i-lucide-library-big',
+        to: '/sentiments',
+      },
+    ]
   },
   {
     label: 'PxCharts',
