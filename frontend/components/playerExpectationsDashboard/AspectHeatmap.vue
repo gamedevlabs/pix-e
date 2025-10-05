@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{heatmapData: object | null}>()
+const props = defineProps<{ heatmapData: object | null }>()
 
 const aspects = ref([])
 const years = ref([])

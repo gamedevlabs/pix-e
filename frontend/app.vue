@@ -37,7 +37,7 @@ const items = ref<NavigationMenuItem[]>([
         icon: 'i-lucide-library-big',
         to: '/sentiments',
       },
-    ]
+    ],
   },
   {
     label: 'PxCharts',

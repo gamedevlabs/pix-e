@@ -85,9 +85,7 @@ const chartOptions = {
 
 <template>
   <UCard>
-    <template #header>
-      Dominant Aspect Analysis
-    </template>
+    <template #header> Dominant Aspect Analysis </template>
     <div class="chart-container">
       <Bar
         v-if="!loading && chartData.labels.length > 0"

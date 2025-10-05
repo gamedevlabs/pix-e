@@ -3,13 +3,13 @@ import { ref, watch } from 'vue'
 import MultiSelectFilter from './MultiSelectFilter.vue'
 
 const props = defineProps<{
-  selectedDataset: string,
-  uniqueGenres: [],
-  selectedGenres: [],
-  uniqueSentiments: [],
-  selectedSentiment: string,
-  uniqueGames: [],
-  selectedGames: [],
+  selectedDataset: string
+  uniqueGenres: []
+  selectedGenres: []
+  uniqueSentiments: []
+  selectedSentiment: string
+  uniqueGames: []
+  selectedGames: []
 }>()
 
 const emit = defineEmits(['dataset-change', 'genre-change', 'sentiment-change', 'game-change'])

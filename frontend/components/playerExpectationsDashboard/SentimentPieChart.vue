@@ -15,9 +15,5 @@ const options: ChartOptions<'pie'> = {
 </script>
 
 <template>
-  <BaseChart
-      type="pie"
-      :chart-data="props.chartData"
-      :chart-options="options"
-  />
+  <BaseChart type="pie" :chart-data="props.chartData" :chart-options="options" />
 </template>

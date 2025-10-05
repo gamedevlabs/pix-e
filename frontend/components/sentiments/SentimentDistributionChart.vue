@@ -89,9 +89,7 @@ const chartOptions = {
 
 <template>
   <UCard>
-    <template #header>
-      Sentiment Distribution
-    </template>
+    <template #header> Sentiment Distribution </template>
     <div class="chart-container">
       <Doughnut v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
       <p v-else>No sentiment data to display.</p>
