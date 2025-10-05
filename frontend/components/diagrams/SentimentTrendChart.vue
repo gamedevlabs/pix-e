@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import BaseChart from '~/components/diagrams/BaseChart.vue'
 
 const props = defineProps({

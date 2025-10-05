@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import {
   Chart as ChartJS,
   Title,
@@ -25,7 +25,7 @@ ChartJS.register(
   LinearScale,
 )
 
-const props = defineProps({
+defineProps({
   type: {
     type: String,
     required: true,

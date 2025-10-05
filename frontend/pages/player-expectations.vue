@@ -1,11 +1,4 @@
-<script setup>
-import AspectBarChart from '~/components/diagrams/AspectBarChart.vue'
-import AspectSentimentChart from '~/components/diagrams/AspectSentimentChart.vue'
-import SentimentTrendChart from '~/components/diagrams/SentimentTrendChart.vue'
-import SentimentPieChart from '~/components/diagrams/SentimentPieChart.vue'
-import AspectHeatmap from '~/components/diagrams/AspectHeatmap.vue'
-import TopConfusionBarChart from '~/components/diagrams/TopConfusionBarChart.vue'
-
+<script setup lang="ts">
 // Reactive State
 const aspectChartData = ref(null)
 const sentimentChartData = ref(null)
