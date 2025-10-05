@@ -20,7 +20,7 @@ async function main() {
   // Step 1: Setup Python virtualenv if not exists
   if (!existsSync(venvDir)) {
     console.log('🔧 Creating Python virtual environment...');
-    runCommand(`~/.pyenv/shims/python -m venv .venv`, { cwd: backendDir });
+    runCommand(`python -m venv .venv`, { cwd: backendDir });
   } else {
     console.log('✅ Python virtual environment already exists.');
   }
