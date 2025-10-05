@@ -5,7 +5,7 @@ import type { ChartData, ChartOptions } from 'chart.js'
 type T = 'bar'
 
 // Option A: keep `props.chartData`
-const props = defineProps<{ chartData: ChartData<T> }>()
+const props = defineProps<{ chartData: ChartData<T> | null }>()
 
 const options: ChartOptions<T> = {
   responsive: true,

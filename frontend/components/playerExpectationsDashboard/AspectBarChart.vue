@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type { ChartData, ChartOptions } from 'chart.js'
 
-// Strongly typed props
-const props = defineProps<{ chartData: ChartData<'pie'> }>()
+// Define props with types
+const props = defineProps<{
+  chartData: ChartData | null
+}>()
 
-// Typed chart options
-const options: ChartOptions<'pie'> = {
+// Define your chart options (fully typed)
+const options: ChartOptions = {
   responsive: true,
   plugins: {
-    legend: { position: 'bottom' },
+    legend: { display: false },
     title: { display: false },
   },
 }
@@ -16,7 +18,7 @@ const options: ChartOptions<'pie'> = {
 
 <template>
   <BaseChart
-      type="pie"
+      type="bar"
       :chart-data="props.chartData"
       :chart-options="options"
   />

@@ -8,7 +8,7 @@ type ChartType = 'bar' | 'line' | 'pie'
 const props = withDefaults(
   defineProps<{
     type: ChartType
-    chartData: ChartData
+    chartData: ChartData | null
     chartOptions?: ChartOptions
   }>(),
   {

@@ -4,7 +4,7 @@ import { Bar } from 'vue-chartjs'
 
 // ✅ Define typed props
 const props = withDefaults(
-    defineProps<{ chartData: ChartData<'bar'> }>(),
+    defineProps<{ chartData?: ChartData<'bar'> | null }>(),
     {
       chartData: () => ({ labels: [], datasets: [] }),
     }
