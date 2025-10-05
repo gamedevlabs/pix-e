@@ -1,55 +1,35 @@
 <script setup lang="ts">
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  LineElement,
-  PointElement,
-  CategoryScale,
-  LinearScale,
-  ArcElement,
-} from 'chart.js'
+import { computed, type Component } from 'vue'
 import { Bar, Line, Pie } from 'vue-chartjs'
+import type { ChartData, ChartOptions } from 'chart.js'
 
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
+type ChartType = 'bar' | 'line' | 'pie'
+
+// Strongly-typed props with a default for options
+const props = withDefaults(
+  defineProps<{
+    type: ChartType
+    chartData: ChartData
+    chartOptions?: ChartOptions
+  }>(),
+  {
+    chartOptions: () => ({}),
+  },
 )
 
-defineProps({
-  type: {
-    type: String,
-    required: true,
-  },
-  chartData: {
-    type: Object,
-    required: true,
-  },
-  chartOptions: {
-    type: Object,
-    default: () => ({}),
-  },
-})
-
-const chartTypes = {
+const chartTypes: Record<ChartType, Component> = {
   bar: Bar,
   line: Line,
   pie: Pie,
 }
+
+// Select the component based on the prop (keeps TS happy)
+const Selected = computed(() => chartTypes[props.type])
 </script>
 
 <template>
   <component
-    :is="chartTypes[type]"
+    :is="Selected"
     v-if="chartData?.labels && chartData?.datasets"
     :data="chartData"
     :options="chartOptions"
