@@ -1,30 +1,4 @@
-<template>
-  <UDropdownMenu :items="dropdownItems" :ui="dropdownUi" class="w-full">
-    <!-- Button showing current selections -->
-    <UButton
-      :label="buttonLabel"
-      trailing-icon="i-heroicons-chevron-down-20-solid"
-      class="w-full justify-between bg-input-background text-text border border-border hover:bg-hover-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 ease-in-out h-10"
-    />
-
-    <!-- Dropdown content: List of options with checkboxes -->
-    <template #item="{ item }">
-      <div class="block w-full px-2 py-1">
-        <UCheckbox
-          :model-value="item.checked"
-          :label="item.label"
-          class="block w-full text-[#00f5ff] hover:text-[#00ffff] transition-colors duration-200 font-mono"
-          :ui="checkboxUi"
-          @update:model-value="toggleOption(item.value)"
-        />
-      </div>
-    </template>
-  </UDropdownMenu>
-</template>
-
 <script setup lang="ts">
-import { computed } from 'vue'
-
 const props = defineProps({
   options: {
     type: Array as () => string[],
@@ -89,3 +63,27 @@ const checkboxUi = {
   disabled: 'cursor-not-allowed opacity-50',
 }
 </script>
+
+<template>
+  <UDropdownMenu :items="dropdownItems" :ui="dropdownUi" class="w-full">
+    <!-- Button showing current selections -->
+    <UButton
+      :label="buttonLabel"
+      trailing-icon="i-heroicons-chevron-down-20-solid"
+      class="w-full justify-between bg-input-background text-text border border-border hover:bg-hover-background focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 ease-in-out h-10"
+    />
+
+    <!-- Dropdown content: List of options with checkboxes -->
+    <template #item="{ item }">
+      <div class="block w-full px-2 py-1">
+        <UCheckbox
+          :model-value="item.checked"
+          :label="item.label"
+          class="block w-full text-[#00f5ff] hover:text-[#00ffff] transition-colors duration-200 font-mono"
+          :ui="checkboxUi"
+          @update:model-value="toggleOption(item.value)"
+        />
+      </div>
+    </template>
+  </UDropdownMenu>
+</template>

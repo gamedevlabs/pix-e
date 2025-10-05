@@ -1,18 +1,4 @@
-<template>
-  <ChartCard title="Dominant Aspect Analysis">
-    <div class="chart-container">
-      <Bar
-        v-if="!loading && chartData.labels.length > 0"
-        :data="chartData"
-        :options="chartOptions"
-      />
-      <p v-if="!loading && chartData.labels.length === 0">No dominant aspect data to display.</p>
-      <p v-if="loading">Loading...</p>
-    </div>
-  </ChartCard>
-</template>
-
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import {
@@ -97,6 +83,20 @@ const chartOptions = {
   },
 }
 </script>
+
+<template>
+  <ChartCard title="Dominant Aspect Analysis">
+    <div class="chart-container">
+      <Bar
+        v-if="!loading && chartData.labels.length > 0"
+        :data="chartData"
+        :options="chartOptions"
+      />
+      <p v-if="!loading && chartData.labels.length === 0">No dominant aspect data to display.</p>
+      <p v-if="loading">Loading...</p>
+    </div>
+  </ChartCard>
+</template>
 
 <style scoped>
 .chart-container {

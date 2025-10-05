@@ -1,43 +1,4 @@
-<template>
-  <div class="filters-container bg-card-background p-6 rounded-lg shadow-lg border border-border">
-    <h2 class="text-xl font-bold mb-4 text-primary">Filter Data</h2>
-
-    <!-- Dataset Selector -->
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-secondary mb-2">Dataset</label>
-      <MultiSelectFilter
-        v-model="selectedDatasetArray"
-        :options="datasetOptions"
-        placeholder="All Expectations"
-        :single-select="true"
-      />
-    </div>
-
-    <!-- Genre Multi-Select -->
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-secondary mb-2">Genre</label>
-      <MultiSelectFilter v-model="selectedGenre" :options="uniqueGenres" placeholder="All Genres" />
-    </div>
-
-    <!-- Sentiment Single-Select -->
-    <div class="mb-4">
-      <label class="block text-sm font-medium text-secondary mb-2">Sentiment</label>
-      <MultiSelectFilter
-        v-model="selectedSentimentArray"
-        :options="uniqueSentiments"
-        placeholder="All Sentiments"
-      />
-    </div>
-
-    <!-- Game Multi-Select -->
-    <div>
-      <label class="block text-sm font-medium text-secondary mb-2">Game Name</label>
-      <MultiSelectFilter v-model="selectedGame" :options="uniqueGames" placeholder="All Games" />
-    </div>
-  </div>
-</template>
-
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import MultiSelectFilter from './MultiSelectFilter.vue'
 
@@ -99,3 +60,42 @@ watch(selectedGame, (newVal) => {
   emit('game-change', newVal)
 })
 </script>
+
+<template>
+  <div class="filters-container bg-card-background p-6 rounded-lg shadow-lg border border-border">
+    <h2 class="text-xl font-bold mb-4 text-primary">Filter Data</h2>
+
+    <!-- Dataset Selector -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-secondary mb-2">Dataset</label>
+      <MultiSelectFilter
+        v-model="selectedDatasetArray"
+        :options="datasetOptions"
+        placeholder="All Expectations"
+        :single-select="true"
+      />
+    </div>
+
+    <!-- Genre Multi-Select -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-secondary mb-2">Genre</label>
+      <MultiSelectFilter v-model="selectedGenre" :options="uniqueGenres" placeholder="All Genres" />
+    </div>
+
+    <!-- Sentiment Single-Select -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-secondary mb-2">Sentiment</label>
+      <MultiSelectFilter
+        v-model="selectedSentimentArray"
+        :options="uniqueSentiments"
+        placeholder="All Sentiments"
+      />
+    </div>
+
+    <!-- Game Multi-Select -->
+    <div>
+      <label class="block text-sm font-medium text-secondary mb-2">Game Name</label>
+      <MultiSelectFilter v-model="selectedGame" :options="uniqueGames" placeholder="All Games" />
+    </div>
+  </div>
+</template>

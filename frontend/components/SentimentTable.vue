@@ -1,3 +1,88 @@
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+
+const props = defineProps({
+  data: {
+    type: Array,
+    default: () => [],
+  },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const headers = [
+  { label: 'Game Name', key: 'name' },
+  { label: 'Genres', key: 'genres' },
+  { label: 'Review Text', key: 'review_text' },
+  { label: 'Expectations', key: 'expectations' },
+  { label: 'Dominant Aspect', key: 'dominant_aspect' },
+  { label: 'Dominant Sentiment', key: 'dominant_sentiment' },
+]
+
+const sortColumn = ref(null)
+const sortDirection = ref('asc')
+const currentPage = ref(1)
+const itemsPerPage = ref(10)
+
+// Format JSON/array values
+const formatCell = (value) => {
+  if (typeof value === 'object' && value !== null) {
+    return JSON.stringify(value)
+  }
+  return value
+}
+
+// Sorted Data
+const sortedData = computed(() => {
+  if (!sortColumn.value) return props.data
+  return [...props.data].sort((a, b) => {
+    const aVal = a[sortColumn.value]
+    const bVal = b[sortColumn.value]
+    if (aVal == null) return sortDirection.value === 'asc' ? 1 : -1
+    if (bVal == null) return sortDirection.value === 'asc' ? -1 : 1
+    return sortDirection.value === 'asc'
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal))
+  })
+})
+
+// Paginated Data
+const totalPages = computed(() => Math.ceil(sortedData.value.length / itemsPerPage.value))
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return sortedData.value.slice(start, start + itemsPerPage.value)
+})
+
+// Sorting
+const sortBy = (column) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+  currentPage.value = 1
+}
+
+// Pagination
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value++
+}
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value--
+}
+
+// Reset to page 1 on data change
+watch(
+  () => props.data,
+  () => {
+    currentPage.value = 1
+  },
+)
+</script>
+
 <template>
   <div
     class="sentiment-table-container bg-card-background p-6 rounded-lg shadow-lg border border-border"
@@ -84,98 +169,15 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, watch } from 'vue'
-
-const props = defineProps({
-  data: {
-    type: Array,
-    default: () => [],
-  },
-  loading: {
-    type: Boolean,
-    default: false,
-  },
-})
-
-const headers = [
-  { label: 'Game Name', key: 'name' },
-  { label: 'Genres', key: 'genres' },
-  { label: 'Review Text', key: 'review_text' },
-  { label: 'Expectations', key: 'expectations' },
-  { label: 'Dominant Aspect', key: 'dominant_aspect' },
-  { label: 'Dominant Sentiment', key: 'dominant_sentiment' },
-]
-
-const sortColumn = ref(null)
-const sortDirection = ref('asc')
-const currentPage = ref(1)
-const itemsPerPage = ref(10)
-
-// Format JSON/array values
-const formatCell = (value) => {
-  if (typeof value === 'object' && value !== null) {
-    return JSON.stringify(value)
-  }
-  return value
-}
-
-// Sorted Data
-const sortedData = computed(() => {
-  if (!sortColumn.value) return props.data
-  return [...props.data].sort((a, b) => {
-    const aVal = a[sortColumn.value]
-    const bVal = b[sortColumn.value]
-    if (aVal == null) return sortDirection.value === 'asc' ? 1 : -1
-    if (bVal == null) return sortDirection.value === 'asc' ? -1 : 1
-    return sortDirection.value === 'asc'
-      ? String(aVal).localeCompare(String(bVal))
-      : String(bVal).localeCompare(String(aVal))
-  })
-})
-
-// Paginated Data
-const totalPages = computed(() => Math.ceil(sortedData.value.length / itemsPerPage.value))
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  return sortedData.value.slice(start, start + itemsPerPage.value)
-})
-
-// Sorting
-const sortBy = (column) => {
-  if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortColumn.value = column
-    sortDirection.value = 'asc'
-  }
-  currentPage.value = 1
-}
-
-// Pagination
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++
-}
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--
-}
-
-// Reset to page 1 on data change
-watch(
-  () => props.data,
-  () => {
-    currentPage.value = 1
-  },
-)
-</script>
-
 <style scoped>
 .text-sentiment-positive {
   color: #27599e;
 }
+
 .text-sentiment-neutral {
   color: #a1d5cc;
 }
+
 .text-sentiment-negative {
   color: #d9c85f;
 }
