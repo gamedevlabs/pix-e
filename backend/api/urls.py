@@ -25,5 +25,5 @@ urlpatterns = [
     path("", include("pxnodes.urls")),
     path("api/", include("pxcharts.urls")),
     path("api/", include("sentiments.urls")),
-    path('', include('player_expectations.urls')),
+    path("", include("player_expectations.urls")),
 ]
