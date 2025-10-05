@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import SentimentFilters from '@/components/SentimentFilters.vue'
-import SentimentChart from '@/components/SentimentDistributionChart.vue'
-import SentimentTable from '@/components/SentimentTable.vue'
-import DominantAnalysis from '@/components/DominantAnalysis.vue'
-
 // Main data state
 const allSentiments = ref([])
 const loading = ref(false)
@@ -135,7 +130,7 @@ const onGameChange = (games) => {
         @sentiment-change="onSentimentChange"
         @game-change="onGameChange"
       />
-      <SentimentChart :key="selectedDataset" :data="filteredData" />
+      <SentimentDistributionChart :key="selectedDataset" :data="filteredData" />
       <DominantAnalysis :data="filteredData" :loading="loading" />
     </div>
     <SentimentTable :key="selectedDataset" :data="filteredData" />
