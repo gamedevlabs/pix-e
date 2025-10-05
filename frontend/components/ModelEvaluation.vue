@@ -1,5 +1,5 @@
 <script setup>
-import BaseChart from '~/components/charts/BaseChart.vue'
+import BaseChart from '~/components/diagrams/BaseChart.vue'
 
 defineProps(['chartData'])
 
@@ -11,31 +11,31 @@ const options = {
     title: {
       display: true,
       text: 'Top Model-GPT Aspect Confusions',
-      font: { size: 18 }
-    }
+      font: { size: 18 },
+    },
   },
   scales: {
     x: {
       beginAtZero: true,
       title: {
         display: true,
-        text: 'Number of Confusions'
-      }
+        text: 'Number of Confusions',
+      },
     },
     y: {
       title: {
         display: true,
-        text: 'Model → GPT'
+        text: 'Model → GPT',
       },
       ticks: {
         autoSkip: false,
-        font: { size: 12 }
-      }
-    }
-  }
+        font: { size: 12 },
+      },
+    },
+  },
 }
 </script>
 
 <template>
-  <BaseChart type="bar" :chartData="chartData" :chartOptions="options" />
+  <BaseChart type="bar" :chart-data="chartData" :chart-options="options" />
 </template>

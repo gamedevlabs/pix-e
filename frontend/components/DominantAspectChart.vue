@@ -1,11 +1,7 @@
 <template>
   <div class="chart-container">
     <h3>Top Dominant Aspects</h3>
-    <Bar
-      :data="chartData"
-      :options="chartOptions"
-      v-if="chartData.labels.length > 0"
-    />
+    <Bar v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
     <p v-else>No dominant aspect data to display.</p>
   </div>
 </template>
@@ -28,15 +24,16 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 const props = defineProps({
   data: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 })
 
 const aspectCounts = computed(() => {
   const counts = {}
-  props.data.forEach(item => {
+  props.data.forEach((item) => {
     const aspect = item.dominant_aspect?.toLowerCase()
-    if (aspect && aspect !== 'nan') { // Exclude NaN values
+    if (aspect && aspect !== 'nan') {
+      // Exclude NaN values
       counts[aspect] = (counts[aspect] || 0) + 1
     }
   })
@@ -77,28 +74,28 @@ const chartOptions = {
     title: {
       display: true,
       text: 'Top 10 Dominant Aspects',
-      color: 'var(--color-primary)' // Use CSS variable for title color
-    }
+      color: 'var(--color-primary)', // Use CSS variable for title color
+    },
   },
   scales: {
     x: {
       ticks: {
-        color: 'var(--color-text)' // Use CSS variable for x-axis labels
+        color: 'var(--color-text)', // Use CSS variable for x-axis labels
       },
       grid: {
-        color: 'rgba(255, 255, 255, 0.1)' // Light grid lines
-      }
+        color: 'rgba(255, 255, 255, 0.1)', // Light grid lines
+      },
     },
     y: {
       beginAtZero: true,
       ticks: {
-        color: 'var(--color-text)' // Use CSS variable for y-axis labels
+        color: 'var(--color-text)', // Use CSS variable for y-axis labels
       },
       grid: {
-        color: 'rgba(255, 255, 255, 0.1)' // Light grid lines
-      }
-    }
-  }
+        color: 'rgba(255, 255, 255, 0.1)', // Light grid lines
+      },
+    },
+  },
 }
 </script>
 

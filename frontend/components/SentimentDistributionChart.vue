@@ -1,11 +1,7 @@
 <template>
   <ChartCard title="Sentiment Distribution">
     <div class="chart-container">
-      <Doughnut
-        :data="chartData"
-        :options="chartOptions"
-        v-if="chartData.labels.length > 0"
-      />
+      <Doughnut v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
       <p v-else>No sentiment data to display.</p>
     </div>
   </ChartCard>
@@ -14,14 +10,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { Doughnut } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  CategoryScale,
-} from 'chart.js'
+import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js'
 import ChartCard from '@/components/ChartCard.vue'
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
@@ -43,7 +32,7 @@ const sentimentCounts = computed(() => {
     negative: 0,
     neutral: 0,
   }
-  props.data.forEach(item => {
+  props.data.forEach((item) => {
     const sentiment = item.dominant_sentiment?.toLowerCase()
     if (sentiment === 'positive') {
       counts.positive++

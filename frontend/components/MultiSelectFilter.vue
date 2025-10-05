@@ -1,9 +1,5 @@
 <template>
-  <UDropdownMenu
-    :items="dropdownItems"
-    :ui="dropdownUi"
-    class="w-full"
-  >
+  <UDropdownMenu :items="dropdownItems" :ui="dropdownUi" class="w-full">
     <!-- Button showing current selections -->
     <UButton
       :label="buttonLabel"
@@ -17,9 +13,9 @@
         <UCheckbox
           :model-value="item.checked"
           :label="item.label"
-          @update:model-value="toggleOption(item.value)"
           class="block w-full text-[#00f5ff] hover:text-[#00ffff] transition-colors duration-200 font-mono"
           :ui="checkboxUi"
+          @update:model-value="toggleOption(item.value)"
         />
       </div>
     </template>
@@ -32,34 +28,34 @@ import { computed } from 'vue'
 const props = defineProps({
   options: {
     type: Array as () => string[],
-    default: () => []
+    default: () => [],
   },
   modelValue: {
     type: Array as () => string[],
-    default: () => []
+    default: () => [],
   },
   placeholder: {
     type: String,
-    default: 'Select items'
-  }
+    default: 'Select items',
+  },
 })
 
 const emit = defineEmits(['update:modelValue'])
 
 // Computed dropdown items: each option with label, value, checked
 const dropdownItems = computed(() =>
-  props.options.map(option => ({
+  props.options.map((option) => ({
     label: option,
     value: option,
-    checked: props.modelValue.includes(option)
-  }))
+    checked: props.modelValue.includes(option),
+  })),
 )
 
 // Toggle selection for option
 const toggleOption = (optionValue: string) => {
   const isSelected = props.modelValue.includes(optionValue)
   const updatedSelection = isSelected
-    ? props.modelValue.filter(item => item !== optionValue)
+    ? props.modelValue.filter((item) => item !== optionValue)
     : [...props.modelValue, optionValue]
   emit('update:modelValue', updatedSelection)
 }
@@ -79,9 +75,9 @@ const dropdownUi = {
   ring: 'ring-2 ring-[#00f5ff]',
   item: {
     base: 'block w-full',
-    disabled: 'cursor-not-allowed opacity-50'
+    disabled: 'cursor-not-allowed opacity-50',
   },
-  content: 'flex flex-col gap-1 max-h-64 overflow-y-auto'
+  content: 'flex flex-col gap-1 max-h-64 overflow-y-auto',
 }
 
 const checkboxUi = {
@@ -90,6 +86,6 @@ const checkboxUi = {
   background: 'bg-[#1a1a3d]',
   checked: 'bg-[#00f5ff] border-[#00f5ff]',
   indeterminate: 'bg-[#00f5ff] border-[#00f5ff]',
-  disabled: 'cursor-not-allowed opacity-50'
+  disabled: 'cursor-not-allowed opacity-50',
 }
 </script>

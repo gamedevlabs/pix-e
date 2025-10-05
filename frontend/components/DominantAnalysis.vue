@@ -2,9 +2,9 @@
   <ChartCard title="Dominant Aspect Analysis">
     <div class="chart-container">
       <Bar
+        v-if="!loading && chartData.labels.length > 0"
         :data="chartData"
         :options="chartOptions"
-        v-if="!loading && chartData.labels.length > 0"
       />
       <p v-if="!loading && chartData.labels.length === 0">No dominant aspect data to display.</p>
       <p v-if="loading">Loading...</p>
@@ -13,8 +13,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { Bar } from 'vue-chartjs';
+import { computed } from 'vue'
+import { Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   Title,
@@ -23,10 +23,10 @@ import {
   BarElement,
   CategoryScale,
   LinearScale,
-} from 'chart.js';
-import ChartCard from '@/components/ChartCard.vue';
+} from 'chart.js'
+import ChartCard from '@/components/ChartCard.vue'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const props = defineProps({
   data: {
@@ -37,26 +37,26 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
 const aspectCounts = computed(() => {
-  const counts = {};
-  props.data.forEach(item => {
+  const counts = {}
+  props.data.forEach((item) => {
     if (item.dominant_aspect) {
-      const aspect = item.dominant_aspect;
-      counts[aspect] = (counts[aspect] || 0) + 1;
+      const aspect = item.dominant_aspect
+      counts[aspect] = (counts[aspect] || 0) + 1
     }
-  });
-  return counts;
-});
+  })
+  return counts
+})
 
 const chartData = computed(() => {
   const sortedAspects = Object.entries(aspectCounts.value)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 10); // Top 10 dominant aspects
+    .slice(0, 10) // Top 10 dominant aspects
 
-  const labels = sortedAspects.map(([aspect]) => aspect);
-  const data = sortedAspects.map(([, count]) => count);
+  const labels = sortedAspects.map(([aspect]) => aspect)
+  const data = sortedAspects.map(([, count]) => count)
 
   return {
     labels: labels,
@@ -67,8 +67,8 @@ const chartData = computed(() => {
         data: data,
       },
     ],
-  };
-});
+  }
+})
 
 const chartOptions = {
   responsive: true,
@@ -95,7 +95,7 @@ const chartOptions = {
       },
     },
   },
-};
+}
 </script>
 
 <style scoped>

@@ -14,141 +14,135 @@
         @sentiment-change="onSentimentChange"
         @game-change="onGameChange"
       />
-      <SentimentChart :data="filteredData" :key="selectedDataset" />
+      <SentimentChart :key="selectedDataset" :data="filteredData" />
       <DominantAnalysis :data="filteredData" :loading="loading" />
     </div>
-    <SentimentTable :data="filteredData" :key="selectedDataset" />
+    <SentimentTable :key="selectedDataset" :data="filteredData" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
-import SentimentFilters from '@/components/SentimentFilters.vue';
-import SentimentChart from '@/components/SentimentDistributionChart.vue';
-import SentimentTable from '@/components/SentimentTable.vue';
-import DominantAnalysis from '@/components/DominantAnalysis.vue';
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import SentimentFilters from '@/components/SentimentFilters.vue'
+import SentimentChart from '@/components/SentimentDistributionChart.vue'
+import SentimentTable from '@/components/SentimentTable.vue'
+import DominantAnalysis from '@/components/DominantAnalysis.vue'
 
 // Main data state
-const allSentiments = ref([]);
-const loading = ref(false);
-const error = ref(null);
+const allSentiments = ref([])
+const loading = ref(false)
+const error = ref(null)
 
 // Filter states
-const selectedDataset = ref('all');
-const selectedGenres = ref([]);
-const selectedSentiment = ref('');
-const selectedGames = ref([]);
+const selectedDataset = ref('all')
+const selectedGenres = ref([])
+const selectedSentiment = ref('')
+const selectedGames = ref([])
 
 // Fetch data from API
 const fetchSentiments = async () => {
-  loading.value = true;
-  error.value = null;
+  loading.value = true
+  error.value = null
   try {
-    const response = await axios.get(`http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`);
-    allSentiments.value = response.data;
+    const response = await axios.get(
+      `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
+    )
+    allSentiments.value = response.data
   } catch (err) {
-    console.error(err);
-    error.value = 'Failed to load sentiment data.';
+    console.error(err)
+    error.value = 'Failed to load sentiment data.'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // Initial data load
-onMounted(fetchSentiments);
+onMounted(fetchSentiments)
 
 // Dynamic options for filters
 const uniqueGenres = computed(() => {
-  let data = allSentiments.value;
+  let data = allSentiments.value
 
   if (selectedSentiment.value) {
-    data = data.filter(item => item.dominant_sentiment === selectedSentiment.value);
+    data = data.filter((item) => item.dominant_sentiment === selectedSentiment.value)
   }
   if (selectedGames.value.length > 0) {
-    data = data.filter(item => selectedGames.value.includes(item.name));
+    data = data.filter((item) => selectedGames.value.includes(item.name))
   }
 
-  return [...new Set(data.flatMap(item =>
-    JSON.parse(item.genres.replace(/'/g, '"'))
-  ))].sort();
-});
+  return [...new Set(data.flatMap((item) => JSON.parse(item.genres.replace(/'/g, '"'))))].sort()
+})
 
 const uniqueSentiments = computed(() => {
-  let data = allSentiments.value;
+  let data = allSentiments.value
 
   if (selectedGenres.value.length > 0) {
-    data = data.filter(item =>
-      selectedGenres.value.some(g =>
-        JSON.parse(item.genres.replace(/'/g, '"')).includes(g)
-      )
-    );
+    data = data.filter((item) =>
+      selectedGenres.value.some((g) => JSON.parse(item.genres.replace(/'/g, '"')).includes(g)),
+    )
   }
   if (selectedGames.value.length > 0) {
-    data = data.filter(item => selectedGames.value.includes(item.name));
+    data = data.filter((item) => selectedGames.value.includes(item.name))
   }
 
-  return [...new Set(data.map(item => item.dominant_sentiment).filter(Boolean))].sort();
-});
+  return [...new Set(data.map((item) => item.dominant_sentiment).filter(Boolean))].sort()
+})
 
 const uniqueGames = computed(() => {
-  let data = allSentiments.value;
+  let data = allSentiments.value
 
   if (selectedGenres.value.length > 0) {
-    data = data.filter(item =>
-      selectedGenres.value.some(g =>
-        JSON.parse(item.genres.replace(/'/g, '"')).includes(g)
-      )
-    );
+    data = data.filter((item) =>
+      selectedGenres.value.some((g) => JSON.parse(item.genres.replace(/'/g, '"')).includes(g)),
+    )
   }
   if (selectedSentiment.value) {
-    data = data.filter(item => item.dominant_sentiment === selectedSentiment.value);
+    data = data.filter((item) => item.dominant_sentiment === selectedSentiment.value)
   }
 
-  return [...new Set(data.map(item => item.name).filter(Boolean))].sort();
-});
+  return [...new Set(data.map((item) => item.name).filter(Boolean))].sort()
+})
 
-// Main filtered data for charts and tables
+// Main filtered data for diagrams and tables
 const filteredData = computed(() => {
-  let data = allSentiments.value;
+  let data = allSentiments.value
 
   if (selectedGenres.value.length > 0) {
-    data = data.filter(item =>
-      selectedGenres.value.some(g =>
-        JSON.parse(item.genres.replace(/'/g, '"')).includes(g)
-      )
-    );
+    data = data.filter((item) =>
+      selectedGenres.value.some((g) => JSON.parse(item.genres.replace(/'/g, '"')).includes(g)),
+    )
   }
   if (selectedSentiment.value) {
-    data = data.filter(item => item.dominant_sentiment === selectedSentiment.value);
+    data = data.filter((item) => item.dominant_sentiment === selectedSentiment.value)
   }
   if (selectedGames.value.length > 0) {
-    data = data.filter(item => selectedGames.value.includes(item.name));
+    data = data.filter((item) => selectedGames.value.includes(item.name))
   }
 
-  return data;
-});
+  return data
+})
 
 // Event handlers for filter changes
 const onDatasetChange = (dataset) => {
-  selectedDataset.value = dataset;
-  selectedGenres.value = [];
-  selectedSentiment.value = '';
-  selectedGames.value = [];
-  fetchSentiments();
-};
+  selectedDataset.value = dataset
+  selectedGenres.value = []
+  selectedSentiment.value = ''
+  selectedGames.value = []
+  fetchSentiments()
+}
 
 const onGenreChange = (genres) => {
-  selectedGenres.value = genres;
-};
+  selectedGenres.value = genres
+}
 
 const onSentimentChange = (sentiment) => {
-  selectedSentiment.value = sentiment;
-};
+  selectedSentiment.value = sentiment
+}
 
 const onGameChange = (games) => {
-  selectedGames.value = games;
-};
+  selectedGames.value = games
+}
 </script>
 
 <style scoped>

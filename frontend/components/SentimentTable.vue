@@ -1,5 +1,7 @@
 <template>
-  <div class="sentiment-table-container bg-card-background p-6 rounded-lg shadow-lg border border-border">
+  <div
+    class="sentiment-table-container bg-card-background p-6 rounded-lg shadow-lg border border-border"
+  >
     <h2 class="text-xl font-bold text-primary mb-4">Filtered Sentiment Data</h2>
 
     <!-- Loading State -->
@@ -18,9 +20,12 @@
             <th
               v-for="header in headers"
               :key="header.key"
-              @click="sortBy(header.key)"
               class="px-4 py-3 text-left text-sm font-medium text-secondary uppercase tracking-wider cursor-pointer hover:bg-hover-background transition-colors duration-200"
-              :class="{ 'rounded-tl-lg': header.key === headers[0].key, 'rounded-tr-lg': header.key === headers.at(-1).key }"
+              :class="{
+                'rounded-tl-lg': header.key === headers[0].key,
+                'rounded-tr-lg': header.key === headers.at(-1).key,
+              }"
+              @click="sortBy(header.key)"
             >
               {{ header.label }}
               <span v-if="sortColumn === header.key">
@@ -45,7 +50,7 @@
               :class="{
                 'text-sentiment-positive': item.dominant_sentiment === 'positive',
                 'text-sentiment-negative': item.dominant_sentiment === 'negative',
-                'text-sentiment-neutral': item.dominant_sentiment === 'neutral'
+                'text-sentiment-neutral': item.dominant_sentiment === 'neutral',
               }"
             >
               {{ item.dominant_sentiment }}
@@ -61,17 +66,17 @@
       class="pagination-controls flex justify-center items-center mt-6 space-x-4"
     >
       <button
-        @click="prevPage"
         :disabled="currentPage === 1"
         class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark disabled:bg-gray-700 disabled:text-gray-400 transition-colors duration-200"
+        @click="prevPage"
       >
         Previous
       </button>
       <span class="text-text font-medium">Page {{ currentPage }} of {{ totalPages }}</span>
       <button
-        @click="nextPage"
         :disabled="currentPage === totalPages"
         class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark disabled:bg-gray-700 disabled:text-gray-400 transition-colors duration-200"
+        @click="nextPage"
       >
         Next
       </button>
@@ -85,12 +90,12 @@ import { ref, computed, watch } from 'vue'
 const props = defineProps({
   data: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   loading: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const headers = [
@@ -99,7 +104,7 @@ const headers = [
   { label: 'Review Text', key: 'review_text' },
   { label: 'Expectations', key: 'expectations' },
   { label: 'Dominant Aspect', key: 'dominant_aspect' },
-  { label: 'Dominant Sentiment', key: 'dominant_sentiment' }
+  { label: 'Dominant Sentiment', key: 'dominant_sentiment' },
 ]
 
 const sortColumn = ref(null)
@@ -156,9 +161,12 @@ const prevPage = () => {
 }
 
 // Reset to page 1 on data change
-watch(() => props.data, () => {
-  currentPage.value = 1
-})
+watch(
+  () => props.data,
+  () => {
+    currentPage.value = 1
+  },
+)
 </script>
 
 <style scoped>
