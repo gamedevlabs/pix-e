@@ -2,32 +2,32 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const items = ref<NavigationMenuItem[]>([
-  // {
-  //   label: 'Dashboard',
-  //   icon: 'i-lucide-book-open',
-  //   to: '/',
-  // },
-  // {
-  //   label: 'PxNodes',
-  //   icon: 'i-lucide-hexagon', 
-  //   to: '/pxnodes', 
-  // },
-  // {
-  //   label: 'PxComponents',
-  //   icon: 'i-lucide-component',
-  //   to: '/pxcomponents',
-  // },
-  // {
-  //   label: 'PxComponentsDefinitions',
-  //   icon: 'i-lucide-library-big',
-  //   to: '/pxcomponentdefinitions',
-  // },
-    {
+  {
+    label: 'Dashboard',
+    icon: 'i-lucide-book-open',
+    to: '/',
+  },
+  {
+    label: 'PxNodes',
+    icon: 'i-lucide-hexagon',
+    to: '/pxnodes',
+  },
+  {
+    label: 'PxComponents',
+    icon: 'i-lucide-component',
+    to: '/pxcomponents',
+  },
+  {
+    label: 'PxComponentsDefinitions',
+    icon: 'i-lucide-library-big',
+    to: '/pxcomponentdefinitions',
+  },
+  {
     label: 'Player Expectations Dashboard',
     icon: 'i-lucide-book-open',
     to: '/player-expectations',
   },
-    {
+  {
     label: 'Sentiment Analysis',
     icon: 'i-lucide-library-big',
     to: '/sentiments',
@@ -82,8 +82,8 @@ function toggleSidebar() {
             color="gray"
             variant="ghost"
             aria-label="Toggle Sidebar"
-            @click="toggleSidebar"
             class="mr-3"
+            @click="toggleSidebar"
           />
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
@@ -119,7 +119,11 @@ function toggleSidebar() {
           }"
           class="border-r border-gray-200 dark:border-gray-800 overflow-y-auto flex flex-col items-stretch transition-all duration-300 ease-in-out"
         >
-          <UNavigationMenu orientation="vertical" :items="items" :class="{'hidden': isSidebarCollapsed}" />
+          <UNavigationMenu
+            orientation="vertical"
+            :items="items"
+            :class="{ hidden: isSidebarCollapsed }"
+          />
           <div v-if="isSidebarCollapsed" class="flex flex-col items-center mt-4 space-y-2">
             <UButton
               v-for="item in items"
@@ -137,8 +141,6 @@ function toggleSidebar() {
         <!-- Page Content -->
         <main
           :class="{
-            'ml-16': isSidebarCollapsed, // Adjust margin when collapsed
-            'ml-64': !isSidebarCollapsed, // Adjust margin when expanded
             'p-10': !isSidebarCollapsed, // Add padding only when not collapsed
             'p-4': isSidebarCollapsed, // Smaller padding when collapsed
           }"
