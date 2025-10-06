@@ -1,127 +1,15 @@
 <script setup lang="ts">
-// Reactive State
-const aspectChartData = ref(null)
-const sentimentChartData = ref(null)
-const lineChartData = ref(null)
-const sentimentPieData = ref(null)
-const heatmapData = ref(null)
-const topConfusionsChartData = ref(null)
+const {
+  aspectChartData,
+  sentimentChartData,
+  lineChartData,
+  sentimentPieData,
+  heatmapData,
+  topConfusionsChartData,
+  load,
+} = usePlayerExpectationCharts('http://localhost:8000/api')
 
-onMounted(async () => {
-  try {
-    const data = await $fetch('http://localhost:8000/api/player-expectations/')
-    const poster_palette = ['#27599e', '#a1d5cc', '#d9c85f', '#3b6cb2', '#69a89f']
-
-    // 1️⃣ Aspect Frequency Chart
-    aspectChartData.value = {
-      labels: Object.keys(data.aspectFrequency),
-      datasets: [
-        {
-          label: 'Mentions',
-          data: Object.values(data.aspectFrequency),
-          backgroundColor: poster_palette,
-        },
-      ],
-    }
-
-    // 2️⃣ Aspect Sentiment Breakdown
-    const rawSentimentData = data.aspectSentiment
-    const sentiments = ['positive', 'neutral', 'negative']
-    const sentimentColors = {
-      positive: poster_palette[0],
-      neutral: poster_palette[1],
-      negative: poster_palette[2],
-    }
-
-    // 提取aspect顺序
-    const labels = Array.from(new Set(rawSentimentData.map((item) => item.dominant_aspect)))
-
-    // 初始化一个 Map<sentiment, Map<aspect, count>>
-    const sentimentMap = new Map()
-    for (const sentiment of sentiments) {
-      sentimentMap.set(sentiment, new Map())
-    }
-
-    // 填充数据
-    for (const item of rawSentimentData) {
-      const { dominant_aspect, dominant_sentiment, count } = item
-      sentimentMap.get(dominant_sentiment).set(dominant_aspect, count)
-    }
-
-    // 构建 chartData
-    sentimentChartData.value = {
-      labels,
-      datasets: sentiments.map((sentiment) => ({
-        label: sentiment,
-        data: labels.map((aspect) => sentimentMap.get(sentiment).get(aspect) || 0),
-        backgroundColor: sentimentColors[sentiment],
-      })),
-    }
-
-    // 3️⃣ Trend Over Time
-    const trendData = data.trendOverTime
-    const timeLabels = trendData.map((i) => i.month)
-    lineChartData.value = {
-      labels: timeLabels,
-      datasets: sentiments.map((sentiment) => ({
-        label: sentiment,
-        data: trendData.map((i) => i[sentiment] || 0),
-        borderColor: sentimentColors[sentiment],
-        fill: false,
-      })),
-    }
-
-    // 4️⃣ Pie Chart
-    sentimentPieData.value = {
-      labels: Object.keys(data.sentimentPie),
-      datasets: [
-        {
-          data: Object.values(data.sentimentPie),
-          backgroundColor: [
-            sentimentColors.positive,
-            sentimentColors.neutral,
-            sentimentColors.negative,
-          ],
-        },
-      ],
-    }
-
-    // 5️⃣ Heatmap
-    heatmapData.value = data.heatmap
-
-    // 6️⃣ Top Confusions Chart
-    const confusionPalette = [
-      '#27599e',
-      '#a1d5cc',
-      '#d9c85f', // Blue, Teal (light), Yellow (dark)
-      '#3b6cb2',
-      '#69a89f',
-      '#f8ef9a', // Blue (light), Teal (dark), Yellow (light)
-      '#153b7a',
-      '#8ac9c0',
-      '#f2e686', // Blue (dark), Teal (mid), Yellow (mid)
-      '#27599e', // Repeat base blue for 11th bar
-    ]
-
-    // Trim palette to match number of bars
-    const trimmedPalette = confusionPalette.slice(0, data.topConfusions.length)
-
-    topConfusionsChartData.value = {
-      labels: data.topConfusions.map((c) => c.pair),
-      datasets: [
-        {
-          label: 'Model → GPT',
-          data: data.topConfusions.map((c) => c.count),
-          backgroundColor: trimmedPalette,
-        },
-      ],
-    }
-    console.log('data.topConfusions:', data.topConfusions)
-    console.log('topConfusionsChartData.value:', topConfusionsChartData.value)
-  } catch (err) {
-    console.error('Error loading data:', err)
-  }
-})
+onMounted(load)
 </script>
 
 <template>

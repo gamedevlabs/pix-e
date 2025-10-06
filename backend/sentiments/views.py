@@ -108,7 +108,7 @@ class SentimentData(APIView):
         print(
             f"Final df shape before JSON conversion: {df.shape}, columns: {df.columns.tolist()}"
         )
-        print(f"Sample of final df head:")
+        print("Sample of final df head:")
         print(df.head())
 
         # Final cleaning before JSON serialization
