@@ -16,7 +16,7 @@ const fetchSentiments = async () => {
   error.value = null
   try {
     const sentiments = await $fetch(
-        `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
+      `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
     )
     allSentiments.value = sentiments.data
   } catch (err) {
