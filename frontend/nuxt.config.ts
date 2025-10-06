@@ -1,3 +1,6 @@
+// nuxt.config.ts
+import { defineNuxtConfig } from 'nuxt/config'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
@@ -5,7 +8,7 @@ export default defineNuxtConfig({
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {
-      title: 'Pixie',
+      title: 'pix:e',
       link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.png' }],
     },
   },
