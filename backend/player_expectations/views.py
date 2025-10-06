@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from django.db.models import F, Q, Value, CharField, TextField, Case, When
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+import datetime
+from collections import Counter, defaultdict
+
+from django.db.models import Case, CharField, Count, F, Q, TextField, Value, When
 
 # -----------------------------
 # views.py
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from django.db.models import Count
-from .models import PlayerExpectationsAbsa, PlayerExpectationsConfusions
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-import datetime
-from collections import Counter, defaultdict
+from .models import PlayerExpectationsAbsa, PlayerExpectationsConfusions
 
 SENTIMENT_ORDER = ["positive", "neutral", "negative"]
 
@@ -60,7 +60,7 @@ def aspect_frequency_view(request):
     return JsonResponse({"data": data})
 
 
-# ---------- 2) Aspect + sentiment breakdown (top 10 aspects by positive count) ----------
+# -------- 2) Aspect + sentiment breakdown (top 10 aspects by positive count) --------
 @require_GET
 def aspect_sentiment_view(request):
     rows = _base_rows()
@@ -216,7 +216,7 @@ class SentimentData(APIView):
 
         # 1) One base queryset with NON-colliding annotations
         base = PlayerExpectationsAbsa.objects.annotate(
-            # choose explicit_expectations when has_explicit == "true", else expectations
+            # explicit_expectations when has_explicit == "true", else expectations
             expectations_out=Case(
                 When(has_explicit__iexact="true", then=F("explicit_expectations")),
                 default=F("expectations"),
@@ -248,7 +248,8 @@ class SentimentData(APIView):
         else:
             return Response(
                 {
-                    "error": "Invalid type parameter. Use 'explicit', 'implicit', 'all', or 'not_assigned'."
+                    "error": "Invalid type parameter. "
+                    "Use 'explicit', 'implicit', 'all', or 'not_assigned'."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

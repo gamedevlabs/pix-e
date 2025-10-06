@@ -10,8 +10,12 @@ def load_seed_data(apps, schema_editor):
     """
 
     # Dynamically get model classes (avoid direct imports)
-    PlayerExpectationsAbsa = apps.get_model("player_expectations", "PlayerExpectationsAbsa")
-    PlayerExpectationsConfusions = apps.get_model("player_expectations", "PlayerExpectationsConfusions")
+    PlayerExpectationsAbsa = apps.get_model(
+        "player_expectations", "PlayerExpectationsAbsa"
+    )
+    PlayerExpectationsConfusions = apps.get_model(
+        "player_expectations", "PlayerExpectationsConfusions"
+    )
 
     # ---------- resolve paths ----------
     base_dir = Path(__file__).resolve().parent.parent  # one level above 'migrations'
@@ -20,7 +24,9 @@ def load_seed_data(apps, schema_editor):
     confusions_path = seeds_dir / "confusions.csv"
 
     if not absa_path.exists():
-        print(f"[seed_data] WARNING: {absa_path} not found, skipping PlayerExpectationsAbsa seeding.")
+        print(
+            f"[seed_data] WARNING: {absa_path} not found, skipping PlayerExpectationsAbsa seeding."
+        )
     else:
         df_absa = pd.read_csv(absa_path)
         df_absa = df_absa.replace({pd.NA: None})
@@ -56,7 +62,9 @@ def load_seed_data(apps, schema_editor):
         print(f"[seed_data] Inserted {len(objs)} PlayerExpectationsAbsa records.")
 
     if not confusions_path.exists():
-        print(f"[seed_data] WARNING: {confusions_path} not found, skipping PlayerExpectationsConfusions seeding.")
+        print(
+            f"[seed_data] WARNING: {confusions_path} not found, skipping PlayerExpectationsConfusions seeding."
+        )
     else:
         df_conf = pd.read_csv(confusions_path)
         df_conf = df_conf.replace({pd.NA: None})
@@ -73,13 +81,19 @@ def load_seed_data(apps, schema_editor):
             for row in records_conf
         ]
         PlayerExpectationsConfusions.objects.bulk_create(objs_conf, batch_size=500)
-        print(f"[seed_data] Inserted {len(objs_conf)} PlayerExpectationsConfusions records.")
+        print(
+            f"[seed_data] Inserted {len(objs_conf)} PlayerExpectationsConfusions records."
+        )
 
 
 def unload_seed_data(apps, schema_editor):
     """Reverse operation for migration rollback."""
-    PlayerExpectationsAbsa = apps.get_model("player_expectations", "PlayerExpectationsAbsa")
-    PlayerExpectationsConfusions = apps.get_model("player_expectations", "PlayerExpectationsConfusions")
+    PlayerExpectationsAbsa = apps.get_model(
+        "player_expectations", "PlayerExpectationsAbsa"
+    )
+    PlayerExpectationsConfusions = apps.get_model(
+        "player_expectations", "PlayerExpectationsConfusions"
+    )
 
     PlayerExpectationsAbsa.objects.all().delete()
     PlayerExpectationsConfusions.objects.all().delete()

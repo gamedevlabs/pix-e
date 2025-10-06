@@ -1,13 +1,13 @@
 from django.urls import path
 
 from .views import (
+    SentimentData,
     aspect_frequency_view,
     aspect_sentiment_view,
-    trend_over_time_view,
-    sentiment_pie_view,
     heatmap_view,
+    sentiment_pie_view,
     top_confusions_view,
-    SentimentData,
+    trend_over_time_view,
 )
 
 urlpatterns = [
