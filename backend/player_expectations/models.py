@@ -35,7 +35,7 @@ class PlayerExpectationsAbsa(models.Model):
     dominant_sentiment = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "player_expectations_absa"
 
 
@@ -47,30 +47,5 @@ class PlayerExpectationsConfusions(models.Model):
     agreement = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "player_expectations_confusions"
-
-
-class PlayerExpectationsExplicitSentiment(models.Model):
-    appid = models.IntegerField(blank=True, null=True)
-    name = models.TextField(blank=True, null=True)
-    release_date = models.TextField(blank=True, null=True)
-    required_age = models.IntegerField(blank=True, null=True)
-    price = models.TextField(blank=True, null=True)  # This field type is a guess.
-    dlc_count = models.IntegerField(blank=True, null=True)
-    categories = models.TextField(blank=True, null=True)
-    genres = models.TextField(blank=True, null=True)
-    user_score = models.IntegerField(blank=True, null=True)
-    positive = models.IntegerField(blank=True, null=True)
-    negative = models.IntegerField(blank=True, null=True)
-    tags = models.TextField(blank=True, null=True)
-    review_text = models.TextField(blank=True, null=True)
-    explicit_expectations = models.TextField(blank=True, null=True)
-    has_explicit = models.TextField(blank=True, null=True)
-    expectations = models.TextField(blank=True, null=True)
-    dominant_aspect = models.TextField(blank=True, null=True)
-    dominant_sentiment = models.TextField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = "player_expectations_explicit_sentiment"

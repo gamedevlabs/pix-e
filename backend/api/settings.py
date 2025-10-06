@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     "accounts",
     "pxcharts",
     "player_expectations",
-    "sentiments",
 ]
 
 REST_FRAMEWORK = {
