@@ -15,9 +15,10 @@ const fetchSentiments = async () => {
   loading.value = true
   error.value = null
   try {
-    allSentiments.value = await $fetch(
-      `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
+    const sentiments = await $fetch(
+        `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
     )
+    allSentiments.value = sentiments.data
   } catch (err) {
     console.error(err)
     error.value = 'Failed to load sentiment data.'
