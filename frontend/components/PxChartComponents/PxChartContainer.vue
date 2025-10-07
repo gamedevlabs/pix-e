@@ -2,7 +2,7 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import {PxChartContainerAddPxNodeForm} from "#components";
+import { PxChartContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{

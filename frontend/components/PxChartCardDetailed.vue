@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import {PxChartContainerAddPxNodeForm} from "#components";
+import { PxChartContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<{
   chart: PxChart
