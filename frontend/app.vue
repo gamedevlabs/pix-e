@@ -23,6 +23,11 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pxcomponentdefinitions',
   },
   {
+    label: 'PxCharts',
+    icon: 'i-lucide-chart-network',
+    to: '/pxcharts',
+  },
+  {
     label: 'Player Expectations',
     icon: 'i-lucide-book-open',
     to: '/player-expectations',
@@ -38,11 +43,6 @@ const items = ref<NavigationMenuItem[]>([
         to: '/sentiments',
       },
     ],
-  },
-  {
-    label: 'PxCharts',
-    icon: 'i-lucide-chart-network',
-    to: '/pxcharts',
   },
   {
     label: 'Pillars',

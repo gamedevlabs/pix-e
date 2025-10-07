@@ -2,7 +2,7 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import { LazyPxChartComponentsPxChartContainerAddPxNodeForm } from '#components'
+import {PxChartContainerAddPxNodeForm} from "#components";
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
 
 const overlay = useOverlay()
-const modalAddPxNode = overlay.create(LazyPxChartComponentsPxChartContainerAddPxNodeForm)
+const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
 
 const isBeingEdited = ref(false)
 const editForm = ref({
