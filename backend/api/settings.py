@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "llm",
     "accounts",
     "pxcharts",
+    "player_expectations",
 ]
 
 REST_FRAMEWORK = {
