@@ -9,7 +9,7 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
-    target-branch: "dependabot"
+    target-branch: "main"
 
   # Enable version updates for pip
   - package-ecosystem: "pip"
@@ -17,5 +17,5 @@ updates:
     directory: "/backend"
     schedule:
       interval: "weekly"
-    target-branch: "dependabot"
+    target-branch: "main"
 
