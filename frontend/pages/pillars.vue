@@ -6,21 +6,24 @@ definePageMeta({
 const config = useRuntimeConfig()
 
 const {
-  pillars,
+  items: pillars,
+  fetchAll: pillarsFetchAll,
+  createItem: createPillar,
+  updateItem: updatePillar,
+  deleteItem: deletePillar,
+  additionalFeature,
   designIdea,
   llmFeedback,
-  initalPillarFetch,
-  createPillar,
-  updatePillar,
-  deletePillar,
-  getLLMFeedback,
-  validatePillar,
+  featureFeedback,
+  getPillarsInContextFeedback,
   updateDesignIdea,
-} = await usePillars()
+  getPillarsCompleteness,
+  getPillarsAdditions,
+  getPillarContradictions,
+  getContextInPillarsFeedback,
+} = usePillars()
 
-const selectedPillar = ref(-1)
-
-initalPillarFetch()
+await pillarsFetchAll()
 
 await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`, {
   method: 'GET',
@@ -30,165 +33,191 @@ await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`,
   designIdea.value = data.data.value?.description ?? ''
 })
 
-async function handlePillarCreation() {
-  const newPillar = await createPillar()
-  selectedPillar.value = newPillar.pillar_id
+const selectedPillar = ref(-1)
+const newItem = ref<NamedEntity | null>(null)
+
+function addItem() {
+  newItem.value = { name: '', description: '' }
 }
 
-async function handlePillarSelect(toSelect: number) {
-  if (selectedPillar.value != -1) {
-    const pillar = pillars.value.find((p) => p.pillar_id === selectedPillar.value)
-    if (pillar) {
-      await updatePillar(pillar)
-    }
-  }
-  selectedPillar.value = toSelect
+async function createItem(newEntityDraft: Partial<NamedEntity>) {
+  await createPillar(newEntityDraft)
+  newItem.value = null
 }
 
-async function handlePillarDelete(pillar: Pillar) {
-  if (selectedPillar.value === pillar.pillar_id) {
-    selectedPillar.value = -1
-  }
-  await deletePillar(pillar)
+async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) {
+  await updatePillar(id, { ...namedEntityDraft })
+  selectedPillar.value = -1
+}
+
+async function dismissIssue(pillar: Pillar, index: number) {
+  pillar.llm_feedback?.structuralIssues.splice(index, 1)
 }
 </script>
 
 <template>
-  <div>
+  <div class="flex -m-10">
+    <div class="flex-1 min-w-0 p-10">
+      <!-- Pillar Display -->
+      <h2 class="text-2xl font-bold mb-4">Pillars:</h2>
+      <SimpleCardSection use-add-button @add-clicked="addItem">
+        <div v-for="pillar in pillars" :key="pillar.id">
+          <PillarCard
+            :pillar="pillar"
+            :is-being-edited="selectedPillar === pillar.id"
+            show-edit
+            show-delete
+            @edit="selectedPillar = selectedPillar === pillar.id ? -1 : pillar.id"
+            @update="(namedEntityDraft) => handleUpdate(pillar.id, namedEntityDraft)"
+            @delete="deletePillar(pillar.id)"
+            @dismiss="dismissIssue(pillar, $event)"
+          />
+        </div>
+        <div v-if="newItem">
+          <NamedEntityCard
+            :named-entity="newItem"
+            :is-being-edited="true"
+            @edit="newItem = null"
+            @update="createItem"
+            @delete="newItem = null"
+          />
+        </div>
+      </SimpleCardSection>
+
+      <!-- Overall LLM Feedback -->
+      <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
+        <h2 class="text-2xl font-bold">
+          LLM Feedback
+          <UButton
+            icon="i-lucide-refresh-cw"
+            label="Refresh All"
+            color="secondary"
+            variant="soft"
+            loading-auto
+            @click="getPillarsInContextFeedback"
+          />
+        </h2>
+
+        <div class="w-full p-4 gap-4">
+          <h2 class="text-2xl font-bold">
+            Coverage:
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="getPillarsCompleteness"
+            />
+          </h2>
+          <!-- Coverage Feedback -->
+          <div class="w-full p-4 gap-4">
+            <div
+              v-for="pillar in llmFeedback.coverage.pillarFeedback"
+              :key="pillar.name"
+              class="border-b mb-4 border-neutral-500 pb-4"
+            >
+              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
+              <p>{{ pillar.reasoning }}</p>
+            </div>
+          </div>
+          <!-- Contradictions Feedback -->
+          <h2 class="text-2xl font-bold">
+            Contradictions:
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="getPillarContradictions"
+            />
+          </h2>
+          <div class="w-full p-4 gap-4">
+            <div
+              v-for="contradiction in llmFeedback.contradictions.contradictions"
+              :key="contradiction.pillarOneId"
+              class="border-b mb-4 border-neutral-500 pb-4"
+            >
+              <h3 class="text-lg font-semibold">
+                {{ contradiction.pillarOneTitle + ' vs ' + contradiction.pillarTwoTitle }}
+              </h3>
+              <p>{{ contradiction.reason }}</p>
+            </div>
+          </div>
+
+          <!-- Additions Feedback -->
+          <h2 class="text-2xl font-bold">
+            Additions:
+
+            <UButton
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="getPillarsAdditions"
+            />
+          </h2>
+          <div class="w-full p-4 gap-4">
+            <div
+              v-for="pillar in llmFeedback.proposedAdditions.additions"
+              :key="pillar.name"
+              class="border-b mb-4 border-neutral-500 pb-4"
+            >
+              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
+              <p>{{ pillar.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Game Design Idea Section -->
-    <h2 class="text-2xl font-bold mb-4">Game Design Idea:</h2>
-    <div class="flex items-stretch w-300 max-w-xxl">
+    <div
+      class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
+    >
+      <h2 class="text-2xl font-semibold mb-4">Core Design Idea:</h2>
       <UTextarea
         v-model="designIdea"
         placeholder="Enter your game design idea here..."
         variant="outline"
         color="secondary"
         size="xl"
-        class="w-full"
+        :rows="25"
+        :max-rows="0"
         autoresize
+        class="w-full"
         @focusout="updateDesignIdea"
       />
-    </div>
 
-    <!-- Pillar Display -->
-    <h2 class="text-2xl font-bold mt-6 mb-4">Pillars:</h2>
-    <div class="flex mt-6 gap-4 flex-wrap p-5">
-      <div v-for="pillar in pillars" :key="pillar.pillar_id" class="relative">
-        <UCard class="w-70 min-h-55 flex flex-col justify-center-safe" variant="soft">
-          <template #header>
-            <div class="w-full h-12 flex items-center justify-between">
-              <div class="flex-1">
-                <template v-if="selectedPillar === pillar.pillar_id">
-                  <UInput
-                    v-model="pillar.title"
-                    placeholder="Enter name..."
-                    size="xl"
-                    variant="subtle"
-                  />
-                </template>
-                <template v-else>
-                  <h3 class="text-lg font-semibold h-full flex items-center">
-                    {{ pillar.title !== '' ? pillar.title : 'Title' }}
-                  </h3>
-                </template>
-              </div>
-            </div>
-          </template>
+      <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Feature:</h2>
+      <UTextarea
+        v-model="additionalFeature"
+        placeholder="Describe an additional feature or mechanic..."
+        variant="outline"
+        color="secondary"
+        size="xl"
+        :rows="5"
+        :max-rows="0"
+        autoresize
+        class="w-full"
+      />
 
-          <div class="flex-1 w-full flex items-center left-0">
-            <template v-if="selectedPillar === pillar.pillar_id">
-              <UTextarea
-                v-model="pillar.description"
-                placeholder="Enter description here..."
-                size="lg"
-                variant="subtle"
-                :rows="1"
-                autoresize
-                class="w-full"
-              />
-            </template>
-            <template v-else>
-              <p>{{ pillar.description !== '' ? pillar.description : 'Description' }}</p>
-            </template>
-          </div>
-
-          <template #footer>
-            <div class="flex items-center justify-between">
-              <UButton
-                color="neutral"
-                variant="soft"
-                @click="
-                  selectedPillar === pillar.pillar_id
-                    ? handlePillarSelect(-1)
-                    : handlePillarSelect(pillar.pillar_id)
-                "
-              >
-                {{ selectedPillar === pillar.pillar_id ? 'Save' : 'Edit' }}
-              </UButton>
-              <UButton
-                v-if="selectedPillar !== pillar.pillar_id"
-                color="secondary"
-                variant="soft"
-                label="Validate"
-                @click="validatePillar(pillar)"
-              />
-            </div>
-            <UCollapsible class="pt-4" :open="pillar.display_open" :disabled="!pillar.llm_feedback">
-              <UButton
-                color="neutral"
-                variant="soft"
-                class="w-full text-left"
-                :label="pillar.llm_feedback ? 'LLM Feedback' : 'No LLM Feedback'"
-                icon="i-lucide-chevron-down"
-                @click="pillar.display_open = !pillar.display_open"
-              />
-              <template #content>
-                {{ pillar.llm_feedback }}
-              </template>
-            </UCollapsible>
-          </template>
-        </UCard>
-
-        <UButton
-          aria-label="Delete"
-          icon="i-lucide-trash-2"
-          color="error"
-          variant="ghost"
-          class="absolute top-2 right-2 z-10"
-          @click="handlePillarDelete(pillar)"
-        />
-      </div>
-      <div>
-        <UButton
-          icon="i-lucide-plus"
-          variant="soft"
-          color="secondary"
-          size="lg"
-          class="w-70 min-h-55 [&>*]:text-[50px] justify-center"
-          @click="handlePillarCreation"
-        />
-      </div>
-    </div>
-
-    <!-- LLM Feedback -->
-    <h2 class="text-2xl font-bold mt-6 mb-4">
-      LLM Feedback
       <UButton
         icon="i-lucide-refresh-cw"
-        label="Refresh"
+        label="Generate Feedback"
         color="secondary"
         variant="soft"
-        @click="getLLMFeedback"
+        loading-auto
+        @click="getContextInPillarsFeedback"
       />
-    </h2>
 
-    <div class="flex gap-4 flex-wrap w-300">
-      <div
-        style="color: var(--ui-color-secondary-200)"
-        class="p-4 rounded-lg w-fit whitespace-pre-line"
-      >
-        {{ llmFeedback }}
-      </div>
+      <h2 class="text-2xl font-semibold mt-6 mb-4">Feature Feedback:</h2>
+      <p>{{ featureFeedback.rating }}</p>
+      <p>
+        {{ featureFeedback.feedback }}
+      </p>
     </div>
   </div>
 </template>

@@ -1,77 +1,74 @@
 ﻿import { usePillarsApi } from '@/composables/api/pillarsApi'
 
-export async function usePillars() {
-  const config = useRuntimeConfig()
+export function usePillars() {
+  const basics = useCrud<Pillar>('llm/pillars/')
+
   const pillarsApi = usePillarsApi()
-  const pillars = ref<Pillar[]>([])
   const designIdea = ref<string>('')
-  const llmFeedback = ref<string>('Feedback will be displayed here')
+  const llmFeedback = ref<PillarsInContextFeedback>({
+    coverage: {
+      pillarFeedback: [],
+    },
+    contradictions: {
+      contradictions: [],
+    },
+    proposedAdditions: {
+      additions: [],
+    },
+  })
 
-  async function createPillar() {
-    const pillar: Pillar = await pillarsApi.createPillarAPICall()
-    pillar.llm_feedback = ''
-    pillars.value.splice(pillar.pillar_id, 0, pillar)
-    return pillar
-  }
+  const featureFeedback = ref<ContextInPillarsFeedback>({
+    rating: 0,
+    feedback: '',
+  })
 
-  async function updatePillar(pillar: Pillar) {
-    await pillarsApi.updatePillarAPICall(pillar)
-  }
-
-  async function deletePillar(pillar: Pillar) {
-    await pillarsApi.deletePillarAPICall(pillar)
-    const index = pillars.value.findIndex((p) => p.pillar_id === pillar.pillar_id)
-    if (index !== -1) {
-      pillars.value.splice(index, 1)
-    }
-  }
+  const additionalFeature = ref<string>('')
 
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
 
-  async function getLLMFeedback() {
-    llmFeedback.value = await pillarsApi.getLLMFeedback()
+  async function getPillarsInContextFeedback() {
+    llmFeedback.value = await pillarsApi.getPillarsInContextAPICall()
   }
 
   async function validatePillar(pillar: Pillar) {
     return await pillarsApi.validatePillarAPICall(pillar)
   }
 
-  async function initalPillarFetch() {
-    await useFetch<PillarDTO[]>(`${config.public.apiBase}/llm/pillars/`, {
-      credentials: 'include',
-      headers: useRequestHeaders(['cookie']),
-    })
-      .then((data) => {
-        if (data.data) {
-          data.data.value?.forEach((dto) => {
-            const pillar: Pillar = {
-              pillar_id: dto.pillar_id,
-              title: dto.title,
-              description: dto.description,
-              llm_feedback: '',
-              display_open: false,
-            }
-            pillars.value.push(pillar)
-          })
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching:', error)
-      })
+  async function fixPillarWithAI(pillar: Pillar) {
+    return await pillarsApi.fixPillarWithAIAPICall(pillar)
+  }
+
+  async function getPillarContradictions() {
+    llmFeedback.value.contradictions = await pillarsApi.getPillarsContradictionsAPICall()
+  }
+
+  async function getPillarsCompleteness() {
+    llmFeedback.value.coverage = await pillarsApi.getPillarsCompletenessAPICall()
+  }
+
+  async function getPillarsAdditions() {
+    llmFeedback.value.proposedAdditions = await pillarsApi.getPillarsAdditionsAPICall()
+  }
+
+  async function getContextInPillarsFeedback() {
+    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
   }
 
   return {
-    pillars,
+    ...basics,
     designIdea,
     llmFeedback,
-    initalPillarFetch,
-    createPillar,
-    updatePillar,
-    deletePillar,
+    featureFeedback,
+    additionalFeature,
     validatePillar,
     updateDesignIdea,
-    getLLMFeedback,
+    getPillarsInContextFeedback,
+    fixPillarWithAI,
+    getPillarContradictions,
+    getPillarsCompleteness,
+    getPillarsAdditions,
+    getContextInPillarsFeedback,
   }
 }

@@ -7,26 +7,19 @@ class Pillar(models.Model):
     user = models.ForeignKey(
         "auth.User", on_delete=models.CASCADE, related_name="pillars"
     )
-    pillar_id = models.PositiveIntegerField()
 
-    title = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        unique_together = ["user", "pillar_id"]
-
-    def save(self, *args, **kwargs):
-        if self.pillar_id is None:
-            last = Pillar.objects.filter(user=self.user).order_by("-pillar_id").first()
-            self.pillar_id = (last.pillar_id + 1) if last else 0
-        super().save(*args, **kwargs)
+    def __str__(self):
+        return f"ID: ({self.id}), {self.name}:\n {self.description}"
 
 
 class GameDesignDescription(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         "auth.User",
         on_delete=models.CASCADE,
         related_name="game_designs",

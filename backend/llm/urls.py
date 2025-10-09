@@ -1,16 +1,22 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import DesignView, OverallFeedbackView, PillarFeedbackView, PillarViewSet
+from .views import (
+    DesignView,
+    LLMFeedbackView,
+    PillarFeedbackView,
+    PillarViewSet,
+)
 
 app_name = "llm"
 
 router = DefaultRouter()
 router.register(r"pillars", PillarViewSet, basename="pillars")
+router.register(r"pillars", PillarFeedbackView, basename="pillar-feedback")
+router.register(r"feedback", LLMFeedbackView, basename="llm-feedback")
 
 urlpatterns = router.urls
 
-router = DefaultRouter()
 
 designView = DesignView.as_view(
     {
@@ -26,17 +32,4 @@ designCreate = DesignView.as_view(
 )
 urlpatterns += [
     path("design/get_or_create/", designCreate, name="design-get_or_create")
-]
-
-# router.register(r'design', designView, basename='design')
-
-urlpatterns += router.urls
-
-urlpatterns += [
-    path("feedback/", OverallFeedbackView.as_view()),
-    path(
-        "pillars/<int:pillar_id>/validate/",
-        PillarFeedbackView.as_view(),
-        name="pillar-validate",
-    ),
 ]

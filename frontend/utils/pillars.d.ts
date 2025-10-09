@@ -1,21 +1,64 @@
 ﻿type PillarDTO = {
-  pillar_id: number
-  title: string
+  pillarId: number
+  name: string
   description: string
 }
 
-type Pillar = {
-  pillar_id: number
-  title: string
+type CompletenessAnswer = {
+  pillarId: number
+  name: str
+  reasoning: str
+}
+
+type ContradictionIssue = {
+  pillarOneId: number
+  pillarTwoId: number
+  pillarOneTitle: string
+  pillarTwoTitle: string
+  reason: string
+}
+
+interface Pillar extends NamedEntity {
+  id: number
+  name: string
   description: string
-  llm_feedback: string
-  display_open: boolean
+  llm_feedback: PillarFeedback | null
 }
 
 type GameDesign = {
   game_id: number
   description: string
 }
-type LLMFeedback = {
+
+type PillarFeedback = {
+  hasStructureIssue: boolean
+  structuralIssues: {
+    title: string
+    description: string
+    severity: number
+  }[]
+  content_feedback: string
+}
+
+type PillarCompletenessFeedback = {
+  pillarFeedback: CompletenessAnswer[]
+}
+
+type PillarContradictionsFeedback = {
+  contradictions: ContradictionIssue[]
+}
+
+type PillarAdditionsFeedback = {
+  additions: PillarDTO[]
+}
+
+type PillarsInContextFeedback = {
+  coverage: PillarCompletenessFeedback
+  contradictions: PillarContradictionsFeedback
+  proposedAdditions: PillarAdditionsFeedback
+}
+
+type ContextInPillarsFeedback = {
+  rating: number
   feedback: string
 }

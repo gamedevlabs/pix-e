@@ -1,15 +1,14 @@
 # from django.shortcuts import render
 # from django.views import View
 # from rest_framework.views import APIView
-
 from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .gemini.GeminiLink import GeminiLink
+from .llm_links.LLMSwitcher import LLMSwitcher
+from .llm_links.responseSchemes import PillarsInContextResponse
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
@@ -19,7 +18,6 @@ from .serializers import GameDesignSerializer, PillarSerializer
 class PillarViewSet(ModelViewSet):
     serializer_class = PillarSerializer
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = "pillar_id"
 
     def get_queryset(self):
         return Pillar.objects.filter(user=self.request.user)
@@ -50,63 +48,128 @@ class DesignView(ModelViewSet):
         )
 
 
-class OverallFeedbackView(APIView):
+class PillarFeedbackView(ViewSet):
     def __init__(self, **kwargs):
         super().__init__()
-        self.gemini = GeminiLink()
+        self.llmSwitcher = LLMSwitcher()
 
-    def get(self, request):
+    @action(detail=True, methods=["POST"], url_path="validate")
+    def validate_pillar(self, request, pk):
         try:
-            design = GameDesignDescription.objects.first()
-            pillars = [pillar for pillar in Pillar.objects.all()]
+            pillar = Pillar.objects.filter(id=pk).first()
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillar(pillar)
 
-            prompt = (
-                f"Rate the following game design description with regards to the "
-                f"following design pillars:\n"
-                f"{design}\n\nPillars:\n"
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
             )
-            prompt += f"Game Design Description: {design.description}\n"
-            prompt += "Design Pillars:\n"
-            for pillar in pillars:
-                prompt += f"Title: {pillar.title}\n"
-                prompt += f"Description: {pillar.description}\n\n"
+        except Exception as e:
+            print(e)
+            return HttpResponse({"error": e}, status=500)
 
-            prompt += (
-                "\nDo not use any markdown in your answer. Answer directly as "
-                "if you are giving your feedback to "
-                "the designer."
+    @action(detail=True, methods=["POST"], url_path="fix")
+    def fix_pillar(self, request, pk):
+        try:
+            pillar = Pillar.objects.filter(id=pk).first()
+            llm = self.llmSwitcher.get_llm(request.data["model"])
+            pillar = llm.improve_pillar(pillar)
+            data = PillarSerializer(pillar).data
+            return JsonResponse(data, status=200)
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=500)
+
+
+class LLMFeedbackView(ViewSet):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.llmSwitcher = LLMSwitcher()
+
+    @action(detail=False, methods=["POST"], url_path="overall")
+    def overall_feedback(self, request):
+        try:
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+
+            answer: PillarsInContextResponse = None
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillars_in_context(pillars, design.description)
+
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
             )
-            answer = self.gemini.generate_response(prompt)
-            return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:
             return HttpResponse({"error": str(e)}, status=404)
 
-
-class PillarFeedbackView(APIView):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.gemini = GeminiLink()
-
-    def get(self, request, pillar_id):
+    @action(detail=False, methods=["POST"], url_path="completeness")
+    def completeness(self, request):
         try:
-            pillar = Pillar.objects.filter(pillar_id=pillar_id).first()
-            prompt = """Check if the following Game Design Pillar is written in a
-                        sensible way. First validate, but only list these issues if
-                        they are present otherwise ignore this section:
-                        1. The title is not clear or does not match the description.
-                        2. The description is not written as continuous text.
-                        3. The intent of the pillar is not clear.\n
-                        Then give feedback on the pillar and if it could be improved.\n
-                      \n\n"""
-            prompt += f"Title: {pillar.title}\n"
-            prompt += f"Description: {pillar.description}\n\n"
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
 
-            prompt += (
-                "Do not use any markdown in your answer. Answer directly as if"
-                " your giving your feedback to the "
-                "designer."
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillar_completeness(pillars, design.description)
+
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
             )
-            answer = self.gemini.generate_response(prompt)
-            return JsonResponse({"feedback": answer}, status=200)
         except Exception as e:
-            return HttpResponse({"error": e}, status=404)
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="contradictions")
+    def contradictions(self, request):
+        try:
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_pillar_contradictions(pillars, design.description)
+
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="additions")
+    def additions(self, request):
+        try:
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            design = GameDesignDescription.objects.filter(
+                user=self.request.user
+            ).first()
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.suggest_pillar_additions(pillars, design.description)
+
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
+
+    @action(detail=False, methods=["POST"], url_path="context")
+    def context(self, request):
+        try:
+            pillars = [pillar for pillar in Pillar.objects.filter(user=request.user)]
+            context = request.data.get("context", "")
+
+            model = request.data["model"]
+            llm = self.llmSwitcher.get_llm(model)
+            answer = llm.evaluate_context_with_pillars(pillars, context)
+
+            return HttpResponse(
+                answer.model_dump_json(), content_type="application/json", status=200
+            )
+        except Exception as e:
+            return HttpResponse({"error": str(e)}, status=404)
