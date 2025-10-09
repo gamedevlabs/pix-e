@@ -1,0 +1,544 @@
+index,sentence,model_aspect,gpt_aspect,agreement
+0,"Rust is one of the cruelest games on Steam, and that's what makes it so compelling.",gameplay,"""gameplay""",yes
+2,The champion of Battle Royales.,gameplay,gameplay,yes
+4,AMAZING,value,graphics,no
+6,Put a ring on it.,value,"""value""",yes
+8,Stardew Valley has been the most rich and heartwarming experience I’ve had in a game in years.,story,story,yes
+10,Made friends from it and probably will lose them all because of it at some point.,story,community,no
+12,Among Us is a game.,gameplay,"""gameplay""",yes
+14,It’s an exciting time to be a PC gamer when a team of just four people can create something this impressive.,gameplay,innovation,partial
+16,"Geometry Dash is a fast-paced platformer that will leave you screaming in frustration, but you’ll keep coming back for more.",gameplay,gameplay,yes
+18,"Dying Light gradually and gratifyingly evolves into a fast, hyper-violent celebration of vertical freedom and zombie destruction.",gameplay,gameplay,yes
+20,This beautifully implemented port is a perfect PC introduction to the joys of Monster Hunter,gameplay,gameplay,yes
+22,This is absolutely a buy,value,"""value""",yes
+24,Amazing Car Crashes + Hilarious Greenlight Trailer = Magic,gameplay,graphics,no
+26,Spelunking co-operative goodness. It's a winner.,performance,gameplay,no
+28,utterly breathtaking,graphics,graphics,yes
+30,An Open-World Masterpiece,story,gameplay,no
+32,Hades is one of the best roguelites of all-time.,graphics,gameplay,no
+34,7 Days to Die is like Minecraft with Gravity. Building defenses with friends and huddling in the corner hoping no zombies get through can be great fun. But what keeps me coming back to the game is the TNT.,gameplay,gameplay,yes
+36,PC Game of the Year 2013,gameplay,graphics,no
+38,I have a couple of issues with the user interface.,graphics,"""user interface"" typically falls under the ""performance"" aspect.",no
+40,"n a year of groundbreaking video game releases, The Finals is yet another highlight.",gameplay,"""innovation""",yes
+42,The pinnacle of First Person Shooters,gameplay,gameplay,yes
+44,"The finest city builder in over a decade, Cities: Skylines's few flaws are so minor I only noticed them after hours of enjoyment.",performance,gameplay,no
+46,"This is the game, and it makes Borderlands persistently fresh in a way other shooters never are.",gameplay,gameplay,yes
+48,A Masterpiece,story,"""graphics""",no
+50,Essential,value,"""gameplay""",no
+52,It's just dumb fun...,gameplay,value,partially
+54,Instant Classic,audio,gameplay,no
+56,A master class in AAA game development.,gameplay,innovation,partially
+58,Slay the Spire is the Roguelike Card Game I Never Knew I Wanted,gameplay,gameplay,yes
+60,...a lively and engaging multiplayer experience…,gameplay,gameplay,partially
+62,A monster of a sequel.,story,story,yes
+64,Dead Cells may be the most fun I've had in a game all year.,gameplay,gameplay,yes
+66,This game is SO fun,gameplay,gameplay,yes
+68,Humans were not supposed to be doing this!,gameplay,innovation,partially
+70,BADASS,gameplay,gameplay,yes
+72,"A touching tale on the importance of pets, hope, and friendship",story,"""story""",yes
+74,I can't say enough nice things about Darkest Dungeon.,story,value,no
+76,It is a must-play for fans of MOBAs and action games alike,gameplay,gameplay,yes
+78,Smite a great game to play with friends.,gameplay,gameplay,yes
+80,"Black Mesa Source winds up being exactly what it always promised to be – a modernised, faithful recreation of a deservedly landmark first-person shooter.",story,gameplay,no
+82,The best third-person shooter I've played in years.,gameplay,gameplay,yes
+84,Balatro is one of the best deck-building roguelikes I have ever played.,gameplay,gameplay,yes
+86,The most impressive Need for Speed game in years.,gameplay,"""gameplay""",yes
+88,Celeste is a surprise masterpiece.,innovation,"""story""",no
+90,"Bold, ambitious, and surprising",innovation,"""innovation""",yes
+92,ONE ADVENTURE YOU WON’T WANT TO MISS,gameplay,"""adventure"" refers to the aspect of ""gameplay.""",yes
+94,Outstanding,performance,"overall, the implicit aspect discussed in the sentence ""outstanding"" would be ""performance"".",yes.
+96,The Final Cut elevates Disco Elysium from an already phenomenal RPG to a true must-play masterpiece.,audio,story,no
+98,"Teardown Is A Heist Game Where Levels Are Fully Destructible, And It's Fantastic",gameplay,gameplay,yes
+100,"If ever there was an example of outstanding FPS gunplay, Insurgency: Sandstorm is surely it",gameplay,gameplay,yes
+102,"Space Engineers makes welding, joining and glazing seem like the best jobs in the world. It looks superb.",graphics,graphics,yes
+104,"If you enjoy third-person brawlers DMC5 is a must, and if you've never tried one before, this is a great place to start. What a treat.",gameplay,gameplay,yes
+106,Director Hideaki Itsuno and his team have delivered: Devil May Cry is back.,story,gameplay,no
+108,"'...what (Outlast) can definitely claim to be is a great game... It’ll also intrigue, terrify and surprise you. Outlast is not an experiment in how games can be scary, it’s an exemplification...",gameplay,story,no
+110,A hallmark of excellence.,innovation,"""excellence"" is often associated with high quality and exceptional performance. therefore, the aspect that best describes the main implicit aspect in the sentence ""a hallmark of excellence"" is ""performance.""",no
+112,The best World War II shooter for years,gameplay,gameplay,yes
+114,"It's a game time-traveled in directly from the fear-center of Tipper Gore's brain, circa 1989. It's pure, unadulterated nihilism with a candy-coated shell. And I'll be damned if it isn't one of the most intoxicating games of this year.",gameplay,"""gameplay""",partially
+116,"The developers say that they’ve created the most realistic simulation of the human metabolic system ever made, the end result of which is a fairly regular requirement that my avatar urinate and empty his bowels.",gameplay,gameplay,yes
+118,Cult of the Lamb sinks its claws into you.,gameplay,gameplay,yes
+120,"Each time I beamed down from my personal starship into the 2D sidescrolling craft-em-up that is Starbound, I found an experience that shoots for the stars and lands squarely among them.",gameplay,gameplay,yes
+122,Vermintide 2's combat and level design are so feverishly fun,gameplay,"""gameplay""",yes
+124,"No Blood, No Gore, Just Megatons of Steel!",gameplay,"""gameplay""",no
+126,"It's simple, it's different and it's superb fun.",gameplay,gameplay,yes
+128,Warhammer 2 is Total War perfected,gameplay,gameplay,yes.
+130,"by the end of an hour session in a team with five other journalists, I was hooked",story,community,no.
+132,The 'spiritual successor' to Diablo 2 that fans have been pining about for years.,story,"""gameplay""",no
+134,"Grim Dawn’s the action RPG I’ve enjoyed most in quite some time, and I’m very keen to try the later chapters as they’re released. More so than Torchlight 2, which was a bit too much of a sugar rush experience for me, and certainly more so than Diablo III",gameplay,gameplay,yes
+136,The impression that the team at GSC Game World has created something special with STALKER 2.,graphics,innovation,partially
+138,Stalker 2 is a game-of-the-year contender... It looks set to not only do justice to a legendary predecessor but take its franchise to all-new heights.,gameplay,"""franchise""",no
+140,Village doesn't pull any punches when it comes to horror,story,story,yes
+142,"Each section is fun, intense, and, naturally, frightening in its own way",gameplay,gameplay,yes
+144,Crusader Kings 3 is my Game of the Year so far.,gameplay,gameplay,yes
+146,Shining Bright Like a Supernova,story,graphics,no
+148,Enter the Gungeon's roguelike elements and vast array of crazy weapons keep it entertaining for the long haul.,gameplay,"""gameplay""",yes
+150,Fallout Shelter is simple to play and addictive as hell,gameplay,gameplay,yes
+152,One of the best takes on the MMO experience I’ve ever seen,gameplay,gameplay,yes
+154,"...playing is winning, and there’s something quite satisfying about leading your house to power and glory through whatever means you can, for as long as you can.",gameplay,progression,yes
+156,"It's perfectly possible to have made a few too many enemies, anger the Pope and find most of Europe out for your blood. That's really what makes the game so damn fun.",gameplay,gameplay,yes
+158,The best zoo simulation so far,gameplay,gameplay,yes
+160,This is one of gaming’s great sandboxes,gameplay,gameplay,no
+162,Conan Exiles is brilliantly addictive.,gameplay,gameplay,yes
+164,"VR finally has its killer app, and it's called Rec Room",gameplay,community,no
+166,The gameplay loop is incredibly satisfying,gameplay,gameplay,yes
+168,"..it is absorbing, brilliantly written and causes you to question your every instinct and reaction - both in the game and in real life.",story,"""gameplay""",no
+170,I could personally see myself losing days of my life to exploring Enshrouded's wilds.,gameplay,exploration,partially
+172,You can now enjoy the masterpiece in its best form,value,graphics,no
+174,Persona 4 Golden on PC is the best port yet of one of the JRPG genre's previous generation greats,gameplay,"""port"" refers to ""performance"".",no
+176,There is more pound-for-pound fun in every hour than anything else.,gameplay,value,partially
+178,Like if Mad Max and Twisted Metal had a baby in a sandbox,story,"""innovation""",no.
+180,"It’s simple, poignant, and full of heart.",story,"""story""",yes
+182,"A big, shiny example of so much we keep asking for in games, but rarely get",graphics,"""value""",partially
+184,A joy to play,gameplay,gameplay,yes
+186,"Bold, original and brilliant",innovation,innovation,yes
+188,A must-play,gameplay,gameplay,yes
+190,The most ambitious in the modern trilogy,gameplay,story,partially
+192,One of Lara Croft’s best modern adventures,gameplay,"""gameplay""",yes
+194,A must-play,gameplay,"""gameplay""",yes
+196,The most ambitious in the modern trilogy,gameplay,"""ambitious"" typically refers to aspects such as ""innovation"" or ""progression"".",partial
+198,One of Lara Croft’s best modern adventures,gameplay,story,no
+200,A must-play,gameplay,gameplay,yes
+202,"Katana Zero remains bleak, beautiful, bloody, and brilliant.",story,graphics,no.
+204,You won't be able to stop clicking,gameplay,gameplay,yes
+206,"This War of Mine shows the horrors of war in a way, that we rarely can experience in a game.",gameplay,story,no
+208,"The universe Inside depicts is one of the eeriest, most captivating settings I've ever encountered in a game.",graphics,"""setting"" - story",no
+210,Armored Core 6 Fires of Rubicon is nothing short of a masterpiece.,gameplay,"""gameplay""",yes
+212,"Supremely balanced, intelligent, and deeply strategic",value,gameplay,no
+214,"Manor Lords enters Early Access as one of the most impressive, ambitious city builders yet.",innovation,"""gameplay""",partially
+216,AMAZING,value,graphics,no
+218,Remarkable,graphics,graphics,yes
+220,"Prison Architect chills me to the bone. If played haphazardly it can be a wonderful farce rich with hilarious anecdotes, but played patiently and carefully it’s a horror game, a top-down voyage into the heart of darkness, an eternal raging fire I forever try but can only fail to douse.",story,story,yes
+222,"Yakuza’s debut on PC is long overdue, but you couldn’t have asked for a stronger start.",gameplay,"""debut"" - refers to the aspect of ""progression""",no
+224,"A game that occupies your thoughts when you're not playing it, and it's thoroughly captivating when you are.",gameplay,gameplay,yes
+226,"In almost every way, Hotline Miami 2 is a marked improvement on an already tremendous formula.",performance,gameplay,no
+228,Cinematic delights every step of the way,graphics,graphics,yes
+230,"Gripping, heartbreaking",story,"""story""",yes
+232,"One of Overcooked 2’s biggest overhauls is the throw button, and it’s truly a game-changer.",gameplay,"""gameplay""",yes
+234,"Tactical, immersive, technologically advanced, and brave.",innovation,innovation,partially
+236,Barotrauma is a bit like FTL with giant sea monsters,gameplay,gameplay,yes
+238,… a gaming experience that shouldn’t be missed,gameplay,value,no
+240,... a fan's dream come true.,story,value,no
+242,Gang Beasts – probably the funniest fighting game ever made,gameplay,gameplay,yes
+244,Beneath Broforce's bad puns and bulging biceps lies a brilliant ode to action cinema and retro gaming.,gameplay,story,no
+246,Broforce is pretty much what I had in mind when I invented America.,innovation,"""innovation""",no
+248,The Walking Dead: The Game demands to be experienced.,gameplay,"""experience"" – value.",partially
+250,[...]OneShot surprised me with how quickly it made me care.,gameplay,"""story""",no
+252,Blazing a new trail,innovation,innovation,yes
+254,"I saw my body slump to the floor, some distance away and then the hammer-bastard was standing over me, attempting to play croquet with what remained of my face.",gameplay,story,no
+256,It’s a feel-good game that will surely help someone relieve some stress in these troubled times.,gameplay,value,no
+258,One of the best platformers of the year is in … first person?... Ghostrunner nails platforming with all the grace of a cyborg ninja,gameplay,gameplay,yes
+260,The game the Alien series has always deserved,gameplay,"""innovation""",partial
+262,An absolute triumph in every department,performance,"""performance""",yes
+264,"GTFO has, bar none, the most consistent and polished atmosphere I’ve ever encountered in a game.",gameplay,"""atmosphere"" -> ""graphics""",no
+266,The ingenuity that went into making this [Tabletop Simulator] is pretty impressive.,graphics,innovation,no
+268,A Hat in Time is marvelous. It is so much fun.,story,gameplay,no
+270,The ultimate edition of the RPG game,value,value,yes
+272,I can’t wait to jump in with friends,gameplay,community,partially
+274,"Clever, challenging, and immensely enjoyable... An ore-mining, boss-beating delight",gameplay,"""gameplay""",yes
+276,Amazing,story,none,no
+278,A Must-Play Revenge Tale,story,story,yes
+280,Beautiful and bittersweet.,story,"""story""",no
+282,Plentiful selection of weapons and abilities,gameplay,progression,partial
+284,Outstanding,performance,value,no
+286,A thought-provoking and bittersweet adventure,story,"""story""",yes
+288,Control is set in an engrossingly weird paranormal world that I couldn’t help but explore,story,story,yes
+290,丁寧に作られた自由で幅の広いゲームシステムは遊びやすさ抜群！,story,"""gameplay""",no.
+292,"Incredibly promising. Not only is its premise totally unique, but it sets up an ambitious future with an ever-expanding universe filled with new biomes, threats, lore and more",story,"""innovation""",yes
+294,Medieval Dynasty delivers a nice blend of survival sim and economy game with a story layer behind it.,story,"""gameplay""",partial
+296,deserves its place in the RPG pantheon,value,value,yes
+298,One of the year's best,gameplay,value,partial
+300,"If you are looking for a new online CCG, look no further than Kards!",community,gameplay,no
+302,...absolutely a must-buy,value,"""value""",yes
+304,"...a fantastic RPG made better by this release, and is something that every RPG fan should experience",gameplay,"""experience"" - this sentence suggests that the main implicit aspect discussed is the overall experience of the game, which is closely related to the ""gameplay"" aspect.",yes
+306,The game is a masterpiece.,gameplay,"""gameplay""",yes.
+308,"Dark, disturbing, yet eerily beautiful, Limbo is a world that deserves to be explored.",story,graphics,no
+310,…one of the tightest indie creations I've played in a long time.,gameplay,gameplay,yes
+312,"Simply the best rally sim around, building on its predecessor’s already fine foundations",gameplay,gameplay,yes
+314,Graveyard Keeper offers up a dark and macabre variation to the town management/farming simulator.,gameplay,gameplay,yes
+316,...one Hell of a homecoming.,story,story,yes
+318,Essential purchase,value,"""value""",yes
+320,more than a worthy alternative to Stardew Valley and one of the first must have games of 2019,gameplay,"""gameplay""",yes
+322,A compelling call to the darkness,story,story,yes
+324,Your Next Obsession,gameplay,"""innovation""",no
+326,"Touching, poignant and will definitely move you",story,story,yes
+328,"Forager is a game that gives you joy from the minute you start playing, and from there just continues delivering.",gameplay,gameplay,yes
+330,Hack'N'Slash at its best!!,gameplay,gameplay,yes
+332,grimly enchanting,story,graphics,no
+334,"Rain World’s beautiful, dilapidated grandeur is enveloping",graphics,graphics,yes
+336,"It's a triumph of real-time strategy design, and the best the Total War series has ever been",gameplay,gameplay,yes
+338,...I am obsessed.,gameplay,progression.,partially
+340,Some of the most fun I've had this year...,gameplay,"""fun"" is most closely related to the aspect ""gameplay"" in this sentence.",yes
+342,A Pokemon-like that listens to what fans want,gameplay,"""community""",no
+344,…this is the Dark Souls sequel PC gamers deserve.,performance,gameplay,partially
+346,"Brilliant, beautiful, and absolutely essential",value,graphics,no
+348,Wolfenstein 2 is a masterpiece.,story,story,yes
+350,Potion Craft has reignited the excitement I used to feel about crafty games,gameplay,gameplay,yes
+352,Nioh 2's Combat is Phenomenal,gameplay,gameplay,yes
+354,We totally asked for this.,value,story,no
+356,"Mankind Divided is a smart, handsome and weighty addition to the stealth-action genre",gameplay,gameplay,partially
+358,You'll be playing it for months.,gameplay,progression,yes
+360,"A triumph of a game, and arguably the best isometric RPG since Planescape Torment.",gameplay,story,partially
+362,The dark interpretations of these fairy tales are gripping and Telltale never forgets that hook.,story,story,yes
+364,… immediately stakes its own claim as one of the most exciting adventure games of the year.,gameplay,gameplay,yes
+366,Steam-style survival with traces of No Man’s Sky? Interesting!,story,"""innovation""",no
+368,The Talos Principle is an absolute joy to play.,gameplay,gameplay,yes
+370,It weaves gripping gameplay and storytelling with an off-beat cast in a way that's absolutely to die for.,story,story,yes
+372,"It's witty, it's bold, it's gorgeous, and it's immaculately put together.",graphics,graphics,no
+374,"Generation Zero has grown over the years to offer the best stealth survival experience that pits you against an island filled with hostile machines. The tension you feel playing solo is second to none, and going in with others still feels like you’re facing an insurmountable enemy.",gameplay,gameplay,yes.
+376,Civilization 7 is a blast to play,gameplay,gameplay,yes
+378,Sid Meier's Civilization 7 has the series in its best shape yet,performance,progression,no
+380,"Why can't I stop playing it? (...) It's total, hilarious chaos.",gameplay,"""gameplay""",yes
+382,Halls of Torment assembles the Frankenstein parts of Diablo and Vampire Survivors into something brilliantly all its own.,story,innovation,partial
+384,"deep, endlessly fun an immensely inviting",gameplay,gameplay,yes
+386,"The game’s vision is intoxicating, and its execution is inspired.",graphics,innovation,no
+388,a must-play,gameplay,gameplay,yes
+390,Valhalla is the ultimate Assassin's Creed experience,gameplay,gameplay,yes
+392,Origin Story Of Wildcat - Evan Fong,story,"""story""",yes
+394,"Seriously folks I'm not lying, I love this game !!",gameplay,"""gameplay""",yes
+396,"[...] Once you’re hooked, it feels vast, enveloping, alive.",audio,"""immersion""",yes
+398,A hallmark of excellence.,innovation,value,no
+400,"The creator of Papers, Please is back with another masterpiece",story,"""innovation""",partially
+402,"Kunos Simulazioni brings the GT Series in our home, and you don't need a superlicence to drive",performance,performance,no
+404,"Life is hard. Sometimes games are hard, and that just reminds me that life is hard, and then everything feels too damn hard. Not early access city-builder Dorfromantik, though. That game is just the right amount of chill.",gameplay,gameplay,partially
+406,"Dorfromantik activates what I think of as my meditative lizard brain, thanks to the tiny thrill of getting those hexes to fit together. It’s well-suited to casual engagement, and challenging enough for the score obsessed (myself included) to play it over and over.",gameplay,gameplay,yes
+408,2015's Most Insane Multiplayer Game,gameplay,"""gameplay""",yes
+410,"Duck Game was, without a doubt, the weirdest game I played this year. And suffice it to say, it's one that stuck with me",gameplay,gameplay,yes
+412,Wandering Sword is an excellent debut game and has all the hallmarks of a classic RPG. Do not overlook this superb indie gem!,gameplay,gameplay,yes
+414,Crazy in all the right ways.,value,innovation,no
+416,...an unrelenting slaughterhouse.,story,gameplay,no
+418,MORE INTENSE THAN EVER,performance,intensity,yes
+420,"While it doesn't look or feel like it at first, there's a lot going on here strategy-wise that ends up making the game a time sink if you're not careful.",gameplay,"""progression""",no
+422,This is how you port a classic,gameplay,"""porting"" in the sentence can be associated with the aspect ""performance.""",no
+424,"If you haven’t picked Bayonetta up yet, there is no reason not to do so now on PC",gameplay,"""value""",no
+426,The gameplay is addictive and incredibly well done,gameplay,"""gameplay""",yes
+428,"Yes, you should absolutely download and play this game.",gameplay,"""value""",no
+430,a dream game for Star Wars fans.,gameplay,"""gameplay""",yes
+432,...one hell of an adrenaline-filled ride...,gameplay,gameplay,yes
+434,this game has ruined my life but I’m too addicted to quit,gameplay,"""addiction"" - progression",no
+436,"The more you put into Shadow Warrior 2's combat, the more you get back.",gameplay,gameplay,yes
+438,What makes Cells to Singularity stand out is the fact that it tells the journey of the evolution of mankind from the very beginning.,story,"""story""",yes
+440,everything Resident Evil fans know and love about the series is here,story,story,yes
+442,A Great Example Of Early Access Development Benefitting A Game And Its Players,innovation,progression,partial
+444,An extraordinarily well-crafted piece of software and one of the most significant releases in flight simming history,performance,innovation,partially
+446,Mortal Kombat 1 is a masterclass in gaming achievement.,gameplay,gameplay,yes
+448,"UNIQUE, FUN, AND WILDLY IMAGINATIVE",graphics,innovation,no
+450,Kingdom is a fantastic example of what can be accomplished with minimalism.,graphics,gameplay,no
+452,One Of The Best Life Simulation Games In Years,gameplay,gameplay,yes
+454,Now we can add Battle Brothers to the list of Good Mercenary Games.,gameplay,"""gameplay""",yes
+456,Dead Island and Dead Island Riptide have never looked so good.,graphics,"""graphics""",yes
+458,a seriously impressive spectacle,graphics,graphics,yes
+460,Gas Station Simulator incorporates all the best elements from your multiple memorable times at gas stations.,gameplay,"""experience""",partially
+462,You've never seen anything like this before.,story,innovation,no
+464,"Competent, clever, beautiful",value,graphics,no
+466,The Best MMO I've played in Years.,gameplay,gameplay,yes
+468,Absolutely gorgeous and a joy to behold.,graphics,graphics,yes
+470,Triumphant,story,"""gameplay""",no
+472,A psychological horror masterpiece,story,story,yes
+474,"Polished and refined, this is the best and most satisfying sniping that Rebellion has ever crafted. Sniper Elite 3 is the game I always wanted from this franchise",gameplay,gameplay,yes
+476,"Meant to be played over and over again... Building on the excellent Mini Metro that came before it, Mini Motorways is a great evolution of Dinosaur Polo Club's minimalist transport sim.",gameplay,"""gameplay""",yes
+478,Excellent adaptation of the Warhammer universe,gameplay,story,no
+480,DUSK is brilliant,gameplay,graphics,no
+482,DUSK is f**king great and you’re better off playing that than arguing on forums about things.,gameplay,gameplay,yes
+484,…one of the largest Trek-things around in terms of scale.,story,scale,no
+486,A neat standalone project,innovation,"""project"" seems to relate most closely to the ""innovation"" aspect.",yes
+488,A whole new dimension of strategy,innovation,"""strategy"" corresponds to the aspect ""gameplay.""",partially
+490,Just Shapes and Beats is a mesmerizing rhythm game with an exceedingly simple idea.,gameplay,audio,yes
+492,That was fascinating! That was REALLY fascinating! That was crazy... I did not expect that going into it!,story,story,yes
+494,Workers &amp; Resources fills the gap left by Cities: Skylines 2.,gameplay,"""progression""",yes
+496,"Neon Abyss is undoubtedly one of the best Rogue-likes in recent years; gorgeous, meticulously designed and a hell of a lot of fun to play",gameplay,graphics,partially
+498,An instant classic.,innovation,"""value""",no.
+500,I am completely addicted.,gameplay,progression,yes
+502,X4 - The German Star Citizen,gameplay,graphics,no
+504,Fans of ambitious space simulations will encounter an almost unrivalled space opera.,gameplay,"""story""",no.
+506,"FAR: Lone Sails is a transfixing, lovely experience ... It will likely stick with you for a long time.",story,"""experience"" corresponds most closely to the ""gameplay"" aspect.",no.
+508,"Incredible, refined version",value,graphics,no
+510,TerraTech is digital Lego Technic with guns,gameplay,gameplay,yes
+512,Darkwood is a promising top-down horror roguelike that has cult classic written all over it.,innovation,gameplay,partially
+514,A stellar adventure with enough moments of surprise and excitement to rival even its own source material.,story,"""story""",yes
+516,The gameplay is extremely addictive and is akin to a puzzle game more so than anything.,gameplay,gameplay,yes
+518,Monster Train might be the best deckbuilder since Slay The Spire,gameplay,gameplay,yes
+520,"Monster Train is a pleasant, mind-blowingly addictive exercise that’s well worth your time, especially if you’re a fan of roguelikes, card games, and deck-building fare",gameplay,gameplay,yes
+522,the closest thing to 'The Hunger Games' we've played yet,gameplay,story,no
+524,One of the finest collections of this generation.,value,"""value""",no
+526,Animal Well redefines the Metroidvania genre,story,innovation,no
+528,"I've been thinking about this game a lot for the past 36 hours. It demanded I think about it, at first only superficially, but later more substantively. I mulled over a lot of questions when I should have been sleeping. I continued thinking right when I woke up. I think I dreamed about it in between.",gameplay,"""gameplay""",yes
+530,"If, as Roger Ebert said, movies are a machine that generates empathy, then Spelunky 2, even more so than the original, is a machine for generating surprise. And, inevitably, its close cousin: delight.",innovation,gameplay,no
+532,Superb,story,value,no
+534,One of the best shooters to come out in recent years.,performance,gameplay,no
+536,An intense and exhilarating survival horror experience,gameplay,gameplay,yes
+538,A wish come true,story,value,no
+540,"One of the best city-building simulators, ever",gameplay,gameplay,yes
+542,There's something strangely compelling about it,story,"""compelling"" can be associated with the aspect of ""gameplay"".",partial
+544,This is an unexpectedly well put together thing with plenty to do,innovation,value,partially
+546,The Ascent Makes Good On Cyberpunk 2077's Promise,gameplay,"""promise"" aspect.   word: ""promise"".",no
+548,"The New X-Plane Flight Sim Is So Ridiculously Detailed, It Even Has Catering Trucks",graphics,graphics,yes
+550,"Xplane11 è veramente incredibile, ed è sicuramente il futuro dei simulatori di volo.",gameplay,performance,no
+552,Day of Infamy does justice to the classic WWII mod that inspired it.,gameplay,"""mod"" the game is inspired by is the main implicit aspect in the sentence, which falls under the aspect of ""community.""",no.
+554,Blacklist gets stealth right.,innovation,gameplay,no
+556,Blacklist serves as an anthology of all of Splinter Cell's best ideas.,innovation,"""innovation""",yes
+558,"I absolutely love this game. But it's not just me who loves it, my whole family loves this game. My kids walked in my office while I was playing this, and both asked if they could play. Soon after, my wife walked in and asked if she could play. And all of us had an absolute blast with it.",gameplay,value,partial
+560,A terrific game,gameplay,gameplay,yes
+562,Sniper Elite 5 has blown me away,gameplay,gameplay,yes
+564,"By setting its mundane stall in the days after events that would be taken oh-so-seriously in another game, Viscera Cleanup Detail manages to be morbidly hilarious without ever telling a single joke.",gameplay,"""story""",no.
+566,... A memorable experience that may last me a lifetime.,story,value,partially
+568,"My new beau is ENDLESS™ Space 2, and it’s got its hooks in me deep.",gameplay,gameplay,yes
+570,"A new masterpiece of the genre, as simple as that.",story,story,yes
+572,I often get feelings while playing this game that I haven’t experienced in quite some time.,gameplay,"feelings: ""gameplay""",yes
+574,Death’s Door is beyond exceptional and has solidified itself on my games-of-the-year list.,gameplay,gameplay,yes
+576,...bewitching and enticing,graphics,graphics,yes
+578,"If you want a tiny, varied Deus Ex that will make you laugh, this is i",graphics,gameplay,no
+580,"Action/RPG that succeeds in story, combat, leveling, and the bond formed in a family.",gameplay,story,no
+582,"I've only got two evenings clocked so far since its early access launch this week, but I already suspect that Mistria will wind up being my favorite farm life sim of this year.",gameplay,gameplay,yes
+584,Saying that it stands head-and-shoulders above all of the scant competition for grand-strategy kingship almost goes without saying.,value,"""value""",yes
+586,The idea itself owes a lot to the likes of Uplink. But it’s the execution that makes Hacknet great,innovation,execution,no
+588,"Hero shooters need a little weird injected into them, and FragPunk is here to do that.",gameplay,innovation,partially
+590,"Surviving Mars from Haemimont Games is a true triumph, and represents a game I've been yearning for for years.",gameplay,"""gameplay""",yes
+592,Nothing else marries survival and city-building so deftly,gameplay,"""gameplay""",yes
+594,Frostpunk 2 is the most engrossing city builder I've played since the first.,gameplay,gameplay,yes
+596,It Might Be Exactly What the FPS Genre Needs,gameplay,"""innovation""",no
+598,I can’t think of a first-person shooter I’ve enjoyed more this year.,gameplay,gameplay,yes
+600,A Worthy New IP,value,innovation.,no
+602,"Block N Load [is not only] a lot of fun, but is even addictive and offers me a welcome alternative to League of Legends.",gameplay,gameplay,yes
+604,"If your life's been missing some excitement, [Descenders] might just be what you need",story,gameplay,no
+606,One of the finest adventures around,story,gameplay,no
+608,"That’s the true victory of Moonlighter. Every piece of the puzzle is simple and welcoming, but the whole is more than the sum of its parts.",story,"""gameplay""",no
+610,"Moonlighter is going to be a game you’ll pick up, play, and instantly want to tell your friends all about.",gameplay,gameplay,yes
+612,"I find I just can’t argue with the reviews it’s getting. It’s ridiculous, and it deserves that 98% positivity",value,"""reviews"" - value",yes
+614,A silly idea but done extremely well,innovation,"""execution""",no
+616,It’s a Russian MMO heading to the west,gameplay,innovation,partially
+618,"For the price the developers are asking for this game, it’s an absolute steal.",value,"""value""",yes
+620,Completely brilliant,story,innovation,partially
+622,Going Medieval will be huge,story,innovation,no
+624,"Suddenly, after what only felt like a few minutes, I looked up at the clock and realized I had spent hours building, managing, and tinkering with my medieval settlement. And I can’t wait to get back to it.",gameplay,gameplay,yes
+626,A fun and empowering experience.,gameplay,experience,yes
+628,"Escape Simulator is a puzzle fan’s dream! If you like escape rooms and solving puzzles, then this is a game that needs to be in your library!",gameplay,gameplay,yes
+630,"Somewhere during the journey you realize you’ve gained skills, your perception’s changed, and there’s a science to the way you navigate. It’s no longer about just making it through, but making it through well.",story,"""progression""",no
+632,"I must admit, the trailer is oddly compelling.",graphics,graphics,yes
+634,Trains shouldn't do this sort of thing. They just shouldn't.,value,performance,no
+636,"As for me, I think I'm going to go back to Escapists for quite a while whenever I need to brush up on my puzzle skills simply because of how open-ended it is",gameplay,gameplay,yes
+638,"It’s a self-aware indie gem with an anarchic sensibility, where anything can happen.",gameplay,story,no
+640,"This is a game that had me both laugh out loud, and exclaim to my monitor how smart it was being.",gameplay,gameplay,yes
+642,This Engrossing Indie Action-RPG is a Knockout,gameplay,gameplay,yes
+644,An absolutely excellent RTS about controlling an ant colony.,performance,"""gameplay""",no
+646,"It is something special, something you’ll want to play again and again and is a game that will undoubtedly be remembered as one of the genre’s best.",gameplay,gameplay,yes
+648,Stellar,graphics,graphics,yes
+650,"Rogue Legacy 2 isn’t just another can’t-miss indie hit, it’s the best work yet from Cellar Door Games.",performance,gameplay,no
+652,A must-play for point-and-click fans.,gameplay,"""gameplay""",yes
+654,"Shovel Knight is one of the best platformers I've ever played, period.",gameplay,gameplay,yes
+656,Will keep you coming back for more. And more.,story,value,no
+658,[C]asual gamers should eat this up.,gameplay,gameplay,yes
+660,"Surgeon Simulator 2013 is hardly a simulation, but it makes medical malpractice an absolute delight.",gameplay,gameplay,yes
+662,"Simply put, the experience is wonderful.",value,"""value""",yes
+664,It's like Subnautica mixed with Prey ... I like that game a lot!,gameplay,gameplay,yes
+666,the game Warhammer 40k fans have been waiting for,gameplay,"""gameplay""",yes
+668,Ixion is a properly great blend of management sim and sci-fi storytelling,gameplay,"""story""",no
+670,"Game of Thrones Meets Vikings Meets Disney. The Banner Saga is blindingly lovely and arguably just as intriguing to play. Built atop a world that all but demands the attention of travel documentaries, it's epic in the literal sense of the word.",story,graphics,partially
+672,I never expected to see myself — or such a strong reflection of myself and my own life — in a video game.,gameplay,story,no
+674,"Even as the developer told me what the game was doing to mess with my brain while I was playing it, it still succeeded in messing with my brain.",gameplay,gameplay,yes
+676,Every aspect of Antichamber is made to get players out of their comfort zone.,gameplay,gameplay,yes
+678,"Verdict: Buy, buy, buy. A must-have video game.",gameplay,"""value""",no
+680,Mountain breaks the mold of video games.,gameplay,innovation,no
+682,Devil May Cry 4 Special Edition reaffirms the series' status as the current king of the action genre.,performance,gameplay,no.
+684,Everything about Another Crab’s Treasure just works. It feels like it was made with a general love for the genre but a desire to do something new.,story,innovation,partially
+686,Rusty Lake's The Past Within Makes Co-op Puzzle Solving Spooky &amp; Fun,story,gameplay,no
+688,Warhammer 40K: Boltgun is an absolute blast of a boomer shooter,gameplay,gameplay,yes
+690,My Favorite Pain and Suffering Simulator,gameplay,"""gameplay""",yes
+692,"This vivid, intricate metropolis is genuinely stunning...",graphics,graphics,yes
+694,It’s like that perfect cup of tea. You’ll always want another one.,value,"""value""",yes
+696,We Were Here Together provides a great assortment of co-op challenges that will test your ability to communicate vocally as well as to solve them together.,story,"""communication""",no
+698,...we found ourselves savouring every combat encounter...,gameplay,gameplay,yes
+700,"…the strange and beautiful world of Albion, with all its weird idiosyncrasies and wildly varied accents, is as absorbing and lovably, peculiarly British as it ever was.",story,story,yes
+702,"I'm a Slapshot main now, b*tch",gameplay,gameplay,yes
+704,Gloomhaven’s digital adaptation is a marvelous turn-based dungeon crawler.,gameplay,gameplay,yes
+706,"With zombies, more is better. Dead Rising 3 delivers the undead and great tools to kill them with by the truckload.",gameplay,gameplay,yes
+708,"The game is an instant classic. There’s not a mark to be said against it. It excels in every possible way, challenging the best of us while still remaining pick-up-and-play enough that literally anyone could start in on it, and subsequently get hopelessly addicted.",gameplay,"""gameplay""",yes
+710,The best in the series by some distance,gameplay,value,partial
+712,A must-play detective sim,gameplay,gameplay,yes
+714,Easily the most polished and refined Dungeons game to date and Evily as good as the game that started the genre 20 years ago.,gameplay,gameplay,yes
+716,Fear. Pure fear. The most primal of emotions is the overwhelming one while playing Layers of Fear.,gameplay,"""audio""",no
+718,Propelling yourself from the first-person perspective is consistently breathtaking,graphics,gameplay,no
+720,"This game is great - I'm having a wonderful time playing, and time has flown by.",gameplay,gameplay,yes
+722,This game has stolen my life and I don't want it back. Very chill factory game that won't let me stop making my lines more efficient.,gameplay,gameplay,yes
+724,A must-buy for every JRPG fan,value,"""value""",yes
+726,Fans of Piranha Games should prepare themselves for more of what they love.,gameplay,"""gameplay""",yes
+728,An excellent PvE extraction shooter that I am loving my time with.,gameplay,gameplay,yes
+730,I love it to bits.,graphics,value,no
+732,"Infection Free Zone may currently be a rather standard zombie apocalypse experience, but it is exciting and thrilling, and that's not mentioning the hours of fun exploring real world locations (and your home).",gameplay,gameplay,yes
+734,《Fate seeker》：The bloom from Jin Yong‘s dream of Jianghu,story,"""story""",yes
+736,"Strange Horticulture is quiet, meticulous, delightful, dark, and beguiling. An utterly lovely game.",gameplay,gameplay,no
+738,Très bon,value,"""value""",yes
+740,"a game that promotes hope, friendship and kindness",gameplay,"""community""",no
+742,调制魔弹，爽轰四方，这是一杯过程远比过关更精彩的弹幕鸡尾酒，你几乎不可能用同样的套路通关两次。,story,gameplay,no
+744,"Creepy, addictively infuriating and nothing short of brilliant. A cerebral puzzle game that makes you feel like you belong in Mensa",gameplay,"""gameplay""",yes
+746,"Max Inferno’s debut is a warm, charming triumph",story,story,yes
+748,An Emotionally Painted Masterpiece.,story,graphics,no
+750,"Without question the biggest, best looking, and most refined Warriors title on the battlefield",graphics,graphics,yes
+752,The Best Game of 2024 Is Even Better On PC,gameplay,performance,yes
+754,Final Fantasy 7 Rebirth is a masterpiece,story,"""story""",yes
+756,A Triumphant Return To A Beloved World,story,"""story""",yes.
+758,Absolver is one of the top games of the year.,gameplay,gameplay,yes
+760,Utterly Fantastic,story,"""fantastic"" typically refers to the overall quality or experience of the game, which would best align with the aspect of ""value.""",no
+762,不羁于武侠游戏的条条框框，用它丰富的内容、精致的细节，与独特的探案主题，打造出了一种返璞归真的体验。,story,story,yes
+764,豐富的互動要素和更有邏輯的關卡設計也讓探索這件事情變得更加有趣，意外優秀的演出和額外的小遊戲和經營要素也為作品添增了些許風味！,story,gameplay,no
+766,A glowing (pun intended) entry into the sci-fi survival horror RPG genre.,gameplay,innovation,partial
+768,...will keep you glued in suspense,story,story,yes
+770,Instant classic,audio,value,no.
+772,Old school real time strategy gameplay,gameplay,"""gameplay""",yes
+774,A solid tried and true roguelike,gameplay,gameplay,yes
+776,Everything I’ve hoped for.,story,value,no
+778,"Of course, Impostor Factory isn’t just a murder mystery.",story,story,yes
+780,...Nekopara will give you plenty to purr about.,story,gameplay,no
+782,"This is an extremely well made Visual Novel, and I hope the exposure on Steam leads many more people to become fans of the genre.",graphics,story,no
+784,"Outrageously pretty and newly refined, Frozenbyte’s series finally strikes gold",graphics,graphics,yes
+786,truly incredible,story,value,no
+788,Superflight is an absolute treat for the senses.,graphics,graphics,yes
+790,"… a must play for anyone who grew up playing games or watching action movies in the 2000s, and for everyone else as well",gameplay,value,partially
+792,BOILS WITH INTRIGUE,performance,story,no.
+794,"GENUINETLY GUT-WRENCHING, HORRIFIC, AND REAL",graphics,story,no
+796,Number 1 game of the year ... Eco is a revelation ... It made me realize that games are actually crucial for understanding our relationship to all kinds of natural and man-made systems. The thing that gives me chills is that I think it is only in games that we can play with economic systems. And I walked away from my experience in Eco feeling like I learned so much even though we had no instructor. No one was connecting the dots for us. We simply learned through play.,gameplay,innovation,no
+798,exactly what a Metroidvania Soulslike sequel needs to be,gameplay,"""gameplay""",yes
+800,the masterclass of a genre,story,"""innovation""",no.
+802,Pure cathartic and exhilarating action with every squeeze of the trigger.,performance,gameplay,no
+804,Fans of old school shooters will definitely find the challenge and excitement level are very high here.,gameplay,gameplay,yes
+806,"Tails of Iron is one of the best Soulslikes ever made, surpassing even its inspirations",gameplay,gameplay,yes
+808,There is nothing a bunny-girl can’t do.,gameplay,"""capabilities"" - progression",yes
+810,A return to form,performance,gameplay,no
+812,Think of this game as Fallout’s little indie brother.,gameplay,"""comparison""",no.
+814,Interesting and unique in its design…,innovation,"""innovation""",yes
+816,I now have February 2 circled on my calendar.,value,progression,no.
+818,Orcs Must Die! 3 is the best entry in the series.,story,gameplay,no
+820,"Fans of anime, MMOs, nature management, and even sociology will want to give Wakfu a try, if for no other reason than to see what happens when you let gamers run the world.",gameplay,community,no
+822,I do strongly recommend Cosmoteer,gameplay,value,partial
+824,For The King II is nothing short of an amazing title...A truly superb sequel,story,"""sequel"" is implicitly referring to the ""story"".",yes
+826,...this is the ultimate version of Sins of a Solar Empire...,gameplay,"""gameplay""",yes
+828,Hats off to Lince Works for a stunning presentation.,graphics,"""presentation"" in the sentence suggests a focus on the ""graphics"" aspect.",yes
+830,Sniper Ghost Warrior: Contracts finds the fine line between action arcade and sniper simulation.,gameplay,"""gameplay""",yes
+832,A layered and engaging space opera that triumphs both on and off the battlefield,gameplay,story,partially
+834,Daemonhunters is the absolute business,gameplay,value,no
+836,"When Transmissions ended, I cringed. I wanted more so, so badly.",story,story,yes
+838,"Without a doubt, Synthetik is a game shooter fans owe it to themselves to play.",gameplay,gameplay,yes
+840,One of the Best Comedies of the Year,story,"""story""",partially
+842,"Little Misfortune is a game about lost innocence, trust and childhood. It's about morbid curiosity, and the charming adventures we all go on as kids.",story,"""story""",yes
+844,"We reviewed both prior titles with 10/10 but surely no one is capable of creating three games with perfect scores, right?",gameplay,"""expectations""",no
+846,Winner: 2011 Best Sidescroller,gameplay,gameplay,yes
+848,"... shapez 2 has, in my mind at least, turned the holy trinity of factory games (Factorio, Satisfactory, Dyson Sphere Program) into a holy quartet. This is by far the most fun I've had reviewing a game ...",gameplay,gameplay,yes
+850,Adrenaline fueled future,innovation,"""gameplay""",no
+852,"Densely imagined and as complex as you fancy, this roguelike RPG is brilliant.",gameplay,"""complexity""",yes
+854,The Lovecraftian overtones were strong enough to warp my mind into an excited frenzy,audio,story,no
+856,The New Leader to Beat.,innovation,progression,no
+858,Masterful and Smart Adventure.,story,"""gameplay""",no
+860,Stronghold Kingdoms is probably one of my favourite MMORTS titles,gameplay,gameplay,yes
+862,Deeply silly and all the better for it,story,gameplay,no
+864,It’s an incredibly cool idea…,innovation,innovation,yes
+866,The one largest influence on Balatro was Luck be a Landlord.,gameplay,story,no
+868,Probably the best downloadable title on the market right now.,gameplay,value,partially
+870,Chrono Trigger purists rejoice...,gameplay,community,no
+872,"Diehard GameFAN: 2013 Game of the Year/Best PC Game/Best Digital-Downloadable Game/Best Tactical RPG, Softpedia: Best RPG 2013, Hardcoregamer: Nominated Best Strategy Game 2013, Gamezebo: Best Games of 2013, Gamasutra: Top Games of the 2013",gameplay,"""gameplay""",yes
+874,It believes in the sinister low-ebb horror of the island to worm its way into your mind without having to crutch on a jumpscare every few minutes.,audio,"""audio""",no
+876,"Tactically deep, and bursting with character",story,gameplay,no
+878,Amazing... makes genius use of a time loop mechanic,gameplay,innovation,yes
+880,Darksiders Genesis is a rare spinoff that equals and sometimes surpasses its mainline brethren.,story,gameplay,no.
+882,"Monster Sanctuary's combat, party customization and upkeep, and monster-assisted platforming make it a joy to play",gameplay,gameplay,yes
+884,I legitimately felt cool as hell while playing this game,gameplay,gameplay,yes
+886,"amusing, memorable and downright fun",story,gameplay,no
+888,"King of Crabs is Fortnite with crabs, and you pretty much have to play it.",gameplay,gameplay,yes
+890,"Trombone Champ managed to elicit the kind of guttural, delightfully awful cackle from me that hasn't exited my body in years.",performance,audio,yes
+892,"Hauntingly rapturous to play and replay, Cultist Simulator won't let you be the next Jim Jones, but it might just make you the next Torgo. With sassier hair, naturally.",gameplay,gameplay,yes
+894,Inventive,innovation,"""innovation""",yes
+896,The funniest game I've ever played,gameplay,gameplay,yes
+898,"Do Not Feed The Monkeys is an excellent game that explores morality and empathy in a similar way to Papers, Please",gameplay,story,no
+900,"Not only [does it] nail the universe, the ships, and the tactics, but it looks and sounds amazing while doing so.",gameplay,graphics,no
+902,A light-hearted game of mass murder in 'Party Hard',gameplay,gameplay,yes
+904,A fantastic return to SUPERHOT’s slick shootouts,performance,gameplay,no
+906,Truly fantastic,story,value,no
+908,“one of the sports games of the year,gameplay,gameplay,yes
+910,The official license is in good hands.,value,"""license"" would best fit under the aspect of ""value"".",yes
+912,Absolutely an instant cult classic.,story,value,no
+914,"the game we never axed for, but seeded all along",gameplay,value,no
+916,"I check it out, and quickly realise that this game, “Timberman",gameplay,gameplay,yes
+918,"Rebuilt from the ground up in every way, Destroy All Humans! (2020) puts every other remaster on notice -- this is how it’s done.",performance,graphics,no
+920,"Hilarious, quietly radical strategy game is the best since XCOM 2",gameplay,gameplay,yes
+922,The BEST SWAT TEAM Simulator EVER!,gameplay,gameplay,yes
+924,A harrowing look into a reality where Big Brother is always watching,story,story,yes
+926,It'll make you feel like a kid again.,value,"""emotion""",no
+928,UNBEATABLE’s [white label] demo is a masterpiece; it’s the kind of thing that leaves me in awe as to how human beings can be so creative and brilliant.,audio,innovation,no
+930,The new gold standard in 4X space strategy,value,gameplay,no.
+932,"Age of Darkness isn’t just good for an early access game, or for an Australian game. It’s just good, full stop",gameplay,value,partially
+934,An incredible title that provides many hours of entertainment,graphics,gameplay,no
+936,"Excavators, cranes, trucks, childhood dreams come true!",story,progression,partially
+938,"This is Supergiant’s best work to date, and that’s saying something.",story,"""overall""",no
+940,SHO-damn good,performance,gameplay,no
+942,Imagine 80 Days by way of Dune and a Makoto Shinkai film,story,story,yes
+944,"Now featuring new maps, modes, and playable thunderlizards we felt Dino D-Day is well worth a second look.",gameplay,value,partially
+946,"Hand of Fate is an extraordinary example of the best that indie development, Kickstarter, and Steam Early Access have to offer.",innovation,innovation.,yes
+948,More than a Sci-Fi Dark Souls,story,gameplay,no
+950,"Nostalgic charm meets sensible modernization, perfect for newcomers and returnees.",innovation,story,no
+952,"One thing’s for sure, any aircraft that does find its way into this sim is going to be rivet-perfect visually and bally persuasive in the flight modelling department",graphics,graphics,yes
+954,"Ni No Kuni 2 is gorgeous, charming and constantly evolving…",story,graphics,no
+956,A Non-Stop High Octane Thrill Ride,gameplay,gameplay,yes
+958,"Stop, collaborate and listen: We Were Here Too demonstrates the power of two-player puzzling",gameplay,gameplay,yes
+960,"Relaxed like Anno, hard like Banished.",performance,gameplay,no.
+962,Catherine Classic is an unmissable puzzle game,gameplay,gameplay,yes
+964,"Genuinely funny and heartfelt moments take place throughout, all working seamlessly together to create a commentary on the importance of friendships and the pain inherent in letting go.",story,"""story""",yes
+966,"Ultimate General: Civil War is basically an overblown sequel to the first game, using its success (and everything developers Game-Labs learned) as a foundation to go and build something much bigger and, so far at least, much better.",gameplay,progression,no
+968,This VN is really one of the best out there on Steam.,gameplay,"""gameplay""",no
+970,"The world of Little Kitty, Big City truly feels like a playground above anything else",story,gameplay,no
+972,Incredible,value,value,partially
+974,A beautifully dark adventure,story,graphics,partially
+976,The Best VR Zombie Shooter Yet,gameplay,gameplay,yes
+978,"It draws you in, ratchets the tension, and ends with a bang.",story,"""story""",yes
+980,SUPERHOT VR feels downright rapturous,gameplay,gameplay,yes
+982,The Bunker is genuinely one of the scariest and most stressful videogames I've ever played.,gameplay,"""scariest"" - ""gameplay""",yes
+984,"a very compelling and satisfying adventure... The realm of possibilities seems endless, and every time I set sail I find something new.",story,gameplay,partially
+986,"I love it dude, I'm having so much fun man. I'm having so so much fun.",gameplay,gameplay,yes
+988,"Cat Quest is a game about a cat going on an adventure, nothing more and nothing less, but I’ll tell you what: it’s a bloody good adventure.",gameplay,gameplay,yes
+990,Viewfinder is puzzle game heaven,gameplay,gameplay,yes
+992,"Life is Feudal: MMO has been significantly refined through development, targeted rebalancing, and the elimination of bugs while maintaining a strong bond with its community, with a special nod to the contributions of modders.",performance,community,no
+994,Cassette Beasts is wonderfully carefree,story,gameplay.,no.
+996,"Warhammer 40,000: Gladius - Relics of War is further proof that we shouldn't look at AAA studios to deliver a good 40K strategy experience.",gameplay,gameplay,yes
+998,"Postal Brain Damaged is [the] bomb! Fun, fast, ferocious and punishing. A Postal spinoff that breathes new life into a franchise [...]",gameplay,gameplay,yes
+1000,An excellent rogue-like,gameplay,gameplay,yes
+1002,"As a study in the wordless pleasure of fixing stuff, though, it really sings",performance,"""gameplay""",no
+1004,There's Already A New Starcraft RTS And It's Called Stormgate,gameplay,innovation,partial
+1006,"Risen is a solid, engrossing and beautifully presented RPG that's well worth your time and money.",value,"""value""",yes
+1008,There’s so much to love about Railway Empire,story,value,no
+1010,Partisans 1941 Looks A Lot Like A Modern Commandos,gameplay,gameplay,yes
+1012,Out of all the games that sprout up when talking about Animal Crossing... I've found that Spry Fox's relaxing Cozy Grove is the closest. It has everything you could want from a life-sim.,gameplay,"""gameplay""",yes
+1014,Eternal has far and away the most generous card acquisition rate of any of these modern digital CCGs. It’s only right that a breakneck thrilling game is as open with its goodies as it is creative in its card design.,gameplay,progression,partially
+1016,I can’t stop myself from playing to see how far Baroque Decay pushes the envelope.,gameplay,innovation,partially
+1018,Among the best of the non-From Software titles,gameplay,gameplay,yes
+1020,"It looks good as heck! Holy guacamole, Batman.",gameplay,graphics,no
+1022,"I heartily recommend you get Rusty Lake Hotel for a mere £1.60, as well as Rusty Lake: Roots for two quid. And then splurge on the amazing free Cube Escapes, each of which adds to the Rusty Lake universe in a peculiar way. You’ll be so glad you did.",value,"""value""",yes
+1024,The Next Big Dungeon Crawling Roguelike,gameplay,gameplay,yes
+1026,"It's a great game, it is absolutely wonderful",gameplay,"""gameplay""",yes
+1028,Une réussite,performance,"""value""",no
+1030,"A Genuine, Heartfelt Tale of Love and Loss",story,"""story""",yes
+1032,Serious Sam HD: The First Encounter is a great purchase for both fans of the series and newcomers.,value,"""value""",yes
+1034,"For a first game, it is surprisingly complex, demanding and motivating.",gameplay,gameplay,yes
+1036,superb,performance,value,no
+1038,"You know condensed milk? Super Crate Box is like that, only with fun instead of milk.",gameplay,gameplay,yes
+1040,A truly eerie horror game.,gameplay,"""eerie"" corresponds to the ""audio"" aspect.",no
+1042,"It’s short, sweet, and has left me thinking about its choices for long past the single sitting it asked of me.",story,"""story""",yes
+1044,A piece of adventure gaming history,gameplay,story,no.
+1046,A hallmark of excellence.,innovation,value,partially
+1048,"Like its predecessor, it remains a damn treat",value,value,yes
+1050,Arrrowhead has beautifully restored Gauntlet to its former glory.,story,graphics,no
+1052,Manifold Garden is a feast for the eyes and the mind...,graphics,graphics,yes
+1054,A serene gravity flipping puzzler with impossible structures to wrap your head around.,gameplay,gameplay,yes
+1056,"Operation: Tango is snappy, clever, well-designed, and incredibly engaging.",graphics,gameplay,no
+1058,"Orcs Must Die! embellishes your devious side, encouraging you to devise clever ways of fulfilling the command of the title.",gameplay,gameplay,yes
+1060,...prepare to be astonished,story,gameplay,no
+1062,...impossibly good,value,value,yes
+1064,"The roller coaster sim you've been waiting for [...] managing staff, guests, and park design has never felt better or more complete.",graphics,gameplay,no
+1066,I have to believe Holmes would approve.,value,story,no
+1068,Chained Echoes is simply the best RPG I’ve played in a very very long time.,gameplay,"""gameplay""",yes
+1070,"I returned to Democracy 3 in an attempt to put right the wrongs of my previous administration. On my first visit, I broke Britain, crushing its culture and creating a country reminiscent of Clockwork Orange, filled with gangs and ultraviolence.",story,story,yes
+1072,"If you fancy a modern Dungeon Keeper, War for the Overworld continues to be the best of the bunch.",gameplay,gameplay,yes
+1074,"Brightrock Games haven't stopped supporting the game ... In fact, they rolled up their sleeves, listened to feedback, and polished those old dungeons to a shine.",gameplay,progression,no
+1076,This is a masterpiece.,story,"""masterpiece"" typically refers to the overall quality or achievement of the product rather than a specific aspect. if we were to infer, ""masterpiece"" could be related to aspects such as ""gameplay"", ""graphics"", ""story"" or ""innovation"". but without more context, it's challenging to pinpoint a specific aspect.",partial
+1078,Undoubtedly this is the best way to play Vanquish.,gameplay,gameplay,yes
+1080,"A Moment Of Pure Movement Bliss, Courtesy Of Valley",audio,gameplay,no
+1082,Like to keep trying to crash my PC,performance,performance,yes
+1084,A badass monster mash,gameplay,gameplay,yes

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { LazyPxChartComponentsPxChartContainerAddPxNodeForm } from '#components'
+import { PxChartContainerAddPxNodeForm } from '#components'
 
 const props = defineProps<{
   chart: PxChart
@@ -19,7 +19,7 @@ const localChart = ref<PxChart>(props.chart)
 const isBeingEdited = ref(false)
 
 const overlay = useOverlay()
-const modalAddPxNode = overlay.create(LazyPxChartComponentsPxChartContainerAddPxNodeForm)
+const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
 
 watch(
   () => isBeingEdited,

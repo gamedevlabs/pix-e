@@ -28,6 +28,23 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pxcharts',
   },
   {
+    label: 'Player Expectations',
+    icon: 'i-lucide-book-open',
+    to: '/player-expectations',
+    children: [
+      {
+        label: 'Dashboard',
+        icon: 'i-lucide-book-open',
+        to: '/player-expectations',
+      },
+      {
+        label: 'Sentiment Analysis',
+        icon: 'i-lucide-library-big',
+        to: '/sentiments',
+      },
+    ],
+  },
+  {
     label: 'Pillars',
     icon: 'i-lucide-landmark',
     to: '/pillars',
@@ -53,6 +70,12 @@ const llmstore = useLLM()
 async function handleLogout() {
   await authentication.logout()
 }
+
+const isSidebarCollapsed = ref(false)
+
+function toggleSidebar() {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
 </script>
 
 <template>
@@ -63,6 +86,14 @@ async function handleLogout() {
         class="h-16 border-b border-gray-200 dark:border-gray-800 px-6 flex items-center justify-between"
       >
         <div class="flex items-center">
+          <UButton
+            :icon="isSidebarCollapsed ? 'i-lucide-panel-right' : 'i-lucide-panel-left'"
+            color="gray"
+            variant="ghost"
+            aria-label="Toggle Sidebar"
+            class="mr-3"
+            @click="toggleSidebar"
+          />
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
         </div>
@@ -95,13 +126,42 @@ async function handleLogout() {
       <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
         <aside
-          class="w-64 border-r border-gray-200 dark:border-gray-800 p-4 overflow-y-auto flex flex-col items-stretch"
+          :class="{
+            'w-16': isSidebarCollapsed,
+            'w-64': !isSidebarCollapsed,
+            'p-4': !isSidebarCollapsed, // Add padding only when not collapsed
+            'px-2': isSidebarCollapsed, // Smaller horizontal padding when collapsed
+            'overflow-hidden': isSidebarCollapsed, // Hide overflow when collapsed
+          }"
+          class="border-r border-gray-200 dark:border-gray-800 overflow-y-auto flex flex-col items-stretch transition-all duration-300 ease-in-out"
         >
-          <UNavigationMenu orientation="vertical" :items="items" />
+          <UNavigationMenu
+            orientation="vertical"
+            :items="items"
+            :class="{ hidden: isSidebarCollapsed }"
+          />
+          <div v-if="isSidebarCollapsed" class="flex flex-col items-center mt-4 space-y-2">
+            <UButton
+              v-for="item in items"
+              :key="item.to"
+              :icon="item.icon"
+              :to="item.to"
+              variant="ghost"
+              color="gray"
+              class="w-full justify-center"
+              :aria-label="item.label"
+            />
+          </div>
         </aside>
 
         <!-- Page Content -->
-        <main class="flex-1 p-10 overflow-y-auto">
+        <main
+          :class="{
+            'p-10': !isSidebarCollapsed, // Add padding only when not collapsed
+            'p-4': isSidebarCollapsed, // Smaller padding when collapsed
+          }"
+          class="flex-1 overflow-y-auto transition-all duration-300 ease-in-out"
+        >
           <NuxtPage />
         </main>
       </div>
