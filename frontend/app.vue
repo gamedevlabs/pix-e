@@ -106,7 +106,7 @@ function toggleSidebar() {
             :icon="llmstore.llm_icon"
             class="w-48"
           />
-          <ColorModeSwitch />
+          <UColorModeSwitch />
           <UButton
             v-if="!authentication.isLoggedIn.value"
             label="Login"
