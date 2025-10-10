@@ -108,6 +108,7 @@
   --ui-warning: var(--ui-color-warning-500);
   --ui-error: var(--ui-color-error-500);
   --ui-neutral: var(--ui-color-neutral-500);
+  --ui-container: var(--container-max-width);
 }
 
 .dark {

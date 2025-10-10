@@ -80,24 +80,24 @@ function toggleSidebar() {
 
 <template>
   <UApp>
+
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
-      <header
-        class="h-16 border-b border-gray-200 dark:border-gray-800 px-6 flex items-center justify-between"
-      >
-        <div class="flex items-center">
+      <UHeader class="px-0" :ui="{container: 'sm:px-2 lg:px-4'}">
+        <template #left>
           <UButton
-            :icon="isSidebarCollapsed ? 'i-lucide-panel-right' : 'i-lucide-panel-left'"
-            color="gray"
-            variant="ghost"
-            aria-label="Toggle Sidebar"
-            class="mr-3"
-            @click="toggleSidebar"
+              :icon="isSidebarCollapsed ? 'i-lucide-panel-right' : 'i-lucide-panel-left'"
+              color="gray"
+              variant="ghost"
+              aria-label="Toggle Sidebar"
+              class="mr-3"
+              @click="toggleSidebar"
           />
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
-        </div>
-        <div class="flex items-center gap-3">
+        </template>
+
+        <template #right>
           <!-- Put user info, settings, logout etc. here -->
           <USelect
             v-model="llmstore.active_llm"
@@ -108,19 +108,19 @@ function toggleSidebar() {
           />
           <UColorModeSwitch />
           <UButton
-            v-if="!authentication.isLoggedIn.value"
-            label="Login"
-            color="primary"
-            variant="subtle"
-            @click="useRouter().push('login')"
+              v-if="!authentication.isLoggedIn.value"
+              label="Login"
+              color="primary"
+              variant="subtle"
+              @click="useRouter().push('login')"
           />
           <div v-else class="flex items-center gap-2">
             <p>Hello {{ authentication.user.value?.username }}</p>
             <UButton label="Logout" color="error" variant="subtle" @click="handleLogout" />
           </div>
           <UAvatar src="https://i.pravatar.cc/40" alt="User" />
-        </div>
-      </header>
+        </template>
+      </UHeader>
 
       <!-- Main Content Area -->
       <div class="flex flex-1 overflow-hidden">
