@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+const authentication = useAuthentication()
+await authentication.checkAuthentication()
+
+const llmStore = useLLM()
+
 const items = ref<NavigationMenuItem[]>([
   {
     label: 'Dashboard',
@@ -49,23 +54,26 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-landmark',
     to: '/pillars',
   },
-  /*{
-    label: 'GitHub',
-    icon: 'i-simple-icons-github',
-    badge: '3.8k',
-    to: 'https://github.com/nuxt/ui',
-    target: '_blank',
-  },
-  {
-    label: 'Help',
-    icon: 'i-lucide-circle-help',
-    disabled: true,
-  },*/
 ])
-const authentication = useAuthentication()
-authentication.checkAuthentication()
 
-const llmstore = useLLM()
+const dropdownItems = ref([
+  [
+    {
+      label: authentication.user.value?.username,
+      icon: 'i-lucide-user',
+      type: 'label',
+    },
+  ],
+  [
+    {
+      label: 'Logout',
+      icon: 'i-lucide-log-out',
+      async onSelect() {
+        await handleLogout()
+      },
+    },
+  ],
+])
 
 async function handleLogout() {
   await authentication.logout()
@@ -82,31 +90,23 @@ function toggleSidebar() {
   <UApp>
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
-      <header
-        class="h-16 border-b border-gray-200 dark:border-gray-800 px-6 flex items-center justify-between"
-      >
-        <div class="flex items-center">
+      <UHeader class="px-0" :ui="{ container: 'sm:px-2 lg:px-4' }">
+        <template #left>
           <UButton
             :icon="isSidebarCollapsed ? 'i-lucide-panel-right' : 'i-lucide-panel-left'"
-            color="gray"
+            color="neutral"
             variant="ghost"
             aria-label="Toggle Sidebar"
-            class="mr-3"
+            class="mr-2"
             @click="toggleSidebar"
           />
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
-        </div>
-        <div class="flex items-center gap-3">
-          <!-- Put user info, settings, logout etc. here -->
-          <USelect
-            v-model="llmstore.active_llm"
-            :items="llmstore.llm_models"
-            value-key="value"
-            :icon="llmstore.llm_icon"
-            class="w-48"
-          />
-          <ColorModeSwitch />
+        </template>
+
+        <template #right>
+          <UColorModeSwitch />
+
           <UButton
             v-if="!authentication.isLoggedIn.value"
             label="Login"
@@ -115,47 +115,38 @@ function toggleSidebar() {
             @click="useRouter().push('login')"
           />
           <div v-else class="flex items-center gap-2">
-            <p>Hello {{ authentication.user.value?.username }}</p>
-            <UButton label="Logout" color="error" variant="subtle" @click="handleLogout" />
+            <!-- Put user info, settings, logout etc. here -->
+            <USelect
+              v-model="llmStore.active_llm"
+              :items="llmStore.llm_models"
+              value-key="value"
+              :icon="llmStore.llm_icon"
+              class="w-48"
+            />
+            <UDropdownMenu :items="dropdownItems">
+              <!-- we need to wrap it in a div so the whole component is clickable -->
+              <div>
+                <UAvatar avatar="i-lucide-user" :alt="authentication.user.value?.username" />
+              </div>
+            </UDropdownMenu>
           </div>
-          <UAvatar src="https://i.pravatar.cc/40" alt="User" />
-        </div>
-      </header>
+        </template>
+      </UHeader>
 
       <!-- Main Content Area -->
-      <div class="flex flex-1 overflow-hidden">
+      <UMain class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <aside
-          :class="{
-            'w-16': isSidebarCollapsed,
-            'w-64': !isSidebarCollapsed,
-            'p-4': !isSidebarCollapsed, // Add padding only when not collapsed
-            'px-2': isSidebarCollapsed, // Smaller horizontal padding when collapsed
-            'overflow-hidden': isSidebarCollapsed, // Hide overflow when collapsed
-          }"
-          class="border-r border-gray-200 dark:border-gray-800 overflow-y-auto flex flex-col items-stretch transition-all duration-300 ease-in-out"
-        >
-          <UNavigationMenu
-            orientation="vertical"
-            :items="items"
-            :class="{ hidden: isSidebarCollapsed }"
-          />
-          <div v-if="isSidebarCollapsed" class="flex flex-col items-center mt-4 space-y-2">
-            <UButton
-              v-for="item in items"
-              :key="item.to"
-              :icon="item.icon"
-              :to="item.to"
-              variant="ghost"
-              color="gray"
-              class="w-full justify-center"
-              :aria-label="item.label"
-            />
-          </div>
-        </aside>
+        <UNavigationMenu
+          tooltip
+          popover
+          :collapsed="isSidebarCollapsed"
+          orientation="vertical"
+          :items="items"
+          class="border-r border-gray-200 dark:border-gray-800 overflow-y-auto flex flex-col items-stretch"
+        />
 
         <!-- Page Content -->
-        <main
+        <UMain
           :class="{
             'p-10': !isSidebarCollapsed, // Add padding only when not collapsed
             'p-4': isSidebarCollapsed, // Smaller padding when collapsed
@@ -163,8 +154,8 @@ function toggleSidebar() {
           class="flex-1 overflow-y-auto transition-all duration-300 ease-in-out"
         >
           <NuxtPage />
-        </main>
-      </div>
+        </UMain>
+      </UMain>
     </div>
   </UApp>
 </template>
@@ -172,7 +163,7 @@ function toggleSidebar() {
 <style scoped>
 .page-enter-active,
 .page-leave-active {
-  transition: all 0.4s;
+  transition: all 0.2s;
 }
 
 .page-enter-from,
