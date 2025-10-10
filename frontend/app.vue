@@ -126,7 +126,7 @@ function toggleSidebar() {
             <UDropdownMenu :items="dropdownItems">
               <!-- we need to wrap it in a div so the whole component is clickable -->
               <div>
-                <UAvatar avatar="i-lucide-user" :alt="authentication.user.value?.username"/>
+                <UAvatar avatar="i-lucide-user" :alt="authentication.user.value?.username" />
               </div>
             </UDropdownMenu>
           </div>
