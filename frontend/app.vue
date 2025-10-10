@@ -80,18 +80,17 @@ function toggleSidebar() {
 
 <template>
   <UApp>
-
     <div class="min-h-screen flex flex-col">
       <!-- Topbar -->
-      <UHeader class="px-0" :ui="{container: 'sm:px-2 lg:px-4'}">
+      <UHeader class="px-0" :ui="{ container: 'sm:px-2 lg:px-4' }">
         <template #left>
           <UButton
-              :icon="isSidebarCollapsed ? 'i-lucide-panel-right' : 'i-lucide-panel-left'"
-              color="gray"
-              variant="ghost"
-              aria-label="Toggle Sidebar"
-              class="mr-3"
-              @click="toggleSidebar"
+            :icon="isSidebarCollapsed ? 'i-lucide-panel-right' : 'i-lucide-panel-left'"
+            color="neutral"
+            variant="ghost"
+            aria-label="Toggle Sidebar"
+            class="mr-2"
+            @click="toggleSidebar"
           />
           <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto mr-2 object-contain" />
           <h1 class="text-xl font-bold">pix:e</h1>
@@ -108,11 +107,11 @@ function toggleSidebar() {
           />
           <UColorModeSwitch />
           <UButton
-              v-if="!authentication.isLoggedIn.value"
-              label="Login"
-              color="primary"
-              variant="subtle"
-              @click="useRouter().push('login')"
+            v-if="!authentication.isLoggedIn.value"
+            label="Login"
+            color="primary"
+            variant="subtle"
+            @click="useRouter().push('login')"
           />
           <div v-else class="flex items-center gap-2">
             <p>Hello {{ authentication.user.value?.username }}</p>
@@ -123,39 +122,19 @@ function toggleSidebar() {
       </UHeader>
 
       <!-- Main Content Area -->
-      <div class="flex flex-1 overflow-hidden">
+      <UMain class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <aside
-          :class="{
-            'w-16': isSidebarCollapsed,
-            'w-64': !isSidebarCollapsed,
-            'p-4': !isSidebarCollapsed, // Add padding only when not collapsed
-            'px-2': isSidebarCollapsed, // Smaller horizontal padding when collapsed
-            'overflow-hidden': isSidebarCollapsed, // Hide overflow when collapsed
-          }"
-          class="border-r border-gray-200 dark:border-gray-800 overflow-y-auto flex flex-col items-stretch transition-all duration-300 ease-in-out"
-        >
-          <UNavigationMenu
-            orientation="vertical"
-            :items="items"
-            :class="{ hidden: isSidebarCollapsed }"
-          />
-          <div v-if="isSidebarCollapsed" class="flex flex-col items-center mt-4 space-y-2">
-            <UButton
-              v-for="item in items"
-              :key="item.to"
-              :icon="item.icon"
-              :to="item.to"
-              variant="ghost"
-              color="gray"
-              class="w-full justify-center"
-              :aria-label="item.label"
-            />
-          </div>
-        </aside>
+        <UNavigationMenu
+          tooltip
+          popover
+          :collapsed="isSidebarCollapsed"
+          orientation="vertical"
+          :items="items"
+          class="border-r border-gray-200 dark:border-gray-800 overflow-y-auto flex flex-col items-stretch"
+        />
 
         <!-- Page Content -->
-        <main
+        <UMain
           :class="{
             'p-10': !isSidebarCollapsed, // Add padding only when not collapsed
             'p-4': isSidebarCollapsed, // Smaller padding when collapsed
@@ -163,8 +142,8 @@ function toggleSidebar() {
           class="flex-1 overflow-y-auto transition-all duration-300 ease-in-out"
         >
           <NuxtPage />
-        </main>
-      </div>
+        </UMain>
+      </UMain>
     </div>
   </UApp>
 </template>
@@ -172,7 +151,7 @@ function toggleSidebar() {
 <style scoped>
 .page-enter-active,
 .page-leave-active {
-  transition: all 0.4s;
+  transition: all 0.2s;
 }
 
 .page-enter-from,

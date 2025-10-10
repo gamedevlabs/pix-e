@@ -109,6 +109,7 @@
   --ui-error: var(--ui-color-error-500);
   --ui-neutral: var(--ui-color-neutral-500);
   --ui-container: var(--container-max-width);
+  --ui-header-height: 52px;
 }
 
 .dark {
