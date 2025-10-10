@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+const authentication = useAuthentication()
+await authentication.checkAuthentication()
+
+const llmStore = useLLM()
+
 const items = ref<NavigationMenuItem[]>([
   {
     label: 'Dashboard',
@@ -49,23 +54,26 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-landmark',
     to: '/pillars',
   },
-  /*{
-    label: 'GitHub',
-    icon: 'i-simple-icons-github',
-    badge: '3.8k',
-    to: 'https://github.com/nuxt/ui',
-    target: '_blank',
-  },
-  {
-    label: 'Help',
-    icon: 'i-lucide-circle-help',
-    disabled: true,
-  },*/
 ])
-const authentication = useAuthentication()
-authentication.checkAuthentication()
 
-const llmstore = useLLM()
+const dropdownItems = ref([
+  [
+    {
+      label: authentication.user.value?.username,
+      icon: 'i-lucide-user',
+      type: 'label',
+    },
+  ],
+  [
+    {
+      label: 'Logout',
+      icon: 'i-lucide-log-out',
+      async onSelect() {
+        await handleLogout()
+      },
+    },
+  ],
+])
 
 async function handleLogout() {
   await authentication.logout()
@@ -97,15 +105,8 @@ function toggleSidebar() {
         </template>
 
         <template #right>
-          <!-- Put user info, settings, logout etc. here -->
-          <USelect
-            v-model="llmstore.active_llm"
-            :items="llmstore.llm_models"
-            value-key="value"
-            :icon="llmstore.llm_icon"
-            class="w-48"
-          />
           <UColorModeSwitch />
+
           <UButton
             v-if="!authentication.isLoggedIn.value"
             label="Login"
@@ -114,10 +115,21 @@ function toggleSidebar() {
             @click="useRouter().push('login')"
           />
           <div v-else class="flex items-center gap-2">
-            <p>Hello {{ authentication.user.value?.username }}</p>
-            <UButton label="Logout" color="error" variant="subtle" @click="handleLogout" />
+            <!-- Put user info, settings, logout etc. here -->
+            <USelect
+              v-model="llmStore.active_llm"
+              :items="llmStore.llm_models"
+              value-key="value"
+              :icon="llmStore.llm_icon"
+              class="w-48"
+            />
+            <UDropdownMenu :items="dropdownItems">
+              <!-- we need to wrap it in a div so the whole component is clickable -->
+              <div>
+                <UAvatar avatar="i-lucide-user" :alt="authentication.user.value?.username"/>
+              </div>
+            </UDropdownMenu>
           </div>
-          <UAvatar src="https://i.pravatar.cc/40" alt="User" />
         </template>
       </UHeader>
 
