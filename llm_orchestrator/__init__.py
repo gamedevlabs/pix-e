@@ -33,6 +33,37 @@ from llm_orchestrator.types import (
     CachePolicy,
 )
 
+# Exception exports
+from llm_orchestrator.exceptions import (
+    # Base
+    OrchestratorError,
+    # Request validation
+    InvalidRequestError,
+    ValidationError,
+    UnknownFeatureError,
+    UnknownOperationError,
+    # Auth
+    AuthenticationError,
+    PermissionDeniedError,
+    # Resources
+    RunNotFoundError,
+    IdempotencyConflictError,
+    # Rate limiting
+    RateLimitError,
+    # Model/Provider
+    ModelUnavailableError,
+    ProviderError,
+    AgentFailureError,
+    InsufficientResourcesError,
+    # Timeout
+    TimeoutError,
+    # Warnings
+    CacheError,
+    PartialSuccessError,
+    # Helpers
+    get_http_status_for_error,
+)
+
 __all__ = [
     # Main types
     "LLMRequest",
@@ -50,5 +81,24 @@ __all__ = [
     "ExecutionMode",
     "ModelPreference",
     "CachePolicy",
+    # Exceptions
+    "OrchestratorError",
+    "InvalidRequestError",
+    "ValidationError",
+    "UnknownFeatureError",
+    "UnknownOperationError",
+    "AuthenticationError",
+    "PermissionDeniedError",
+    "RunNotFoundError",
+    "IdempotencyConflictError",
+    "RateLimitError",
+    "ModelUnavailableError",
+    "ProviderError",
+    "AgentFailureError",
+    "InsufficientResourcesError",
+    "TimeoutError",
+    "CacheError",
+    "PartialSuccessError",
+    "get_http_status_for_error",
 ]
 
