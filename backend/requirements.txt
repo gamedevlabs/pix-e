@@ -42,3 +42,4 @@ google-generativeai==0.5.4
 numpy==1.26.4
 google_genai==1.12.1
 openai==1.82.0
+python-dotenv==1.1.1
