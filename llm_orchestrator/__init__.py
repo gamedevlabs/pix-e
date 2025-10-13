@@ -64,6 +64,14 @@ from llm_orchestrator.exceptions import (
     get_http_status_for_error,
 )
 
+# Configuration exports
+from llm_orchestrator.config import (
+    Config,
+    get_config,
+    set_config,
+    reset_config,
+)
+
 __all__ = [
     # Main types
     "LLMRequest",
@@ -100,5 +108,10 @@ __all__ = [
     "CacheError",
     "PartialSuccessError",
     "get_http_status_for_error",
+    # Configuration
+    "Config",
+    "get_config",
+    "set_config",
+    "reset_config",
 ]
 
