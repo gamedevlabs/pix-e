@@ -51,6 +51,20 @@
         </template>
         -->
       </UCard>
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
+          <h2 class="font-semibold text-lg">Unified Agentic AI Interface</h2>
+        </template>
+        <p>
+          All pix:e AI features are powered by a unified agentic interface. The agentic approach
+          ensures top-tier results through tool usage and improved context awareness.
+        </p>
+        <!--
+        <template #footer>
+          <UButton color="neutral" variant="soft">Read more</UButton>
+        </template>
+        -->
+      </UCard>
     </section>
   </UContainer>
 </template>
