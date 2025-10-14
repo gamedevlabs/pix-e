@@ -120,6 +120,14 @@ class UnknownFeatureError(OrchestratorError):
         feature: str,
         available_features: Optional[list] = None,
     ):
+        # Auto-populate available features from registry if not provided
+        if available_features is None:
+            try:
+                from llm_orchestrator.features import list_features
+                available_features = list_features()
+            except ImportError:
+                available_features = []
+        
         context = {"requested_feature": feature}
         if available_features:
             context["available_features"] = available_features
@@ -128,7 +136,7 @@ class UnknownFeatureError(OrchestratorError):
             message=f"Unknown feature: '{feature}'",
             code="UNKNOWN_FEATURE",
             context=context,
-            suggestion=f"Available features: {', '.join(available_features)}" if available_features else None,
+            suggestion=f"Available features: {', '.join(str(f) for f in available_features)}" if available_features else None,
         )
 
 
@@ -150,6 +158,15 @@ class UnknownOperationError(OrchestratorError):
         operation: str,
         available_operations: Optional[list] = None,
     ):
+        # Auto-populate available operations from registry if not provided
+        if available_operations is None:
+            try:
+                from llm_orchestrator.features import list_operations
+                ops = list_operations(feature)
+                available_operations = [op.id for op in ops]
+            except ImportError:
+                available_operations = []
+        
         context = {
             "feature": feature,
             "requested_operation": operation,
@@ -161,7 +178,7 @@ class UnknownOperationError(OrchestratorError):
             message=f"Unknown operation '{operation}' for feature '{feature}'",
             code="UNKNOWN_OPERATION",
             context=context,
-            suggestion=f"Available operations: {', '.join(available_operations)}" if available_operations else None,
+            suggestion=f"Available operations: {', '.join(str(op) for op in available_operations)}" if available_operations else None,
         )
 
 

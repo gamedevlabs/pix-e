@@ -10,7 +10,8 @@ Supports loading configuration from:
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Optional, get_args
+from llm_orchestrator.types import ExecutionMode, ModelPreference
 
 
 @dataclass
@@ -272,12 +273,12 @@ class Config:
             issues.append("cache_max_size_mb must be positive")
 
         # Check model preference is valid
-        valid_preferences = ["local", "cloud", "auto"]
+        valid_preferences = get_args(ModelPreference)
         if self.default_model_preference not in valid_preferences:
             issues.append(f"default_model_preference must be one of {valid_preferences}")
 
         # Check execution mode is valid
-        valid_modes = ["monolithic", "agentic"]
+        valid_modes = get_args(ExecutionMode)
         if self.default_execution_mode not in valid_modes:
             issues.append(f"default_execution_mode must be one of {valid_modes}")
 
