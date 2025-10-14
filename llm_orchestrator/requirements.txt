@@ -9,6 +9,12 @@ jsonschema>=4.0.0
 # Async HTTP client for provider APIs
 httpx>=0.27.0
 
+# OpenAI SDK for GPT models
+openai>=1.0.0
+
+# Load .env files
+python-dotenv>=1.0.0
+
 # Django is expected to be provided by the backend environment
 # Django>=5.0.0  # Provided by backend
 

@@ -2,6 +2,7 @@
 Configuration management for the LLM Orchestrator.
 
 Supports loading configuration from:
+- .env files
 - Environment variables
 - Django settings (when running in Django context)
 - Direct initialization (for testing)
@@ -12,6 +13,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, get_args
 from llm_orchestrator.types import ExecutionMode, ModelPreference
+
+# Load .env file if it exists
+try:
+    from dotenv import load_dotenv
+    # Look for .env in project root (parent of llm_orchestrator)
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass  # python-dotenv not installed
 
 
 @dataclass
@@ -156,9 +167,13 @@ class Config:
             except (ImportError, Exception):
                 pass  # Django not available or not configured
             
-            # Fall back to environment variable
+            # Try prefixed environment variable (LLM_ORCHESTRATOR_*)
             env_name = f"LLM_ORCHESTRATOR_{name.upper()}"
             env_value = os.getenv(env_name)
+            
+            # If not found, try non-prefixed for common keys (OPENAI_API_KEY, etc.)
+            if env_value is None:
+                env_value = os.getenv(name.upper())
             
             if env_value is None:
                 return default
