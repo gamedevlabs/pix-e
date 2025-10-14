@@ -72,6 +72,23 @@ from llm_orchestrator.config import (
     reset_config,
 )
 
+# Feature and operation registry exports
+from llm_orchestrator.features import (
+    # Feature IDs
+    FeatureID,
+    # Operation IDs
+    PillarsOperations,
+    SPARCOperations,
+    MoodboardsOperations,
+    # Metadata
+    OperationMetadata,
+    OperationRegistry,
+    # Convenience functions
+    get_operation,
+    list_features,
+    list_operations,
+)
+
 __all__ = [
     # Main types
     "LLMRequest",
@@ -113,5 +130,15 @@ __all__ = [
     "get_config",
     "set_config",
     "reset_config",
+    # Features & Operations
+    "FeatureID",
+    "PillarsOperations",
+    "SPARCOperations",
+    "MoodboardsOperations",
+    "OperationMetadata",
+    "OperationRegistry",
+    "get_operation",
+    "list_features",
+    "list_operations",
 ]
 

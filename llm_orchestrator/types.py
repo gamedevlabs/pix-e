@@ -4,8 +4,8 @@ Type definitions for the LLM Orchestrator.
 This module contains all Pydantic models that define the API contract.
 """
 
-from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List, Literal, Optional, Union
+from pydantic import BaseModel, Field, field_validator
 
 
 # ============================================
@@ -81,9 +81,16 @@ class LLMRequest(BaseModel):
     Unified request format for all LLM operations.
     
     This is the main request type that features send to the orchestrator.
+    
+    Features can use type-safe enums or strings:
+        from llm_orchestrator.features import FeatureID, PillarsOperations
+        LLMRequest(feature=FeatureID.PILLARS, operation=PillarsOperations.VALIDATE, ...)
+        
+    Or plain strings (backward compatible):
+        LLMRequest(feature="pillars", operation="validate", ...)
     """
 
-    # Feature identification
+    # Feature identification (accepts enums or strings)
     feature: str = Field(..., description="Feature name (e.g., 'pillars', 'sparc', 'moodboards')")
     operation: str = Field(..., description="Feature-specific operation name (e.g., 'validate', 'evaluate_concept')")
 
@@ -104,6 +111,16 @@ class LLMRequest(BaseModel):
 
     # Metadata
     metadata: Optional[RequestMetadata] = None
+
+    # Ensure enums are coerced to their string values
+    @field_validator("feature", "operation", mode="before")
+    @classmethod
+    def _coerce_enum_to_str(cls, v: Any) -> Any:
+        try:
+            # Support Enum-like objects
+            return v.value if hasattr(v, "value") else v
+        except Exception:
+            return v
 
 
 # ============================================
