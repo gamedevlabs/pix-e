@@ -66,7 +66,7 @@ class LLMOrchestrator:
         else:
             raise InvalidRequestError(
                 message=f"Unknown execution mode: {mode}",
-                details={"mode": mode, "valid_modes": ["monolithic", "agentic"]}
+                context={"mode": mode, "valid_modes": ["monolithic", "agentic"]}
             )
     
     def _execute_handler_mode(self, request: LLMRequest) -> LLMResponse:
@@ -139,7 +139,7 @@ class LLMOrchestrator:
         response.warnings.append(WarningInfo(
             code="AGENT_MODE_NOT_IMPLEMENTED",
             message="Agent mode not yet implemented, falling back to handler mode",
-            details={"feature": request.feature, "operation": request.operation}
+            context={"feature": request.feature, "operation": request.operation}
         ))
         
         return response
