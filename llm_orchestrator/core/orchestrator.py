@@ -153,16 +153,16 @@ class LLMOrchestrator:
     def _select_model(self, request: LLMRequest, handler) -> str:
         """
         Select which model to use for the request.
-        
+
         Priority:
         1. Explicit model_id in request
         2. Automatic selection based on handler requirements
-        3. Default model from config
+        3. First available model (fallback)
         """
         # If user specified a model, use it directly
         if request.model_id:
             return request.model_id
-        
+
         # Try automatic selection based on handler requirements
         if hasattr(handler, 'capability_requirements') and handler.capability_requirements:
             try:
@@ -172,24 +172,14 @@ class LLMOrchestrator:
                 )
                 return model.name
             except Exception:
-                # Fall through to default if auto-selection fails
+                # Fall through to simple fallback
                 pass
-        
-        # Use default model based on preference
-        preference = request.model_preference or self.config.default_model_preference
-        
-        if preference == "local":
-            # Try to find a local model
-            models = self.model_manager.list_available_models()
-            local_models = [m for m in models if m.type == "local"]
-            if local_models:
-                return local_models[0].name
-        
-        # Fallback: use first available model
+
+        # Simple fallback: use first available model
         models = self.model_manager.list_available_models()
         if models:
             return models[0].name
-        
+
         # No models available
         from llm_orchestrator.exceptions import ModelUnavailableError
         raise ModelUnavailableError(
