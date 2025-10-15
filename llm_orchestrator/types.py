@@ -97,11 +97,17 @@ class LLMRequest(BaseModel):
     # Operation payload
     data: Dict[str, Any] = Field(..., description="Operation-specific data")
 
-    # Execution configuration
-    mode: ExecutionMode = Field(..., description="Execution mode (e.g., 'monolithic', 'agentic')")
-    model_preference: ModelPreference = Field(..., description="Model selection preference")
+    # Execution configuration (optional with defaults from config)
+    mode: Optional[ExecutionMode] = Field(None, description="Execution mode (e.g., 'monolithic', 'agentic'). Defaults to config.")
+    model_preference: Optional[ModelPreference] = Field(None, description="Model selection preference. Defaults to config.")
+    
+    # Model specification (convenience fields - can also use route config)
+    model_id: Optional[str] = Field(None, description="Explicit model to use (overrides preference)")
+    temperature: Optional[float] = Field(None, ge=0.0, le=1.0, description="Sampling temperature")
+    max_tokens: Optional[int] = Field(None, gt=0, description="Maximum tokens to generate")
+    provider_options: Optional[Dict[str, Any]] = Field(None, description="Provider-specific options")
 
-    # Optional configurations
+    # Optional configurations (structured alternative to convenience fields)
     capabilities: Optional[CapabilityRequirements] = None
     sampling: Optional[SamplingConfig] = None
     route: Optional[RoutingConfig] = None
