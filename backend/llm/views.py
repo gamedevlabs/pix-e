@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from llm_orchestrator import LLMOrchestrator, LLMRequest
+from llm_orchestrator.config import get_config
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,13 +11,11 @@ from .serializers import GameDesignSerializer, PillarSerializer
 
 # Create your views here.
 
-# Model name mapping
-MODEL_MAP = {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini"}
-
 
 def get_model_id(model_name: str) -> str:
-    """Map frontend model names to actual model IDs."""
-    return MODEL_MAP.get(model_name, model_name)
+    """Map frontend model names to actual model IDs using orchestrator config."""
+    config = get_config()
+    return config.resolve_model_alias(model_name)
 
 
 def format_pillars_text(pillars: list[Pillar]) -> str:

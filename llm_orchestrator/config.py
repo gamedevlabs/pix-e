@@ -68,6 +68,12 @@ class Config:
     # Default execution mode when not specified
     default_execution_mode: str = "monolithic"  # "monolithic" | "agentic"
 
+    # Model name aliases: maps friendly names to full model IDs
+    model_aliases: dict = field(default_factory=lambda: {
+        "gemini": "gemini-2.0-flash-exp",
+        "openai": "gpt-4o-mini"
+    })
+
     # ============================================
     # Storage Configuration
     # ============================================
@@ -205,7 +211,8 @@ class Config:
             max_parallel_agents=get_setting("max_parallel_agents", 10, int),
             default_model_preference=get_setting("default_model_preference", "auto"),
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
-            
+            model_aliases=get_setting("model_aliases", {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini"}, dict),
+
             # Storage
             artifact_storage_path=get_setting("artifact_storage_path", Path("./artifacts"), Path),
             max_artifact_size_bytes=get_setting("max_artifact_size_bytes", 10 * 1024 * 1024, int),
@@ -314,10 +321,10 @@ class Config:
     def get_provider_config(self, provider: str) -> dict:
         """
         Get configuration for a specific provider.
-        
+
         Args:
             provider: Provider name ("ollama", "openai", "gemini")
-        
+
         Returns:
             Dictionary with provider-specific configuration
         """
@@ -339,6 +346,18 @@ class Config:
             }
         else:
             return {}
+
+    def resolve_model_alias(self, model_name: str) -> str:
+        """
+        Resolve a model alias to its full model ID.
+
+        Args:
+            model_name: Model name or alias (e.g., "gemini" or "gemini-2.0-flash-exp")
+
+        Returns:
+            Full model ID (returns input if no alias found)
+        """
+        return self.model_aliases.get(model_name, model_name)
 
     def __str__(self) -> str:
         """String representation (hides sensitive data)."""
