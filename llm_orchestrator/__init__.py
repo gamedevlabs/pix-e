@@ -89,6 +89,10 @@ from llm_orchestrator.features import (
     list_operations,
 )
 
+# Auto-import operations to register handlers
+import importlib as _importlib
+_importlib.import_module("llm_orchestrator.operations")
+
 __all__ = [
     # Main types
     "LLMRequest",
