@@ -118,8 +118,7 @@ class LLMOrchestrator:
             from llm_orchestrator.exceptions import ProviderError
             raise ProviderError(
                 message=f"Handler execution failed: {str(e)}",
-                provider="handler",
-                details={"operation_id": operation_id, "error": str(e)}
+                provider="handler"
             )
     
     def _execute_agent_mode(self, request: LLMRequest) -> LLMResponse:
@@ -206,27 +205,27 @@ class LLMOrchestrator:
         try:
             model_details = self.model_manager._find_model_by_name(model_name)
             model_info = ModelInfo(
-                id=model_details.name,
-                provider=model_details.provider,
-                capabilities=model_details.capabilities.model_dump() if model_details.capabilities else {}
+                name=model_details.name,
+                type=model_details.type,
+                provider=model_details.provider
             )
         except Exception:
             # Fallback if model lookup fails
             model_info = ModelInfo(
-                id=model_name,
-                provider="unknown",
-                capabilities={}
+                name=model_name,
+                type="cloud",
+                provider="unknown"
             )
         
         # Build metadata
         metadata = ResponseMetadata(
-            model=model_info,
-            execution_mode=mode,
-            # token_usage will be added
-            # agents will be added
+            execution_time_ms=0,  # TODO: Track actual execution time
+            mode=mode,  # type: ignore
+            models_used=[model_info]
         )
         
         return LLMResponse(
-            data=result.model_dump() if hasattr(result, 'model_dump') else result,
+            success=True,
+            results=result.model_dump() if hasattr(result, 'model_dump') else result,
             metadata=metadata
         )
