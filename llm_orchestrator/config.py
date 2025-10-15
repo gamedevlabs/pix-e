@@ -66,7 +66,7 @@ class Config:
     default_model_preference: str = "auto"  # "local" | "cloud" | "auto"
 
     # Default execution mode when not specified
-    default_execution_mode: str = "agentic"  # "monolithic" | "agentic"
+    default_execution_mode: str = "monolithic"  # "monolithic" | "agentic"
 
     # ============================================
     # Storage Configuration
@@ -204,7 +204,7 @@ class Config:
             default_timeout_ms=get_setting("default_timeout_ms", 120000, int),
             max_parallel_agents=get_setting("max_parallel_agents", 10, int),
             default_model_preference=get_setting("default_model_preference", "auto"),
-            default_execution_mode=get_setting("default_execution_mode", "agentic"),
+            default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             
             # Storage
             artifact_storage_path=get_setting("artifact_storage_path", Path("./artifacts"), Path),
