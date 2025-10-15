@@ -7,6 +7,7 @@ Handlers are stateless and use the ModelManager for LLM interactions.
 
 from typing import Dict, Any
 from llm_orchestrator.core import BaseOperationHandler, register_handler
+from llm_orchestrator.exceptions import InvalidRequestError
 from llm_orchestrator.operations.pillars.prompts import (
     ValidationPrompt,
     ImprovePillarPrompt,
@@ -35,7 +36,6 @@ class ValidatePillarHandler(BaseOperationHandler):
         return ValidationPrompt % (data['name'], data['description'])
     
     def validate_input(self, data: Dict[str, Any]) -> None:
-        from llm_orchestrator.exceptions import InvalidRequestError
         if 'name' not in data or 'description' not in data:
             raise InvalidRequestError(
                 message="Missing required fields: 'name' and 'description'"
@@ -52,7 +52,6 @@ class ImprovePillarHandler(BaseOperationHandler):
         return ImprovePillarPrompt % (data['name'], data['description'])
     
     def validate_input(self, data: Dict[str, Any]) -> None:
-        from llm_orchestrator.exceptions import InvalidRequestError
         if 'name' not in data or 'description' not in data:
             raise InvalidRequestError(
                 message="Missing required fields: 'name' and 'description'"
@@ -71,7 +70,6 @@ class EvaluateCompletenessHandler(BaseOperationHandler):
         return PillarCompletenessPrompt % (context, pillars_text)
     
     def validate_input(self, data: Dict[str, Any]) -> None:
-        from llm_orchestrator.exceptions import InvalidRequestError
         if 'pillars_text' not in data or 'context' not in data:
             raise InvalidRequestError(
                 message="Missing required fields: 'pillars_text' and 'context'"
@@ -90,7 +88,6 @@ class EvaluateContradictionsHandler(BaseOperationHandler):
         return PillarContradictionPrompt % (context, pillars_text)
     
     def validate_input(self, data: Dict[str, Any]) -> None:
-        from llm_orchestrator.exceptions import InvalidRequestError
         if 'pillars_text' not in data or 'context' not in data:
             raise InvalidRequestError(
                 message="Missing required fields: 'pillars_text' and 'context'"
@@ -109,7 +106,6 @@ class SuggestAdditionsHandler(BaseOperationHandler):
         return PillarAdditionPrompt % (context, pillars_text)
     
     def validate_input(self, data: Dict[str, Any]) -> None:
-        from llm_orchestrator.exceptions import InvalidRequestError
         if 'pillars_text' not in data or 'context' not in data:
             raise InvalidRequestError(
                 message="Missing required fields: 'pillars_text' and 'context'"
@@ -128,7 +124,6 @@ class EvaluateContextHandler(BaseOperationHandler):
         return ContextInPillarsPrompt % (context, pillars_text)
     
     def validate_input(self, data: Dict[str, Any]) -> None:
-        from llm_orchestrator.exceptions import InvalidRequestError
         if 'pillars_text' not in data or 'context' not in data:
             raise InvalidRequestError(
                 message="Missing required fields: 'pillars_text' and 'context'"
