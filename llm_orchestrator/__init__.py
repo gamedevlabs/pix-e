@@ -93,7 +93,12 @@ from llm_orchestrator.features import (
 import importlib as _importlib
 _importlib.import_module("llm_orchestrator.operations")
 
+# Core orchestrator
+from llm_orchestrator.core import LLMOrchestrator
+
 __all__ = [
+    # Main orchestrator
+    "LLMOrchestrator",
     # Main types
     "LLMRequest",
     "LLMResponse",

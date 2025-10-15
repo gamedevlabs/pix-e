@@ -10,6 +10,7 @@ from llm_orchestrator.core.handler_registry import (
     list_operations,
     get_registry,
 )
+from llm_orchestrator.core.orchestrator import LLMOrchestrator
 
 __all__ = [
     "BaseOperationHandler",
@@ -18,5 +19,6 @@ __all__ = [
     "get_handler",
     "list_operations",
     "get_registry",
+    "LLMOrchestrator",
 ]
 
