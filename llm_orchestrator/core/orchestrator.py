@@ -5,6 +5,7 @@ The orchestrator is the primary entry point for all LLM operations.
 It routes requests to either operation handlers (monolithic mode) or agents (agentic mode).
 """
 
+import time
 from typing import Optional, Dict, Any
 from llm_orchestrator.types import (
     LLMRequest,
@@ -72,9 +73,11 @@ class LLMOrchestrator:
     def _execute_handler_mode(self, request: LLMRequest) -> LLMResponse:
         """
         Execute request using operation handlers (monolithic mode).
-        
+
         This is the direct execution path for current pix:e features.
         """
+        start_time = time.time()
+
         # Build operation ID
         operation_id = f"{request.feature}.{request.operation}"
         
@@ -99,13 +102,16 @@ class LLMOrchestrator:
                 max_tokens=request.max_tokens,
                 **(request.provider_options or {})
             )
-            
+
+            execution_time_ms = int((time.time() - start_time) * 1000)
+
             # Build response
             return self._build_response(
                 request=request,
                 result=result,
                 model_name=model_name,
-                mode="monolithic"
+                mode="monolithic",
+                execution_time_ms=execution_time_ms
             )
             
         except Exception as e:
@@ -196,7 +202,8 @@ class LLMOrchestrator:
         request: LLMRequest,
         result: Any,
         model_name: str,
-        mode: str
+        mode: str,
+        execution_time_ms: int
     ) -> LLMResponse:
         """
         Build LLMResponse from handler result.
@@ -216,14 +223,14 @@ class LLMOrchestrator:
                 type="cloud",
                 provider="unknown"
             )
-        
+
         # Build metadata
         metadata = ResponseMetadata(
-            execution_time_ms=0,  # TODO: Track actual execution time
+            execution_time_ms=execution_time_ms,
             mode=mode,  # type: ignore
             models_used=[model_info]
         )
-        
+
         return LLMResponse(
             success=True,
             results=result.model_dump() if hasattr(result, 'model_dump') else result,
