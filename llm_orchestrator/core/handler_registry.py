@@ -38,12 +38,13 @@ class HandlerRegistry:
         Get handler class for an operation.
         """
         if operation_id not in self._handlers:
+            feature = operation_id.split('.')[0] if '.' in operation_id else ''
+            operation = operation_id.split('.')[1] if '.' in operation_id else operation_id
             raise UnknownOperationError(
-                message=f"No handler registered for operation '{operation_id}'",
-                feature=operation_id.split('.')[0] if '.' in operation_id else '',
-                operation=operation_id.split('.')[1] if '.' in operation_id else operation_id
+                feature=feature,
+                operation=operation
             )
-        
+
         return self._handlers[operation_id]
     
     def list_operations(self, feature: Optional[str] = None) -> List[str]:

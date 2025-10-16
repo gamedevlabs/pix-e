@@ -82,8 +82,8 @@ class OllamaProvider(BaseProvider):
             return models
         except httpx.RequestError as e:
             raise ProviderError(
-                message=f"Failed to list Ollama models: {str(e)}",
-                provider="ollama"
+                provider="ollama",
+                message=f"Failed to list models: {str(e)}"
             )
     
     def get_model_info(self, model_name: str) -> ModelDetails:
@@ -105,18 +105,20 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not found in Ollama",
-                    model_name=model_name,
-                    provider="ollama"
+                    model=model_name,
+                    provider="ollama",
+                    reason="Model not found in Ollama"
                 )
             raise ProviderError(
+                provider="ollama",
                 message=f"Failed to get model info: {str(e)}",
-                provider="ollama"
+                context={"model": model_name}
             )
         except httpx.RequestError as e:
             raise ProviderError(
+                provider="ollama",
                 message=f"Failed to get model info: {str(e)}",
-                provider="ollama"
+                context={"model": model_name}
             )
     
     def generate_text(
@@ -154,18 +156,20 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not found",
-                    model_name=model_name,
-                    provider="ollama"
+                    model=model_name,
+                    provider="ollama",
+                    reason="Model not found"
                 )
             raise ProviderError(
-                message=f"Ollama generation failed: {str(e)}",
-                provider="ollama"
+                provider="ollama",
+                message=f"Generation failed: {str(e)}",
+                context={"model": model_name}
             )
         except httpx.RequestError as e:
             raise ProviderError(
-                message=f"Ollama request failed: {str(e)}",
-                provider="ollama"
+                provider="ollama",
+                message=f"Request failed: {str(e)}",
+                context={"model": model_name}
             )
     
     def generate_structured(
@@ -212,25 +216,28 @@ class OllamaProvider(BaseProvider):
                     return response_schema(**parsed_data) if callable(response_schema) else parsed_data
             except (json.JSONDecodeError, ValidationError) as e:
                 raise ProviderError(
+                    provider="ollama",
                     message=f"Failed to parse structured response: {str(e)}",
-                    provider="ollama"
+                    context={"model": model_name}
                 )
                 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not found",
-                    model_name=model_name,
-                    provider="ollama"
+                    model=model_name,
+                    provider="ollama",
+                    reason="Model not found"
                 )
             raise ProviderError(
-                message=f"Ollama structured generation failed: {str(e)}",
-                provider="ollama"
+                provider="ollama",
+                message=f"Structured generation failed: {str(e)}",
+                context={"model": model_name}
             )
         except httpx.RequestError as e:
             raise ProviderError(
-                message=f"Ollama request failed: {str(e)}",
-                provider="ollama"
+                provider="ollama",
+                message=f"Request failed: {str(e)}",
+                context={"model": model_name}
             )
     
     def _get_model_capabilities(
