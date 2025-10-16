@@ -4,6 +4,7 @@ OpenAI provider implementation for GPT models.
 This provider communicates with OpenAI's API for cloud-based LLM access.
 """
 
+import copy
 import json
 from typing import Any, Dict, List, Optional
 
@@ -71,8 +72,8 @@ class OpenAIProvider(BaseProvider):
         api_key = config.get("api_key")
         if not api_key:
             raise ProviderError(
-                message="OpenAI API key is required",
-                provider="openai"
+                provider="openai",
+                message="API key is required"
             )
         
         self.client = OpenAI(
@@ -126,8 +127,8 @@ class OpenAIProvider(BaseProvider):
             return models
         except APIError as e:
             raise ProviderError(
-                message=f"Failed to list OpenAI models: {str(e)}",
-                provider="openai"
+                provider="openai",
+                message=f"Failed to list models: {str(e)}"
             )
     
     def get_model_info(self, model_name: str) -> ModelDetails:
@@ -146,13 +147,14 @@ class OpenAIProvider(BaseProvider):
         except APIError as e:
             if "does not exist" in str(e).lower() or e.status_code == 404:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not found",
-                    model_name=model_name,
-                    provider="openai"
+                    model=model_name,
+                    provider="openai",
+                    reason="Model not found"
                 )
             raise ProviderError(
+                provider="openai",
                 message=f"Failed to get model info: {str(e)}",
-                provider="openai"
+                context={"model": model_name}
             )
     
     def generate_text(
@@ -190,23 +192,25 @@ class OpenAIProvider(BaseProvider):
         except OpenAIRateLimitError as e:
             raise RateLimitError(
                 message=f"OpenAI rate limit exceeded: {str(e)}",
-                provider="openai"
+                context={"provider": "openai", "model": model_name}
             )
         except APITimeoutError as e:
             raise ProviderError(
-                message=f"OpenAI request timed out: {str(e)}",
-                provider="openai"
+                provider="openai",
+                message=f"Request timed out: {str(e)}",
+                context={"model": model_name}
             )
         except APIError as e:
             if "does not exist" in str(e).lower():
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not available",
-                    model_name=model_name,
-                    provider="openai"
+                    model=model_name,
+                    provider="openai",
+                    reason=str(e)
                 )
             raise ProviderError(
-                message=f"OpenAI generation failed: {str(e)}",
-                provider="openai"
+                provider="openai",
+                message=f"Generation failed: {str(e)}",
+                context={"model": model_name}
             )
     
     def generate_structured(
@@ -270,30 +274,33 @@ class OpenAIProvider(BaseProvider):
                     return response_schema(**parsed_data) if callable(response_schema) else parsed_data
             except (json.JSONDecodeError, ValidationError) as e:
                 raise ProviderError(
+                    provider="openai",
                     message=f"Failed to parse structured response: {str(e)}",
-                    provider="openai"
+                    context={"model": model_name}
                 )
                 
         except OpenAIRateLimitError as e:
             raise RateLimitError(
                 message=f"OpenAI rate limit exceeded: {str(e)}",
-                provider="openai"
+                context={"provider": "openai", "model": model_name}
             )
         except APITimeoutError as e:
             raise ProviderError(
-                message=f"OpenAI request timed out: {str(e)}",
-                provider="openai"
+                provider="openai",
+                message=f"Request timed out: {str(e)}",
+                context={"model": model_name}
             )
         except APIError as e:
             if "does not exist" in str(e).lower():
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not available",
-                    model_name=model_name,
-                    provider="openai"
+                    model=model_name,
+                    provider="openai",
+                    reason=str(e)
                 )
             raise ProviderError(
-                message=f"OpenAI structured generation failed: {str(e)}",
-                provider="openai"
+                provider="openai",
+                message=f"Structured generation failed: {str(e)}",
+                context={"model": model_name}
             )
     
     def _get_model_capabilities(self, model_name: str) -> ModelCapabilities:
@@ -347,9 +354,40 @@ class OpenAIProvider(BaseProvider):
             # Fallback to basic object schema
             schema = {"type": "object"}
         
-        # OpenAI requires additionalProperties to be false for strict mode
-        if "additionalProperties" not in schema:
-            schema["additionalProperties"] = False
+        # Make a deep copy to avoid mutating the original schema
+        schema = copy.deepcopy(schema)
+        
+        # OpenAI requires additionalProperties=false at ALL levels for strict mode
+        return self._add_additional_properties(schema)
+    
+    def _add_additional_properties(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively add additionalProperties=false to all objects in schema."""
+        if isinstance(schema, dict):
+            # If this is an object type OR has properties (implicit object), add additionalProperties
+            if schema.get("type") == "object" or "properties" in schema:
+                if "additionalProperties" not in schema:
+                    schema["additionalProperties"] = False
+                
+                # Recursively process properties
+                if "properties" in schema:
+                    for prop_name, prop_schema in schema["properties"].items():
+                        schema["properties"][prop_name] = self._add_additional_properties(prop_schema)
+            
+            # Handle arrays
+            elif schema.get("type") == "array":
+                if "items" in schema:
+                    schema["items"] = self._add_additional_properties(schema["items"])
+            
+            # Handle anyOf, oneOf, allOf
+            for key in ["anyOf", "oneOf", "allOf"]:
+                if key in schema:
+                    schema[key] = [self._add_additional_properties(s) for s in schema[key]]
+            
+            # Handle $defs or definitions (common in Pydantic schemas)
+            for key in ["$defs", "definitions"]:
+                if key in schema:
+                    for def_name, def_schema in schema[key].items():
+                        schema[key][def_name] = self._add_additional_properties(def_schema)
         
         return schema
     

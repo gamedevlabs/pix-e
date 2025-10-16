@@ -4,6 +4,7 @@ Gemini provider implementation for Google's Gemini models.
 This provider communicates with Google's Gemini API for cloud-based LLM access.
 """
 
+import re
 from typing import Any, Dict, List, Optional
 
 from google import genai
@@ -74,8 +75,8 @@ class GeminiProvider(BaseProvider):
         api_key = config.get("api_key")
         if not api_key:
             raise ProviderError(
-                message="Gemini API key is required",
-                provider="gemini"
+                provider="gemini",
+                message="API key is required"
             )
         
         # Initialize client (timeout will be handled per-request if needed)
@@ -128,8 +129,8 @@ class GeminiProvider(BaseProvider):
             return models
         except (ClientError, GeminiAPIError) as e:
             raise ProviderError(
-                message=f"Failed to list Gemini models: {str(e)}",
-                provider="gemini"
+                provider="gemini",
+                message=f"Failed to list models: {str(e)}"
             )
     
     def get_model_info(self, model_name: str) -> ModelDetails:
@@ -152,13 +153,14 @@ class GeminiProvider(BaseProvider):
             error_str = str(e).lower()
             if "not found" in error_str or "404" in error_str:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not found",
-                    model_name=model_name,
-                    provider="gemini"
+                    model=model_name,
+                    provider="gemini",
+                    reason="Model not found"
                 )
             raise ProviderError(
+                provider="gemini",
                 message=f"Failed to get model info: {str(e)}",
-                provider="gemini"
+                context={"model": model_name}
             )
     
     def generate_text(
@@ -195,25 +197,36 @@ class GeminiProvider(BaseProvider):
             error_str = str(e).lower()
             
             if "quota" in error_str or "rate limit" in error_str:
+                # Try to extract retry delay from error message
+                retry_after = None
+                if "retry in" in error_str:
+                    # Extract seconds from "Please retry in 13.674307975s"
+                    match = re.search(r"retry in (\d+(?:\.\d+)?)", error_str)
+                    if match:
+                        retry_after = int(float(match.group(1)))
+                
                 raise RateLimitError(
                     message=f"Gemini rate limit exceeded: {str(e)}",
-                    provider="gemini"
+                    retry_after_seconds=retry_after,
+                    context={"provider": "gemini", "model": model_name}
                 )
             elif "not found" in error_str or "404" in error_str:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not available",
-                    model_name=model_name,
-                    provider="gemini"
+                    model=model_name,
+                    provider="gemini",
+                    reason=str(e)
                 )
             elif "timeout" in error_str:
                 raise ProviderError(
-                    message=f"Gemini request timed out: {str(e)}",
-                    provider="gemini"
+                    provider="gemini",
+                    message=f"Request timed out: {str(e)}",
+                    context={"model": model_name}
                 )
             else:
                 raise ProviderError(
-                    message=f"Gemini generation failed: {str(e)}",
-                    provider="gemini"
+                    provider="gemini",
+                    message=f"Generation failed: {str(e)}",
+                    context={"model": model_name}
                 )
     
     def generate_structured(
@@ -259,32 +272,44 @@ class GeminiProvider(BaseProvider):
             
         except ValidationError as e:
             raise ProviderError(
-                message=f"Failed to validate Gemini response: {str(e)}",
-                provider="gemini"
+                provider="gemini",
+                message=f"Failed to validate response: {str(e)}",
+                context={"model": model_name}
             )
         except (ClientError, GeminiAPIError) as e:
             error_str = str(e).lower()
             
             if "quota" in error_str or "rate limit" in error_str:
+                # Try to extract retry delay from error message
+                retry_after = None
+                if "retry in" in error_str:
+                    # Extract seconds from "Please retry in 13.674307975s"
+                    match = re.search(r"retry in (\d+(?:\.\d+)?)", error_str)
+                    if match:
+                        retry_after = int(float(match.group(1)))
+                
                 raise RateLimitError(
                     message=f"Gemini rate limit exceeded: {str(e)}",
-                    provider="gemini"
+                    retry_after_seconds=retry_after,
+                    context={"provider": "gemini", "model": model_name}
                 )
             elif "not found" in error_str or "404" in error_str:
                 raise ModelUnavailableError(
-                    message=f"Model '{model_name}' not available",
-                    model_name=model_name,
-                    provider="gemini"
+                    model=model_name,
+                    provider="gemini",
+                    reason=str(e)
                 )
             elif "timeout" in error_str:
                 raise ProviderError(
-                    message=f"Gemini request timed out: {str(e)}",
-                    provider="gemini"
+                    provider="gemini",
+                    message=f"Request timed out: {str(e)}",
+                    context={"model": model_name}
                 )
             else:
                 raise ProviderError(
-                    message=f"Gemini structured generation failed: {str(e)}",
-                    provider="gemini"
+                    provider="gemini",
+                    message=f"Structured generation failed: {str(e)}",
+                    context={"model": model_name}
                 )
     
     def _get_model_capabilities(self, model_name: str) -> ModelCapabilities:

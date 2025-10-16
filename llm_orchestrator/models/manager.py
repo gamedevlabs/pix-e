@@ -199,8 +199,9 @@ class ModelManager:
         # Model not found
         available_names = [m.name for m in all_models[:5]]
         raise ModelUnavailableError(
-            message=f"Model '{model_name}' not found. Available models: {', '.join(available_names)}...",
-            model_name=model_name
+            model=model_name,
+            provider="unknown",
+            reason=f"Model not found. Available models: {', '.join(available_names)}..."
         )
     
     def generate_with_model(
@@ -304,8 +305,9 @@ class ModelManager:
         
         if not matching:
             raise ModelUnavailableError(
-                message=f"No models match requirements: {requirements.model_dump()}",
-                model_name="auto-select"
+                model="auto-select",
+                provider="any",
+                reason=f"No models match requirements: {requirements.model_dump()}"
             )
         
         # Apply model preference
@@ -331,8 +333,9 @@ class ModelManager:
         
         if not best:
             raise ModelUnavailableError(
-                message="Could not select a suitable model",
-                model_name="auto-select"
+                model="auto-select",
+                provider="any",
+                reason="Could not select a suitable model"
             )
         
         logger.info(f"Auto-selected model: {best.name} ({best.provider})")
