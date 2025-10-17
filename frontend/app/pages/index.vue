@@ -53,6 +53,20 @@
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
+          <h2 class="font-semibold text-lg">Player Expectations Dashboard</h2>
+        </template>
+        <p>
+          What do players expect when buying different genre games? What do they like or dislike?
+          For these insights and more, visit the Player Expectations module.
+        </p>
+        <!--
+        <template #footer>
+          <UButton color="neutral" variant="soft">Read more</UButton>
+        </template>
+        -->
+      </UCard>
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
           <h2 class="font-semibold text-lg">Unified Agentic AI Interface</h2>
         </template>
         <p>
