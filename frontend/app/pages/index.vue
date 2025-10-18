@@ -80,15 +80,14 @@
         -->
       </UCard>
       <UCard class="hover:shadow-lg transition">
-          <template #header>
-            <h2 class="font-semibold text-lg">Movie Script Evaluator for Virtual Production</h2>
-          </template>
-          <p>
-            This tool is to evaluate movie scripts through LLMs based on the assets available in the game engine
-            for virtual production purposes. 
-          </p>
-
-        </UCard>
+        <template #header>
+          <h2 class="font-semibold text-lg">Movie Script Evaluator for Virtual Production</h2>
+        </template>
+        <p>
+          This tool is to evaluate movie scripts through LLMs based on the assets available in the
+          game engine for virtual production purposes.
+        </p>
+      </UCard>
     </section>
   </UContainer>
 </template>
