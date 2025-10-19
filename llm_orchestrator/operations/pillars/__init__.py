@@ -10,12 +10,12 @@ Handlers are auto-registered when this module is imported.
 """
 
 from llm_orchestrator.operations.pillars.handlers import (
-    ValidatePillarHandler,
-    ImprovePillarHandler,
     EvaluateCompletenessHandler,
-    EvaluateContradictionsHandler,
-    SuggestAdditionsHandler,
     EvaluateContextHandler,
+    EvaluateContradictionsHandler,
+    ImprovePillarHandler,
+    SuggestAdditionsHandler,
+    ValidatePillarHandler,
 )
 
 __all__ = [
@@ -26,4 +26,3 @@ __all__ = [
     "SuggestAdditionsHandler",
     "EvaluateContextHandler",
 ]
-

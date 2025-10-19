@@ -8,20 +8,19 @@ Includes:
 """
 
 from llm_orchestrator.models.capabilities import (
-    matches_requirements,
+    compare_capabilities,
     filter_by_capabilities,
     find_best_model,
-    rank_models,
     get_capability_summary,
     get_models_with_capability,
-    compare_capabilities,
+    matches_requirements,
+    rank_models,
 )
 from llm_orchestrator.models.manager import ModelManager
 
 __all__ = [
     # Model Manager
     "ModelManager",
-    
     # Capability utilities
     "matches_requirements",
     "filter_by_capabilities",
@@ -31,4 +30,3 @@ __all__ = [
     "get_models_with_capability",
     "compare_capabilities",
 ]
-

@@ -4,9 +4,9 @@ Type definitions for the LLM Orchestrator.
 This module contains all Pydantic models that define the API contract.
 """
 
-from typing import Any, Dict, List, Literal, Optional, Union
-from pydantic import BaseModel, Field, field_validator
+from typing import Any, Dict, List, Literal, Optional
 
+from pydantic import BaseModel, Field, field_validator
 
 # ============================================
 # Enums and Literals
@@ -43,7 +43,9 @@ class CapabilityRequirements(BaseModel):
     multimodal: Optional[bool] = None
     function_calling: Optional[bool] = None
     json_strict: Optional[bool] = None
-    min_context_window: Optional[int] = Field(None, description="Minimum tokens required")
+    min_context_window: Optional[int] = Field(
+        None, description="Minimum tokens required"
+    )
 
 
 class RoutingConfig(BaseModel):
@@ -79,33 +81,55 @@ class RequestMetadata(BaseModel):
 class LLMRequest(BaseModel):
     """
     Unified request format for all LLM operations.
-    
+
     This is the main request type that features send to the orchestrator.
-    
+
     Features can use type-safe enums or strings:
         from llm_orchestrator.features import FeatureID, PillarsOperations
         LLMRequest(feature=FeatureID.PILLARS, operation=PillarsOperations.VALIDATE, ...)
-        
+
     Or plain strings (backward compatible):
         LLMRequest(feature="pillars", operation="validate", ...)
     """
 
     # Feature identification (accepts enums or strings)
-    feature: str = Field(..., description="Feature name (e.g., 'pillars', 'sparc', 'moodboards')")
-    operation: str = Field(..., description="Feature-specific operation name (e.g., 'validate', 'evaluate_concept')")
+    feature: str = Field(
+        ..., description="Feature name (e.g., 'pillars', 'sparc', 'moodboards')"
+    )
+    operation: str = Field(
+        ...,
+        description=(
+            "Feature-specific operation name " "(e.g., 'validate', 'evaluate_concept')"
+        ),
+    )
 
     # Operation payload
     data: Dict[str, Any] = Field(..., description="Operation-specific data")
 
     # Execution configuration (optional with defaults from config)
-    mode: Optional[ExecutionMode] = Field(None, description="Execution mode (e.g., 'monolithic', 'agentic'). Defaults to config.")
-    model_preference: Optional[ModelPreference] = Field(None, description="Model selection preference. Defaults to config.")
-    
+    mode: Optional[ExecutionMode] = Field(
+        None,
+        description=(
+            "Execution mode (e.g., 'monolithic', 'agentic'). " "Defaults to config."
+        ),
+    )
+    model_preference: Optional[ModelPreference] = Field(
+        None, description="Model selection preference. Defaults to config."
+    )
+
     # Model specification (convenience fields - can also use route config)
-    model_id: Optional[str] = Field(None, description="Explicit model to use (overrides preference)")
-    temperature: Optional[float] = Field(None, ge=0.0, le=1.0, description="Sampling temperature")
-    max_tokens: Optional[int] = Field(None, gt=0, description="Maximum tokens to generate")
-    provider_options: Optional[Dict[str, Any]] = Field(None, description="Provider-specific options")
+    model_id: Optional[str] = Field(
+        None, description="Explicit model to use (overrides preference)"
+    )
+    temperature: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Sampling temperature"
+    )
+    max_tokens: Optional[int] = Field(
+        None, gt=0, description="Maximum tokens to generate"
+    )
+    provider_options: Optional[Dict[str, Any]] = Field(
+        None, description="Provider-specific options"
+    )
 
     # Optional configurations (structured alternative to convenience fields)
     capabilities: Optional[CapabilityRequirements] = None
@@ -137,7 +161,9 @@ class LLMRequest(BaseModel):
 class ModelInfo(BaseModel):
     """Information about a model used in execution."""
 
-    name: str = Field(..., description="Model name (e.g., 'llama3.1:8b', 'gpt-4o-mini')")
+    name: str = Field(
+        ..., description="Model name (e.g., 'llama3.1:8b', 'gpt-4o-mini')"
+    )
     type: ProviderType = Field(..., description="Model type")
     provider: str = Field(..., description="Provider name (e.g., 'ollama', 'openai')")
 
@@ -163,7 +189,9 @@ class ArtifactInfo(BaseModel):
 
     id: str = Field(..., description="Unique artifact ID")
     type: ArtifactType
-    uri: Optional[str] = Field(None, description="Storage URI (e.g., 'store://runs/{run_id}/{artifact}')")
+    uri: Optional[str] = Field(
+        None, description="Storage URI (e.g., 'store://runs/{run_id}/{artifact}')"
+    )
     bytes_size: Optional[int] = Field(None, ge=0)
     sha256: Optional[str] = None
     created_by_agent: Optional[str] = None
@@ -241,7 +269,7 @@ class WarningInfo(BaseModel):
 class LLMResponse(BaseModel):
     """
     Unified response format for all LLM operations.
-    
+
     This is returned by the orchestrator after execution.
     """
 
@@ -260,7 +288,7 @@ class LLMResponse(BaseModel):
 class RunInfo(BaseModel):
     """
     Information about a queued/running job.
-    
+
     Returned when wait=False.
     """
 
@@ -311,12 +339,8 @@ class OperationInfo(BaseModel):
 
     id: str = Field(..., description="Operation ID (e.g., 'pillars.validate')")
     version: str = Field(..., description="Semantic version")
-    request_schema_uri: str = Field(
-        ..., description="URI to request JSON schema"
-    )
-    response_schema_uri: str = Field(
-        ..., description="URI to response JSON schema"
-    )
+    request_schema_uri: str = Field(..., description="URI to request JSON schema")
+    response_schema_uri: str = Field(..., description="URI to response JSON schema")
 
 
 class OperationCatalog(BaseModel):
@@ -333,7 +357,7 @@ class OperationCatalog(BaseModel):
 class AgentTask(BaseModel):
     """
     A task for an agent to execute.
-    
+
     Used by the router and executor to coordinate agent execution.
     """
 
@@ -457,4 +481,3 @@ class WarningEvent(StreamEvent):
 
     event_type: Literal["warning"] = "warning"
     warning: WarningInfo
-

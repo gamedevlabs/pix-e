@@ -8,93 +8,76 @@ Supports both monolithic and agentic execution modes.
 
 __version__ = "0.1.0"
 
-# Type exports
-from llm_orchestrator.types import (
-    # Request/Response
-    LLMRequest,
-    LLMResponse,
-    # Metadata
-    ResponseMetadata,
-    ErrorInfo,
-    WarningInfo,
-    # Models
-    ModelInfo,
-    AgentInfo,
-    TokenUsage,
-    # Job/Run
-    RunInfo,
-    RunStatus,
-    # Inventory
-    ModelInventory,
-    OperationCatalog,
-    # Enums
-    ExecutionMode,
-    ModelPreference,
-    CachePolicy,
-)
-
-# Exception exports
-from llm_orchestrator.exceptions import (
-    # Base
-    OrchestratorError,
-    # Request validation
-    InvalidRequestError,
-    ValidationError,
-    UnknownFeatureError,
-    UnknownOperationError,
-    # Auth
-    AuthenticationError,
-    PermissionDeniedError,
-    # Resources
-    RunNotFoundError,
-    IdempotencyConflictError,
-    # Rate limiting
-    RateLimitError,
-    # Model/Provider
-    ModelUnavailableError,
-    ProviderError,
-    AgentFailureError,
-    InsufficientResourcesError,
-    # Timeout
-    TimeoutError,
-    # Warnings
-    CacheError,
-    PartialSuccessError,
-    # Helpers
-    get_http_status_for_error,
-)
+# Auto-import operations to register handlers
+import importlib as _importlib
 
 # Configuration exports
 from llm_orchestrator.config import (
     Config,
     get_config,
-    set_config,
     reset_config,
+    set_config,
+)
+
+# Exception exports
+from llm_orchestrator.exceptions import (  # Base; Request validation; Auth; Resources; Rate limiting; Model/Provider; Timeout; Warnings; Helpers  # noqa: E501
+    AgentFailureError,
+    AuthenticationError,
+    CacheError,
+    IdempotencyConflictError,
+    InsufficientResourcesError,
+    InvalidRequestError,
+    ModelUnavailableError,
+    OrchestratorError,
+    PartialSuccessError,
+    PermissionDeniedError,
+    ProviderError,
+    RateLimitError,
+    RunNotFoundError,
+    TimeoutError,
+    UnknownFeatureError,
+    UnknownOperationError,
+    ValidationError,
+    get_http_status_for_error,
 )
 
 # Feature and operation registry exports
-from llm_orchestrator.features import (
-    # Feature IDs
+from llm_orchestrator.features import (  # Feature IDs; Operation IDs; Metadata; Convenience functions  # noqa: E501
     FeatureID,
-    # Operation IDs
-    PillarsOperations,
-    SPARCOperations,
     MoodboardsOperations,
-    # Metadata
     OperationMetadata,
     OperationRegistry,
-    # Convenience functions
+    PillarsOperations,
+    SPARCOperations,
     get_operation,
     list_features,
     list_operations,
 )
 
+# Type exports
+from llm_orchestrator.types import (  # Request/Response; Metadata; Models; Job/Run; Inventory; Enums  # noqa: E501
+    AgentInfo,
+    CachePolicy,
+    ErrorInfo,
+    ExecutionMode,
+    LLMRequest,
+    LLMResponse,
+    ModelInfo,
+    ModelInventory,
+    ModelPreference,
+    OperationCatalog,
+    ResponseMetadata,
+    RunInfo,
+    RunStatus,
+    TokenUsage,
+    WarningInfo,
+)
+
 # Auto-import operations to register handlers
-import importlib as _importlib
 _importlib.import_module("llm_orchestrator.operations")
 
 # Core orchestrator
-from llm_orchestrator.core import LLMOrchestrator
+from llm_orchestrator.core import LLMOrchestrator  # noqa: E402
 
 __all__ = [
     # Main orchestrator
@@ -150,4 +133,3 @@ __all__ = [
     "list_features",
     "list_operations",
 ]
-

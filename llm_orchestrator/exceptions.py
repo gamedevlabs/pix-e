@@ -5,13 +5,13 @@ These exceptions map to the error codes defined in the API specification
 and provide structured error handling throughout the orchestrator.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class OrchestratorError(Exception):
     """
     Base exception for all orchestrator errors.
-    
+
     All custom exceptions inherit from this to allow catching all
     orchestrator-specific errors.
     """
@@ -31,16 +31,17 @@ class OrchestratorError(Exception):
 
     def to_error_info(self) -> Dict[str, Any]:
         """Convert to ErrorInfo dict for API responses."""
-        error_info = {
+        context_dict = dict(self.context)
+        if self.suggestion:
+            context_dict["suggestion"] = self.suggestion
+
+        error_info: Dict[str, Any] = {
             "code": self.code,
             "message": self.message,
             "severity": "error",
-            "context": self.context,
+            "context": context_dict,
         }
-        
-        if self.suggestion:
-            error_info["context"]["suggestion"] = self.suggestion
-        
+
         return error_info
 
 
@@ -52,10 +53,10 @@ class OrchestratorError(Exception):
 class InvalidRequestError(OrchestratorError):
     """
     Request format is invalid.
-    
+
     HTTP Status: 400
     Error Code: INVALID_REQUEST
-    
+
     Raised when:
     - Malformed JSON
     - Missing required fields
@@ -79,10 +80,10 @@ class InvalidRequestError(OrchestratorError):
 class ValidationError(OrchestratorError):
     """
     Input data validation failed.
-    
+
     HTTP Status: 400
     Error Code: VALIDATION_ERROR
-    
+
     Raised when:
     - Data doesn't match operation schema
     - Constraints violated (e.g., negative timeout)
@@ -106,10 +107,10 @@ class ValidationError(OrchestratorError):
 class UnknownFeatureError(OrchestratorError):
     """
     Feature not recognized.
-    
+
     HTTP Status: 400
     Error Code: UNKNOWN_FEATURE
-    
+
     Raised when:
     - Feature name typo
     - Feature not implemented
@@ -118,35 +119,40 @@ class UnknownFeatureError(OrchestratorError):
     def __init__(
         self,
         feature: str,
-        available_features: Optional[list] = None,
+        available_features: Optional[List[Any]] = None,
     ):
         # Auto-populate available features from registry if not provided
         if available_features is None:
             try:
                 from llm_orchestrator.features import list_features
+
                 available_features = list_features()
             except ImportError:
                 available_features = []
-        
-        context = {"requested_feature": feature}
+
+        context: Dict[str, Any] = {"requested_feature": feature}
         if available_features:
-            context["available_features"] = available_features
-        
+            context["available_features"] = [str(f) for f in available_features]
+
         super().__init__(
             message=f"Unknown feature: '{feature}'",
             code="UNKNOWN_FEATURE",
             context=context,
-            suggestion=f"Available features: {', '.join(str(f) for f in available_features)}" if available_features else None,
+            suggestion=(
+                f"Available features: {', '.join(str(f) for f in available_features)}"
+                if available_features
+                else None
+            ),
         )
 
 
 class UnknownOperationError(OrchestratorError):
     """
     Operation not recognized for this feature.
-    
+
     HTTP Status: 400
     Error Code: UNKNOWN_OPERATION
-    
+
     Raised when:
     - Operation name typo
     - Operation not implemented for this feature
@@ -156,29 +162,37 @@ class UnknownOperationError(OrchestratorError):
         self,
         feature: str,
         operation: str,
-        available_operations: Optional[list] = None,
+        available_operations: Optional[List[Any]] = None,
     ):
         # Auto-populate available operations from registry if not provided
         if available_operations is None:
             try:
                 from llm_orchestrator.features import list_operations
+
                 ops = list_operations(feature)
                 available_operations = [op.id for op in ops]
             except ImportError:
                 available_operations = []
-        
-        context = {
+
+        context: Dict[str, Any] = {
             "feature": feature,
             "requested_operation": operation,
         }
         if available_operations:
-            context["available_operations"] = available_operations
-        
+            context["available_operations"] = [str(op) for op in available_operations]
+
         super().__init__(
             message=f"Unknown operation '{operation}' for feature '{feature}'",
             code="UNKNOWN_OPERATION",
             context=context,
-            suggestion=f"Available operations: {', '.join(str(op) for op in available_operations)}" if available_operations else None,
+            suggestion=(
+                (
+                    "Available operations: "
+                    f"{', '.join(str(op) for op in available_operations)}"
+                )
+                if available_operations
+                else None
+            ),
         )
 
 
@@ -190,10 +204,10 @@ class UnknownOperationError(OrchestratorError):
 class AuthenticationError(OrchestratorError):
     """
     Authentication failed.
-    
+
     HTTP Status: 401
     Error Code: AUTH_ERROR
-    
+
     Raised when:
     - Missing credentials
     - Invalid API key
@@ -216,10 +230,10 @@ class AuthenticationError(OrchestratorError):
 class PermissionDeniedError(OrchestratorError):
     """
     User lacks permission for this operation.
-    
+
     HTTP Status: 403
     Error Code: PERMISSION_DENIED
-    
+
     Raised when:
     - User not allowed for provider/model
     - Quota exceeded
@@ -245,10 +259,10 @@ class PermissionDeniedError(OrchestratorError):
 class RunNotFoundError(OrchestratorError):
     """
     Run ID not found.
-    
+
     HTTP Status: 404
     Error Code: RUN_NOT_FOUND
-    
+
     Raised when:
     - Invalid run_id
     - Run expired/deleted
@@ -266,10 +280,10 @@ class RunNotFoundError(OrchestratorError):
 class IdempotencyConflictError(OrchestratorError):
     """
     Idempotency key conflict.
-    
+
     HTTP Status: 409
     Error Code: IDEMPOTENCY_CONFLICT
-    
+
     Raised when:
     - Same idempotency_key used with different payload
     """
@@ -295,10 +309,10 @@ class IdempotencyConflictError(OrchestratorError):
 class RateLimitError(OrchestratorError):
     """
     Rate limit exceeded.
-    
+
     HTTP Status: 429
     Error Code: RATE_LIMIT
-    
+
     Raised when:
     - Too many requests to cloud API
     - User quota exceeded
@@ -313,12 +327,16 @@ class RateLimitError(OrchestratorError):
         ctx = context or {}
         if retry_after_seconds:
             ctx["retry_after_seconds"] = retry_after_seconds
-        
+
         super().__init__(
             message=message,
             code="RATE_LIMIT",
             context=ctx,
-            suggestion=f"Wait {retry_after_seconds} seconds before retrying" if retry_after_seconds else "Wait before retrying",
+            suggestion=(
+                f"Wait {retry_after_seconds} seconds before retrying"
+                if retry_after_seconds
+                else "Wait before retrying"
+            ),
         )
 
 
@@ -330,10 +348,10 @@ class RateLimitError(OrchestratorError):
 class ModelUnavailableError(OrchestratorError):
     """
     Requested model not available.
-    
+
     HTTP Status: 503
     Error Code: MODEL_UNAVAILABLE
-    
+
     Raised when:
     - Ollama not running
     - Model not pulled
@@ -351,7 +369,7 @@ class ModelUnavailableError(OrchestratorError):
         message = f"Model '{model}' from provider '{provider}' is not available"
         if reason:
             message += f": {reason}"
-        
+
         super().__init__(
             message=message,
             code="MODEL_UNAVAILABLE",
@@ -362,7 +380,7 @@ class ModelUnavailableError(OrchestratorError):
             },
             suggestion=suggestion or self._get_default_suggestion(provider, model),
         )
-    
+
     def _get_default_suggestion(self, provider: str, model: str) -> str:
         """Provide provider-specific suggestions."""
         if provider == "ollama":
@@ -376,10 +394,10 @@ class ModelUnavailableError(OrchestratorError):
 class ProviderError(OrchestratorError):
     """
     Upstream provider error.
-    
+
     HTTP Status: 502
     Error Code: PROVIDER_ERROR
-    
+
     Raised when:
     - Provider returns error
     - Network issues
@@ -394,7 +412,7 @@ class ProviderError(OrchestratorError):
     ):
         ctx = context or {}
         ctx["provider"] = provider
-        
+
         super().__init__(
             message=f"Provider '{provider}' error: {message}",
             code="PROVIDER_ERROR",
@@ -405,10 +423,10 @@ class ProviderError(OrchestratorError):
 class AgentFailureError(OrchestratorError):
     """
     Agent execution failed.
-    
+
     HTTP Status: 500
     Error Code: AGENT_FAILURE
-    
+
     Raised when:
     - Agent crashed
     - Unexpected output
@@ -423,7 +441,7 @@ class AgentFailureError(OrchestratorError):
     ):
         ctx = context or {}
         ctx["agent"] = agent_name
-        
+
         super().__init__(
             message=f"Agent '{agent_name}' failed: {message}",
             code="AGENT_FAILURE",
@@ -434,10 +452,10 @@ class AgentFailureError(OrchestratorError):
 class InsufficientResourcesError(OrchestratorError):
     """
     Not enough compute resources.
-    
+
     HTTP Status: 503
     Error Code: INSUFFICIENT_RESOURCES
-    
+
     Raised when:
     - GPU memory full
     - CPU overloaded
@@ -452,7 +470,7 @@ class InsufficientResourcesError(OrchestratorError):
     ):
         ctx = context or {}
         ctx["resource_type"] = resource_type
-        
+
         super().__init__(
             message=f"Insufficient {resource_type}: {message}",
             code="INSUFFICIENT_RESOURCES",
@@ -469,10 +487,10 @@ class InsufficientResourcesError(OrchestratorError):
 class TimeoutError(OrchestratorError):
     """
     Operation exceeded timeout.
-    
+
     HTTP Status: 504
     Error Code: TIMEOUT
-    
+
     Raised when:
     - Model too slow
     - Network timeout
@@ -488,7 +506,7 @@ class TimeoutError(OrchestratorError):
         ctx = context or {}
         ctx["operation"] = operation
         ctx["timeout_ms"] = timeout_ms
-        
+
         super().__init__(
             message=f"Operation '{operation}' timed out after {timeout_ms}ms",
             code="TIMEOUT",
@@ -505,10 +523,10 @@ class TimeoutError(OrchestratorError):
 class CacheError(OrchestratorError):
     """
     Cache operation failed (non-critical).
-    
+
     Error Code: CACHE_ERROR
     Severity: warning
-    
+
     This is a warning, not a fatal error.
     """
 
@@ -533,10 +551,10 @@ class CacheError(OrchestratorError):
 class PartialSuccessError(OrchestratorError):
     """
     Some agents succeeded, some failed.
-    
+
     Error Code: PARTIAL_SUCCESS
     Severity: warning
-    
+
     This is a warning - operation partially succeeded.
     """
 
@@ -550,7 +568,7 @@ class PartialSuccessError(OrchestratorError):
         ctx = context or {}
         ctx["succeeded"] = succeeded
         ctx["failed"] = failed
-        
+
         super().__init__(
             message=message,
             code="PARTIAL_SUCCESS",
@@ -572,7 +590,7 @@ class PartialSuccessError(OrchestratorError):
 def get_http_status_for_error(error: OrchestratorError) -> int:
     """
     Map error code to HTTP status code.
-    
+
     Based on the HTTP Status Mapping table in the API specification.
     """
     status_map = {
@@ -593,6 +611,5 @@ def get_http_status_for_error(error: OrchestratorError) -> int:
         "CACHE_ERROR": 200,  # Warning, not an error
         "PARTIAL_SUCCESS": 200,  # Warning, not an error
     }
-    
-    return status_map.get(error.code, 500)
 
+    return status_map.get(error.code, 500)

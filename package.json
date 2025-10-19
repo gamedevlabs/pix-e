@@ -7,7 +7,10 @@
     "install-all": "node install.js",
     "start-backend": "cd backend && (.venv\\Scripts\\python.exe manage.py runserver || ./.venv/bin/python manage.py runserver)",
     "start-frontend": "cd frontend && npm run dev",
-    "start-all": "concurrently \"npm run start-backend\" \"npm run start-frontend\""
+    "start-all": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "lint-python": "cd backend && (.venv\\Scripts\\python.exe -m black ../backend ../llm_orchestrator && .venv\\Scripts\\python.exe -m isort ../backend ../llm_orchestrator && .venv\\Scripts\\python.exe -m flake8 ../backend ../llm_orchestrator || ./.venv/bin/python -m black ../backend ../llm_orchestrator && ./.venv/bin/python -m isort ../backend ../llm_orchestrator && ./.venv/bin/python -m flake8 ../backend ../llm_orchestrator)",
+    "lint-python-check": "cd backend && (.venv\\Scripts\\python.exe -m black --check ../backend ../llm_orchestrator && .venv\\Scripts\\python.exe -m isort --check ../backend ../llm_orchestrator && .venv\\Scripts\\python.exe -m flake8 ../backend ../llm_orchestrator || ./.venv/bin/python -m black --check ../backend ../llm_orchestrator && ./.venv/bin/python -m isort --check ../backend ../llm_orchestrator && ./.venv/bin/python -m flake8 ../backend ../llm_orchestrator)",
+    "typecheck-python": "cd backend && (.venv\\Scripts\\python.exe -m mypy ../backend ../llm_orchestrator || ./.venv/bin/python -m mypy ../backend ../llm_orchestrator)"
   },
   "repository": {
     "type": "git",

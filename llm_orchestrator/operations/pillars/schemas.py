@@ -73,4 +73,3 @@ class ContextInPillarsResponse(BaseModel):
     feedback: str = Field(
         description="Feedback on how the context fits with the pillars"
     )
-

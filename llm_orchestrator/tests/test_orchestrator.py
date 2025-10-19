@@ -2,8 +2,9 @@
 Tests for LLM Orchestrator core functionality.
 """
 
+from unittest.mock import MagicMock, Mock
+
 import pytest
-from unittest.mock import Mock, MagicMock
 from llm_orchestrator import LLMOrchestrator, LLMRequest
 from llm_orchestrator.exceptions import (
     InvalidRequestError,
@@ -31,7 +32,7 @@ class TestOrchestratorBasics:
             feature="pillars",
             operation="validate",
             data={"name": "test", "description": "test"},
-            mode="monolithic"
+            mode="monolithic",
         )
         # Manually override to test internal validation
         request.mode = "invalid_mode"
@@ -49,7 +50,7 @@ class TestOrchestratorBasics:
             feature="unknown_feature",
             operation="unknown_operation",
             data={},
-            model_id="gemini"
+            model_id="gemini",
         )
 
         with pytest.raises(UnknownOperationError):
@@ -62,11 +63,16 @@ class TestOrchestratorBasics:
         # Mock the handler to avoid actual LLM calls
         mock_handler_class = Mock()
         mock_handler = MagicMock()
-        mock_handler.execute.return_value = {"is_valid": True, "issues": [], "suggestions": []}
+        mock_handler.execute.return_value = {
+            "is_valid": True,
+            "issues": [],
+            "suggestions": [],
+        }
         mock_handler_class.return_value = mock_handler
 
         # Patch the handler registry
         from llm_orchestrator.core import handler_registry
+
         original_get_handler = handler_registry.get_handler
         handler_registry.get_handler = Mock(return_value=mock_handler_class)
 
@@ -75,7 +81,7 @@ class TestOrchestratorBasics:
                 feature="pillars",
                 operation="validate",
                 data={"name": "test", "description": "test"},
-                model_id="gemini"
+                model_id="gemini",
             )
 
             response = orchestrator.execute(request)
@@ -102,6 +108,7 @@ class TestModelSelection:
         mock_handler_class.return_value = mock_handler
 
         from llm_orchestrator.core import handler_registry
+
         original_get_handler = handler_registry.get_handler
         handler_registry.get_handler = Mock(return_value=mock_handler_class)
 
@@ -110,7 +117,7 @@ class TestModelSelection:
                 feature="pillars",
                 operation="validate",
                 data={"name": "test", "description": "test"},
-                model_id="custom-model-123"
+                model_id="custom-model-123",
             )
 
             orchestrator.execute(request)
@@ -124,6 +131,7 @@ class TestModelSelection:
     def test_model_alias_resolution(self):
         """Test that model aliases are resolved correctly."""
         from llm_orchestrator.config import get_config
+
         config = get_config()
 
         # Test gemini alias
@@ -154,6 +162,7 @@ class TestResponseStructure:
         mock_handler_class.return_value = mock_handler
 
         from llm_orchestrator.core import handler_registry
+
         original_get_handler = handler_registry.get_handler
         handler_registry.get_handler = Mock(return_value=mock_handler_class)
 
@@ -162,7 +171,7 @@ class TestResponseStructure:
                 feature="pillars",
                 operation="validate",
                 data={"name": "test", "description": "test"},
-                model_id="gemini"
+                model_id="gemini",
             )
 
             response = orchestrator.execute(request)

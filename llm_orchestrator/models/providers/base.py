@@ -5,49 +5,50 @@ All provider implementations (Ollama, OpenAI, Gemini) inherit from this.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
-from llm_orchestrator.types import ModelCapabilities, ModelDetails, ProviderType
+
+from llm_orchestrator.types import ModelDetails, ProviderType
 
 
 class BaseProvider(ABC):
     """
     Abstract base class for all LLM providers.
-    
+
     Providers handle communication with specific LLM services
     (Ollama, OpenAI, Gemini, etc.) and abstract away their differences.
     """
-    
+
     def __init__(self, config: Dict[str, Any]):
         """
         Initialize provider with configuration.
-        
+
         Args:
             config: Provider-specific configuration (API keys, URLs, etc.)
         """
         self.config = config
         self._is_available: Optional[bool] = None
-    
+
     @property
     @abstractmethod
     def provider_name(self) -> str:
         """Get provider name (e.g., 'ollama', 'openai', 'gemini')."""
         pass
-    
+
     @property
     @abstractmethod
     def provider_type(self) -> ProviderType:
         """Get provider type ('local' or 'cloud')."""
         pass
-    
+
     @abstractmethod
     def list_models(self) -> List[ModelDetails]:
         """
         List all available models from this provider.
-        
+
         Returns:
             List of ModelDetails with capabilities
         """
         pass
-    
+
     @abstractmethod
     def generate_text(
         self,
@@ -55,11 +56,11 @@ class BaseProvider(ABC):
         prompt: str,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         """
         Generate text using the specified model.
-        
+
         Args:
             model_name: Name of the model to use
             prompt: Text prompt
@@ -68,7 +69,7 @@ class BaseProvider(ABC):
             **kwargs: Provider-specific parameters
         """
         pass
-    
+
     @abstractmethod
     def generate_structured(
         self,
@@ -77,11 +78,11 @@ class BaseProvider(ABC):
         response_schema: type,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         """
         Generate structured output (JSON) using the specified model.
-        
+
         Args:
             model_name: Name of the model to use
             prompt: Text prompt
@@ -91,25 +92,25 @@ class BaseProvider(ABC):
             **kwargs: Provider-specific parameters
         """
         pass
-    
+
     @abstractmethod
     def is_available(self) -> bool:
         """
         Check if provider is available and reachable.
         """
         pass
-    
+
     @abstractmethod
     def get_model_info(self, model_name: str) -> ModelDetails:
         """
         Get detailed information about a specific model.
         """
         pass
-    
+
     def supports_capability(self, model_name: str, capability: str) -> bool:
         """
         Check if a model supports a specific capability.
-        
+
         Args:
             model_name: Name of the model
             capability: Capability to check (e.g., 'json_strict', 'vision')
@@ -119,14 +120,14 @@ class BaseProvider(ABC):
             return getattr(model_info.capabilities, capability, False) or False
         except Exception:
             return False
-    
+
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(provider={self.provider_name}, type={self.provider_type})"
+        return f"{self.__class__.__name__}(provider={self.provider_name}, type={self.provider_type})"  # noqa: E501
 
 
 class GenerationResult:
     """Result from text generation."""
-    
+
     def __init__(
         self,
         text: str,
@@ -134,7 +135,7 @@ class GenerationResult:
         provider: str,
         prompt_tokens: int = 0,
         completion_tokens: int = 0,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         self.text = text
         self.model = model

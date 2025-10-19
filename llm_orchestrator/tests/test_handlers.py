@@ -2,14 +2,15 @@
 Tests for operation handlers.
 """
 
-import pytest
 from unittest.mock import Mock
-from llm_orchestrator.operations.pillars.handlers import (
-    ValidatePillarHandler,
-    ImprovePillarHandler,
-    EvaluateCompletenessHandler,
-)
+
+import pytest
 from llm_orchestrator.exceptions import InvalidRequestError
+from llm_orchestrator.operations.pillars.handlers import (
+    EvaluateCompletenessHandler,
+    ImprovePillarHandler,
+    ValidatePillarHandler,
+)
 
 
 class TestValidatePillarHandler:
@@ -118,7 +119,7 @@ class TestEvaluateCompletenessHandler:
 
         data = {
             "pillars_text": "1. Pillar one\n2. Pillar two",
-            "context": "Game design context"
+            "context": "Game design context",
         }
         # Should not raise
         handler.validate_input(data)
@@ -152,7 +153,7 @@ class TestEvaluateCompletenessHandler:
 
         data = {
             "pillars_text": "1. Pillar one\n2. Pillar two",
-            "context": "Game design context"
+            "context": "Game design context",
         }
         prompt = handler.build_prompt(data)
 
