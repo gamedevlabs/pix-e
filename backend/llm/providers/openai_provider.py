@@ -8,7 +8,6 @@ import copy
 import json
 from typing import Any, Dict, List, Optional
 
-from local_llm.base import BaseProvider
 from openai import (
     APIError,
     APITimeoutError,
@@ -22,6 +21,7 @@ from llm.exceptions import (
     ProviderError,
     RateLimitError,
 )
+from llm.providers.base import BaseProvider
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 

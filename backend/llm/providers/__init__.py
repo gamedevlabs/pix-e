@@ -1,10 +1,12 @@
 """
 LLM Provider implementations for the orchestrator.
 
-This package contains cloud provider implementations (OpenAI, Gemini).
-Local providers (e.g., Ollama) live in the project root package `local_llm`.
+This package contains all provider implementations:
+- Local providers: Ollama
+- Cloud providers: OpenAI, Gemini
 """
 
+from llm.providers.base import BaseProvider, GenerationResult
 from llm.providers.capabilities import (
     compare_capabilities,
     filter_by_capabilities,
@@ -16,10 +18,15 @@ from llm.providers.capabilities import (
 )
 from llm.providers.gemini_provider import GeminiProvider
 from llm.providers.manager import ModelManager
+from llm.providers.ollama_provider import OllamaProvider
 from llm.providers.openai_provider import OpenAIProvider
 
 __all__ = [
+    # Base classes
+    "BaseProvider",
+    "GenerationResult",
     # Providers
+    "OllamaProvider",
     "OpenAIProvider",
     "GeminiProvider",
     "ModelManager",

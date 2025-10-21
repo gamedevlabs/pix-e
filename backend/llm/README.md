@@ -25,15 +25,13 @@ backend/llm/                 # LLM Orchestrator (Django app)
 ├── types.py                 # Type definitions (LLMRequest, LLMResponse)
 ├── exceptions.py            # Custom exception hierarchy
 ├── config.py                # Configuration management
-└── providers/               # Cloud provider layer
+└── providers/               # Provider layer (all providers)
+    ├── base.py              # BaseProvider interface
     ├── manager.py           # ModelManager for provider abstraction
+    ├── ollama_provider.py   # Local models (Llama, Mistral, etc.)
     ├── openai_provider.py   # GPT-4, GPT-3.5, etc.
     ├── gemini_provider.py   # Gemini 2.0, Gemini 1.5, etc.
     └── capabilities.py      # Model capability matching
-
-local_llm/                   # Local provider (project root)
-├── base.py                  # BaseProvider interface
-└── ollama.py                # Local models (Llama, Mistral, etc.)
 
 backend/pillars/llm/         # Pillar feature operations
 ├── handlers.py              # Operation handlers

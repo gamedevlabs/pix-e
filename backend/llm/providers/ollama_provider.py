@@ -10,38 +10,9 @@ from typing import Any, Dict, List, Optional
 import httpx
 from pydantic import ValidationError
 
-from local_llm.base import (
-    BaseProvider,
-    ModelCapabilities,
-    ModelDetails,
-    ProviderType,
-)
-
-
-class ProviderError(Exception):
-    """Exception raised when a provider operation fails."""
-
-    def __init__(
-        self,
-        provider: str,
-        message: str,
-        context: Optional[Dict[str, Any]] = None,
-    ):
-        self.provider = provider
-        self.message = message
-        self.context = context or {}
-        super().__init__(f"[{provider}] {message}")
-
-
-class ModelUnavailableError(Exception):
-    """Exception raised when a model is not available."""
-
-    def __init__(self, model: str, provider: str, reason: str):
-        self.model = model
-        self.provider = provider
-        self.reason = reason
-        msg = f"Model '{model}' unavailable on {provider}: {reason}"
-        super().__init__(msg)
+from llm.exceptions import ModelUnavailableError, ProviderError
+from llm.providers.base import BaseProvider
+from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 
 class OllamaProvider(BaseProvider):
@@ -111,7 +82,9 @@ class OllamaProvider(BaseProvider):
 
             return models
         except httpx.RequestError as e:
-            raise ProviderError(provider="ollama", message=f"Failed to list models: {str(e)}")
+            raise ProviderError(
+                provider="ollama", message=f"Failed to list models: {str(e)}"
+            )
 
     def get_model_info(self, model_name: str) -> ModelDetails:
         """Get information about a specific model."""
@@ -274,7 +247,9 @@ class OllamaProvider(BaseProvider):
                 context={"model": model_name},
             )
 
-    def _get_model_capabilities(self, model_name: str, model_info: Dict[str, Any]) -> ModelCapabilities:
+    def _get_model_capabilities(
+        self, model_name: str, model_info: Dict[str, Any]
+    ) -> ModelCapabilities:
         """
         Determine model capabilities based on name and metadata.
 
@@ -361,5 +336,3 @@ class OllamaProvider(BaseProvider):
         """Clean up HTTP client on deletion."""
         if hasattr(self, "client"):
             self.client.close()
-
-

@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional
 from google import genai
 from google.genai.errors import APIError as GeminiAPIError
 from google.genai.errors import ClientError
-from local_llm.base import BaseProvider
 from pydantic import ValidationError
 
 from llm.exceptions import (
@@ -18,6 +17,7 @@ from llm.exceptions import (
     ProviderError,
     RateLimitError,
 )
+from llm.providers.base import BaseProvider
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 

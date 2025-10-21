@@ -4,31 +4,9 @@ All provider implementations (Ollama, OpenAI, Gemini) inherit from this.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
-
-# Type definitions needed by providers
-ProviderType = Literal["local", "cloud"]
-
-
-class ModelCapabilities(BaseModel):
-    """Capabilities of a model."""
-
-    json_strict: Optional[bool] = None
-    vision: Optional[bool] = None
-    multimodal: Optional[bool] = None
-    function_calling: Optional[bool] = None
-    min_context_window: Optional[int] = None
-
-
-class ModelDetails(BaseModel):
-    """Detailed information about an available model."""
-
-    name: str
-    provider: str
-    type: ProviderType
-    capabilities: ModelCapabilities
+from llm.types import ModelDetails, ProviderType
 
 
 class BaseProvider(ABC):
@@ -166,5 +144,3 @@ class GenerationResult:
         self.completion_tokens = completion_tokens
         self.total_tokens = prompt_tokens + completion_tokens
         self.metadata = metadata or {}
-
-

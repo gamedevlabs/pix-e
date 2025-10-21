@@ -13,19 +13,18 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from local_llm import OllamaProvider
-from local_llm.base import BaseProvider, GenerationResult
-
 from llm.config import Config, get_config
 from llm.exceptions import (
     ModelUnavailableError,
     ProviderError,
 )
+from llm.providers.base import BaseProvider, GenerationResult
 from llm.providers.capabilities import (
     filter_by_capabilities,
     find_best_model,
 )
 from llm.providers.gemini_provider import GeminiProvider
+from llm.providers.ollama_provider import OllamaProvider
 from llm.providers.openai_provider import OpenAIProvider
 from llm.types import (
     CapabilityRequirements,
