@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, get_args
 
-from backend.llm.types import ExecutionMode, ModelPreference
+from llm.types import ExecutionMode, ModelPreference
 
 # Load .env file if it exists
 try:
