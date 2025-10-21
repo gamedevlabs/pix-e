@@ -124,10 +124,10 @@ class UnknownFeatureError(OrchestratorError):
         # Auto-populate available features from registry if not provided
         if available_features is None:
             try:
-                from backend.llm.features import list_features
+                from backend.llm import list_features
 
                 available_features = list_features()
-            except ImportError:
+            except Exception:
                 available_features = []
 
         context: Dict[str, Any] = {"requested_feature": feature}

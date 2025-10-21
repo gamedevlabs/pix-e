@@ -172,7 +172,7 @@ Focus on the core essence and key mechanics.
 """
 ```
 
-3. **Create handler** in `backend/pillars/llm/handlers.py`:
+3. **Create handler** in `backend/pillars/llm/handlers.py` (auto-registered):
 ```python
 from backend.llm.operation_handler import BaseOperationHandler
 from backend.llm.exceptions import InvalidRequestError
@@ -183,6 +183,8 @@ class SummarizePillarHandler(BaseOperationHandler):
     """Summarize a game design pillar."""
 
     operation_id = "pillars.summarize"
+    description = "Generate a concise summary of a pillar"
+    version = "1.0.0"
     response_schema = PillarSummaryResponse
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
@@ -195,16 +197,7 @@ class SummarizePillarHandler(BaseOperationHandler):
             )
 ```
 
-4. **Register handler** in `backend/pillars/llm/__init__.py`:
-```python
-from backend.llm.handler_registry import register_handler
-from .handlers import SummarizePillarHandler
-
-# Auto-register on import
-register_handler("pillars.summarize", SummarizePillarHandler)
-```
-
-5. **Use from Django views**:
+4. **Use from Django views**:
 ```python
 from backend.llm import LLMOrchestrator
 from backend.llm.types import LLMRequest
@@ -276,16 +269,7 @@ class AnalyzeMoodboardHandler(BaseOperationHandler):
             raise InvalidRequestError(message="Missing 'description'")
 ```
 
-5. **Register handlers** in `backend/moodboards/llm/__init__.py`:
-```python
-from backend.llm.handler_registry import register_handler
-from .handlers import AnalyzeMoodboardHandler
-
-# Auto-register on import
-register_handler("moodboards.analyze", AnalyzeMoodboardHandler)
-```
-
-6. **Import in Django views** to trigger registration:
+5. **Import in Django views** to trigger auto-registration:
 ```python
 from backend.llm import LLMOrchestrator
 from backend.llm.types import LLMRequest

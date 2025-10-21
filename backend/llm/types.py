@@ -85,13 +85,13 @@ class LLMRequest(BaseModel):
 
     This is the main request type that features send to the orchestrator.
 
-    Features can use type-safe enums or strings:
-        from backend.llm.features import FeatureID, PillarsOperations
-        LLMRequest(feature=FeatureID.PILLARS,
-                   operation=PillarsOperations.VALIDATE, ...)
-
-    Or plain strings (backward compatible):
+    Recommended usage (plain strings):
         LLMRequest(feature="pillars", operation="validate", ...)
+
+    Available operations can be discovered dynamically. Example:
+        from backend.llm import list_operations
+        ops = list_operations(feature="pillars")
+        # ['pillars.validate', 'pillars.improve', ...]
     """
 
     # Feature identification (accepts enums or strings)

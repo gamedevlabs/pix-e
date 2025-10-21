@@ -16,16 +16,16 @@ from llm.exceptions import (
     ProviderError,
 )
 
-# Features
-from llm.features import (
-    FeatureID,
-    MoodboardsOperations,
-    PillarsOperations,
-    SPARCOperations,
-    get_operation,
+# Handler registry and metadata
+from llm.handler_registry import (
+    OperationMetadata,
+    get_handler,
+    get_metadata,
     list_features,
+    list_metadata,
+    list_operations,
+    register_handler,
 )
-from llm.handler_registry import get_handler, list_operations, register_handler
 
 # Handler framework
 from llm.operation_handler import BaseOperationHandler
@@ -68,12 +68,9 @@ __all__ = [
     "BaseOperationHandler",
     "register_handler",
     "get_handler",
+    "get_metadata",
     "list_operations",
-    # Features
-    "FeatureID",
-    "PillarsOperations",
-    "SPARCOperations",
-    "MoodboardsOperations",
-    "get_operation",
+    "list_metadata",
     "list_features",
+    "OperationMetadata",
 ]

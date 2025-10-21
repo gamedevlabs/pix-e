@@ -5,6 +5,7 @@ Handlers execute feature operations without agents. They provide:
 - Prompt building from input data
 - Response schema definition
 - Execution logic using ModelManager
+- Metadata for discovery and documentation
 """
 
 from abc import ABC, abstractmethod
@@ -25,12 +26,31 @@ class BaseOperationHandler(ABC):
     2. Define response schemas
     3. Execute via ModelManager
     4. Return validated responses
+    5. Provide metadata for discovery
     """
 
-    # Subclasses must define these
-    operation_id: str  # e.g., "pillars.validate"
+    # Subclasses MUST define these
+    operation_id: str = ""  # e.g., "pillars.validate"
     response_schema: Type[BaseModel]  # Pydantic model for response
+
+    # Optional metadata (with defaults)
+    description: str = ""
+    version: str = "1.0.0"
     capability_requirements: Optional[CapabilityRequirements] = None
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Auto-register handler when class is defined.
+
+        This metaclass hook is called whenever a subclass is created.
+        """
+        super().__init_subclass__(**kwargs)
+
+        # Only register if operation_id is defined (not the base class)
+        if hasattr(cls, "operation_id") and cls.operation_id:
+            from llm.handler_registry import register_handler
+
+            register_handler(cls.operation_id, cls)
 
     def __init__(self, model_manager: ModelManager):
         """
@@ -52,6 +72,20 @@ class BaseOperationHandler(ABC):
         # Default: no validation
         # Subclasses can override
         pass
+
+    @property
+    def feature_id(self) -> str:
+        """Extract feature ID from operation_id."""
+        return self.operation_id.split(".")[0] if "." in self.operation_id else ""
+
+    @property
+    def operation_name(self) -> str:
+        """Extract operation name from operation_id."""
+        return (
+            self.operation_id.split(".")[1]
+            if "." in self.operation_id
+            else self.operation_id
+        )
 
     def execute(
         self,
