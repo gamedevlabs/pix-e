@@ -18,25 +18,30 @@ The LLM Orchestrator provides a clean abstraction layer between pix:e features (
 ## Architecture
 
 ```
-llm_orchestrator/
-├── core/                    # Core orchestration
-│   ├── orchestrator.py      # Main LLMOrchestrator class
-│   ├── operation_handler.py # Base handler for operations
-│   └── handler_registry.py  # Handler registration system
-├── operations/              # Feature-specific operations
-│   └── pillars/            # Pillar operations
-│       ├── handlers.py      # Operation handlers
-│       ├── prompts.py       # Prompt templates
-│       └── schemas.py       # Response schemas (Pydantic)
-├── models/                  # Model provider layer
-│   ├── manager.py          # ModelManager for provider abstraction
-│   └── providers/          # Provider implementations
-│       ├── ollama.py        # Local models (Llama, Mistral, etc.)
-│       ├── openai_provider.py  # GPT-4, GPT-3.5, etc.
-│       └── gemini_provider.py  # Gemini 2.0, Gemini 1.5, etc.
-├── types.py                # Type definitions (LLMRequest, LLMResponse)
-├── exceptions.py           # Custom exception hierarchy
-└── config.py              # Configuration management
+backend/llm/                 # LLM Orchestrator (Django app)
+├── orchestrator.py          # Main LLMOrchestrator class
+├── operation_handler.py     # Base handler for operations
+├── handler_registry.py      # Handler registration system
+├── types.py                 # Type definitions (LLMRequest, LLMResponse)
+├── exceptions.py            # Custom exception hierarchy
+├── config.py                # Configuration management
+└── providers/               # Cloud provider layer
+    ├── manager.py           # ModelManager for provider abstraction
+    ├── openai_provider.py   # GPT-4, GPT-3.5, etc.
+    ├── gemini_provider.py   # Gemini 2.0, Gemini 1.5, etc.
+    └── capabilities.py      # Model capability matching
+
+llm_provider/                # Local provider (project root)
+├── base.py                  # BaseProvider interface
+└── ollama.py                # Local models (Llama, Mistral, etc.)
+
+backend/pillars/llm/         # Pillar feature operations
+├── handlers.py              # Operation handlers
+├── prompts.py               # Prompt templates
+└── schemas.py               # Response schemas (Pydantic)
+
+backend/{feature}/llm/       # Other feature operations (future)
+└── ...                      # SPARC, moodboards, etc.
 ```
 
 ## Status
@@ -48,7 +53,7 @@ llm_orchestrator/
 - [x] Configuration management (env vars, Django integration)
 - [x] Model provider layer (Ollama, OpenAI, Gemini)
 - [x] Operation handler framework
-- [x] Pillar operations (operations: validate, improve, evaluate_*, suggest_additions)
+- [x] Pillar operations (validate, improve, evaluate_*, suggest_additions)
 - [x] Execution time tracking & performance metrics
 - [x] Model alias system (gemini → gemini-2.0-flash-exp, etc.)
 - [x] Structured output support (Pydantic schemas)
@@ -65,7 +70,8 @@ llm_orchestrator/
 ### Basic Usage
 
 ```python
-from llm_orchestrator import LLMOrchestrator, LLMRequest
+from backend.llm import LLMOrchestrator
+from backend.llm.types import LLMRequest
 
 # Initialize orchestrator (loads config from .env)
 orchestrator = LLMOrchestrator()
@@ -144,7 +150,7 @@ You can use either the alias or full model ID in requests.
 
 **Example: Adding a "summarize" operation to the pillars feature**
 
-1. **Define response schema** in `operations/pillars/schemas.py`:
+1. **Define response schema** in `backend/pillars/llm/schemas.py`:
 ```python
 from pydantic import BaseModel
 
@@ -154,7 +160,7 @@ class PillarSummaryResponse(BaseModel):
     word_count: int
 ```
 
-2. **Create prompt template** in `operations/pillars/prompts.py`:
+2. **Create prompt template** in `backend/pillars/llm/prompts.py`:
 ```python
 SummarizePrompt = """
 Summarize this game design pillar in 2-3 sentences:
@@ -166,8 +172,13 @@ Focus on the core essence and key mechanics.
 """
 ```
 
-3. **Create handler** in `operations/pillars/handlers.py`:
+3. **Create handler** in `backend/pillars/llm/handlers.py`:
 ```python
+from backend.llm.operation_handler import BaseOperationHandler
+from backend.llm.exceptions import InvalidRequestError
+from .prompts import SummarizePrompt
+from .schemas import PillarSummaryResponse
+
 class SummarizePillarHandler(BaseOperationHandler):
     """Summarize a game design pillar."""
 
@@ -184,16 +195,22 @@ class SummarizePillarHandler(BaseOperationHandler):
             )
 ```
 
-4. **Register handler** in `register_all_handlers()` function:
+4. **Register handler** in `backend/pillars/llm/__init__.py`:
 ```python
-def register_all_handlers():
-    # ... existing handlers ...
-    register_handler("pillars.summarize", SummarizePillarHandler)
+from backend.llm.handler_registry import register_handler
+from .handlers import SummarizePillarHandler
+
+# Auto-register on import
+register_handler("pillars.summarize", SummarizePillarHandler)
 ```
 
 5. **Use from Django views**:
 ```python
-from llm_orchestrator import LLMOrchestrator, LLMRequest
+from backend.llm import LLMOrchestrator
+from backend.llm.types import LLMRequest
+
+# Import handlers to trigger auto-registration
+from backend.pillars.llm import handlers  # noqa: F401
 
 orchestrator = LLMOrchestrator()
 request = LLMRequest(
@@ -208,15 +225,15 @@ summary = response.results['summary']
 
 ### Adding a New Feature
 
-**Example: Adding "moodboards" features**
+**Example: Adding "moodboards" feature**
 
-1. **Create feature directory**:
+1. **Create feature directory structure**:
 ```bash
-mkdir -p llm_orchestrator/operations/moodboards
-touch llm_orchestrator/operations/moodboards/{__init__.py,handlers.py,prompts.py,schemas.py}
+mkdir -p backend/moodboards/llm
+touch backend/moodboards/llm/{__init__.py,handlers.py,prompts.py,schemas.py}
 ```
 
-2. **Define schemas** in `schemas.py`:
+2. **Define schemas** in `backend/moodboards/llm/schemas.py`:
 ```python
 from pydantic import BaseModel
 
@@ -227,7 +244,7 @@ class MoodboardAnalysis(BaseModel):
     suggestions: list[str]
 ```
 
-3. **Create prompts** in `prompts.py`:
+3. **Create prompts** in `backend/moodboards/llm/prompts.py`:
 ```python
 AnalyzeMoodboardPrompt = """
 Analyze this moodboard description and extract:
@@ -240,10 +257,10 @@ Moodboard: %s
 """
 ```
 
-4. **Implement handlers** in `handlers.py`:
+4. **Implement handlers** in `backend/moodboards/llm/handlers.py`:
 ```python
-from llm_orchestrator.core import BaseOperationHandler, register_handler
-from llm_orchestrator.exceptions import InvalidRequestError
+from backend.llm.operation_handler import BaseOperationHandler
+from backend.llm.exceptions import InvalidRequestError
 from .prompts import AnalyzeMoodboardPrompt
 from .schemas import MoodboardAnalysis
 
@@ -257,18 +274,24 @@ class AnalyzeMoodboardHandler(BaseOperationHandler):
     def validate_input(self, data: dict) -> None:
         if 'description' not in data:
             raise InvalidRequestError(message="Missing 'description'")
-
-def register_all_handlers():
-    register_handler("moodboards.analyze", AnalyzeMoodboardHandler)
-
-# Auto-register on import
-register_all_handlers()
 ```
 
-5. **Import in Django views** to trigger registration:
+5. **Register handlers** in `backend/moodboards/llm/__init__.py`:
 ```python
+from backend.llm.handler_registry import register_handler
+from .handlers import AnalyzeMoodboardHandler
+
+# Auto-register on import
+register_handler("moodboards.analyze", AnalyzeMoodboardHandler)
+```
+
+6. **Import in Django views** to trigger registration:
+```python
+from backend.llm import LLMOrchestrator
+from backend.llm.types import LLMRequest
+
 # This import registers all moodboard handlers
-import llm_orchestrator.operations.moodboards.handlers
+from backend.moodboards.llm import handlers  # noqa: F401
 
 # Now use it
 orchestrator = LLMOrchestrator()
@@ -285,13 +308,13 @@ response = orchestrator.execute(request)
 
 **Example: Adding Anthropic Claude support**
 
-1. **Create provider class** in `models/providers/anthropic_provider.py`:
+1. **Create provider class** in `backend/llm/providers/anthropic_provider.py`:
 ```python
 from typing import Any, Dict, List, Optional
 from anthropic import Anthropic  # pip install anthropic
-from llm_orchestrator.models.providers.base import BaseProvider
-from llm_orchestrator.types import ModelDetails, ProviderType
-from llm_orchestrator.exceptions import ProviderError
+from llm_provider.base import BaseProvider
+from backend.llm.types import ModelDetails, ProviderType
+from backend.llm.exceptions import ProviderError
 
 class AnthropicProvider(BaseProvider):
     """Provider for Anthropic Claude models."""
@@ -326,7 +349,7 @@ class AnthropicProvider(BaseProvider):
     # Implement other required methods...
 ```
 
-2. **Add configuration** in `config.py`:
+2. **Add configuration** in `backend/llm/config.py`:
 ```python
 @dataclass
 class Config:
@@ -344,9 +367,9 @@ class Config:
     })
 ```
 
-3. **Register in ModelManager** (`models/manager.py`):
+3. **Register in ModelManager** (`backend/llm/providers/manager.py`):
 ```python
-from llm_orchestrator.models.providers.anthropic_provider import AnthropicProvider
+from backend.llm.providers.anthropic_provider import AnthropicProvider
 
 class ModelManager:
     def __init__(self, config: Config):
@@ -359,7 +382,7 @@ class ModelManager:
             )
 ```
 
-4. **Add to provider config getter** in `config.py`:
+4. **Add to provider config getter** in `backend/llm/config.py`:
 ```python
 def get_provider_config(self, provider: str) -> dict:
     # ... existing providers ...
@@ -386,44 +409,52 @@ request = LLMRequest(
 
 ## Integration with Django
 
-The orchestrator integrates seamlessly with Django:
+The orchestrator is now a Django app and integrates seamlessly:
 
 ```python
-# backend/llm/views.py
-from llm_orchestrator import LLMOrchestrator, LLMRequest
-from rest_framework.decorators import api_view
+# backend/pillars/views.py
+from backend.llm import LLMOrchestrator, get_config
+from backend.llm.types import LLMRequest
+from backend.pillars.llm import handlers  # noqa: F401 - triggers auto-registration
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
-@api_view(['POST'])
-def validate_pillar(request):
-    """Validate a game design pillar using LLM."""
-    orchestrator = LLMOrchestrator()
+class PillarFeedbackView(ViewSet):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.orchestrator = LLMOrchestrator()
 
-    llm_request = LLMRequest(
-        feature="pillars",
-        operation="validate",
-        data={
-            "name": request.data.get("name"),
-            "description": request.data.get("description")
-        },
-        model_id=request.data.get("model", "gemini")
-    )
+    @action(detail=True, methods=["POST"], url_path="validate")
+    def validate_pillar(self, request, pk):
+        """Validate a game design pillar using LLM."""
+        pillar = Pillar.objects.get(id=pk)
 
-    llm_response = orchestrator.execute(llm_request)
+        llm_request = LLMRequest(
+            feature="pillars",
+            operation="validate",
+            data={
+                "name": pillar.name,
+                "description": pillar.description
+            },
+            model_id=request.data.get("model", "gemini")
+        )
 
-    return Response({
-        "results": llm_response.results,
-        "execution_time_ms": llm_response.metadata.execution_time_ms,
-        "model_used": llm_response.metadata.models_used[0]
-    })
+        llm_response = self.orchestrator.execute(llm_request)
+
+        return JsonResponse({
+            "results": llm_response.results,
+            "execution_time_ms": llm_response.metadata.execution_time_ms,
+            "model_used": llm_response.metadata.models_used[0]
+        })
 ```
 
 ## Project Structure Philosophy
 
-- **`orchestrator/core/`**: Framework code - don't modify unless adding core features
-- **`orchestrator/operations/{feature}/`**: Feature-specific code - add new features here
-- **`orchestrator/models/providers/`**: Provider implementations - add new LLM providers here
-- **`backend/llm/`**: Django integration - views that use the orchestrator
+- **`backend/llm/`**: Orchestrator core - framework code, don't modify unless adding core features
+- **`backend/{feature}/llm/`**: Feature-specific code - add new features here (e.g., `backend/pillars/llm/`)
+- **`backend/llm/providers/`**: Cloud provider implementations - add new cloud LLM providers here
+- **`llm_provider/`**: Local provider package at project root - only contains Ollama and BaseProvider
+- **`backend/{feature}/views.py`**: Django integration - views that use the orchestrator
 
 ## Error Handling
 
@@ -468,16 +499,39 @@ print(f"Completed in {response.metadata.execution_time_ms}ms")
 print(f"Used model: {response.metadata.models_used[0]}")
 ```
 
+## Import Structure
+
+After the refactoring, the import structure is:
+
+```python
+# Local provider (from project root)
+from llm_provider import OllamaProvider, BaseProvider
+
+# Orchestrator (from backend)
+from backend.llm import LLMOrchestrator, ModelManager, get_config
+from backend.llm.types import LLMRequest, LLMResponse
+
+# Cloud providers (from backend, internal use)
+from backend.llm.providers import OpenAIProvider, GeminiProvider
+
+# Feature handlers (from feature apps, auto-registered)
+# These are imported by the Django app to trigger registration
+from backend.pillars.llm import handlers  # Registers all pillars handlers
+```
+
 ## Testing
 
-Run tests from project root:
+Run tests from backend directory:
 ```bash
-# Run all tests
-python -m pytest llm_orchestrator/tests/ -v
+# Activate virtual environment
+source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate     # Windows
 
-# Run specific test file
-python -m pytest llm_orchestrator/tests/test_handlers.py -v
+# Run all tests (when implemented)
+python manage.py test llm
 
-# Run with coverage
-python -m pytest llm_orchestrator/tests/ --cov=llm_orchestrator
+flake8 .
+isort .
+black .
+mypy .
 ```
