@@ -503,17 +503,65 @@ from backend.pillars.llm import handlers  # Registers all pillars handlers
 
 ## Testing
 
-Run tests from backend directory:
+The project includes comprehensive test coverage for the LLM orchestrator and pillar handlers.
+
+### Running Tests
+
+From the `backend/` directory:
+
 ```bash
 # Activate virtual environment
 source .venv/bin/activate  # macOS/Linux
 .venv\Scripts\activate     # Windows
 
-# Run all tests (when implemented)
-python manage.py test llm
+# Run all LLM and pillar tests (93 tests)
+python -m pytest llm/tests/ pillars/tests/ -v
 
-flake8 .
-isort .
-black .
-mypy .
+# Run only orchestrator tests (64 tests)
+python -m pytest llm/tests/ -v
+
+# Run only pillar handler tests (29 tests)
+python -m pytest pillars/tests/ -v
+
+# Run specific test file
+python -m pytest llm/tests/test_orchestrator_basic.py -v
+
+# Run with coverage report
+python -m pytest llm/tests/ pillars/tests/ --cov=llm --cov=pillars --cov-report=term-missing
+
+# Run in quiet mode (just show summary)
+python -m pytest llm/tests/ pillars/tests/ -q
+```
+
+### Test Structure
+
+**LLM Orchestrator Tests** (`backend/llm/tests/`):
+- `test_handler_registry.py` - Handler registration and discovery (12 tests)
+- `test_orchestrator_basic.py` - Initialization and configuration (14 tests)
+- `test_execution_modes.py` - Monolithic/agentic mode execution (5 tests)
+- `test_execution_metadata.py` - Time tracking and metadata (3 tests)
+- `test_model_selection_basic.py` - Model selection and aliases (8 tests)
+- `test_model_capabilities.py` - Capability matching (4 tests)
+- `test_response_validation.py` - Response structure (6 tests)
+- `test_response_metadata.py` - Response metadata (3 tests)
+- `test_error_handling.py` - Error scenarios (9 tests)
+
+**Pillar Handler Tests** (`backend/pillars/tests/`):
+- `test_validate_handler.py` - Validate operation (7 tests)
+- `test_improve_handler.py` - Improve operation (7 tests)
+- `test_completeness_contradictions.py` - Evaluation operations (9 tests)
+- `test_additions_context.py` - Suggestions and context (6 tests)
+
+### Code Quality
+
+Check code quality from the `backend/` directory:
+
+```bash
+# Auto-formatting
+black llm/ pillars/
+isort llm/ pillars/
+# Linting
+flake8 llm/ pillars/
+# Type checking
+mypy llm/ pillars/
 ```
