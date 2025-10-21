@@ -6,6 +6,9 @@ from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from llm import LLMOrchestrator, LLMRequest, get_config
 
+# Import handlers to trigger auto-registration
+from pillars.llm import handlers  # noqa: F401
+
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
