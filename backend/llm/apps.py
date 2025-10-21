@@ -9,6 +9,7 @@ class LlmConfig(AppConfig):
     for LLM orchestration. Included in INSTALLED_APPS to ensure
     proper app loading order and imports.
     """
+
     default_auto_field = "django.db.models.BigAutoField"
     name = "llm"
     # Prevent Django from looking for models

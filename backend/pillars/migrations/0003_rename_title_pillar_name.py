@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    replaces = [('llm', '0003_rename_title_pillar_name')]
+    replaces = [("llm", "0003_rename_title_pillar_name")]
 
     dependencies = [
         ("pillars", "0002_alter_pillar_unique_together_remove_pillar_pillar_id"),

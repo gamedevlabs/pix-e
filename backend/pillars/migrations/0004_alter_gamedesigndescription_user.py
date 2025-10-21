@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [('llm', '0004_alter_gamedesigndescription_user')]
+    replaces = [("llm", "0004_alter_gamedesigndescription_user")]
 
     dependencies = [
         ("pillars", "0003_rename_title_pillar_name"),
