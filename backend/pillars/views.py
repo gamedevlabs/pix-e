@@ -4,10 +4,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from llm import LLMOrchestrator, LLMRequest, get_config
+from backend.llm import LLMOrchestrator, get_config
+from backend.llm.types import LLMRequest
 
 # Import handlers to trigger auto-registration
-from pillars.llm import handlers  # noqa: F401
+from backend.pillars.llm import handlers  # noqa: F401
 
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
