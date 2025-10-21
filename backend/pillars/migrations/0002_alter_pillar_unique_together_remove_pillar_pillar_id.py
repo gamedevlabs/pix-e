@@ -5,8 +5,10 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
+    replaces = [('llm', '0002_alter_pillar_unique_together_remove_pillar_pillar_id')]
+
     dependencies = [
-        ("llm", "0001_initial"),
+        ("pillars", "0001_initial"),
     ]
 
     operations = [

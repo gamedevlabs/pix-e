@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "pxnodes",
     "llm",
+    "pillars",
     "accounts",
     "pxcharts",
     "player_expectations",
