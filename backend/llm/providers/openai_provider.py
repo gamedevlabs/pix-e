@@ -407,7 +407,7 @@ class OpenAIProvider(BaseProvider):
 
         return f"""{prompt}
 
-You must respond with valid JSON matching this schema:
-{schema_str}
+        You must respond with valid JSON matching this schema:
+        {schema_str}
 
-Respond only with the JSON object, no additional text."""
+        Respond only with the JSON object, no additional text."""
