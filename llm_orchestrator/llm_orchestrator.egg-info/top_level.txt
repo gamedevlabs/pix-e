@@ -1,7 +1,0 @@
-agents
-core
-models
-operations
-schemas
-storage
-tests
