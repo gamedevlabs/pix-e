@@ -72,6 +72,7 @@ class GeminiProvider(BaseProvider):
                 - timeout: Request timeout in seconds (default: 60)
         """
         super().__init__(config)
+        self._is_available: Optional[bool] = None
 
         api_key = config.get("api_key")
         if not api_key:

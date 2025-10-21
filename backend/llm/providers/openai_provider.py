@@ -73,6 +73,7 @@ class OpenAIProvider(BaseProvider):
                 - base_url: API base URL (optional, for compatible APIs)
         """
         super().__init__(config)
+        self._is_available: Optional[bool] = None
 
         api_key = config.get("api_key")
         if not api_key:
