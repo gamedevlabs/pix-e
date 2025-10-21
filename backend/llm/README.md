@@ -31,7 +31,7 @@ backend/llm/                 # LLM Orchestrator (Django app)
     ├── gemini_provider.py   # Gemini 2.0, Gemini 1.5, etc.
     └── capabilities.py      # Model capability matching
 
-llm_provider/                # Local provider (project root)
+local_llm/                   # Local provider (project root)
 ├── base.py                  # BaseProvider interface
 └── ollama.py                # Local models (Llama, Mistral, etc.)
 
@@ -296,7 +296,7 @@ response = orchestrator.execute(request)
 ```python
 from typing import Any, Dict, List, Optional
 from anthropic import Anthropic  # pip install anthropic
-from llm_provider.base import BaseProvider
+from local_llm.base import BaseProvider
 from backend.llm.types import ModelDetails, ProviderType
 from backend.llm.exceptions import ProviderError
 
@@ -437,7 +437,7 @@ class PillarFeedbackView(ViewSet):
 - **`backend/llm/`**: Orchestrator core - framework code, don't modify unless adding core features
 - **`backend/{feature}/llm/`**: Feature-specific code - add new features here (e.g., `backend/pillars/llm/`)
 - **`backend/llm/providers/`**: Cloud provider implementations - add new cloud LLM providers here
-- **`llm_provider/`**: Local provider package at project root - only contains Ollama and BaseProvider
+- **`local_llm/`**: Local provider package at project root - only contains Ollama and BaseProvider
 - **`backend/{feature}/views.py`**: Django integration - views that use the orchestrator
 
 ## Error Handling
@@ -489,7 +489,7 @@ After the refactoring, the import structure is:
 
 ```python
 # Local provider (from project root)
-from llm_provider import OllamaProvider, BaseProvider
+from local_llm import OllamaProvider, BaseProvider
 
 # Orchestrator (from backend)
 from backend.llm import LLMOrchestrator, ModelManager, get_config

@@ -166,3 +166,5 @@ class GenerationResult:
         self.completion_tokens = completion_tokens
         self.total_tokens = prompt_tokens + completion_tokens
         self.metadata = metadata or {}
+
+

@@ -2,7 +2,7 @@
 LLM Provider implementations for the orchestrator.
 
 This package contains cloud provider implementations (OpenAI, Gemini).
-Local provider (Ollama) is in the standalone llm_provider package.
+Local providers (e.g., Ollama) live in the project root package `local_llm`.
 """
 
 from llm.providers.capabilities import (

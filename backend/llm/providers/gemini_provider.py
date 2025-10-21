@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from google import genai
 from google.genai.errors import APIError as GeminiAPIError
 from google.genai.errors import ClientError
-from llm_provider.base import BaseProvider
+from local_llm.base import BaseProvider
 from pydantic import ValidationError
 
 from llm.exceptions import (

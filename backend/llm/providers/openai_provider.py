@@ -8,7 +8,7 @@ import copy
 import json
 from typing import Any, Dict, List, Optional
 
-from llm_provider.base import BaseProvider
+from local_llm.base import BaseProvider
 from openai import (
     APIError,
     APITimeoutError,

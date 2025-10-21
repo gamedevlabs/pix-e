@@ -10,8 +10,12 @@ from typing import Any, Dict, List, Optional
 import httpx
 from pydantic import ValidationError
 
-from llm_provider.base import (BaseProvider, ModelCapabilities, ModelDetails,
-                               ProviderType)
+from local_llm.base import (
+    BaseProvider,
+    ModelCapabilities,
+    ModelDetails,
+    ProviderType,
+)
 
 
 class ProviderError(Exception):
@@ -61,13 +65,9 @@ class OllamaProvider(BaseProvider):
                 - timeout: Request timeout in seconds (default: 60)
         """
         super().__init__(config)
-        self.base_url = config.get(
-            "base_url", "http://localhost:11434"
-        )
+        self.base_url = config.get("base_url", "http://localhost:11434")
         self.timeout = config.get("timeout", 60)
-        self.client = httpx.Client(
-            base_url=self.base_url, timeout=self.timeout
-        )
+        self.client = httpx.Client(base_url=self.base_url, timeout=self.timeout)
 
     @property
     def provider_name(self) -> str:
@@ -105,24 +105,18 @@ class OllamaProvider(BaseProvider):
                         name=name,
                         provider=self.provider_name,
                         type=self.provider_type,
-                        capabilities=self._get_model_capabilities(
-                            name, model_info
-                        ),
+                        capabilities=self._get_model_capabilities(name, model_info),
                     )
                 )
 
             return models
         except httpx.RequestError as e:
-            raise ProviderError(
-                provider="ollama", message=f"Failed to list models: {str(e)}"
-            )
+            raise ProviderError(provider="ollama", message=f"Failed to list models: {str(e)}")
 
     def get_model_info(self, model_name: str) -> ModelDetails:
         """Get information about a specific model."""
         try:
-            response = self.client.post(
-                "/api/show", json={"name": model_name}
-            )
+            response = self.client.post("/api/show", json={"name": model_name})
             response.raise_for_status()
             model_info = response.json()
 
@@ -130,9 +124,7 @@ class OllamaProvider(BaseProvider):
                 name=model_name,
                 provider=self.provider_name,
                 type=self.provider_type,
-                capabilities=self._get_model_capabilities(
-                    model_name, model_info
-                ),
+                capabilities=self._get_model_capabilities(model_name, model_info),
             )
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:
@@ -218,9 +210,7 @@ class OllamaProvider(BaseProvider):
         """Generate structured JSON output using Ollama."""
         try:
             # Build the prompt with JSON schema instructions
-            schema_prompt = self._build_structured_prompt(
-                prompt, response_schema
-            )
+            schema_prompt = self._build_structured_prompt(prompt, response_schema)
 
             options: Dict[str, Any] = {
                 "temperature": temperature,
@@ -284,9 +274,7 @@ class OllamaProvider(BaseProvider):
                 context={"model": model_name},
             )
 
-    def _get_model_capabilities(
-        self, model_name: str, model_info: Dict[str, Any]
-    ) -> ModelCapabilities:
+    def _get_model_capabilities(self, model_name: str, model_info: Dict[str, Any]) -> ModelCapabilities:
         """
         Determine model capabilities based on name and metadata.
 
@@ -307,9 +295,7 @@ class OllamaProvider(BaseProvider):
             "mistral",
             "qwen",
         ]
-        has_function_calling = any(
-            kw in name_lower for kw in function_keywords
-        )
+        has_function_calling = any(kw in name_lower for kw in function_keywords)
 
         # All Ollama models support JSON mode (structured output)
         has_json_strict = True
@@ -334,9 +320,7 @@ class OllamaProvider(BaseProvider):
             min_context_window=context_window,
         )
 
-    def _build_structured_prompt(
-        self, prompt: str, response_schema: type
-    ) -> str:
+    def _build_structured_prompt(self, prompt: str, response_schema: type) -> str:
         """
         Build a prompt for structured JSON.
 
@@ -377,3 +361,5 @@ class OllamaProvider(BaseProvider):
         """Clean up HTTP client on deletion."""
         if hasattr(self, "client"):
             self.client.close()
+
+

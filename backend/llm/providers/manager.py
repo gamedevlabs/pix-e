@@ -13,8 +13,8 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from llm_provider import OllamaProvider
-from llm_provider.base import BaseProvider, GenerationResult
+from local_llm import OllamaProvider
+from local_llm.base import BaseProvider, GenerationResult
 
 from llm.config import Config, get_config
 from llm.exceptions import (
