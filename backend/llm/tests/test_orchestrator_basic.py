@@ -6,18 +6,30 @@ Tests orchestrator initialization, configuration, and basic request validation.
 
 from unittest.mock import Mock
 
-from llm import LLMOrchestrator
+import pytest
+
+from llm import LLMOrchestrator, ProviderError
 from llm.config import get_config
 from llm.providers import ModelManager
 from llm.types import LLMRequest
 
 
+@pytest.fixture
+def orchestrator():
+    """Return a configured orchestrator or skip if missing credentials."""
+    try:
+        return LLMOrchestrator()
+    except ProviderError as e:
+        pytest.skip(f"Missing provider ({e})")
+    except Exception as e:
+        raise e
+
+
 class TestOrchestratorInitialization:
     """Test orchestrator initialization."""
 
-    def test_orchestrator_initializes_without_arguments(self):
+    def test_orchestrator_initializes_without_arguments(self, orchestrator):
         """Test that orchestrator can be initialized without arguments."""
-        orchestrator = LLMOrchestrator()
 
         assert orchestrator is not None
         assert orchestrator.model_manager is not None
@@ -30,15 +42,13 @@ class TestOrchestratorInitialization:
 
         assert orchestrator.model_manager is mock_manager
 
-    def test_orchestrator_creates_model_manager_if_not_provided(self):
+    def test_orchestrator_creates_model_manager_if_not_provided(self, orchestrator):
         """Test that orchestrator creates ModelManager if not provided."""
-        orchestrator = LLMOrchestrator()
 
         assert isinstance(orchestrator.model_manager, ModelManager)
 
-    def test_orchestrator_loads_config(self):
+    def test_orchestrator_loads_config(self, orchestrator):
         """Test that orchestrator loads configuration."""
-        orchestrator = LLMOrchestrator()
 
         assert orchestrator.config is not None
         # Config should be the same as get_config()
@@ -138,16 +148,14 @@ class TestRequestValidation:
 class TestModelManagerIntegration:
     """Test orchestrator's integration with ModelManager."""
 
-    def test_orchestrator_has_model_manager(self):
+    def test_orchestrator_has_model_manager(self, orchestrator):
         """Test that orchestrator has a model_manager attribute."""
-        orchestrator = LLMOrchestrator()
 
         assert hasattr(orchestrator, "model_manager")
         assert orchestrator.model_manager is not None
 
-    def test_orchestrator_can_access_providers(self):
+    def test_orchestrator_can_access_providers(self, orchestrator):
         """Test that orchestrator can access providers through model_manager."""
-        orchestrator = LLMOrchestrator()
 
         assert hasattr(orchestrator.model_manager, "providers")
         assert isinstance(orchestrator.model_manager.providers, dict)
