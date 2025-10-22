@@ -68,5 +68,5 @@ jobs:
       - name: Run mypy
         run: python -m mypy .
 
-      - name: Run llm & pillar tests
+      - name: Run test suite
         run: python -m pytest llm/tests/ pillars/tests/ -v
