@@ -8,7 +8,7 @@ from .views import (
     PillarViewSet,
 )
 
-app_name = "llm"
+app_name = "pillars"
 
 router = DefaultRouter()
 router.register(r"pillars", PillarViewSet, basename="pillars")

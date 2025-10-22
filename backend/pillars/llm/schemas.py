@@ -1,8 +1,12 @@
+"""
+Response schemas for pillar operations.
+
+These Pydantic models define the structure of LLM responses.
+All schemas are migrated from backend/llm/llm_links/responseSchemes.py to centralize
+pillar-specific logic in the orchestrator.
+"""
+
 from pydantic import BaseModel, Field
-
-
-class StringFeedback(BaseModel):
-    feedback: str
 
 
 class StructuralIssue(BaseModel):

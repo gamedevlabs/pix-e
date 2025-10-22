@@ -7,8 +7,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
+    replaces = [("llm", "0004_alter_gamedesigndescription_user")]
+
     dependencies = [
-        ("llm", "0003_rename_title_pillar_name"),
+        ("pillars", "0003_rename_title_pillar_name"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

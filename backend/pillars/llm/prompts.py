@@ -1,3 +1,11 @@
+"""
+Prompts for pillar operations.
+
+These prompts are used by pillar handlers to generate LLM requests.
+All prompts are migrated from backend/llm/llm_links/prompts.py to centralize
+pillar-specific logic in the orchestrator.
+"""
+
 ValidationPrompt = """Validate the following Game Design Pillar.
 Check for structural issues regarding the following points:
 1. The name does not match the description.
@@ -19,19 +27,6 @@ Check for structural issues regarding the following points:
 Pillar Title: %s
 Pillar Description: %s
 Rewrite erroneous parts of the pillar and return a new pillar object.
-"""
-
-# Deprecated Prompt, split into multiple prompts below
-PillarsInContextPrompt = """Assume the role of a game design expert.
-Evaluate if the following Game Design Idea is sufficiently
-covered by the following Design Pillars.
-Check if pillars stand in contradiction towards the game idea or are not a
-good fit for the game idea (e.g not central to the game idea).
-Also evaluate if the pillars stand in contradiction towards each other.
-
-Game Design Idea: %s
-
-Design Pillars: %s
 """
 
 PillarCompletenessPrompt = """Assume the role of a game design expert.
