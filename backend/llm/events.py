@@ -76,14 +76,16 @@ class EventCollector:
         self, to: ModelInfo, reason: str, from_: Optional[str] = None
     ) -> ModelRoutedEvent:
         """Add a ModelRoutedEvent."""
-        event = ModelRoutedEvent(
-            run_id=self.run_id,
-            timestamp=generate_timestamp(),
-            to=to,
-            reason=reason,
-        )
+        event_data: dict = {
+            "run_id": self.run_id,
+            "timestamp": generate_timestamp(),
+            "to": to,
+            "reason": reason,
+        }
         if from_ is not None:
-            event.from_ = from_
+            event_data["from"] = from_
+
+        event = ModelRoutedEvent.model_validate(event_data)
         self.events.append(event)
         return event
 
