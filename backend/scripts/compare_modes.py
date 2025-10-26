@@ -182,9 +182,17 @@ class ModeComparator:
 
         for op_result in results.values():
             if op_result.get("success", False):
-                total_cost_eur += op_result.get("cost_eur", 0.0)
-                total_prompt_tokens += op_result.get("prompt_tokens", 0)
-                total_completion_tokens += op_result.get("completion_tokens", 0)
+                cost = op_result.get("cost_eur", 0.0)
+                if isinstance(cost, (int, float)):
+                    total_cost_eur += float(cost)
+
+                p_tokens = op_result.get("prompt_tokens", 0)
+                if isinstance(p_tokens, int):
+                    total_prompt_tokens += p_tokens
+
+                c_tokens = op_result.get("completion_tokens", 0)
+                if isinstance(c_tokens, int):
+                    total_completion_tokens += c_tokens
 
         total_tokens = total_prompt_tokens + total_completion_tokens
 
