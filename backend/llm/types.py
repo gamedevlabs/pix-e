@@ -250,6 +250,9 @@ class ResponseMetadata(BaseModel):
     # Artifacts/provenance
     artifacts: Optional[List[ArtifactInfo]] = None
 
+    # Event timeline (agentic mode only)
+    events: Optional[List["StreamEvent"]] = None
+
 
 class ErrorInfo(BaseModel):
     """Error information."""
