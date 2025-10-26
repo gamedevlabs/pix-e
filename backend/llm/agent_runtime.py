@@ -2,9 +2,10 @@
 Agent Runtime for Agentic Execution
 
 Provides BaseAgent class for individual agent execution.
-This is the synchronous version - async wrapper will be added in the next step.
+Supports both synchronous (execute) and asynchronous (run) execution.
 """
 
+import asyncio
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Type
@@ -70,17 +71,67 @@ class BaseAgent(ABC):
         """
         pass
 
+    def _select_model(
+        self, model_manager: ModelManager, context: Dict[str, Any]
+    ) -> str:
+        """Select appropriate model based on capability requirements."""
+        if self.capability_requirements:
+            model = model_manager.auto_select_model(
+                requirements=self.capability_requirements,
+                model_preference=context.get("model_preference", "auto"),
+            )
+            return model.name
+        else:
+            models = model_manager.list_available_models()
+            if not models:
+                raise AgentFailureError(
+                    agent_name=self.name,
+                    message="No models available",
+                    context={"capability_requirements": self.capability_requirements},
+                )
+            return models[0].name
+
+    def _build_error_result(
+        self, error: Exception, execution_time_ms: int
+    ) -> AgentResult:
+        """Build AgentResult for error cases."""
+        if isinstance(error, ValidationError):
+            error_info = ErrorInfo(
+                code="VALIDATION_ERROR",
+                message=f"Response validation failed: {str(error)}",
+                severity="error",
+                context={"validation_errors": error.errors()},
+                diagnostics=None,
+            )
+        elif isinstance(error, AgentFailureError):
+            error_info = ErrorInfo(
+                code="AGENT_FAILURE",
+                message=error.message,
+                severity="error",
+                context=error.context,
+                diagnostics=None,
+            )
+        else:
+            error_info = ErrorInfo(
+                code="EXECUTION_ERROR",
+                message=str(error),
+                severity="error",
+                context={"agent": self.name, "exception_type": type(error).__name__},
+                diagnostics=None,
+            )
+
+        return AgentResult(
+            agent_name=self.name,
+            success=False,
+            data=None,
+            model_used=None,
+            execution_time_ms=execution_time_ms,
+            error=error_info,
+        )
+
     def execute(self, context: Dict[str, Any]) -> AgentResult:
         """
         Execute the agent synchronously.
-
-        This is the main execution method that:
-        1. Validates input
-        2. Builds prompt
-        3. Selects appropriate model
-        4. Calls LLM
-        5. Validates response
-        6. Returns AgentResult
 
         Args:
             context: Execution context with keys:
@@ -88,37 +139,14 @@ class BaseAgent(ABC):
                 - data: Operation input data
         """
         start_time = time.time()
-
-        # Extract context
         model_manager: ModelManager = context["model_manager"]
         data: Dict[str, Any] = context.get("data", {})
 
         try:
             self.validate_input(data)
-
             prompt = self.build_prompt(data)
+            model_name = self._select_model(model_manager, context)
 
-            # Select model based on capability requirements
-            if self.capability_requirements:
-                model = model_manager.auto_select_model(
-                    requirements=self.capability_requirements,
-                    model_preference=context.get("model_preference", "auto"),
-                )
-                model_name = model.name
-            else:
-                # Use first available model
-                models = model_manager.list_available_models()
-                if not models:
-                    raise AgentFailureError(
-                        agent_name=self.name,
-                        message="No models available",
-                        context={
-                            "capability_requirements": self.capability_requirements
-                        },
-                    )
-                model_name = models[0].name
-
-            # Execute LLM call with structured output
             result = model_manager.generate_structured_with_model(
                 model_name=model_name,
                 prompt=prompt,
@@ -127,8 +155,6 @@ class BaseAgent(ABC):
             )
 
             execution_time_ms = int((time.time() - start_time) * 1000)
-
-            # Return successful result
             return AgentResult(
                 agent_name=self.name,
                 success=True,
@@ -138,53 +164,23 @@ class BaseAgent(ABC):
                 error=None,
             )
 
-        except ValidationError as e:
-            # Pydantic validation failed
-            execution_time_ms = int((time.time() - start_time) * 1000)
-            return AgentResult(
-                agent_name=self.name,
-                success=False,
-                data=None,
-                model_used=None,
-                execution_time_ms=execution_time_ms,
-                error=ErrorInfo(
-                    code="VALIDATION_ERROR",
-                    message=f"Response validation failed: {str(e)}",
-                    severity="error",
-                    context={"validation_errors": e.errors()},
-                    diagnostics=None,
-                ),
-            )
-
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
-            error_msg = str(e)
+            return self._build_error_result(e, execution_time_ms)
 
-            if isinstance(e, AgentFailureError):
-                error_info = ErrorInfo(
-                    code="AGENT_FAILURE",
-                    message=e.message,
-                    severity="error",
-                    context=e.context,
-                    diagnostics=None,
-                )
-            else:
-                error_info = ErrorInfo(
-                    code="EXECUTION_ERROR",
-                    message=error_msg,
-                    severity="error",
-                    context={"agent": self.name, "exception_type": type(e).__name__},
-                    diagnostics=None,
-                )
+    async def run(self, context: Dict[str, Any]) -> AgentResult:
+        """
+        Execute the agent asynchronously.
 
-            return AgentResult(
-                agent_name=self.name,
-                success=False,
-                data=None,
-                model_used=None,
-                execution_time_ms=execution_time_ms,
-                error=error_info,
-            )
+        This wraps the synchronous execute() method using asyncio.to_thread()
+        to make it non-blocking in async contexts. This is necessary because
+        our LLM providers are currently synchronous.
+
+        Args:
+            context: Execution context (same as execute())
+        """
+        # Run synchronous execute() in a thread pool to avoid blocking
+        return await asyncio.to_thread(self.execute, context)
 
     def __str__(self) -> str:
         """String representation."""
