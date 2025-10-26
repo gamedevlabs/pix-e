@@ -17,7 +17,7 @@ from llm.exceptions import (
     ProviderError,
     RateLimitError,
 )
-from llm.providers.base import BaseProvider
+from llm.providers.base import BaseProvider, StructuredResult
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 
@@ -274,8 +274,22 @@ class GeminiProvider(BaseProvider):
                 config=config,  # type: ignore[arg-type]
             )
 
+            # Extract token usage if available
+            prompt_tokens = 0
+            completion_tokens = 0
+            if hasattr(response, "usage_metadata"):
+                usage = response.usage_metadata
+                prompt_tokens = getattr(usage, "prompt_token_count", 0)
+                completion_tokens = getattr(usage, "candidates_token_count", 0)
+
             # Gemini SDK automatically parses and validates against the Pydantic schema
-            return response.parsed
+            return StructuredResult(
+                data=response.parsed,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                model=model_name,
+                provider="gemini",
+            )
 
         except ValidationError as e:
             raise ProviderError(

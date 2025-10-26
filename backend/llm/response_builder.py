@@ -8,6 +8,7 @@ handler and agent execution results.
 from typing import Any, List, Set
 
 from llm.events import EventCollector
+from llm.providers.base import StructuredResult
 from llm.providers.manager import ModelManager
 from llm.types import (
     AgentInfo,
@@ -16,6 +17,7 @@ from llm.types import (
     LLMResponse,
     ModelInfo,
     ResponseMetadata,
+    TokenUsage,
 )
 
 
@@ -38,6 +40,18 @@ def build_handler_response(
         execution_time_ms: Total execution time in milliseconds
         model_manager: ModelManager for looking up model details
     """
+    # Extract token usage if result is StructuredResult
+    token_usage = None
+    actual_result = result
+
+    if isinstance(result, StructuredResult):
+        token_usage = TokenUsage(
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+            total_tokens=result.total_tokens,
+        )
+        actual_result = result.data
+
     # Get model info
     try:
         model_details = model_manager._find_model_by_name(model_name)
@@ -55,11 +69,16 @@ def build_handler_response(
         execution_time_ms=execution_time_ms,
         mode=mode,  # type: ignore
         models_used=[model_info],
+        token_usage=token_usage,
     )
 
     return LLMResponse(
         success=True,
-        results=result.model_dump() if hasattr(result, "model_dump") else result,
+        results=(
+            actual_result.model_dump()
+            if hasattr(actual_result, "model_dump")
+            else actual_result
+        ),
         metadata=metadata,
     )
 
@@ -79,13 +98,21 @@ def build_agent_response(
         event_collector: EventCollector with execution timeline
         model_manager: ModelManager for looking up model details
     """
-    # Extract models used from agent results
+    # Extract models used and aggregate token usage from agent results
     models_used_names: Set[str] = set()
     agents_used: List[AgentInfo] = []
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_tokens = 0
 
     for agent_result in execution_result.agent_results:
         if agent_result.model_used:
             models_used_names.add(agent_result.model_used)
+
+        # Aggregate token usage
+        total_prompt_tokens += agent_result.prompt_tokens
+        total_completion_tokens += agent_result.completion_tokens
+        total_tokens += agent_result.total_tokens
 
         # Build AgentInfo
         agents_used.append(
@@ -113,6 +140,15 @@ def build_agent_response(
                 ModelInfo(name=model_name, type="cloud", provider="unknown")
             )
 
+    # Build token usage if any tokens were used
+    token_usage = None
+    if total_tokens > 0:
+        token_usage = TokenUsage(
+            prompt_tokens=total_prompt_tokens,
+            completion_tokens=total_completion_tokens,
+            total_tokens=total_tokens,
+        )
+
     # Build metadata
     metadata = ResponseMetadata(
         execution_time_ms=execution_result.total_execution_time_ms,
@@ -120,6 +156,7 @@ def build_agent_response(
         models_used=models_used,
         agents_used=agents_used,
         events=event_collector.get_events(),
+        token_usage=token_usage,
     )
 
     return LLMResponse(

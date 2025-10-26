@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional, Type
 from pydantic import BaseModel, ValidationError
 
 from llm.exceptions import AgentFailureError
+from llm.providers.base import StructuredResult
 from llm.providers.manager import ModelManager
 from llm.types import AgentResult, CapabilityRequirements, ErrorInfo
 
@@ -75,6 +76,11 @@ class BaseAgent(ABC):
         self, model_manager: ModelManager, context: Dict[str, Any]
     ) -> str:
         """Select appropriate model based on capability requirements."""
+        # If explicit model_id is provided, use it
+        if "model_id" in context and context["model_id"]:
+            return context["model_id"]
+
+        # Otherwise use auto-selection based on capabilities
         if self.capability_requirements:
             model = model_manager.auto_select_model(
                 requirements=self.capability_requirements,
@@ -154,14 +160,33 @@ class BaseAgent(ABC):
                 temperature=self.temperature,
             )
 
+            # Extract token usage if result is StructuredResult
+            prompt_tokens = 0
+            completion_tokens = 0
+            total_tokens = 0
+            actual_result = result
+
+            if isinstance(result, StructuredResult):
+                prompt_tokens = result.prompt_tokens
+                completion_tokens = result.completion_tokens
+                total_tokens = result.total_tokens
+                actual_result = result.data
+
             execution_time_ms = int((time.time() - start_time) * 1000)
             return AgentResult(
                 agent_name=self.name,
                 success=True,
-                data=result.model_dump() if hasattr(result, "model_dump") else result,
+                data=(
+                    actual_result.model_dump()
+                    if hasattr(actual_result, "model_dump")
+                    else actual_result
+                ),
                 model_used=model_name,
                 execution_time_ms=execution_time_ms,
                 error=None,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
             )
 
         except Exception as e:

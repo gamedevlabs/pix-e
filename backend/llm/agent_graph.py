@@ -107,6 +107,10 @@ class BaseAgentGraph(ABC):
             "model_preference": getattr(request, "model_preference", "auto"),
         }
 
+        # Pass explicit model_id if provided
+        if hasattr(request, "model_id") and request.model_id:
+            context["model_id"] = request.model_id
+
         # Execute agents in parallel with concurrency limit
         max_parallel = getattr(self.config, "max_parallel_agents", 3)
         semaphore = asyncio.Semaphore(max_parallel)

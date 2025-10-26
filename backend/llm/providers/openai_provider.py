@@ -21,7 +21,7 @@ from llm.exceptions import (
     ProviderError,
     RateLimitError,
 )
-from llm.providers.base import BaseProvider
+from llm.providers.base import BaseProvider, StructuredResult
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 
@@ -268,19 +268,33 @@ class OpenAIProvider(BaseProvider):
             response = self.client.chat.completions.create(**params)
             content = response.choices[0].message.content or "{}"
 
+            # Extract token usage
+            usage = response.usage
+            prompt_tokens = usage.prompt_tokens if usage else 0
+            completion_tokens = usage.completion_tokens if usage else 0
+
             # Parse and validate
             try:
                 parsed_data = json.loads(content)
                 if hasattr(response_schema, "model_validate"):
                     # Pydantic v2
-                    return response_schema.model_validate(parsed_data)
+                    validated = response_schema.model_validate(parsed_data)
                 else:
                     # Pydantic v1 or plain dict
-                    return (
+                    validated = (
                         response_schema(**parsed_data)
                         if callable(response_schema)
                         else parsed_data
                     )
+
+                # Return with token tracking
+                return StructuredResult(
+                    data=validated,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=model_name,
+                    provider="openai",
+                )
             except (json.JSONDecodeError, ValidationError) as e:
                 raise ProviderError(
                     provider="openai",
