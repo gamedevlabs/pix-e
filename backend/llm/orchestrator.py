@@ -6,10 +6,13 @@ It routes requests to either operation handlers (monolithic mode) or
 agents (agentic mode).
 """
 
+import asyncio
 import time
-from typing import Any, Optional, cast
+from typing import Optional, cast
 
+from llm.agent_registry import get_graph, has_graph
 from llm.config import get_config
+from llm.events import EventCollector
 from llm.exceptions import (
     InvalidRequestError,
     OrchestratorError,
@@ -18,49 +21,25 @@ from llm.exceptions import (
 )
 from llm.handler_registry import get_handler
 from llm.providers import ModelManager
-from llm.types import (
-    LLMRequest,
-    LLMResponse,
-    ModelInfo,
-    ResponseMetadata,
-    WarningInfo,
-)
+from llm.response_builder import build_agent_response, build_handler_response
+from llm.types import LLMRequest, LLMResponse, WarningInfo
 
 
 class LLMOrchestrator:
     """
     Main orchestrator for LLM operations.
 
-    Supports two execution modes:
-    1. Handler Mode (monolithic): Direct execution via operation handlers
-    2. Agent Mode (agentic): Multi-agent orchestration (future)
-
-    The orchestrator:
-    - Routes requests to appropriate handlers/agents
-    - Manages model selection
-    - Tracks execution metadata
-    - Handles errors uniformly
+    Routes requests to handlers (monolithic) or agents (agentic),
+    manages model selection, and tracks execution metadata.
     """
 
     def __init__(self, model_manager: Optional[ModelManager] = None):
-        """
-        Initialize the orchestrator.
-
-        Args:
-            model_manager: Optional ModelManager instance. If not provided,
-                          a new one will be created.
-        """
+        """Initialize orchestrator with optional ModelManager."""
         self.model_manager = model_manager or ModelManager()
         self.config = get_config()
 
     def execute(self, request: LLMRequest) -> LLMResponse:
-        """
-        Execute an LLM operation.
-
-        Routes the request to the appropriate execution path based on mode:
-        - "monolithic": Direct handler execution
-        - "agentic": Agent-based execution (future)
-        """
+        """Execute LLM operation in monolithic or agentic mode."""
         # Determine execution mode
         mode = request.mode or self.config.default_execution_mode
 
@@ -75,29 +54,18 @@ class LLMOrchestrator:
             )
 
     def _execute_handler_mode(self, request: LLMRequest) -> LLMResponse:
-        """
-        Execute request using operation handlers (monolithic mode).
-
-        This is the direct execution path for current pix:e features.
-        """
+        """Execute request using operation handlers (monolithic mode)."""
         start_time = time.time()
-
-        # Build operation ID
         operation_id = f"{request.feature}.{request.operation}"
 
-        # Get handler
         try:
             handler_class = get_handler(operation_id)
         except UnknownOperationError:
             raise
 
-        # Instantiate handler with model manager
         handler = handler_class(self.model_manager)
-
-        # Determine model to use
         model_name = self._select_model(request, handler)
 
-        # Execute handler
         try:
             result = handler.execute(
                 data=request.data,
@@ -108,64 +76,63 @@ class LLMOrchestrator:
             )
 
             execution_time_ms = int((time.time() - start_time) * 1000)
-
-            # Build response
-            return self._build_response(
+            return build_handler_response(
                 request=request,
                 result=result,
                 model_name=model_name,
                 mode="monolithic",
                 execution_time_ms=execution_time_ms,
+                model_manager=self.model_manager,
             )
 
         except Exception as e:
-            # Re-raise orchestrator exceptions as-is
             if isinstance(e, OrchestratorError):
                 raise
-
-            # Wrap other exceptions
             raise ProviderError(
                 message=f"Handler execution failed: {str(e)}", provider="handler"
             )
 
     def _execute_agent_mode(self, request: LLMRequest) -> LLMResponse:
-        """
-        Execute request using agent orchestration (agentic mode).
+        """Execute request using agent orchestration (agentic mode)."""
+        operation_id = f"{request.feature}.{request.operation}"
 
-        For now, this is a placeholder that falls back to handler mode.
-        """
-        # TODO: Implement agent-based execution
-        # For now, fall back to handler mode with a warning
-
-        # Execute via handlers
-        response = self._execute_handler_mode(request)
-
-        # Add warning about fallback
-        response.warnings = response.warnings or []
-        response.warnings.append(
-            WarningInfo(
-                code="AGENT_MODE_NOT_IMPLEMENTED",
-                message="Agent mode not yet implemented, falling back to handler mode",
-                context={"feature": request.feature, "operation": request.operation},
+        if not has_graph(operation_id):
+            response = self._execute_handler_mode(request)
+            response.warnings = response.warnings or []
+            response.warnings.append(
+                WarningInfo(
+                    code="AGENT_GRAPH_NOT_FOUND",
+                    message=f"No agent graph for {operation_id}, using handler mode",
+                    context={"operation_id": operation_id},
+                )
             )
+            return response
+
+        graph_class = get_graph(operation_id)
+        event_collector = EventCollector()
+        graph = graph_class(self.model_manager, self.config, event_collector)
+
+        try:
+            execution_result = asyncio.run(graph.run(request))
+        except Exception as e:
+            raise OrchestratorError(
+                message=f"Agent graph execution failed: {str(e)}",
+                code="AGENT_EXECUTION_FAILED",
+                context={"operation_id": operation_id, "error": str(e)},
+            )
+
+        return build_agent_response(
+            request=request,
+            execution_result=execution_result,
+            event_collector=event_collector,
+            model_manager=self.model_manager,
         )
 
-        return response
-
     def _select_model(self, request: LLMRequest, handler) -> str:
-        """
-        Select which model to use for the request.
-
-        Priority:
-        1. Explicit model_id in request
-        2. Automatic selection based on handler requirements
-        3. First available model (fallback)
-        """
-        # If user specified a model, use it directly
+        """Select model: explicit > auto-select > first available."""
         if request.model_id:
             return request.model_id
 
-        # Try automatic selection based on handler requirements
         if (
             hasattr(handler, "capability_requirements")
             and handler.capability_requirements
@@ -182,53 +149,14 @@ class LLMOrchestrator:
                 )
                 return model.name
             except Exception:
-                # Fall through to simple fallback
                 pass
 
-        # Simple fallback: use first available model
         models = self.model_manager.list_available_models()
         if models:
             return models[0].name
 
-        # No models available
         from llm.exceptions import ModelUnavailableError
 
         raise ModelUnavailableError(
             model="auto-select", provider="any", reason="No models available"
-        )
-
-    def _build_response(
-        self,
-        request: LLMRequest,
-        result: Any,
-        model_name: str,
-        mode: str,
-        execution_time_ms: int,
-    ) -> LLMResponse:
-        """
-        Build LLMResponse from handler result.
-        """
-        # Get model info
-        try:
-            model_details = self.model_manager._find_model_by_name(model_name)
-            model_info = ModelInfo(
-                name=model_details.name,
-                type=model_details.type,
-                provider=model_details.provider,
-            )
-        except Exception:
-            # Fallback if model lookup fails
-            model_info = ModelInfo(name=model_name, type="cloud", provider="unknown")
-
-        # Build metadata
-        metadata = ResponseMetadata(
-            execution_time_ms=execution_time_ms,
-            mode=mode,  # type: ignore
-            models_used=[model_info],
-        )
-
-        return LLMResponse(
-            success=True,
-            results=result.model_dump() if hasattr(result, "model_dump") else result,
-            metadata=metadata,
         )
