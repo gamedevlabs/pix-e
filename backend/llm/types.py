@@ -394,6 +394,9 @@ class AgentResult(BaseModel):
     error: Optional[ErrorInfo] = None
     execution_time_ms: int = Field(..., ge=0)
     model_used: Optional[str] = None
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
 
 
 class ExecutionResult(BaseModel):
