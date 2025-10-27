@@ -1,9 +1,12 @@
-from django.urls import path
-
+from rest_framework_nested import routers
+from django.urls import path, include
 from moviescriptevaluator.views import MovieScriptAssets
 
 app_name = 'moviescriptevaluator'
 
+router = routers.SimpleRouter()
+router.register(r"", MovieScriptAssets, basename="movie-script-evaluator")
+
 urlpatterns = [
-    path("", MovieScriptAssets.as_view(), name="movie-script-assets"),
+    path("", include(router.urls)),
 ]
