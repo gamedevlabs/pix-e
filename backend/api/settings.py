@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "pxnodes",
     "llm",
     "pillars",
+    "sparc",
     "accounts",
     "pxcharts",
     "player_expectations",
