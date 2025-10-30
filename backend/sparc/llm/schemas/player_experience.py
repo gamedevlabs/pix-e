@@ -46,6 +46,11 @@ class PlayerExperienceResponse(BaseModel):
         le=100,
         description="How clear and compelling the player experience is (0-100)",
     )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
+    )
     issues: List[str] = Field(description="List of issues found in current description")
     suggestions: List[str] = Field(description="Actionable suggestions for improvement")
 
@@ -73,6 +78,11 @@ class ThemeResponse(BaseModel):
     )
     missing_theme_elements: List[str] = Field(
         description="Theme elements that should be defined"
+    )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
     )
     suggestions: List[str] = Field(description="Suggestions for strengthening theme")
 
@@ -102,5 +112,10 @@ class PurposeResponse(BaseModel):
     )
     missing_elements: List[str] = Field(
         description="Missing purpose/motivation elements"
+    )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
     )
     suggestions: List[str] = Field(description="Suggestions for clarifying purpose")

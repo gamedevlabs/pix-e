@@ -40,6 +40,11 @@ class GameplayResponse(BaseModel):
     missing_mechanics: List[str] = Field(
         description="Important mechanics that need definition"
     )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
+    )
     suggestions: List[str] = Field(
         description="Suggestions for improving gameplay definition"
     )
@@ -79,5 +84,10 @@ class GoalsChallengesRewardsResponse(BaseModel):
     )
     missing_elements: List[str] = Field(
         description="Missing goal/challenge/reward elements"
+    )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
     )
     suggestions: List[str] = Field(description="Suggestions for improvement")

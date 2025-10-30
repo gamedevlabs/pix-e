@@ -39,6 +39,11 @@ class ArtDirectionResponse(BaseModel):
         ge=0, le=100, description="How clear the art style definition is (0-100)"
     )
     missing_elements: List[str] = Field(description="Missing art direction elements")
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
+    )
     suggestions: List[str] = Field(
         description="Suggestions for art direction development"
     )
@@ -72,6 +77,11 @@ class UniqueFeaturesResponse(BaseModel):
     needs_validation: List[str] = Field(
         description="Uniqueness claims that need evidence/validation"
     )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
+    )
     suggestions: List[str] = Field(
         description="Suggestions for strengthening uniqueness"
     )
@@ -103,4 +113,9 @@ class OpportunitiesRisksResponse(BaseModel):
         description="High-likelihood or high-impact risks needing attention"
     )
     missing_analysis: List[str] = Field(description="Missing opportunity/risk analysis")
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
+    )
     suggestions: List[str] = Field(description="Suggestions for risk management")
