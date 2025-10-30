@@ -38,6 +38,11 @@ class PlaceResponse(BaseModel):
     missing_elements: List[str] = Field(
         description="Missing location or setting elements"
     )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
+    )
     suggestions: List[str] = Field(
         description="Suggestions for developing place/locations"
     )
@@ -83,5 +88,10 @@ class StoryNarrativeResponse(BaseModel):
     )
     missing_story_elements: List[str] = Field(
         description="Story elements that need development"
+    )
+    score: int = Field(
+        ge=0,
+        le=100,
+        description="Overall completeness score for this aspect (0-100)",
     )
     suggestions: List[str] = Field(description="Suggestions for story development")
