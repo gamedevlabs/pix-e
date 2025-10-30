@@ -1,7 +1,7 @@
 """
 Player experience-focused SPARC agents.
 
-Contains agents for evaluating player experience and theme aspects.
+Contains agents for evaluating player experience, theme, and purpose aspects.
 """
 
 from typing import Any, Dict
@@ -10,10 +10,12 @@ from llm.agent_runtime import BaseAgent
 from llm.exceptions import InvalidRequestError
 from sparc.llm.prompts.player_experience import (
     PLAYER_EXPERIENCE_PROMPT,
+    PURPOSE_PROMPT,
     THEME_PROMPT,
 )
 from sparc.llm.schemas.player_experience import (
     PlayerExperienceResponse,
+    PurposeResponse,
     ThemeResponse,
 )
 
@@ -61,6 +63,32 @@ class ThemeAgent(BaseAgent):
         """Build prompt for theme evaluation."""
         game_text = data.get("game_text", "")
         return THEME_PROMPT % game_text
+
+    def validate_input(self, data: Dict[str, Any]) -> None:
+        """Validate input data has required fields."""
+        if "game_text" not in data or not data["game_text"]:
+            raise InvalidRequestError(
+                message="Missing required field: 'game_text'",
+                context={"received_keys": list(data.keys())},
+            )
+
+
+class PurposeAgent(BaseAgent):
+    """
+    Agent for evaluating project purpose and motivation.
+
+    Analyzes why the project exists, creator motivation, team appeal,
+    and what the creator wants to achieve. Critical for sustainable projects.
+    """
+
+    name = "purpose"
+    response_schema = PurposeResponse
+    temperature = 0.3  # Lower for analytical evaluation
+
+    def build_prompt(self, data: Dict[str, Any]) -> str:
+        """Build prompt for purpose evaluation."""
+        game_text = data.get("game_text", "")
+        return PURPOSE_PROMPT % game_text
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate input data has required fields."""
