@@ -27,6 +27,7 @@ django.setup()
 
 # Import to register handlers and agents
 import pillars.llm  # noqa: F401, E402
+import sparc.llm  # noqa: F401, E402
 from llm import LLMOrchestrator  # noqa: E402
 from llm.types import LLMRequest  # noqa: E402
 
@@ -294,6 +295,198 @@ class ModeComparator:
 
         return result
 
+    def run_sparc_comparison(
+        self,
+        game_text: str,
+        test_name: str = "sparc_test",
+        model_id: str = "gpt-4o-mini",
+    ) -> Dict[str, Any]:
+        """
+        Run comparison between monolithic and agentic SPARC evaluation.
+
+        Args:
+            game_text: Game description text for SPARC evaluation
+            test_name: Name for this test run
+            model_id: Model to use for comparison (default: gpt-4o-mini)
+
+        Returns:
+            Comparison results
+        """
+        print(f"\n{'='*60}")
+        print(f"Running SPARC comparison: {test_name}")
+        print(f"{'='*60}\n")
+
+        # Prepare request data
+        request_data = {"game_text": game_text}
+
+        # Run monolithic mode (single SPARC monolithic call)
+        print(f"Running SPARC MONOLITHIC mode with model: {model_id}...")
+        monolithic_result = self._run_sparc_monolithic_mode(request_data, model_id)
+
+        # Run agentic mode (quick scan with 10 parallel agents)
+        print(f"\nRunning SPARC AGENTIC mode (10 agents) with model: {model_id}...")
+        agentic_result = self._run_sparc_agentic_mode(request_data, model_id)
+
+        # Build comparison
+        comparison = {
+            "test_name": test_name,
+            "feature": "sparc",
+            "timestamp": datetime.now().isoformat(),
+            "input_data": {"game_text": game_text},
+            "monolithic": monolithic_result,
+            "agentic": agentic_result,
+            "comparison": self._calculate_comparison(monolithic_result, agentic_result),
+        }
+
+        # Save results
+        self._save_results(comparison, test_name)
+
+        return comparison
+
+    def _run_sparc_monolithic_mode(
+        self, request_data: Dict[str, Any], model_id: str
+    ) -> Dict[str, Any]:
+        """Run SPARC evaluation in monolithic mode (single LLM call)."""
+        start_time = time.time()
+
+        print("  - Running monolithic SPARC evaluation...")
+        request = LLMRequest(
+            feature="sparc",
+            operation="monolithic",
+            data=request_data,
+            mode="monolithic",
+            model_id=model_id,
+        )
+
+        try:
+            response = self.orchestrator.execute(request)
+
+            # Extract token usage and calculate cost
+            prompt_tokens = 0
+            completion_tokens = 0
+            total_tokens = 0
+            cost_eur = 0.0
+            model_used = None
+
+            if response.metadata.models_used:
+                model_used = response.metadata.models_used[0].name
+
+            if response.metadata.token_usage:
+                prompt_tokens = response.metadata.token_usage.prompt_tokens
+                completion_tokens = response.metadata.token_usage.completion_tokens
+                total_tokens = response.metadata.token_usage.total_tokens
+                cost_eur = self._estimate_cost(
+                    model_used or "unknown", prompt_tokens, completion_tokens
+                )
+
+            result = {
+                "mode": "monolithic",
+                "success": response.success,
+                "total_execution_time_ms": response.metadata.execution_time_ms,
+                "results": response.results,
+                "model_used": model_used,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "estimated_cost_eur": round(cost_eur, 8),
+            }
+        except Exception as e:
+            result = {
+                "mode": "monolithic",
+                "success": False,
+                "error": str(e),
+                "total_execution_time_ms": int((time.time() - start_time) * 1000),
+            }
+
+        return result
+
+    def _run_sparc_agentic_mode(
+        self, request_data: Dict[str, Any], model_id: str
+    ) -> Dict[str, Any]:
+        """Run SPARC evaluation in agentic mode (10 agents in parallel)."""
+        start_time = time.time()
+
+        request = LLMRequest(
+            feature="sparc",
+            operation="quick_scan",
+            data=request_data,
+            mode="agentic",
+            model_id=model_id,
+        )
+
+        try:
+            response = self.orchestrator.execute(request)
+
+            agents_info = {}
+            if response.metadata.agents_used:
+                for agent in response.metadata.agents_used:
+                    agents_info[agent.name] = {
+                        "execution_time_ms": agent.execution_time_ms,
+                        "model_used": agent.model,
+                    }
+
+            # Extract token usage and calculate cost
+            prompt_tokens = 0
+            completion_tokens = 0
+            total_tokens = 0
+            cost_eur = 0.0
+
+            if response.metadata.token_usage:
+                prompt_tokens = response.metadata.token_usage.prompt_tokens
+                completion_tokens = response.metadata.token_usage.completion_tokens
+                total_tokens = response.metadata.token_usage.total_tokens
+
+                # Use the first model for cost estimation
+                model_name = (
+                    response.metadata.models_used[0].name
+                    if response.metadata.models_used
+                    else "unknown"
+                )
+                cost_eur = self._estimate_cost(
+                    model_name, prompt_tokens, completion_tokens
+                )
+
+            result = {
+                "mode": "agentic",
+                "success": response.success,
+                "total_execution_time_ms": response.metadata.execution_time_ms,
+                "results": response.results,
+                "agents_info": agents_info,
+                "num_agents": (
+                    len(response.metadata.agents_used)
+                    if response.metadata.agents_used
+                    else 0
+                ),
+                "models_used": (
+                    [m.name for m in response.metadata.models_used]
+                    if response.metadata.models_used
+                    else []
+                ),
+                "events_count": (
+                    len(response.metadata.events) if response.metadata.events else 0
+                ),
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+                "estimated_cost_eur": round(cost_eur, 8),
+            }
+
+            # Add errors/warnings if present
+            if response.errors:
+                result["errors"] = [e.model_dump() for e in response.errors]
+            if response.warnings:
+                result["warnings"] = [w.model_dump() for w in response.warnings]
+
+        except Exception as e:
+            result = {
+                "mode": "agentic",
+                "success": False,
+                "error": str(e),
+                "total_execution_time_ms": int((time.time() - start_time) * 1000),
+            }
+
+        return result
+
     def _estimate_cost(
         self, model_name: str, prompt_tokens: int = 0, completion_tokens: int = 0
     ) -> float:
@@ -367,21 +560,26 @@ class ModeComparator:
 
     def _format_markdown(self, comparison: Dict[str, Any]) -> str:
         """Format comparison results as markdown."""
+        feature = comparison.get("feature", "pillars")
+
         md = f"""# Execution Mode Comparison: {comparison['test_name']}
 
 **Timestamp:** {comparison['timestamp']}
+**Feature:** {feature.upper()}
 
 ## Input Data
 
-### Context
-{comparison['input_data']['context']}
-
-### Pillars
 """
-        pillars_list = comparison["input_data"]["pillars"]
-        if isinstance(pillars_list, list):
-            for p in pillars_list:
-                md += f"\n**{p['name']}**\n{p['description']}\n"
+        # Handle different input data formats
+        if feature == "sparc":
+            md += f"### Game Text\n{comparison['input_data']['game_text']}\n"
+        else:
+            # Pillars format
+            md += f"### Context\n{comparison['input_data']['context']}\n\n### Pillars\n"
+            pillars_list = comparison["input_data"]["pillars"]
+            if isinstance(pillars_list, list):
+                for p in pillars_list:
+                    md += f"\n**{p['name']}**\n{p['description']}\n"
 
         md += "\n---\n\n"
 
@@ -425,26 +623,43 @@ class ModeComparator:
         md += f"""## Monolithic Mode Results
 
 **Total Time:** {mono_data['total_execution_time_ms']}ms
-**Number of Operations:** {mono_data['num_operations']}
-
 """
-        for op_name, op_result in mono_data.get("individual_results", {}).items():
-            md += f"### {op_name}\n"
-            if op_result.get("success"):
-                p_tokens = op_result.get("prompt_tokens", 0)
-                c_tokens = op_result.get("completion_tokens", 0)
-                md += f"- **Time:** {op_result.get('execution_time_ms')}ms\n"
-                md += f"- **Model:** {op_result.get('model_used')}\n"
-                md += (
-                    f"- **Tokens:** {p_tokens} prompt + {c_tokens} "
-                    f"completion = {p_tokens + c_tokens} total\n"
-                )
-                cost = op_result.get("cost_eur", 0.0)
-                md += f"- **Cost:** €{cost:.8f}\n"
-                results_json = json.dumps(op_result.get("results"), indent=2)
-                md += f"- **Output:** {results_json}\n\n"
-            else:
-                md += f"- **Error:** {op_result.get('error')}\n\n"
+
+        # Check if this is SPARC (single call) or pillars (multiple operations)
+        if mono_data.get("individual_results"):
+            # Pillars format with multiple operations
+            md += f"**Number of Operations:** {mono_data['num_operations']}\n\n"
+            for op_name, op_result in mono_data.get("individual_results", {}).items():
+                md += f"### {op_name}\n"
+                if op_result.get("success"):
+                    p_tokens = op_result.get("prompt_tokens", 0)
+                    c_tokens = op_result.get("completion_tokens", 0)
+                    md += f"- **Time:** {op_result.get('execution_time_ms')}ms\n"
+                    md += f"- **Model:** {op_result.get('model_used')}\n"
+                    md += (
+                        f"- **Tokens:** {p_tokens} prompt + {c_tokens} "
+                        f"completion = {p_tokens + c_tokens} total\n"
+                    )
+                    cost = op_result.get("cost_eur", 0.0)
+                    md += f"- **Cost:** €{cost:.8f}\n"
+                    results_json = json.dumps(op_result.get("results"), indent=2)
+                    md += f"- **Output:** {results_json}\n\n"
+                else:
+                    md += f"- **Error:** {op_result.get('error')}\n\n"
+        else:
+            # SPARC format with single operation
+            mono_p = mono_data.get("prompt_tokens", 0)
+            mono_c = mono_data.get("completion_tokens", 0)
+            mono_total = mono_data.get("total_tokens", 0)
+            mono_cost_display = mono_data.get("estimated_cost_eur", 0.0)
+            md += f"**Model:** {mono_data.get('model_used')}\n"
+            md += f"**Success:** {mono_data.get('success')}\n"
+            tokens_text = f"{mono_p} prompt + {mono_c} completion = {mono_total}"
+            md += f"**Tokens:** {tokens_text} total\n"
+            md += f"**Cost:** €{mono_cost_display:.8f}\n\n"
+            if mono_data.get("success"):
+                results_json = json.dumps(mono_data.get("results"), indent=2)
+                md += f"### Output\n```json\n{results_json}\n```\n"
 
         # Agentic results
         agent_data = comparison["agentic"]
@@ -521,7 +736,7 @@ def main():
 
     # Print summary
     print("\n" + "=" * 60)
-    print("SUMMARY")
+    print("PILLARS SUMMARY")
     print("=" * 60)
     comp = results["comparison"]
     print(f"Monolithic time: {comp['monolithic_time_ms']}ms")
@@ -533,6 +748,45 @@ def main():
     print(f"Cost difference: €{comp.get('cost_difference_eur', 0.0):.8f}")
     print(f"\nBoth successful: {comp['both_successful']}")
     print("\n✅ Cost tracking enabled with real token usage from OpenAI.")
+
+    # Run SPARC comparison
+    print("\n" + "=" * 60)
+    print("Running SPARC Comparison")
+    print("=" * 60)
+
+    sample_game_text = """
+    A roguelike dungeon crawler in a procedurally generated dark fantasy world.
+    Players explore dangerous dungeons filled with monsters, traps, and treasures.
+    Features permadeath, turn-based combat, and deep character customization.
+    Each run is unique due to procedural generation of levels, items, and enemies.
+    Players must manage resources carefully and make strategic decisions.
+    """
+
+    sparc_results = comparator.run_sparc_comparison(
+        game_text=sample_game_text.strip(),
+        test_name="sample_sparc_evaluation",
+        model_id="gpt-4o-mini",
+    )
+
+    # Print SPARC summary
+    print("\n" + "=" * 60)
+    print("SPARC SUMMARY")
+    print("=" * 60)
+    sparc_comp = sparc_results["comparison"]
+    print(f"Monolithic time: {sparc_comp['monolithic_time_ms']}ms")
+    print(f"Agentic time (10 agents): {sparc_comp['agentic_time_ms']}ms")
+    if "time_saved_percentage" in sparc_comp:
+        print(f"Time saved: {sparc_comp['time_saved_percentage']}%")
+    mono_cost = sparc_comp.get("monolithic_cost_eur", 0.0)
+    agent_cost = sparc_comp.get("agentic_cost_eur", 0.0)
+    cost_diff = sparc_comp.get("cost_difference_eur", 0.0)
+    print(f"\nMonolithic cost: €{mono_cost:.8f}")
+    print(f"Agentic cost: €{agent_cost:.8f}")
+    print(f"Cost difference: €{cost_diff:.8f}")
+    num_agents = sparc_results["agentic"].get("num_agents", 0)
+    print(f"\nNumber of agents executed: {num_agents}")
+    print(f"Both successful: {sparc_comp['both_successful']}")
+    print("\n✅ SPARC comparison complete with 10 parallel agents.")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ multiple aspects with consistency checking and synthesis.
 
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from sparc.llm.schemas.gameplay import GameplayResponse, GoalsChallengesRewardsResponse
 from sparc.llm.schemas.player_experience import (
@@ -26,6 +26,8 @@ from sparc.llm.schemas.world import PlaceResponse, StoryNarrativeResponse
 class AspectScore(BaseModel):
     """Score and metadata for a single SPARC aspect."""
 
+    model_config = ConfigDict(extra="forbid")
+
     aspect: str = Field(description="Aspect name")
     score: int = Field(ge=0, le=100, description="Completeness score (0-100)")
     status: str = Field(description="Status: strong, adequate, weak, missing")
@@ -37,6 +39,8 @@ class AspectScore(BaseModel):
 
 class ConsistencyIssue(BaseModel):
     """A consistency issue found between SPARC aspects."""
+
+    model_config = ConfigDict(extra="forbid")
 
     aspects_involved: List[str] = Field(
         description="Which aspects have the inconsistency"
@@ -116,6 +120,15 @@ class SPARCComprehensiveResponse(BaseModel):
     )
 
 
+class AspectEvaluation(BaseModel):
+    """Brief evaluation of a single SPARC aspect."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aspect_name: str = Field(description="Name of the aspect")
+    assessment: str = Field(description="Brief assessment of this aspect")
+
+
 class MonolithicSPARCResponse(BaseModel):
     """
     Response from monolithic SPARC evaluation (baseline).
@@ -126,8 +139,8 @@ class MonolithicSPARCResponse(BaseModel):
     overall_assessment: str = Field(
         description="Overall assessment of game concept readiness"
     )
-    aspects_evaluated: dict = Field(
-        description="Brief evaluation of each aspect: {aspect_name: assessment}"
+    aspects_evaluated: List[AspectEvaluation] = Field(
+        description="Brief evaluation of each aspect"
     )
     missing_aspects: List[str] = Field(description="Aspects not adequately addressed")
     suggestions: List[str] = Field(description="2-5 suggestions for improvement")
