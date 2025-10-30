@@ -7,6 +7,7 @@ Contains agent graphs for orchestrating multi-agent SPARC evaluations.
 from typing import Any, Dict, List
 
 from llm.agent_graph import BaseAgentGraph
+from llm.agent_registry import register_graph
 from llm.agent_runtime import BaseAgent
 from llm.types import AgentResult, LLMRequest
 from sparc.llm.agents import (
@@ -39,17 +40,13 @@ class SPARCQuickScanGraph(BaseAgentGraph):
     def build_agents(self, request: LLMRequest) -> List[BaseAgent]:
         """Build all 10 SPARC agents for parallel execution."""
         return [
-            # Player-focused agents (3)
             PlayerExperienceAgent(),
             ThemeAgent(),
             PurposeAgent(),
-            # Gameplay agents (2)
             GameplayAgent(),
             GoalsChallengesRewardsAgent(),
-            # World building agents (2)
             PlaceAgent(),
             StoryNarrativeAgent(),
-            # Visual and meta agents (3)
             UniqueFeaturesAgent(),
             ArtDirectionAgent(),
             OpportunitiesRisksAgent(),
@@ -197,3 +194,7 @@ class SPARCQuickScanGraph(BaseAgentGraph):
             art_direction=results_map.get("art_direction"),
             opportunities_risks=results_map.get("opportunities_risks"),
         ).model_dump()
+
+
+# Register graph for agentic execution
+register_graph("sparc.quick_scan", SPARCQuickScanGraph)
