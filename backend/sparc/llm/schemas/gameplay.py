@@ -6,7 +6,7 @@ Contains schemas for gameplay mechanics and goals/challenges/rewards.
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class GameplayResponse(BaseModel):
@@ -50,6 +50,36 @@ class GameplayResponse(BaseModel):
     )
 
 
+class ObjectiveItem(BaseModel):
+    """An objective in the game."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: str = Field(description="Objective description")
+    start_point: str = Field(description="Where the objective begins")
+    end_point: str = Field(description="Where/how the objective completes")
+
+
+class ObstacleItem(BaseModel):
+    """Obstacles for an objective."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    objective: str = Field(description="Which objective this relates to")
+    obstacles: List[str] = Field(description="List of obstacles for this objective")
+    challenge_type: str = Field(description="Type of challenge presented")
+
+
+class RewardItem(BaseModel):
+    """Reward for completing an objective."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    objective: str = Field(description="Which objective this reward is for")
+    reward_type: str = Field(description="Type of reward (intrinsic, extrinsic, etc.)")
+    description: str = Field(description="Description of the reward")
+
+
 class GoalsChallengesRewardsResponse(BaseModel):
     """
     Goals, Challenges & Rewards evaluation response.
@@ -57,17 +87,9 @@ class GoalsChallengesRewardsResponse(BaseModel):
     Evaluates objectives, obstacles, and reward structures.
     """
 
-    objectives: List[dict] = Field(
-        description="List of objectives: {description, start_point, end_point}"
-    )
-    obstacles: List[dict] = Field(
-        description=(
-            "List of obstacles per objective: " "{objective, obstacles, challenge_type}"
-        )
-    )
-    rewards: List[dict] = Field(
-        description="List of rewards: {objective, reward_type, description}"
-    )
+    objectives: List[ObjectiveItem] = Field(description="List of objectives")
+    obstacles: List[ObstacleItem] = Field(description="List of obstacles per objective")
+    rewards: List[RewardItem] = Field(description="List of rewards")
     story_integration: int = Field(
         ge=0,
         le=100,

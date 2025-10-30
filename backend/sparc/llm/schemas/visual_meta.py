@@ -6,7 +6,18 @@ Contains schemas for art direction, unique features, and opportunities/risks.
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ColorPalette(BaseModel):
+    """Color palette for the game."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    primary: str = Field(description="Primary color")
+    secondary: str = Field(description="Secondary color")
+    light_source: str = Field(description="Light source color")
+    shadow_color: str = Field(description="Shadow color")
 
 
 class ArtDirectionResponse(BaseModel):
@@ -22,8 +33,8 @@ class ArtDirectionResponse(BaseModel):
     visual_uniqueness_elements: List[str] = Field(
         description="2-3 things that make project visually unique"
     )
-    color_palette: dict = Field(
-        description=("Color palette: {primary, secondary, light_source, shadow_color}")
+    color_palette: Optional[ColorPalette] = Field(
+        description="Color palette with primary, secondary, light_source, shadow_color"
     )
     lighting_ratio: Optional[str] = Field(
         description="Light vs dark ratio (high-contrast, evenly lit, etc.)"
@@ -49,6 +60,16 @@ class ArtDirectionResponse(BaseModel):
     )
 
 
+class UniquenessItem(BaseModel):
+    """Validation of a unique feature claim."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    feature: str = Field(description="The claimed unique feature")
+    is_unique: bool = Field(description="Whether this feature is truly unique")
+    reasoning: str = Field(description="Reasoning for the uniqueness assessment")
+
+
 class UniqueFeaturesResponse(BaseModel):
     """
     Unique Features evaluation response.
@@ -59,8 +80,8 @@ class UniqueFeaturesResponse(BaseModel):
     claimed_unique_features: List[str] = Field(
         description="Unique features claimed in the game text"
     )
-    validated_uniqueness: List[dict] = Field(
-        description=("Each feature with validation: {feature, is_unique, reasoning}")
+    validated_uniqueness: List[UniquenessItem] = Field(
+        description="Each feature with validation of uniqueness"
     )
     differentiation_from_existing: str = Field(
         description="How idea differs from other projects"
@@ -87,6 +108,27 @@ class UniqueFeaturesResponse(BaseModel):
     )
 
 
+class OpportunityItem(BaseModel):
+    """An opportunity for the game concept."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    opportunity: str = Field(description="The opportunity identified")
+    description: str = Field(description="Description of the opportunity")
+    how_to_use: str = Field(description="How to leverage this opportunity")
+
+
+class RiskItem(BaseModel):
+    """A risk for the game concept."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    risk: str = Field(description="The risk identified")
+    likelihood: str = Field(description="Likelihood of risk (low, medium, high)")
+    impact: str = Field(description="Impact if risk occurs (low, medium, high)")
+    mitigation: str = Field(description="How to mitigate this risk")
+
+
 class OpportunitiesRisksResponse(BaseModel):
     """
     Opportunities & Risks evaluation response.
@@ -94,12 +136,8 @@ class OpportunitiesRisksResponse(BaseModel):
     Evaluates opportunities for success and potential risks with mitigations.
     """
 
-    opportunities: List[dict] = Field(
-        description=("List of opportunities: {opportunity, description, how_to_use}")
-    )
-    risks: List[dict] = Field(
-        description=("List of risks: {risk, likelihood, impact, mitigation}")
-    )
+    opportunities: List[OpportunityItem] = Field(description="List of opportunities")
+    risks: List[RiskItem] = Field(description="List of risks")
     opportunity_score: int = Field(
         ge=0, le=100, description="Overall opportunity strength (0-100)"
     )
