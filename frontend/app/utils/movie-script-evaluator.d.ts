@@ -1,18 +1,17 @@
 export interface Asset {
-    id?: number;
-    name?: string;
-    className?: string;
-    path?: string;
+  id?: number
+  name?: string
+  class_name?: string
+  project_name?: string
+  path?: string
 
-    createdAt?: string;
-    updatedAt?: string;
+  createdAt?: string
+  updatedAt?: string
 
-    title?: string;
-    name?: string;
-    type?: string;
-    size?: number; // in bytes
-    url?: string;
-    thumbnailUrl?: string;
-    previewUrl?: string;
-    [key: string]: any;
+  title?: string
+  type?: string
+  size?: number // in bytes
+  url?: string
+  thumbnailUrl?: string
+  previewUrl?: string
 }

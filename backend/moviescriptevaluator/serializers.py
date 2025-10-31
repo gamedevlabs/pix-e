@@ -6,5 +6,4 @@ from moviescriptevaluator.models import AssetMetaData
 class UnrealEngineDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetMetaData
-        fields = '__all__'
-
+        fields = "__all__"

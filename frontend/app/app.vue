@@ -58,7 +58,7 @@ const items = ref<NavigationMenuItem[]>([
     label: 'Movie Script Evaluator',
     icon: 'i-lucide-film',
     to: '/movie-script-evaluator',
-  }
+  },
 ])
 
 const dropdownItems = ref([

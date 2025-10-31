@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "accounts",
     "pxcharts",
     "player_expectations",
-    "moviescriptevaluator"
+    "moviescriptevaluator",
 ]
 
 REST_FRAMEWORK = {

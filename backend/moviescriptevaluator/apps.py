@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class MovieScriptEvaluatorConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'moviescriptevaluator'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "moviescriptevaluator"
