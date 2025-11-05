@@ -17,5 +17,5 @@ class Migration(migrations.Migration):
         migrations.AlterModelTable(
             name="GameDesignDescription",
             table="pillars_gamedesigndescription",
-        )
+        ),
     ]
