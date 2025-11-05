@@ -68,5 +68,13 @@ jobs:
       - name: Run mypy
         run: python -m mypy .
 
+      - name: Run django migration checks
+        env:
+          DJANGO_SETTINGS_MODULE: api.settings
+          SECRET_KEY: dummy
+        run: |
+          python manage.py makemigrations --check --dry-run
+          python manage.py migrate --noinput
+
       - name: Run test suite
         run: python -m pytest llm/tests/ pillars/tests/ -v

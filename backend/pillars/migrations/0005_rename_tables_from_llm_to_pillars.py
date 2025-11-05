@@ -10,12 +10,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql="ALTER TABLE llm_pillar RENAME TO pillars_pillar;",
-            reverse_sql="ALTER TABLE pillars_pillar RENAME TO llm_pillar;",
+        migrations.AlterModelTable(
+            name="Pillar",
+            table=None,
         ),
-        migrations.RunSQL(
-            sql="ALTER TABLE llm_gamedesigndescription RENAME TO pillars_gamedesigndescription;",
-            reverse_sql="ALTER TABLE pillars_gamedesigndescription RENAME TO llm_gamedesigndescription;",
+        migrations.AlterModelTable(
+            name="GameDesignDescription",
+            table=None,
         ),
     ]
