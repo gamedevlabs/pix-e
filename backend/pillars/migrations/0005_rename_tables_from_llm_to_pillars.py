@@ -12,10 +12,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelTable(
             name="Pillar",
-            table="pillars_pillar",
+            table=None,
         ),
         migrations.AlterModelTable(
             name="GameDesignDescription",
-            table="pillars_gamedesigndescription",
+            table=None,
         ),
     ]
