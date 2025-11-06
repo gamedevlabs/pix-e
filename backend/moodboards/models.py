@@ -123,6 +123,9 @@ class Moodboard(models.Model):
     canvas_background_image = models.CharField(
         max_length=1000, blank=True, help_text="Optional background image URL"
     )
+    canvas_drawing_layer = models.TextField(
+        blank=True, help_text="Drawing layer image (base64 or URL)"
+    )
     grid_enabled = models.BooleanField(
         default=True, help_text="Show grid lines for alignment"
     )

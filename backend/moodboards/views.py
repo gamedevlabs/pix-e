@@ -1007,7 +1007,18 @@ class MoodboardImageViewSet(viewsets.ModelViewSet):
             editor = ImageEditor(image_path)
 
             # Apply edits for preview in the correct order
-            # 1. First apply transformations
+            # 1. First apply crop if present
+            if "crop" in edits and edits["crop"]:
+                crop_data = edits["crop"]
+                if editor.image:
+                    editor.crop(
+                        crop_data.get("x", 0),
+                        crop_data.get("y", 0),
+                        crop_data.get("width", editor.image.size[0]),
+                        crop_data.get("height", editor.image.size[1]),
+                    )
+
+            # 2. Apply transformations
             if "rotate" in edits and edits["rotate"] != 0:
                 editor.rotate(edits["rotate"])
             if "flip_horizontal" in edits and edits["flip_horizontal"]:
@@ -1015,7 +1026,7 @@ class MoodboardImageViewSet(viewsets.ModelViewSet):
             if "flip_vertical" in edits and edits["flip_vertical"]:
                 editor.flip_vertical()
 
-            # 2. Then apply adjustments
+            # 3. Then apply adjustments
             if "brightness" in edits:
                 editor.adjust_brightness(edits["brightness"])
             if "contrast" in edits:
@@ -1023,7 +1034,7 @@ class MoodboardImageViewSet(viewsets.ModelViewSet):
             if "saturation" in edits:
                 editor.adjust_saturation(edits["saturation"])
 
-            # 3. Finally apply filters
+            # 4. Finally apply filters
             if "filters" in edits:
                 for filter_name, intensity in edits["filters"].items():
                     if intensity > 0:

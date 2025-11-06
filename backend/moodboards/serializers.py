@@ -228,6 +228,7 @@ class MoodboardSerializer(serializers.ModelSerializer):
             "canvas_height",
             "canvas_background_color",
             "canvas_background_image",
+            "canvas_drawing_layer",
             "grid_enabled",
             "grid_size",
             "snap_to_grid",
@@ -400,7 +401,18 @@ class MoodboardDetailSerializer(serializers.ModelSerializer):
             "tag_list",
             "color_palette",
             "is_public",
+            # Canvas settings
+            "canvas_width",
+            "canvas_height",
+            "canvas_background_color",
+            "canvas_background_image",
+            "canvas_drawing_layer",
+            "grid_enabled",
+            "grid_size",
+            "snap_to_grid",
+            # Related objects
             "images",
+            "text_elements",
             "selected_images",
             "unselected_images",
             "comments",
@@ -454,6 +466,15 @@ class MoodboardCreateUpdateSerializer(serializers.ModelSerializer):
             "tags",
             "color_palette",
             "is_public",
+            # Canvas settings
+            "canvas_width",
+            "canvas_height",
+            "canvas_background_color",
+            "canvas_background_image",
+            "canvas_drawing_layer",
+            "grid_enabled",
+            "grid_size",
+            "snap_to_grid",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {

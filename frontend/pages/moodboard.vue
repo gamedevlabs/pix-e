@@ -203,232 +203,6 @@
 
         <!-- Canvas View -->
         <div v-if="viewMode === 'canvas'" class="canvas-container">
-          <!-- Drawing Tools Toolbar -->
-          <div
-            v-if="canEdit"
-            class="drawing-tools-toolbar mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
-          >
-            <div class="flex items-center gap-4 flex-wrap">
-              <!-- Drawing Mode Toggle -->
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mode:</span>
-                <UButtonGroup>
-                  <UButton
-                    :variant="drawingMode === 'move' ? 'solid' : 'outline'"
-                    color="neutral"
-                    size="xs"
-                    icon="i-heroicons-cursor-arrow-rays-20-solid"
-                    @click="setDrawingMode('move')"
-                  >
-                    Move
-                  </UButton>
-                  <UButton
-                    :variant="drawingMode === 'draw' ? 'solid' : 'outline'"
-                    color="primary"
-                    size="xs"
-                    icon="i-heroicons-pencil-20-solid"
-                    @click="setDrawingMode('draw')"
-                  >
-                    Draw
-                  </UButton>
-                  <UButton
-                    :variant="drawingMode === 'erase' ? 'solid' : 'outline'"
-                    color="error"
-                    size="xs"
-                    icon="i-heroicons-trash-20-solid"
-                    @click="setDrawingMode('erase')"
-                  >
-                    Erase
-                  </UButton>
-                </UButtonGroup>
-              </div>
-
-              <!-- Pen Type Selection (only show when drawing) -->
-              <div v-if="drawingMode === 'draw'" class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Pen:</span>
-                <UButtonGroup>
-                  <UButton
-                    class="pen-btn-pen"
-                    :variant="penType === 'pen' ? 'solid' : 'outline'"
-                    color="primary"
-                    size="xs"
-                    @click="setPenType('pen')"
-                  >
-                    ✏️ Pen
-                  </UButton>
-                  <UButton
-                    :variant="penType === 'marker' ? 'solid' : 'outline'"
-                    color="primary"
-                    size="xs"
-                    class="pen-btn-marker"
-                    @click="setPenType('marker')"
-                  >
-                    🖍️ Marker
-                  </UButton>
-                  <UButton
-                    :variant="penType === 'pencil' ? 'solid' : 'outline'"
-                    color="primary"
-                    size="xs"
-                    class="pen-btn-pencil"
-                    @click="setPenType('pencil')"
-                  >
-                    ✏️ Pencil
-                  </UButton>
-                  <UButton
-                    :variant="penType === 'highlighter' ? 'solid' : 'outline'"
-                    color="warning"
-                    size="xs"
-                    class="pen-btn-highlighter"
-                    @click="setPenType('highlighter')"
-                  >
-                    🖍️ Highlight
-                  </UButton>
-                  <UButton
-                    :variant="penType === 'spray' ? 'solid' : 'outline'"
-                    color="secondary"
-                    size="xs"
-                    class="pen-btn-spray"
-                    @click="setPenType('spray')"
-                  >
-                    🎨 Spray
-                  </UButton>
-                  <UButton
-                    :variant="penType === 'watercolor' ? 'solid' : 'outline'"
-                    color="info"
-                    size="xs"
-                    class="pen-btn-watercolor"
-                    @click="setPenType('watercolor')"
-                  >
-                    🎨 Watercolor
-                  </UButton>
-                </UButtonGroup>
-              </div>
-
-              <!-- Brush Settings (only show when drawing/erasing) -->
-              <div v-if="drawingMode !== 'move'" class="flex items-center gap-4">
-                <!-- Brush Size -->
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Size:</span>
-                  <input
-                    v-model="brushSize"
-                    type="range"
-                    :min="getBrushSizeRange().min"
-                    :max="getBrushSizeRange().max"
-                    class="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                  />
-                  <span class="text-xs text-gray-500 min-w-[20px]">{{ brushSize }}</span>
-                </div>
-
-                <!-- Brush Hardness (for applicable pen types) -->
-                <div v-if="showBrushHardness()" class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >Hardness:</span
-                  >
-                  <input
-                    v-model="brushHardness"
-                    type="range"
-                    min="0"
-                    max="100"
-                    class="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                  />
-                  <span class="text-xs text-gray-500 min-w-[30px]">{{ brushHardness }}%</span>
-                </div>
-
-                <!-- Flow Rate (for watercolor and spray) -->
-                <div v-if="showFlowRate()" class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Flow:</span>
-                  <input
-                    v-model="flowRate"
-                    type="range"
-                    min="1"
-                    max="100"
-                    class="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                  />
-                  <span class="text-xs text-gray-500 min-w-[30px]">{{ flowRate }}%</span>
-                </div>
-
-                <!-- Brush Color (only for drawing) -->
-                <div v-if="drawingMode === 'draw'" class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Color:</span>
-                  <input
-                    v-model="brushColor"
-                    type="color"
-                    class="w-8 h-8 border border-gray-300 rounded cursor-pointer"
-                  />
-                </div>
-
-                <!-- Brush Opacity -->
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Opacity:</span>
-                  <input
-                    v-model="brushOpacity"
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.1"
-                    class="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                  />
-                  <span class="text-xs text-gray-500 min-w-[30px]"
-                    >{{ Math.round(brushOpacity * 100) }}%</span
-                  >
-                </div>
-
-                <!-- Blend Mode (for advanced pen types) -->
-                <div v-if="showBlendMode()" class="flex items-center gap-2">
-                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Blend:</span>
-                  <select
-                    v-model="blendMode"
-                    class="text-xs border border-gray-300 rounded px-2 py-1 bg-white dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    <option value="source-over">Normal</option>
-                    <option value="multiply">Multiply</option>
-                    <option value="screen">Screen</option>
-                    <option value="overlay">Overlay</option>
-                    <option value="soft-light">Soft Light</option>
-                    <option value="hard-light">Hard Light</option>
-                    <option value="color-dodge">Color Dodge</option>
-                    <option value="color-burn">Color Burn</option>
-                    <option value="difference">Difference</option>
-                    <option value="exclusion">Exclusion</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Drawing Actions -->
-              <div class="flex items-center gap-2 ml-auto">
-                <UButton
-                  variant="outline"
-                  color="neutral"
-                  size="xs"
-                  icon="i-heroicons-arrow-uturn-left-20-solid"
-                  :disabled="!canUndo"
-                  @click="undoDrawing"
-                >
-                  Undo
-                </UButton>
-                <UButton
-                  variant="outline"
-                  color="neutral"
-                  size="xs"
-                  icon="i-heroicons-arrow-uturn-right-20-solid"
-                  :disabled="!canRedo"
-                  @click="redoDrawing"
-                >
-                  Redo
-                </UButton>
-                <UButton
-                  variant="outline"
-                  color="error"
-                  size="xs"
-                  icon="i-heroicons-trash-20-solid"
-                  @click="clearDrawing"
-                >
-                  Clear All
-                </UButton>
-              </div>
-            </div>
-          </div>
-
           <MoodboardCanvas
             v-if="currentMoodboard"
             :moodboard="currentMoodboard"
@@ -453,6 +227,15 @@
             @update-text-element="handleUpdateTextElement"
             @delete-element="handleDeleteElement"
             @drawing-state-saved="saveDrawingState"
+            @image-edit="openImageEditor"
+            @update-drawing-mode="setDrawingMode"
+            @update-pen-type="setPenType"
+            @update-brush-size="(size: number) => (brushSize = size)"
+            @update-brush-color="(color: string) => (brushColor = color)"
+            @update-brush-opacity="(opacity: number) => (brushOpacity = opacity)"
+            @undo-drawing="undoDrawing"
+            @redo-drawing="redoDrawing"
+            @clear-drawing="clearDrawing"
           />
         </div>
       </div>
@@ -766,7 +549,25 @@ const handleImageUpdate = async (imageData: Partial<MoodboardImage>) => {
 
 const handleMoodboardUpdate = async (moodboardData: Partial<Moodboard>) => {
   if (currentMoodboard.value) {
+    // Update local state
     currentMoodboard.value = { ...currentMoodboard.value, ...moodboardData }
+    
+    // If canvas_drawing_layer is being updated, persist to database
+    if (moodboardData.canvas_drawing_layer !== undefined) {
+      try {
+        await updateMoodboard(currentMoodboard.value.id, {
+          canvas_drawing_layer: moodboardData.canvas_drawing_layer
+        })
+      } catch (error) {
+        console.error('Error saving canvas drawing layer:', error)
+        const toast = useToast()
+        toast.add({
+          title: 'Error',
+          description: 'Failed to save drawing to database',
+          color: 'error',
+        })
+      }
+    }
   }
 }
 
@@ -1098,13 +899,24 @@ const handleDeleteElement = async (elementId: string) => {
 // Load text elements for canvas view
 const loadTextElements = async (moodboardId: string) => {
   try {
-    const response = (await getTextElements(moodboardId)) as { results?: MoodboardTextElement[] }
-    if (response?.results) {
-      textElements.value = response.results
+    const response = await getTextElements(moodboardId)
+    
+    // Handle both paginated response (with results) and direct array response
+    if (response) {
+      if (Array.isArray(response)) {
+        // Direct array response (no pagination)
+        textElements.value = response as MoodboardTextElement[]
+      } else if ((response as { results?: MoodboardTextElement[] })?.results) {
+        // Paginated response with results key
+        textElements.value = (response as { results: MoodboardTextElement[] }).results
+      } else {
+        textElements.value = []
+      }
     } else {
       textElements.value = []
     }
-  } catch {
+  } catch (error) {
+    console.error('Error loading text elements:', error)
     textElements.value = [] // Clear state on error
   }
 }
@@ -1230,6 +1042,10 @@ onMounted(async () => {
     sessionId.value = moodboardId
     await fetchMoodboard()
   } else {
+    // Clear all state when starting fresh (no moodboard ID)
+    textElements.value = []
+    images.value = []
+    moodboard.value = []
     isMoodboardPublic.value = false
     originalMoodboardImageIds.value = []
     removedImageIds.value = []
@@ -1260,6 +1076,7 @@ watch(
         isInitialLoad.value = true
         images.value = []
         moodboard.value = []
+        textElements.value = [] // Clear text elements when switching moodboards
         moodboardName.value = ''
         isMoodboardPublic.value = false
         originalMoodboardImageIds.value = []
@@ -1271,6 +1088,7 @@ watch(
         moodboardName.value = ''
         images.value = []
         moodboard.value = []
+        textElements.value = [] // Clear text elements when leaving moodboard
         isInitialLoad.value = true
         originalMoodboardImageIds.value = []
         removedImageIds.value = []

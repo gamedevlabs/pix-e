@@ -283,22 +283,26 @@ onUnmounted(() => {
   position: absolute;
   cursor: move;
   border: 2px solid transparent;
-  transition: border-color 0.2s ease;
-  padding: 4px;
+  transition: all 0.2s ease;
+  padding: 8px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   word-wrap: break-word;
-  overflow: hidden;
+  overflow: visible;
+  min-width: 50px;
+  min-height: 30px;
 }
 
 .canvas-text-element:hover {
   border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
 .canvas-text-element.selected {
   border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .text-content {
@@ -309,41 +313,52 @@ onUnmounted(() => {
   user-select: none;
   word-break: break-word;
   white-space: pre-wrap;
+  padding: 2px;
 }
 
 .text-editor {
   width: 100%;
   height: 100%;
-  border: none;
+  border: 2px solid #3b82f6;
   outline: none;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.95);
   font: inherit;
   color: inherit;
   text-align: inherit;
   line-height: inherit;
   letter-spacing: inherit;
   resize: none;
-  padding: 0;
+  padding: 8px;
   margin: 0;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .selection-handles {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
   pointer-events: none;
 }
 
 .handle {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: #3b82f6;
-  border: 1px solid white;
-  border-radius: 2px;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
   pointer-events: all;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+}
+
+.handle:hover {
+  transform: scale(1.3);
+  background: #3b82f6;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
 }
 
 .handle-nw {
@@ -393,24 +408,34 @@ onUnmounted(() => {
 
 .delete-button {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 20px;
-  height: 20px;
+  top: -12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
   background: #ef4444;
   color: white;
-  border: none;
+  border: 2px solid white;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 16px;
+  font-weight: bold;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 10;
 }
 
 .delete-button:hover {
   background: #dc2626;
+  transform: scale(1.15);
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.4);
+}
+
+.delete-button:active {
+  transform: scale(0.95);
 }
 
 /* Text editing styles */
@@ -422,53 +447,72 @@ onUnmounted(() => {
 
 .text-editing-toolbar {
   position: absolute;
-  top: -40px;
+  top: -48px;
   left: 0;
   right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 4px 8px;
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15), 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   font-size: 12px;
-  min-width: 300px;
+  min-width: 320px;
+  white-space: nowrap;
 }
 
 .editing-hint {
   color: #6b7280;
   font-size: 11px;
   flex: 1;
+  font-weight: 500;
 }
 
 .save-button,
 .cancel-button {
-  background: none;
-  border: none;
+  background: white;
+  border: 1px solid #e5e7eb;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
   margin-left: 4px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
 }
 
 .save-button {
   color: #059669;
+  border-color: #059669;
 }
 
 .save-button:hover {
-  background: #d1fae5;
+  background: #059669;
+  color: white;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
 }
 
 .cancel-button {
   color: #dc2626;
+  border-color: #dc2626;
 }
 
 .cancel-button:hover {
-  background: #fee2e2;
+  background: #dc2626;
+  color: white;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.save-button:active,
+.cancel-button:active {
+  transform: scale(0.95);
 }
 </style>

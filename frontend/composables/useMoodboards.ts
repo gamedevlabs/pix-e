@@ -74,6 +74,7 @@ export interface Moodboard {
   canvas_height: number
   canvas_background_color: string
   canvas_background_image?: string
+  canvas_drawing_layer?: string
   grid_enabled: boolean
   grid_size: number
   snap_to_grid: boolean

@@ -32,6 +32,20 @@
       <div class="handle handle-e" @mousedown="handleResize($event, 'e')" />
     </div>
 
+    <!-- Edit button -->
+    <button v-if="selected" class="edit-button" title="Edit Image" @click.stop="handleEdit">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        class="icon"
+      >
+        <path
+          d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"
+        />
+      </svg>
+    </button>
+
     <!-- Delete button -->
     <button v-if="selected" class="delete-button" title="Delete" @click.stop="handleDelete">
       ×
@@ -60,6 +74,7 @@ const emit = defineEmits<{
   update: [image: MoodboardImage]
   delete: [imageId: string]
   dragStart: [imageId: string]
+  edit: [image: MoodboardImage]
 }>()
 
 const isDragging = ref(false)
@@ -344,6 +359,10 @@ function handleRotationEnd() {
   }
 }
 
+function handleEdit() {
+  emit('edit', props.image)
+}
+
 function handleDelete() {
   emit('delete', props.image.id)
 }
@@ -483,6 +502,32 @@ onUnmounted(() => {
   right: 0;
   transform: translateY(-50%);
   cursor: e-resize;
+}
+
+.edit-button {
+  position: absolute;
+  top: -10px;
+  right: 15px;
+  width: 20px;
+  height: 20px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.edit-button:hover {
+  background: #2563eb;
+}
+
+.edit-button .icon {
+  width: 12px;
+  height: 12px;
 }
 
 .delete-button {

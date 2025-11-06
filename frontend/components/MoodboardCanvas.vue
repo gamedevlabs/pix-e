@@ -9,6 +9,7 @@
             <UButton
               :variant="canvasMode === 'select' ? 'solid' : 'outline'"
               icon="i-heroicons-cursor-arrow-rays"
+              title="Select and move elements"
               @click="setCanvasMode('select')"
             >
               Select
@@ -16,6 +17,7 @@
             <UButton
               :variant="canvasMode === 'text' ? 'solid' : 'outline'"
               icon="i-heroicons-document-text"
+              title="Add text elements to canvas"
               @click="setCanvasMode('text')"
             >
               Text
@@ -23,11 +25,174 @@
             <UButton
               :variant="canvasMode === 'image' ? 'solid' : 'outline'"
               icon="i-heroicons-photo"
+              title="Add images to canvas"
               @click="openImageMode"
             >
               Image
             </UButton>
+            <UButton
+              :variant="props.drawingMode === 'draw' || props.drawingMode === 'erase' ? 'solid' : 'outline'"
+              icon="i-heroicons-pencil"
+              color="primary"
+              title="Toggle drawing mode"
+              @click="toggleDrawMode"
+            >
+              Draw
+            </UButton>
           </UButtonGroup>
+        </div>
+
+        <!-- Drawing Controls (shown when Draw mode is active) -->
+        <div v-if="props.drawingMode === 'draw' || props.drawingMode === 'erase'" class="drawing-toolbar-expanded">
+          <div class="drawing-controls-row">
+            <!-- Draw/Erase Toggle -->
+            <div class="control-group">
+              <span class="control-label">Mode:</span>
+              <UButtonGroup size="sm">
+                <UButton
+                  :variant="props.drawingMode === 'draw' ? 'solid' : 'outline'"
+                  color="primary"
+                  icon="i-heroicons-pencil-20-solid"
+                  @click="setDrawingMode('draw')"
+                >
+                  Draw
+                </UButton>
+                <UButton
+                  :variant="props.drawingMode === 'erase' ? 'solid' : 'outline'"
+                  color="error"
+                  icon="i-heroicons-x-circle-20-solid"
+                  @click="setDrawingMode('erase')"
+                >
+                  Erase
+                </UButton>
+              </UButtonGroup>
+            </div>
+
+            <!-- Pen Type (only in draw mode) -->
+            <div v-if="props.drawingMode === 'draw'" class="control-group">
+              <span class="control-label">Pen Type:</span>
+              <UButtonGroup size="sm">
+                <UButton
+                  :variant="props.penType === 'pen' ? 'solid' : 'outline'"
+                  title="Pen"
+                  @click="setPenType('pen')"
+                >
+                  ✏️ Pen
+                </UButton>
+                <UButton
+                  :variant="props.penType === 'marker' ? 'solid' : 'outline'"
+                  title="Marker"
+                  @click="setPenType('marker')"
+                >
+                  🖍️ Marker
+                </UButton>
+                <UButton
+                  :variant="props.penType === 'pencil' ? 'solid' : 'outline'"
+                  title="Pencil"
+                  @click="setPenType('pencil')"
+                >
+                  ✏️ Pencil
+                </UButton>
+                <UButton
+                  :variant="props.penType === 'highlighter' ? 'solid' : 'outline'"
+                  title="Highlighter"
+                  @click="setPenType('highlighter')"
+                >
+                  🖍️ Highlight
+                </UButton>
+                <UButton
+                  :variant="props.penType === 'spray' ? 'solid' : 'outline'"
+                  title="Spray"
+                  @click="setPenType('spray')"
+                >
+                  🎨 Spray
+                </UButton>
+                <UButton
+                  :variant="props.penType === 'watercolor' ? 'solid' : 'outline'"
+                  title="Watercolor"
+                  @click="setPenType('watercolor')"
+                >
+                  💧 Water
+                </UButton>
+              </UButtonGroup>
+            </div>
+
+            <!-- Brush Size -->
+            <div class="control-group brush-control">
+              <span class="control-label">Size:</span>
+              <input
+                :value="props.brushSize"
+                type="range"
+                :min="getBrushSizeRange().min"
+                :max="getBrushSizeRange().max"
+                class="range-input-inline"
+                @input="updateBrushSize($event)"
+              />
+              <span class="control-value">{{ props.brushSize }}px</span>
+            </div>
+
+            <!-- Brush Color (only in draw mode) -->
+            <div v-if="props.drawingMode === 'draw'" class="control-group">
+              <span class="control-label">Color:</span>
+              <input
+                :value="props.brushColor"
+                type="color"
+                class="color-input-inline"
+                @input="updateBrushColor($event)"
+              />
+            </div>
+
+            <!-- Opacity -->
+            <div class="control-group brush-control">
+              <span class="control-label">Opacity:</span>
+              <input
+                :value="props.brushOpacity"
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.1"
+                class="range-input-inline"
+                @input="updateBrushOpacity($event)"
+              />
+              <span class="control-value">{{ Math.round((props.brushOpacity || 1) * 100) }}%</span>
+            </div>
+
+            <!-- Divider -->
+            <div class="toolbar-divider"></div>
+
+            <!-- Actions -->
+            <div class="control-group">
+              <UButtonGroup size="sm">
+                <UButton
+                  variant="outline"
+                  icon="i-heroicons-arrow-uturn-left-20-solid"
+                  title="Undo (Ctrl+Z)"
+                  :disabled="!canUndo"
+                  @click="undoDrawing"
+                >
+                  Undo
+                </UButton>
+                <UButton
+                  variant="outline"
+                  icon="i-heroicons-arrow-uturn-right-20-solid"
+                  title="Redo (Ctrl+Y)"
+                  :disabled="!canRedo"
+                  @click="redoDrawing"
+                >
+                  Redo
+                </UButton>
+                <UButton
+                  variant="outline"
+                  color="error"
+                  icon="i-heroicons-trash-20-solid"
+                  title="Clear All Drawing"
+                  @click="clearDrawing"
+                >
+                  Clear
+                </UButton>
+              </UButtonGroup>
+            </div>
+          </div>
         </div>
 
         <div class="toolbar-section">
@@ -36,41 +201,23 @@
             <UButton
               :variant="showGrid ? 'solid' : 'outline'"
               icon="i-heroicons-squares-2x2"
+              title="Toggle grid overlay"
               @click="toggleGrid"
             >
               Grid
             </UButton>
-            <UButton icon="i-heroicons-minus" @click="zoomOut">
+            <UButton 
+              icon="i-heroicons-minus" 
+              title="Zoom out"
+              @click="zoomOut"
+            >
               {{ Math.round(zoomLevel * 100) }}%
             </UButton>
-            <UButton icon="i-heroicons-plus" @click="zoomIn" />
-          </UButtonGroup>
-        </div>
-
-        <div class="toolbar-section">
-          <h3>Layout</h3>
-          <UButtonGroup>
-            <UButton
-              icon="i-heroicons-arrow-up"
-              :disabled="selectedElements.length < 2"
-              @click="alignTop"
-            >
-              Align Top
-            </UButton>
-            <UButton
-              icon="i-heroicons-arrow-left"
-              :disabled="selectedElements.length < 2"
-              @click="alignLeft"
-            >
-              Align Left
-            </UButton>
-            <UButton
-              icon="i-heroicons-squares-plus"
-              :disabled="selectedElements.length < 3"
-              @click="distributeHorizontally"
-            >
-              Distribute
-            </UButton>
+            <UButton 
+              icon="i-heroicons-plus" 
+              title="Zoom in"
+              @click="zoomIn" 
+            />
           </UButtonGroup>
         </div>
 
@@ -81,7 +228,7 @@
               title="Bring to Front"
               icon="i-heroicons-arrow-up-20-solid"
               size="xs"
-              :disabled="selectedElements.length !== 1 || !canBringToFront()"
+              :disabled="selectedElements.length !== 1 || !canBringToFront"
               @click="bringToFront"
             >
               Front
@@ -90,7 +237,7 @@
               title="Bring Forward"
               icon="i-heroicons-arrow-up-20-solid"
               size="xs"
-              :disabled="selectedElements.length !== 1 || !canBringForward()"
+              :disabled="selectedElements.length !== 1 || !canBringForward"
               @click="bringForward"
             >
               Forward
@@ -99,7 +246,7 @@
               title="Send Backward"
               icon="i-heroicons-arrow-down-20-solid"
               size="xs"
-              :disabled="selectedElements.length !== 1 || !canSendBackward()"
+              :disabled="selectedElements.length !== 1 || !canSendBackward"
               @click="sendBackward"
             >
               Backward
@@ -108,7 +255,7 @@
               title="Send to Back"
               icon="i-heroicons-arrow-down-20-solid"
               size="xs"
-              :disabled="selectedElements.length !== 1 || !canSendToBack()"
+              :disabled="selectedElements.length !== 1 || !canSendToBack"
               @click="sendToBack"
             >
               Back
@@ -117,10 +264,28 @@
         </div>
 
         <div class="toolbar-section">
-          <h3>Export</h3>
-          <UButton icon="i-heroicons-arrow-down-tray" @click="() => exportCanvas('png')">
-            Export PNG
-          </UButton>
+          <h3>Actions</h3>
+          <UButtonGroup>
+            <UButton
+              icon="i-heroicons-check-circle"
+              color="primary"
+              :loading="isSaving"
+              @click="saveCanvas"
+            >
+              {{ isSaving ? 'Saving...' : 'Save' }}
+            </UButton>
+            <UDropdownMenu :items="exportMenuItems">
+              <UButton icon="i-heroicons-arrow-down-tray" variant="outline" trailing-icon="i-heroicons-chevron-down">
+                Export
+              </UButton>
+              <template #item="{ item }">
+                <div class="dropdown-item" @click="item.click">
+                  <UIcon :name="item.icon" class="mr-2 w-4 h-4" />
+                  <span>{{ item.label }}</span>
+                </div>
+              </template>
+            </UDropdownMenu>
+          </UButtonGroup>
         </div>
       </div>
 
@@ -177,6 +342,7 @@
             @update="updateImagePosition"
             @delete="deleteElement"
             @drag-start="bringImageToFrontOnDrag"
+            @edit="handleImageEdit"
           />
 
           <!-- Text elements on canvas -->
@@ -193,18 +359,18 @@
             @delete="deleteElement"
           />
 
-          <!-- Drawing Canvas Overlay -->
+          <!-- Drawing Canvas Overlay - Always visible like MS Paint, always below other elements -->
           <canvas
-            v-if="props.drawingMode && props.drawingMode !== 'move'"
             ref="drawingCanvas"
             class="drawing-canvas"
+            :class="{ 'drawing-active': props.drawingMode && props.drawingMode !== 'move' }"
             :width="canvasSettings.canvas_width"
             :height="canvasSettings.canvas_height"
             :style="{
               position: 'absolute',
               top: 0,
               left: 0,
-              zIndex: 1000,
+              zIndex: 1,
               pointerEvents:
                 props.drawingMode === 'draw' || props.drawingMode === 'erase' ? 'auto' : 'none',
               cursor:
@@ -238,8 +404,19 @@
       </div>
 
       <!-- Properties Panel -->
-      <div v-if="selectedElements.length > 0" class="properties-panel">
-        <h3>Properties</h3>
+      <div v-if="selectedElements.length > 0" class="properties-panel" :class="{ collapsed: propertiesPanelCollapsed }">
+        <div class="properties-header">
+          <h3>Properties</h3>
+          <button 
+            class="collapse-button" 
+            @click="propertiesPanelCollapsed = !propertiesPanelCollapsed"
+            :title="propertiesPanelCollapsed ? 'Expand Properties' : 'Collapse Properties'"
+          >
+            <span v-if="!propertiesPanelCollapsed">✕</span>
+            <span v-else>⚙</span>
+          </button>
+        </div>
+        <div v-if="!propertiesPanelCollapsed" class="properties-content">
         <div v-if="selectedElementData">
           <!-- Position controls -->
           <div class="property-group">
@@ -282,10 +459,12 @@
             <!-- Font Family -->
             <div class="mb-3">
               <label class="text-sm text-gray-600 mb-1 block">Font Family</label>
-              <USelect
+              <USelectMenu
                 :model-value="(selectedElementData as MoodboardTextElement).font_family"
-                :options="fontOptions"
+                :items="fontOptions"
+                value-key="value"
                 placeholder="Select font"
+                :ui="{ content: 'min-w-fit' }"
                 @update:model-value="updateTextProperty('font_family', $event)"
               />
             </div>
@@ -305,9 +484,11 @@
               </div>
               <div>
                 <label class="text-sm text-gray-600 mb-1 block">Weight</label>
-                <USelect
+                <USelectMenu
                   :model-value="(selectedElementData as MoodboardTextElement).font_weight"
-                  :options="fontWeightOptions"
+                  :items="fontWeightOptions"
+                  value-key="value"
+                  :ui="{ content: 'min-w-fit' }"
                   @update:model-value="updateTextProperty('font_weight', Number($event))"
                 />
               </div>
@@ -505,6 +686,7 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
     </div>
 
@@ -601,8 +783,19 @@ const emit = defineEmits<{
   'image-removed': [elementId: string]
   addImage: [imageData: Partial<MoodboardImage>]
   addTextElement: [textElement: MoodboardTextElement]
-  moodboardUpdated: [moodboard: Moodboard]
+  moodboardUpdated: [moodboard: Partial<Moodboard>]
   'drawing-state-saved': [imageData: ImageData]
+  'image-edit': [image: MoodboardImage]
+  'update-drawing-mode': [mode: 'move' | 'draw' | 'erase']
+  'update-pen-type': [
+    penType: 'pen' | 'marker' | 'pencil' | 'highlighter' | 'spray' | 'watercolor',
+  ]
+  'update-brush-size': [size: number]
+  'update-brush-color': [color: string]
+  'update-brush-opacity': [opacity: number]
+  'undo-drawing': []
+  'redo-drawing': []
+  'clear-drawing': []
 }>()
 
 // Canvas state
@@ -613,6 +806,9 @@ const zoomLevel = ref(1)
 const showGrid = ref(true)
 const snapToGrid = ref(true)
 const selectedElements = ref<string[]>([])
+
+// Properties panel state
+const propertiesPanelCollapsed = ref(false)
 
 // Drawing state
 const drawingCanvas = ref<HTMLCanvasElement>()
@@ -634,6 +830,7 @@ const selectionBox = ref({
 // Image upload
 const showImageUpload = ref(false)
 const imageUrl = ref('')
+const isSaving = ref(false)
 
 // Watch for changes to showImageUpload
 watch(showImageUpload, (_newValue: boolean) => {})
@@ -789,6 +986,12 @@ const textStylePresets = {
 function setCanvasMode(mode: typeof canvasMode.value) {
   canvasMode.value = mode
   lastModeChangeTime.value = Date.now()
+  
+  // Reset drawing mode to 'move' when switching to any canvas mode
+  if (props.drawingMode && props.drawingMode !== 'move') {
+    emit('update-drawing-mode', 'move')
+  }
+  
   // Close the image upload modal when switching away from image mode
   if (mode !== 'image') {
     closeImageModal()
@@ -814,6 +1017,81 @@ function zoomIn() {
 function zoomOut() {
   zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.1)
 }
+
+// Drawing control functions
+function toggleDrawMode() {
+  // If not in draw/erase mode, activate draw mode
+  // If already in draw/erase mode, go back to move mode
+  if (props.drawingMode === 'move') {
+    // Activate draw mode and set canvas mode to select
+    canvasMode.value = 'select'
+    emit('update-drawing-mode', 'draw')
+  } else {
+    // Deactivate draw mode
+    emit('update-drawing-mode', 'move')
+  }
+}
+
+function setDrawingMode(mode: 'move' | 'draw' | 'erase') {
+  // When enabling draw or erase mode, ensure canvas mode is select
+  if (mode !== 'move') {
+    canvasMode.value = 'select'
+  }
+  emit('update-drawing-mode', mode)
+}
+
+function setPenType(penType: 'pen' | 'marker' | 'pencil' | 'highlighter' | 'spray' | 'watercolor') {
+  emit('update-pen-type', penType)
+}
+
+function getBrushSizeRange() {
+  const penType = props.penType || 'pen'
+  const ranges: Record<string, { min: number; max: number }> = {
+    pen: { min: 1, max: 20 },
+    marker: { min: 5, max: 50 },
+    pencil: { min: 1, max: 10 },
+    highlighter: { min: 10, max: 60 },
+    spray: { min: 5, max: 40 },
+    watercolor: { min: 10, max: 80 },
+  }
+  return ranges[penType] || { min: 1, max: 50 }
+}
+
+function updateBrushSize(event: Event) {
+  const target = event.target as HTMLInputElement
+  emit('update-brush-size', Number(target.value))
+}
+
+function updateBrushColor(event: Event) {
+  const target = event.target as HTMLInputElement
+  emit('update-brush-color', target.value)
+}
+
+function updateBrushOpacity(event: Event) {
+  const target = event.target as HTMLInputElement
+  emit('update-brush-opacity', Number(target.value))
+}
+
+function undoDrawing() {
+  emit('undo-drawing')
+}
+
+function redoDrawing() {
+  emit('redo-drawing')
+}
+
+function clearDrawing() {
+  emit('clear-drawing')
+}
+
+// Computed properties for undo/redo
+const canUndo = computed(() => {
+  return (props.historyStep || 0) > 0
+})
+
+const canRedo = computed(() => {
+  return (props.historyStep || 0) < (props.drawingHistory?.length || 0) - 1
+})
 
 function selectElement(elementId: string, multiSelect = false) {
   if (multiSelect) {
@@ -843,7 +1121,17 @@ function bringImageToFrontOnDrag(imageId: string) {
   }
 }
 
+// Handle image edit
+function handleImageEdit(image: MoodboardImage) {
+  emit('image-edit', image)
+}
+
 function handleCanvasClick(event: MouseEvent) {
+  // Don't handle canvas clicks when in draw/erase mode
+  if (props.drawingMode && props.drawingMode !== 'move') {
+    return
+  }
+
   // Prevent immediate clicks after mode change (give 200ms buffer)
   const timeSinceLastModeChange = Date.now() - lastModeChangeTime.value
   if (timeSinceLastModeChange < 200) {
@@ -1123,167 +1411,321 @@ function closeImageModal() {
   imageUrl.value = ''
 }
 
-function alignTop() {
-  if (selectedElements.value.length < 2) return
-
-  const selectedImages = canvasImages.value.filter((img) => selectedElements.value.includes(img.id))
-  if (selectedImages.length < 2) return
-
-  // Find the topmost position
-  const topPosition = Math.min(...selectedImages.map((img) => img.y_position))
-
-  // Update all selected images to align to top
-  selectedImages.forEach((img) => {
-    if (img.y_position !== topPosition) {
-      const updatedImage = { ...img, y_position: topPosition }
-      updateImagePosition(updatedImage)
-    }
-  })
-}
-
-function alignLeft() {
-  if (selectedElements.value.length < 2) return
-
-  const selectedImages = canvasImages.value.filter((img) => selectedElements.value.includes(img.id))
-  if (selectedImages.length < 2) return
-
-  // Find the leftmost position
-  const leftPosition = Math.min(...selectedImages.map((img) => img.x_position))
-
-  // Update all selected images to align to left
-  selectedImages.forEach((img) => {
-    if (img.x_position !== leftPosition) {
-      const updatedImage = { ...img, x_position: leftPosition }
-      updateImagePosition(updatedImage)
-    }
-  })
-}
-
-function distributeHorizontally() {
-  if (selectedElements.value.length < 3) return
-
-  const selectedImages = canvasImages.value.filter((img) => selectedElements.value.includes(img.id))
-  if (selectedImages.length < 3) return
-
-  // Sort by x position
-  selectedImages.sort((a, b) => a.x_position - b.x_position)
-
-  const leftmost = selectedImages[0].x_position
-  const rightmost = selectedImages[selectedImages.length - 1].x_position
-  const totalSpacing = rightmost - leftmost
-  const spaceBetween = totalSpacing / (selectedImages.length - 1)
-
-  // Update positions for middle elements
-  for (let i = 1; i < selectedImages.length - 1; i++) {
-    const newX = leftmost + i * spaceBetween
-    if (selectedImages[i].x_position !== newX) {
-      const updatedImage = { ...selectedImages[i], x_position: newX }
-      updateImagePosition(updatedImage)
-    }
-  }
-}
-
-// Z-index layering functions
-function canBringToFront(): boolean {
+// Z-index layering functions (as computed properties for reactivity)
+// Simplified: Enable layering buttons when exactly 1 element is selected and there are 2+ total elements
+const canBringToFront = computed((): boolean => {
   if (selectedElements.value.length !== 1) return false
-  const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return false
+  const totalElements = canvasImages.value.length + canvasTextElements.value.length
+  return totalElements >= 2
+})
 
-  // Check if this image already has the highest z-index
-  const maxZIndex = Math.max(...canvasImages.value.map((img) => img.z_index || 0))
-  return (selectedImage.z_index || 0) < maxZIndex
-}
-
-function canBringForward(): boolean {
+const canBringForward = computed((): boolean => {
   if (selectedElements.value.length !== 1) return false
-  const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return false
+  const totalElements = canvasImages.value.length + canvasTextElements.value.length
+  return totalElements >= 2
+})
 
-  // Check if there's any image with a higher z-index
-  return canvasImages.value.some((img) => (img.z_index || 0) > (selectedImage.z_index || 0))
-}
-
-function canSendBackward(): boolean {
+const canSendBackward = computed((): boolean => {
   if (selectedElements.value.length !== 1) return false
-  const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return false
+  const totalElements = canvasImages.value.length + canvasTextElements.value.length
+  return totalElements >= 2
+})
 
-  // Check if there's any image with a lower z-index
-  return canvasImages.value.some((img) => (img.z_index || 0) < (selectedImage.z_index || 0))
-}
-
-function canSendToBack(): boolean {
+const canSendToBack = computed((): boolean => {
   if (selectedElements.value.length !== 1) return false
-  const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return false
+  const totalElements = canvasImages.value.length + canvasTextElements.value.length
+  return totalElements >= 2
+})
 
-  // Check if this image already has the lowest z-index
-  const minZIndex = Math.min(...canvasImages.value.map((img) => img.z_index || 0))
-  return (selectedImage.z_index || 0) > minZIndex
-}
+const exportMenuItems = computed(() => [
+  {
+    label: 'Export as PNG',
+    icon: 'i-heroicons-photo',
+    click: () => exportCanvas('png'),
+  },
+  {
+    label: 'Export as JPEG',
+    icon: 'i-heroicons-photo',
+    click: () => exportCanvas('jpg'),
+  },
+  {
+    label: 'Export as PDF',
+    icon: 'i-heroicons-document',
+    click: () => exportCanvas('pdf'),
+  },
+])
 
 function bringToFront() {
   if (selectedElements.value.length !== 1) return
+  
+  // Get all z-indexes from both images and text elements
+  const allZIndexes = [
+    ...canvasImages.value.map((img) => img.z_index || 0),
+    ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+  ]
+  const maxZIndex = Math.max(...allZIndexes)
+  
+  // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return
-
-  // Set z-index to highest + 1
-  const maxZIndex = Math.max(...canvasImages.value.map((img) => img.z_index || 0))
-  const updatedImage = { ...selectedImage, z_index: maxZIndex + 1 }
-  updateImagePosition(updatedImage)
+  if (selectedImage) {
+    const updatedImage = { ...selectedImage, z_index: maxZIndex + 1 }
+    updateImagePosition(updatedImage)
+    return
+  }
+  
+  // Check if it's a text element
+  const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
+  if (selectedText) {
+    const updatedText = { ...selectedText, z_index: maxZIndex + 1 }
+    updateTextElement(updatedText)
+  }
 }
 
 function bringForward() {
   if (selectedElements.value.length !== 1) return
+  
+  // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return
+  if (selectedImage) {
+    const currentZIndex = selectedImage.z_index || 0
+    // Find the next higher z-index from all elements
+    const allZIndexes = [
+      ...canvasImages.value.map((img) => img.z_index || 0),
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+    ]
+    const higherZIndexes = allZIndexes
+      .filter((z) => z > currentZIndex)
+      .sort((a, b) => a - b)
 
-  const currentZIndex = selectedImage.z_index || 0
-  // Find the next higher z-index
-  const higherZIndexes = canvasImages.value
-    .map((img) => img.z_index || 0)
-    .filter((z) => z > currentZIndex)
-    .sort((a, b) => a - b)
+    if (higherZIndexes.length > 0) {
+      const updatedImage = { ...selectedImage, z_index: higherZIndexes[0] + 1 }
+      updateImagePosition(updatedImage)
+    }
+    return
+  }
+  
+  // Check if it's a text element
+  const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
+  if (selectedText) {
+    const currentZIndex = selectedText.z_index || 0
+    // Find the next higher z-index from all elements
+    const allZIndexes = [
+      ...canvasImages.value.map((img) => img.z_index || 0),
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+    ]
+    const higherZIndexes = allZIndexes
+      .filter((z) => z > currentZIndex)
+      .sort((a, b) => a - b)
 
-  if (higherZIndexes.length > 0) {
-    const updatedImage = { ...selectedImage, z_index: higherZIndexes[0] + 1 }
-    updateImagePosition(updatedImage)
+    if (higherZIndexes.length > 0) {
+      const updatedText = { ...selectedText, z_index: higherZIndexes[0] + 1 }
+      updateTextElement(updatedText)
+    }
   }
 }
 
 function sendBackward() {
   if (selectedElements.value.length !== 1) return
+  
+  // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return
+  if (selectedImage) {
+    const currentZIndex = selectedImage.z_index || 0
+    // Find the next lower z-index from all elements
+    const allZIndexes = [
+      ...canvasImages.value.map((img) => img.z_index || 0),
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+    ]
+    const lowerZIndexes = allZIndexes
+      .filter((z) => z < currentZIndex)
+      .sort((a, b) => b - a)
 
-  const currentZIndex = selectedImage.z_index || 0
-  // Find the next lower z-index
-  const lowerZIndexes = canvasImages.value
-    .map((img) => img.z_index || 0)
-    .filter((z) => z < currentZIndex)
-    .sort((a, b) => b - a)
+    if (lowerZIndexes.length > 0) {
+      const updatedImage = { ...selectedImage, z_index: lowerZIndexes[0] - 1 }
+      updateImagePosition(updatedImage)
+    }
+    return
+  }
+  
+  // Check if it's a text element
+  const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
+  if (selectedText) {
+    const currentZIndex = selectedText.z_index || 0
+    // Find the next lower z-index from all elements
+    const allZIndexes = [
+      ...canvasImages.value.map((img) => img.z_index || 0),
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+    ]
+    const lowerZIndexes = allZIndexes
+      .filter((z) => z < currentZIndex)
+      .sort((a, b) => b - a)
 
-  if (lowerZIndexes.length > 0) {
-    const updatedImage = { ...selectedImage, z_index: lowerZIndexes[0] - 1 }
-    updateImagePosition(updatedImage)
+    if (lowerZIndexes.length > 0) {
+      const updatedText = { ...selectedText, z_index: lowerZIndexes[0] - 1 }
+      updateTextElement(updatedText)
+    }
   }
 }
 
 function sendToBack() {
   if (selectedElements.value.length !== 1) return
+  
+  // Get all z-indexes from both images and text elements
+  const allZIndexes = [
+    ...canvasImages.value.map((img) => img.z_index || 0),
+    ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+  ]
+  const minZIndex = Math.min(...allZIndexes)
+  
+  // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
-  if (!selectedImage) return
+  if (selectedImage) {
+    const updatedImage = { ...selectedImage, z_index: minZIndex - 1 }
+    updateImagePosition(updatedImage)
+    return
+  }
+  
+  // Check if it's a text element
+  const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
+  if (selectedText) {
+    const updatedText = { ...selectedText, z_index: minZIndex - 1 }
+    updateTextElement(updatedText)
+  }
+}
 
-  // Set z-index to lowest - 1
-  const minZIndex = Math.min(...canvasImages.value.map((img) => img.z_index || 0))
-  const updatedImage = { ...selectedImage, z_index: minZIndex - 1 }
-  updateImagePosition(updatedImage)
+// Save canvas function
+async function saveCanvas() {
+  if (isSaving.value) return
+  
+  const toast = useToast()
+  isSaving.value = true
+
+  try {
+    const savePromises: Promise<unknown>[] = []
+    let drawingDataUrl = ''
+    let failedSaves = 0
+    
+    // Count items to save
+    const totalItems = canvasTextElements.value.length + canvasImages.value.length
+    
+    // 1. Save all text elements (to ensure any unsaved changes are persisted)
+    for (const textElement of canvasTextElements.value) {
+      const savePromise = apiUpdateTextElement(
+        props.moodboard.id,
+        textElement.id,
+        textElement
+      ).catch((error) => {
+        console.error(`Failed to save text element ${textElement.id}:`, error)
+        failedSaves++
+        // Continue with other saves even if one fails
+        return null
+      })
+      savePromises.push(savePromise)
+    }
+    
+    // 2. Save all images (to ensure any unsaved position/size changes are persisted)
+    for (const image of canvasImages.value) {
+      const savePromise = apiUpdateImagePosition(
+        props.moodboard.id,
+        image.id,
+        {
+          x_position: image.x_position,
+          y_position: image.y_position,
+          canvas_width: image.canvas_width,
+          canvas_height: image.canvas_height,
+          rotation: image.rotation,
+          z_index: image.z_index,
+          opacity: image.opacity,
+        }
+      ).catch((error) => {
+        console.error(`Failed to save image ${image.id}:`, error)
+        failedSaves++
+        // Continue with other saves even if one fails
+        return null
+      })
+      savePromises.push(savePromise)
+    }
+    
+    // 3. Convert drawing canvas to base64 image
+    const canvas = drawingCanvas.value
+    if (canvas) {
+      // Check if canvas has any drawings (not completely blank)
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const data = imageData.data
+        let hasDrawing = false
+        
+        // Check if any pixel is not transparent
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] > 0) { // Check alpha channel
+            hasDrawing = true
+            break
+          }
+        }
+        
+        // Only save if there are actual drawings
+        if (hasDrawing) {
+          drawingDataUrl = canvas.toDataURL('image/png')
+          // Also emit for history tracking
+          emit('drawing-state-saved', imageData)
+        }
+      }
+    }
+
+    // Wait for all text and image saves to complete
+    await Promise.all(savePromises)
+
+    // 4. Save moodboard with drawing layer (wait for this to complete too)
+    if (props.moodboard) {
+      await new Promise<void>((resolve) => {
+        emit('moodboardUpdated', {
+          ...props.moodboard,
+          canvas_drawing_layer: drawingDataUrl
+        })
+        // Give the parent component time to save
+        setTimeout(() => resolve(), 500)
+      })
+    }
+
+    // Show appropriate success/warning message
+    if (failedSaves === 0) {
+      toast.add({
+        title: 'Saved Successfully',
+        description: `All canvas content saved (${totalItems} items + drawings)`,
+        color: 'success',
+        icon: 'i-heroicons-check-circle',
+      })
+    } else {
+      toast.add({
+        title: 'Partially Saved',
+        description: `Saved ${totalItems - failedSaves}/${totalItems} items. ${failedSaves} failed - please try again.`,
+        color: 'warning',
+        icon: 'i-heroicons-exclamation-triangle',
+      })
+    }
+  } catch (error) {
+    console.error('Error saving canvas:', error)
+    toast.add({
+      title: 'Save Failed',
+      description: 'Failed to save canvas. Please try again.',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  } finally {
+    isSaving.value = false
+  }
 }
 
 async function exportCanvas(format: string) {
   try {
-    await exportCanvasAsImage(format)
-  } catch {
+    if (format === 'pdf') {
+      await exportCanvasAsPDF()
+    } else {
+      await exportCanvasAsImage(format)
+    }
+  } catch (error) {
+    console.error('Export failed:', error)
     // Export failed silently
   }
 }
@@ -1293,6 +1735,11 @@ async function exportCanvasAsImage(format: string) {
   if (!canvas) {
     throw new Error('Canvas element not found')
   }
+  
+  const wrapper = canvas.parentElement
+  if (!wrapper) {
+    throw new Error('Canvas wrapper not found')
+  }
 
   const exportCanvas = document.createElement('canvas')
   const ctx = exportCanvas.getContext('2d')
@@ -1300,27 +1747,113 @@ async function exportCanvasAsImage(format: string) {
     throw new Error('Could not get canvas context')
   }
 
-  const canvasRect = canvas.getBoundingClientRect()
-  const exportWidth = canvasRect.width
-  const exportHeight = canvasRect.height
+  // Export the ENTIRE canvas, not just visible area
+  // Get the full canvas dimensions
+  const canvasWidth = canvas.offsetWidth
+  const canvasHeight = canvas.offsetHeight
+  
+  // Set export dimensions to the full canvas size (at current zoom level)
+  const exportWidth = Math.round(canvasWidth * zoomLevel.value)
+  const exportHeight = Math.round(canvasHeight * zoomLevel.value)
 
   exportCanvas.width = exportWidth
   exportCanvas.height = exportHeight
+  
+  // Source coordinates cover the entire canvas
+  const sourceX = 0
+  const sourceY = 0
+  const sourceWidth = canvasWidth
+  const sourceHeight = canvasHeight
 
-  ctx.fillStyle = '#ffffff'
+  ctx.fillStyle = props.moodboard.canvas_background_color || '#ffffff'
   ctx.fillRect(0, 0, exportWidth, exportHeight)
+  
+  // Draw background image if exists (entire background)
+  if (props.moodboard.canvas_background_image) {
+    try {
+      const bgImage = new Image()
+      bgImage.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve, reject) => {
+        bgImage.onload = () => {
+          // Draw the entire background
+          ctx.drawImage(
+            bgImage,
+            0, 0, canvasWidth, canvasHeight,  // source: full canvas
+            0, 0, exportWidth, exportHeight  // destination: full export canvas
+          )
+          resolve()
+        }
+        bgImage.onerror = () => resolve() // Continue even if background fails
+        bgImage.src = props.moodboard.canvas_background_image!
+      })
+    } catch {
+      // Continue without background
+    }
+  }
+  
+  // Draw grid if enabled (only in visible area)
+  if (showGrid.value) {
+    const gridSize = canvasSettings.value.grid_size * zoomLevel.value
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
+    ctx.lineWidth = 1
+    
+    // Calculate grid starting points based on visible offset
+    const gridStartX = (sourceX * zoomLevel.value) % gridSize
+    const gridStartY = (sourceY * zoomLevel.value) % gridSize
+    
+    // Draw vertical lines
+    for (let x = gridStartX; x <= exportWidth; x += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, exportHeight)
+      ctx.stroke()
+    }
+    
+    // Draw horizontal lines
+    for (let y = gridStartY; y <= exportHeight; y += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(exportWidth, y)
+      ctx.stroke()
+    }
+  }
+
+  // Draw background image if exists (only the visible portion)
+  if (props.moodboard.canvas_background_image) {
+    try {
+      const bgImage = new Image()
+      bgImage.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve, reject) => {
+        bgImage.onload = () => {
+          // Draw only the visible portion of the background
+          ctx.drawImage(
+            bgImage,
+            sourceX, sourceY, sourceWidth, sourceHeight,  // source: visible area
+            0, 0, exportWidth, exportHeight  // destination: full export canvas
+          )
+          resolve()
+        }
+        bgImage.onerror = () => resolve() // Continue even if background fails
+        bgImage.src = props.moodboard.canvas_background_image!
+      })
+    } catch {
+      // Continue without background
+    }
+  }
+
+  // Calculate scale to convert from stored positions to export size
+  const scale = zoomLevel.value
 
   const getActualElementDimensions = (elementId: string) => {
-    const element = document.querySelector(`[data-image-id="${elementId}"]`) as HTMLElement
-    if (element) {
-      const rect = element.getBoundingClientRect()
-      const canvasRect = canvas.getBoundingClientRect()
-
+    // Get the element from data and scale by zoom level (no scroll offset needed for full canvas export)
+    const imageElement = canvasImages.value.find((img) => img.id.toString() === elementId)
+    
+    if (imageElement) {
       return {
-        x: rect.left - canvasRect.left,
-        y: rect.top - canvasRect.top,
-        width: rect.width,
-        height: rect.height,
+        x: (imageElement.x_position || 0) * scale,
+        y: (imageElement.y_position || 0) * scale,
+        width: (imageElement.canvas_width || 200) * scale,
+        height: (imageElement.canvas_height || 200) * scale,
       }
     }
     return null
@@ -1457,10 +1990,10 @@ async function exportCanvasAsImage(format: string) {
         const drawPlaceholder = () => {
           ctx.save()
           ctx.fillStyle = 'rgba(200, 200, 200, 0.5)'
-          const x = img.x_position || 0
-          const y = img.y_position || 0
-          const width = img.canvas_width || 200
-          const height = img.canvas_height || 200
+          const x = (img.x_position || 0) * scale
+          const y = (img.y_position || 0) * scale
+          const width = (img.canvas_width || 200) * scale
+          const height = (img.canvas_height || 200) * scale
           ctx.fillRect(x, y, width, height)
           ctx.restore()
 
@@ -1490,42 +2023,142 @@ async function exportCanvasAsImage(format: string) {
         return
       }
 
-      const textElement = document.querySelector(`[data-text-id="${textEl.id}"]`) as HTMLElement
-      let x, y, fontSize
-
-      if (textElement) {
-        const rect = textElement.getBoundingClientRect()
-        const canvasRect = canvas.getBoundingClientRect()
-
-        x = rect.left - canvasRect.left
-        y = rect.top - canvasRect.top + parseFloat(getComputedStyle(textElement).fontSize)
-        fontSize = parseFloat(getComputedStyle(textElement).fontSize)
-      } else {
-        x = textEl.x_position || 0
-        y = textEl.y_position || 0
-        fontSize = textEl.font_size || 16
-      }
+      // Use stored positions and dimensions scaled by zoom level
+      const x = (textEl.x_position || 0) * scale
+      const y = (textEl.y_position || 0) * scale
+      const width = (textEl.width || 200) * scale
+      const height = (textEl.height || 50) * scale
+      const fontSize = (textEl.font_size || 16) * scale
+      const fontWeight = textEl.font_weight || 400
+      const fontFamily = textEl.font_family || 'Arial'
+      const textColor = textEl.text_color || '#000000'
+      const lineHeight = textEl.line_height || 1.4
+      const letterSpacing = (textEl.letter_spacing || 0) * scale
+      const textAlign = textEl.text_align || 'left'
+      const backgroundColor = textEl.background_color
+      const borderColor = textEl.border_color
+      const borderWidth = (textEl.border_width || 0) * scale
 
       ctx.save()
 
-      const fontWeight = textEl.font_weight || 'normal'
-      const fontFamily = textEl.font_family || 'Arial'
-      const textColor = textEl.text_color || '#000000'
+      // Apply rotation if needed
+      if (textEl.rotation) {
+        const centerX = x + width / 2
+        const centerY = y + height / 2
+        ctx.translate(centerX, centerY)
+        ctx.rotate((textEl.rotation * Math.PI) / 180)
+        ctx.translate(-centerX, -centerY)
+      }
 
-      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
-      ctx.fillStyle = textColor
-      ctx.textAlign = (textEl.text_align as CanvasTextAlign) || 'left'
-
+      // Apply opacity
       if (textEl.opacity !== undefined && textEl.opacity !== 1) {
         ctx.globalAlpha = textEl.opacity
       }
 
-      if (textEl.rotation) {
-        ctx.translate(x, y)
-        ctx.rotate((textEl.rotation * Math.PI) / 180)
-        ctx.fillText(textEl.content, 0, 0)
-      } else {
-        ctx.fillText(textEl.content, x, y)
+      // Draw background if specified
+      if (backgroundColor && backgroundColor.trim() !== '') {
+        ctx.fillStyle = backgroundColor
+        ctx.fillRect(x, y, width, height)
+      }
+
+      // Draw border if specified
+      if (borderWidth > 0 && borderColor && borderColor.trim() !== '') {
+        ctx.strokeStyle = borderColor
+        ctx.lineWidth = borderWidth
+        ctx.strokeRect(x, y, width, height)
+      }
+
+      // Set up text rendering
+      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
+      ctx.fillStyle = textColor
+
+      // Handle letter spacing (if supported)
+      if ('letterSpacing' in ctx) {
+        (ctx as any).letterSpacing = `${letterSpacing}px`
+      }
+
+      // Calculate padding (8px like the component)
+      const padding = 8 * scale
+
+      // Split text into lines based on content (handle \n) and word wrapping
+      const lines: string[] = []
+      const paragraphs = textEl.content.split('\n')
+      
+      for (const paragraph of paragraphs) {
+        if (paragraph.trim() === '') {
+          lines.push('')
+          continue
+        }
+
+        // Word wrap within available width
+        const words = paragraph.split(' ')
+        let currentLine = ''
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word
+          const metrics = ctx.measureText(testLine)
+          const testWidth = metrics.width + (testLine.length - 1) * letterSpacing
+
+          if (testWidth > width - padding * 2 && currentLine !== '') {
+            lines.push(currentLine)
+            currentLine = word
+          } else {
+            currentLine = testLine
+          }
+        }
+
+        if (currentLine) {
+          lines.push(currentLine)
+        }
+      }
+
+      // Calculate line positions
+      const lineHeightPx = fontSize * lineHeight
+      let currentY = y + padding + fontSize // Start position (top padding + font size for baseline)
+
+      // Draw each line
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        
+        if (line.trim() === '') {
+          currentY += lineHeightPx
+          continue
+        }
+
+        let lineX = x + padding
+
+        // Apply text alignment
+        if (textAlign === 'center') {
+          const metrics = ctx.measureText(line)
+          const lineWidth = metrics.width + (line.length - 1) * letterSpacing
+          lineX = x + (width - lineWidth) / 2
+        } else if (textAlign === 'right') {
+          const metrics = ctx.measureText(line)
+          const lineWidth = metrics.width + (line.length - 1) * letterSpacing
+          lineX = x + width - lineWidth - padding
+        } else if (textAlign === 'justify' && i < lines.length - 1) {
+          // For justify, draw with default spacing (simplified - full justify is complex)
+          lineX = x + padding
+        }
+
+        // Break if we exceed the text box height
+        if (currentY > y + height - padding) {
+          break
+        }
+
+        // Draw the text line
+        if (letterSpacing > 0.5) {
+          // Manual letter spacing for better control
+          let charX = lineX
+          for (const char of line) {
+            ctx.fillText(char, charX, currentY)
+            charX += ctx.measureText(char).width + letterSpacing
+          }
+        } else {
+          ctx.fillText(line, lineX, currentY)
+        }
+
+        currentY += lineHeightPx
       }
 
       ctx.restore()
@@ -1553,18 +2186,17 @@ async function exportCanvasAsImage(format: string) {
       })
 
       if (hasDrawing) {
-        // Create a temporary canvas for the drawing data
-        const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = drawingCanvas.value.width
-        tempCanvas.height = drawingCanvas.value.height
-        const tempCtx = tempCanvas.getContext('2d')
-
-        if (tempCtx) {
-          tempCtx.putImageData(drawingImageData, 0, 0)
-
-          // Draw the drawing layer onto the export canvas
-          ctx.drawImage(tempCanvas, 0, 0, exportWidth, exportHeight)
-        }
+        // Draw only the visible portion of the drawing canvas
+        // Source: the visible area in the full-size drawing canvas
+        // Destination: the entire export canvas
+        
+        ctx.save()
+        ctx.drawImage(
+          drawingCanvas.value,
+          sourceX, sourceY, sourceWidth, sourceHeight,  // source: visible area in logical coords
+          0, 0, exportWidth, exportHeight  // destination: full export canvas
+        )
+        ctx.restore()
       }
     }
   }
@@ -1595,6 +2227,395 @@ async function exportCanvasAsImage(format: string) {
       quality,
     )
   })
+}
+
+async function exportCanvasAsPDF() {
+  // Import jsPDF dynamically
+  const { jsPDF } = await import('jspdf')
+  
+  const canvas = canvasElement.value
+  if (!canvas) {
+    throw new Error('Canvas element not found')
+  }
+  
+  const wrapper = canvas.parentElement
+  if (!wrapper) {
+    throw new Error('Canvas wrapper not found')
+  }
+
+  // Export the ENTIRE canvas, not just visible area
+  // Get the full canvas dimensions
+  const canvasWidth = canvas.offsetWidth
+  const canvasHeight = canvas.offsetHeight
+  
+  // Create a temporary canvas for export
+  const tempCanvas = document.createElement('canvas')
+  const exportWidth = Math.round(canvasWidth * zoomLevel.value)
+  const exportHeight = Math.round(canvasHeight * zoomLevel.value)
+  
+  tempCanvas.width = exportWidth
+  tempCanvas.height = exportHeight
+  
+  const ctx = tempCanvas.getContext('2d')
+  if (!ctx) {
+    throw new Error('Could not get canvas context')
+  }
+
+  // Source coordinates cover the entire canvas
+  const sourceX = 0
+  const sourceY = 0
+  const sourceWidth = canvasWidth
+  const sourceHeight = canvasHeight
+  
+  // Fill with background color
+  ctx.fillStyle = props.moodboard.canvas_background_color || '#ffffff'
+  ctx.fillRect(0, 0, exportWidth, exportHeight)
+  
+  // Draw background image if exists (entire background)
+  if (props.moodboard.canvas_background_image) {
+    try {
+      const bgImage = new Image()
+      bgImage.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve, reject) => {
+        bgImage.onload = () => {
+          ctx.drawImage(
+            bgImage,
+            0, 0, canvasWidth, canvasHeight,
+            0, 0, exportWidth, exportHeight
+          )
+          resolve()
+        }
+        bgImage.onerror = () => resolve()
+        bgImage.src = props.moodboard.canvas_background_image!
+      })
+    } catch {
+      // Continue without background
+    }
+  }
+
+  // Draw grid if enabled
+  if (showGrid.value) {
+    const gridSize = canvasSettings.value.grid_size * zoomLevel.value
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
+    ctx.lineWidth = 1
+    
+    // Draw vertical lines
+    for (let x = 0; x <= exportWidth; x += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, exportHeight)
+      ctx.stroke()
+    }
+    
+    // Draw horizontal lines
+    for (let y = 0; y <= exportHeight; y += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(exportWidth, y)
+      ctx.stroke()
+    }
+  }
+
+  const scale = zoomLevel.value
+
+  const getActualElementDimensions = (elementId: string) => {
+    const imageElement = canvasImages.value.find((img) => img.id.toString() === elementId)
+    
+    if (imageElement) {
+      return {
+        x: (imageElement.x_position || 0) * scale,
+        y: (imageElement.y_position || 0) * scale,
+        width: (imageElement.canvas_width || 200) * scale,
+        height: (imageElement.canvas_height || 200) * scale,
+      }
+    }
+    return null
+  }
+
+  // Draw images
+  const imagePromises = canvasImages.value.map(async (img) => {
+    return new Promise<void>((resolve) => {
+      if (!img.image_url) {
+        resolve()
+        return
+      }
+
+      const image = new Image()
+      image.crossOrigin = 'anonymous'
+      
+      image.onload = () => {
+        const actualDimensions = getActualElementDimensions(img.id.toString())
+        const x = actualDimensions?.x || (img.x_position || 0)
+        const y = actualDimensions?.y || (img.y_position || 0)
+        const width = actualDimensions?.width || (img.canvas_width || 200)
+        const height = actualDimensions?.height || (img.canvas_height || 200)
+
+        ctx.save()
+
+        if (img.rotation) {
+          const centerX = x + width / 2
+          const centerY = y + height / 2
+          ctx.translate(centerX, centerY)
+          ctx.rotate((img.rotation * Math.PI) / 180)
+          ctx.translate(-centerX, -centerY)
+        }
+
+        if (img.opacity !== undefined && img.opacity !== 1) {
+          ctx.globalAlpha = img.opacity
+        }
+
+        try {
+          ctx.drawImage(image, x, y, width, height)
+        } catch {
+          // Drawing failed
+        }
+
+        ctx.restore()
+        resolve()
+      }
+
+      image.onerror = () => {
+        // Draw placeholder
+        ctx.save()
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)'
+        const x = (img.x_position || 0) * scale
+        const y = (img.y_position || 0) * scale
+        const width = (img.canvas_width || 200) * scale
+        const height = (img.canvas_height || 200) * scale
+        ctx.fillRect(x, y, width, height)
+        ctx.restore()
+        resolve()
+      }
+
+      let imageUrl = img.image_url
+      if (imageUrl.startsWith('/')) {
+        const config = useRuntimeConfig()
+        imageUrl = `${config.public.apiBase}${imageUrl}`
+      }
+      const separator = imageUrl.includes('?') ? '&' : '?'
+      imageUrl += `${separator}_t=${Date.now()}`
+      image.src = imageUrl
+    })
+  })
+
+  // Draw text elements
+  const textPromises = canvasTextElements.value.map(async (textEl) => {
+    return new Promise<void>((resolve) => {
+      if (!textEl.content || textEl.content.trim() === '') {
+        resolve()
+        return
+      }
+
+      // Use stored positions and dimensions scaled by zoom level
+      const x = (textEl.x_position || 0) * scale
+      const y = (textEl.y_position || 0) * scale
+      const width = (textEl.width || 200) * scale
+      const height = (textEl.height || 50) * scale
+      const fontSize = (textEl.font_size || 16) * scale
+      const fontWeight = textEl.font_weight || 400
+      const fontFamily = textEl.font_family || 'Arial'
+      const textColor = textEl.text_color || '#000000'
+      const lineHeight = textEl.line_height || 1.4
+      const letterSpacing = (textEl.letter_spacing || 0) * scale
+      const textAlign = textEl.text_align || 'left'
+      const backgroundColor = textEl.background_color
+      const borderColor = textEl.border_color
+      const borderWidth = (textEl.border_width || 0) * scale
+
+      ctx.save()
+
+      // Apply rotation if needed
+      if (textEl.rotation) {
+        const centerX = x + width / 2
+        const centerY = y + height / 2
+        ctx.translate(centerX, centerY)
+        ctx.rotate((textEl.rotation * Math.PI) / 180)
+        ctx.translate(-centerX, -centerY)
+      }
+
+      // Apply opacity
+      if (textEl.opacity !== undefined && textEl.opacity !== 1) {
+        ctx.globalAlpha = textEl.opacity
+      }
+
+      // Draw background if specified
+      if (backgroundColor && backgroundColor.trim() !== '') {
+        ctx.fillStyle = backgroundColor
+        ctx.fillRect(x, y, width, height)
+      }
+
+      // Draw border if specified
+      if (borderWidth > 0 && borderColor && borderColor.trim() !== '') {
+        ctx.strokeStyle = borderColor
+        ctx.lineWidth = borderWidth
+        ctx.strokeRect(x, y, width, height)
+      }
+
+      // Set up text rendering
+      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`
+      ctx.fillStyle = textColor
+
+      // Handle letter spacing (if supported)
+      if ('letterSpacing' in ctx) {
+        (ctx as any).letterSpacing = `${letterSpacing}px`
+      }
+
+      // Calculate padding (8px like the component)
+      const padding = 8 * scale
+
+      // Split text into lines based on content (handle \n) and word wrapping
+      const lines: string[] = []
+      const paragraphs = textEl.content.split('\n')
+      
+      for (const paragraph of paragraphs) {
+        if (paragraph.trim() === '') {
+          lines.push('')
+          continue
+        }
+
+        // Word wrap within available width
+        const words = paragraph.split(' ')
+        let currentLine = ''
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word
+          const metrics = ctx.measureText(testLine)
+          const testWidth = metrics.width + (testLine.length - 1) * letterSpacing
+
+          if (testWidth > width - padding * 2 && currentLine !== '') {
+            lines.push(currentLine)
+            currentLine = word
+          } else {
+            currentLine = testLine
+          }
+        }
+
+        if (currentLine) {
+          lines.push(currentLine)
+        }
+      }
+
+      // Calculate line positions
+      const lineHeightPx = fontSize * lineHeight
+      let currentY = y + padding + fontSize // Start position (top padding + font size for baseline)
+
+      // Draw each line
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        
+        if (line.trim() === '') {
+          currentY += lineHeightPx
+          continue
+        }
+
+        let lineX = x + padding
+
+        // Apply text alignment
+        if (textAlign === 'center') {
+          const metrics = ctx.measureText(line)
+          const lineWidth = metrics.width + (line.length - 1) * letterSpacing
+          lineX = x + (width - lineWidth) / 2
+        } else if (textAlign === 'right') {
+          const metrics = ctx.measureText(line)
+          const lineWidth = metrics.width + (line.length - 1) * letterSpacing
+          lineX = x + width - lineWidth - padding
+        } else if (textAlign === 'justify' && i < lines.length - 1) {
+          // For justify, draw with default spacing (simplified - full justify is complex)
+          lineX = x + padding
+        }
+
+        // Break if we exceed the text box height
+        if (currentY > y + height - padding) {
+          break
+        }
+
+        // Draw the text line
+        if (letterSpacing > 0.5) {
+          // Manual letter spacing for better control
+          let charX = lineX
+          for (const char of line) {
+            ctx.fillText(char, charX, currentY)
+            charX += ctx.measureText(char).width + letterSpacing
+          }
+        } else {
+          ctx.fillText(line, lineX, currentY)
+        }
+
+        currentY += lineHeightPx
+      }
+
+      ctx.restore()
+      resolve()
+    })
+  })
+
+  await Promise.all([...imagePromises, ...textPromises])
+
+  // Add drawing layer if it exists
+  if (drawingCanvas.value) {
+    const drawingCtx = drawingCanvas.value.getContext('2d')
+    if (drawingCtx) {
+      const drawingImageData = drawingCtx.getImageData(
+        0, 0,
+        drawingCanvas.value.width,
+        drawingCanvas.value.height,
+      )
+
+      const hasDrawing = drawingImageData.data.some((value, index) => {
+        return index % 4 === 3 && value > 0
+      })
+
+      if (hasDrawing) {
+        ctx.save()
+        ctx.drawImage(
+          drawingCanvas.value,
+          sourceX, sourceY, sourceWidth, sourceHeight,
+          0, 0, exportWidth, exportHeight
+        )
+        ctx.restore()
+      }
+    }
+  }
+
+  // Convert canvas to data URL
+  const imgData = tempCanvas.toDataURL('image/jpeg', 0.95)
+  
+  // Calculate PDF dimensions (A4 or custom based on aspect ratio)
+  const imgWidth = exportWidth
+  const imgHeight = exportHeight
+  const aspectRatio = imgWidth / imgHeight
+  
+  // Use landscape or portrait based on aspect ratio
+  const orientation = aspectRatio > 1 ? 'landscape' : 'portrait'
+  
+  // Create PDF
+  const pdf = new jsPDF({
+    orientation,
+    unit: 'mm',
+    format: 'a4'
+  })
+  
+  // Get PDF dimensions
+  const pdfWidth = pdf.internal.pageSize.getWidth()
+  const pdfHeight = pdf.internal.pageSize.getHeight()
+  
+  // Calculate dimensions to fit image in PDF while maintaining aspect ratio
+  let finalWidth = pdfWidth
+  let finalHeight = pdfWidth / aspectRatio
+  
+  if (finalHeight > pdfHeight) {
+    finalHeight = pdfHeight
+    finalWidth = pdfHeight * aspectRatio
+  }
+  
+  // Center the image
+  const x = (pdfWidth - finalWidth) / 2
+  const y = (pdfHeight - finalHeight) / 2
+  
+  pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight)
+  
+  // Save the PDF
+  pdf.save(`moodboard-${props.moodboard.title || 'untitled'}.pdf`)
 }
 
 // Drawing Functions
@@ -2164,11 +3185,42 @@ function handleKeyDown(event: KeyboardEvent) {
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeyDown)
+  
+  // Restore drawing layer if it exists
+  restoreDrawingLayer()
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown)
 })
+
+// Watch for moodboard changes to restore drawing layer
+watch(
+  () => props.moodboard?.canvas_drawing_layer,
+  () => {
+    restoreDrawingLayer()
+  }
+)
+
+// Function to restore drawing layer from saved data
+async function restoreDrawingLayer() {
+  await nextTick() // Ensure canvas is mounted
+  
+  if (!drawingCanvas.value || !props.moodboard?.canvas_drawing_layer) return
+  
+  const ctx = drawingCanvas.value.getContext('2d')
+  if (!ctx) return
+  
+  // Load the image from base64
+  const img = new Image()
+  img.onload = () => {
+    // Clear canvas first
+    ctx.clearRect(0, 0, drawingCanvas.value!.width, drawingCanvas.value!.height)
+    // Draw the saved image
+    ctx.drawImage(img, 0, 0)
+  }
+  img.src = props.moodboard.canvas_drawing_layer
+}
 </script>
 
 <style scoped>
@@ -2186,6 +3238,7 @@ onUnmounted(() => {
 
 .canvas-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2rem;
   padding: 1rem;
@@ -2207,6 +3260,225 @@ onUnmounted(() => {
   text-transform: uppercase;
   color: #6b7280;
   margin: 0;
+}
+
+/* Draw controls styling */
+.drawing-toolbar-expanded {
+  width: 100%;
+  background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 2px solid #d1d5db;
+  padding: 0.875rem 1.25rem;
+  margin-top: 0;
+  grid-column: 1 / -1;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.drawing-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.control-group.brush-control {
+  background: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.control-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.control-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(to bottom, transparent, #d1d5db 20%, #d1d5db 80%, transparent);
+  margin: 0 0.5rem;
+}
+
+.range-input-inline {
+  width: 100px;
+  height: 6px;
+  background: linear-gradient(to right, #e5e7eb, #cbd5e1);
+  border-radius: 3px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.range-input-inline:hover {
+  background: linear-gradient(to right, #cbd5e1, #94a3b8);
+}
+
+.range-input-inline::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.range-input-inline::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.range-input-inline::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.range-input-inline::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.color-input-inline {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.color-input-inline:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+/* Legacy draw controls styling (can be removed if not used elsewhere) */
+.draw-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.control-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.brush-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.setting-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #374151;
+  min-width: 50px;
+}
+
+.range-input {
+  width: 80px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.range-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.range-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.color-input {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.setting-value {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #6b7280;
+  min-width: 35px;
+}
+
+.drawing-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
 }
 
 .canvas-wrapper {
@@ -2246,20 +3518,22 @@ onUnmounted(() => {
 
 /* Visual feedback for text mode - subtle indicator */
 .moodboard-canvas.mode-text::after {
-  content: '✏️ Click to add text';
+  content: '✏️ Click anywhere to add text';
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(16, 185, 129, 0.8);
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   pointer-events: none;
   z-index: 100;
   opacity: 0;
   animation: showBriefly 4s ease-in-out;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  border: 2px solid white;
 }
 
 .moodboard-canvas.mode-image {
@@ -2268,20 +3542,22 @@ onUnmounted(() => {
 
 /* Visual feedback for image mode - subtle indicator */
 .moodboard-canvas.mode-image::after {
-  content: '📷 Click to add image';
+  content: '📷 Click anywhere to add image';
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(59, 130, 246, 0.8);
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   pointer-events: none;
   z-index: 100;
   opacity: 0;
   animation: showBriefly 4s ease-in-out;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  border: 2px solid white;
 }
 
 @keyframes fadeInOut {
@@ -2339,39 +3615,164 @@ onUnmounted(() => {
 }
 
 .properties-panel {
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
-  width: 300px;
-  max-height: calc(100vh - 200px);
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
+  position: fixed;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  background: linear-gradient(to bottom, #ffffff, #fafbfc);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0;
+  overflow: visible;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  clip-path: none;
+}
+
+.properties-panel:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.1);
+}
+
+.properties-panel.collapsed {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  top: auto;
+  bottom: 2rem;
+  transform: none;
+}
+
+.properties-panel.collapsed:hover {
+  transform: scale(1.1);
+}
+
+.properties-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border-bottom: 2px solid #e5e7eb;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+}
+
+.properties-panel.collapsed .properties-header {
+  padding: 0;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  height: 60px;
+  border-bottom: none;
+  justify-content: center;
+}
+
+.properties-panel.collapsed .properties-header h3 {
+  display: none;
+}
+
+.collapse-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.collapse-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.properties-panel.collapsed .collapse-button {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 24px;
+  border: none;
+  background: transparent;
+}
+
+.properties-content {
+  padding: 1.25rem;
+  max-height: calc(100vh - 180px);
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 10;
+  overflow-x: visible;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(to bottom, #ffffff, #fafbfc);
+  border-radius: 0 0 12px 12px;
+}
+
+.properties-panel h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .properties-panel {
+    width: 280px;
+    right: 1rem;
+  }
+  
+  .properties-panel.collapsed {
+    width: 50px;
+    height: 50px;
+    right: 1rem;
+    bottom: 1rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .properties-panel {
+    max-height: calc(100vh - 80px);
+  }
+  
+  .properties-content {
+    max-height: calc(100vh - 160px);
+  }
 }
 
 .property-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   padding: 1rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
+  background: white;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.property-group:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .property-group label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
   color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .input-row {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .input-row .u-input {
@@ -2380,7 +3781,7 @@ onUnmounted(() => {
 
 /* Typography specific styling */
 .property-group .grid {
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .property-group .grid-cols-2 > div {
@@ -2390,22 +3791,46 @@ onUnmounted(() => {
 
 .property-group .text-sm {
   font-size: 0.75rem;
+  font-weight: 600;
   color: #6b7280;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.375rem;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 /* Color input styling */
 .property-group input[type='color'] {
-  height: 2.5rem;
-  border-radius: 0.375rem;
-  border: 1px solid #d1d5db;
+  height: 2.75rem;
+  border-radius: 0.5rem;
+  border: 2px solid #d1d5db;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.property-group input[type='color']:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Quick style buttons */
 .property-group .grid .button {
   font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+/* Ensure dropdowns appear above everything */
+.property-group :deep(.ui-select-menu),
+.property-group :deep([data-headlessui-state]) {
+  z-index: 9999 !important;
+}
+
+/* Ensure dropdown text doesn't get clipped */
+.property-group :deep(.ui-select-menu-item),
+.property-group :deep([role="option"]) {
+  white-space: nowrap;
+  overflow: visible;
 }
 
 /* Drawing Canvas Styles */
@@ -2415,9 +3840,18 @@ onUnmounted(() => {
   left: 0;
   pointer-events: auto;
   touch-action: none; /* Prevent scrolling on mobile when drawing */
+  transition: opacity 0.15s ease;
+  /* Always visible, acts as the background drawing layer like MS Paint */
 }
 
-.drawing-canvas:hover {
-  opacity: 0.95;
+/* Subtle visual feedback when drawing mode is active */
+.drawing-canvas.drawing-active {
+  /* Slight highlight to show drawing mode is active */
+  filter: brightness(1.02);
+}
+
+/* When not in drawing mode, slightly reduce opacity to emphasize it's background */
+.drawing-canvas:not(.drawing-active) {
+  opacity: 0.98;
 }
 </style>
