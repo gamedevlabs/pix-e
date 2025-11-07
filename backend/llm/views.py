@@ -133,17 +133,26 @@ def get_sd_model():
     global sd_model
     if sd_model is None:
         try:
+            logger.info("Attempting to load Stable Diffusion ONNX model...")
             # Try ONNX pipeline for much faster inference (GPU-friendly)
             sd_model = StableDiffusionOnnxPipeline.from_pretrained(
                 "runwayml/stable-diffusion-v1-5",
                 provider=["CUDAExecutionProvider", "CPUExecutionProvider"],
             )
-        except Exception:
-            # Fallback to normal pipeline if ONNX is not available
-            sd_model = StableDiffusionPipeline.from_pretrained(
-                "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
-            )
-            sd_model = sd_model.to("cuda")
+            logger.info("Successfully loaded Stable Diffusion ONNX model")
+        except Exception as e:
+            logger.warning(f"ONNX pipeline failed: {str(e)}")
+            logger.info("Attempting to load standard Stable Diffusion model...")
+            try:
+                # Fallback to normal pipeline if ONNX is not available
+                sd_model = StableDiffusionPipeline.from_pretrained(
+                    "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
+                )
+                sd_model = sd_model.to("cuda")
+                logger.info("Successfully loaded standard Stable Diffusion model on CUDA")
+            except Exception as e2:
+                logger.error(f"Failed to load Stable Diffusion: {str(e2)}", exc_info=True)
+                raise Exception(f"Could not load Stable Diffusion model: {str(e2)}")
     return sd_model
 
 
@@ -155,13 +164,57 @@ def generate_gaming_images(prompt, num_images=3):
     """
     try:
         # Try to use Stable Diffusion
+        logger.info("=" * 80)
+        logger.info(f"🎨 STABLE DIFFUSION IMAGE GENERATION REQUEST")
+        logger.info(f"Number of images: {num_images}")
+        logger.info(f"Prompt: '{prompt}'")
+        logger.info(f"Prompt length: {len(prompt)} characters")
+        logger.info("=" * 80)
+        
         pipe = get_sd_model()
         # Disable NSFW filter if possible
         if hasattr(pipe, "safety_checker"):
             pipe.safety_checker = None
-        images = pipe(
-            [prompt] * num_images, num_inference_steps=30, height=512, width=512
-        ).images
+        
+        logger.info("Generating images with Stable Diffusion...")
+        
+        # Generate images with similar seeds for consistent variation
+        # Base seed is random, but subsequent images use base_seed + offset
+        # This ensures images are similar but not identical
+        import random
+        import torch
+        
+        base_seed = random.randint(0, 2**32 - 1000)  # Leave room for offsets
+        logger.info(f"Using base seed: {base_seed}")
+        
+        images = []
+        for i in range(num_images):
+            # Each image uses base_seed + small offset (0, 1, 2, ...)
+            seed = base_seed + i
+            logger.info(f"Generating image {i+1}/{num_images} with seed {seed} and prompt: '{prompt}'...")
+            
+            # Use generator for reproducibility
+            generator = torch.Generator(device="cuda").manual_seed(seed)
+            
+            result = pipe(
+                prompt, 
+                num_inference_steps=30, 
+                height=512, 
+                width=512,
+                generator=generator
+            )
+            
+            if not hasattr(result, 'images') or not result.images or len(result.images) == 0:
+                raise Exception(f"Stable Diffusion pipeline returned no images for image {i+1}")
+            
+            images.append(result.images[0])
+            logger.info(f"Generated image {i+1}/{num_images} successfully")
+        
+        logger.info(f"Stable Diffusion returned {len(images)} image objects")
+        
+        # Verify we got the correct number of images
+        if len(images) != num_images:
+            raise Exception(f"Expected {num_images} images but got {len(images)}")
 
         # Save generated images
         import os
@@ -170,66 +223,57 @@ def generate_gaming_images(prompt, num_images=3):
         from django.conf import settings
 
         image_urls = []
-        for img in images:
-            img_id = str(uuid.uuid4())
-            img_path = os.path.join(
-                settings.BASE_DIR, "media", f"moodboard_{img_id}.png"
-            )
-            os.makedirs(os.path.dirname(img_path), exist_ok=True)
-            img.save(img_path)
-            image_urls.append(f"/media/moodboard_{img_id}.png")
+        for i, img in enumerate(images):
+            try:
+                logger.info(f"Processing image {i+1}/{len(images)}...")
+                
+                # Verify image object is valid
+                if img is None:
+                    raise Exception(f"Image {i+1} is None")
+                
+                img_id = str(uuid.uuid4())
+                img_path = os.path.join(
+                    settings.BASE_DIR, "media", f"moodboard_{img_id}.png"
+                )
+                os.makedirs(os.path.dirname(img_path), exist_ok=True)
+                
+                # Save with high quality to ensure image is properly written
+                logger.info(f"Saving image {i+1} to {img_path}...")
+                img.save(img_path, format='PNG', optimize=False)
+                
+                # Verify the file was written
+                if not os.path.exists(img_path):
+                    raise Exception(f"Failed to save image {i+1} to disk - file does not exist after save")
+                
+                file_size = os.path.getsize(img_path)
+                if file_size < 1000:  # Image should be at least 1KB
+                    raise Exception(f"Image {i+1} file size too small ({file_size} bytes), generation may have failed")
+                
+                logger.info(f"✅ Saved image {i+1}/{num_images}: {img_path} ({file_size} bytes)")
+                image_urls.append(f"/media/moodboard_{img_id}.png")
+                
+            except Exception as img_error:
+                logger.error(f"❌ Failed to process image {i+1}: {str(img_error)}", exc_info=True)
+                # Re-raise to fail the entire generation
+                raise Exception(f"Failed to process image {i+1}/{num_images}: {str(img_error)}")
+        
+        logger.info(f"Successfully generated and saved {len(image_urls)} images with Stable Diffusion")
+        
+        # Final verification
+        if len(image_urls) != num_images:
+            raise Exception(f"Generated {len(image_urls)} URLs but expected {num_images}")
+        
         return image_urls
 
-    except Exception:
-        # Stable Diffusion not available, using placeholder images
-        # Create placeholder images for testing
-        import os
-        import uuid
-
-        from django.conf import settings
-        from PIL import Image, ImageDraw, ImageFont
-
-        image_urls = []
-        for i in range(num_images):
-            # Create a simple placeholder image
-            img = Image.new("RGB", (512, 512), color=(73, 109, 137))
-            draw = ImageDraw.Draw(img)
-
-            # Add text
-            text_lines = [
-                f"Generated Image {i+1}",
-                f"Prompt: {prompt[:30]}{'...' if len(prompt) > 30 else ''}",
-                "Placeholder Image",
-            ]
-
-            y_pos = 200
-            for line in text_lines:
-                # Use default font
-                try:
-                    font = ImageFont.load_default()
-                    bbox = draw.textbbox((0, 0), line, font=font)
-                    text_width = bbox[2] - bbox[0]
-                    draw.text(
-                        (256 - text_width // 2, y_pos),
-                        line,
-                        fill=(255, 255, 255),
-                        font=font,
-                    )
-                except Exception:
-                    # Fallback without font
-                    draw.text((100, y_pos), line, fill=(255, 255, 255))
-                y_pos += 30
-
-            # Save the image
-            img_id = str(uuid.uuid4())
-            img_path = os.path.join(
-                settings.BASE_DIR, "media", f"moodboard_{img_id}.png"
-            )
-            os.makedirs(os.path.dirname(img_path), exist_ok=True)
-            img.save(img_path)
-            image_urls.append(f"/media/moodboard_{img_id}.png")
-
-        return image_urls
+    except Exception as e:
+        # Log the actual error with full traceback
+        logger.error(f"Stable Diffusion generation FAILED: {str(e)}", exc_info=True)
+        logger.error(f"Prompt that failed: {prompt}")
+        logger.warning("ERROR: Falling back to placeholder images - THIS SHOULD NOT HAPPEN IN PRODUCTION")
+        
+        # Re-raise the exception instead of silently falling back
+        # This way the frontend knows generation failed
+        raise Exception(f"Image generation failed: {str(e)}. Please check that Stable Diffusion is properly configured and running.")
 
 
 # Legacy moodboard API views removed - now using moodboards app with REST API structure

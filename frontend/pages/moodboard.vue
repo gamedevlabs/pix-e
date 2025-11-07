@@ -63,7 +63,7 @@
 
         <UInput
           v-model="prompt"
-          placeholder="Describe your gaming moodboard..."
+          :placeholder="dropdownMode === 'gaming' ? 'Describe your gaming moodboard...' : 'Describe your creative moodboard...'"
           class="prompt-input"
           @keyup.enter="startSessionWithPrompt"
           @input="handlePromptInput"
@@ -121,9 +121,151 @@
             :style="{ background: color }"
           />
         </div>
+
+        <!-- Advanced Mode Toggle -->
+        <UButton
+          v-if="prompt"
+          variant="outline"
+          color="neutral"
+          size="sm"
+          icon="i-heroicons-code-bracket-20-solid"
+          class="ml-2"
+          @click="showAdvancedPrompt = !showAdvancedPrompt"
+        >
+          {{ showAdvancedPrompt ? 'Hide' : 'Advanced' }}
+        </UButton>
+
         <UButton v-if="canGenerate" :disabled="!prompt" class="ml-2" @click="startSessionWithPrompt"
           >Start Moodboard</UButton
         >
+      </div>
+
+      <!-- Advanced Prompt View (shown in both states) -->
+      <div v-if="showAdvancedPrompt && prompt" class="advanced-prompt-panel">
+        <div class="advanced-prompt-header">
+          <UIcon name="i-heroicons-code-bracket-20-solid" class="w-5 h-5" />
+          <span class="font-semibold text-base">Stable Diffusion Prompt</span>
+          <div class="ml-auto flex items-center gap-2">
+            <UPopover>
+              <div 
+                :class="[
+                  'token-counter cursor-help',
+                  {
+                    'token-counter-warning': promptTokenCount > MAX_TOKENS * 0.9 && promptTokenCount <= MAX_TOKENS,
+                    'token-counter-error': isPromptTooLong
+                  }
+                ]"
+              >
+                <UIcon name="i-heroicons-hashtag-20-solid" class="w-4 h-4" />
+                <span class="font-mono text-sm font-semibold">{{ promptTokenCount }}/{{ MAX_TOKENS }}</span>
+              </div>
+              <template #content>
+                <div class="p-3 max-w-xs">
+                  <p class="font-semibold text-sm mb-2">CLIP Token Count</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    This uses the exact CLIP ViT-B/32 tokenizer from Stable Diffusion v1.5
+                  </p>
+                  <div class="text-xs space-y-1">
+                    <div class="flex justify-between">
+                      <span class="text-gray-500">Total tokens:</span>
+                      <span class="font-mono font-semibold">{{ promptTokenCount }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-500">Special tokens:</span>
+                      <span class="font-mono">2 (BOS + EOS)</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-1 mt-1">
+                      <span class="text-gray-500">Text tokens:</span>
+                      <span class="font-mono font-semibold">~{{ Math.max(0, promptTokenCount - 2) }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-500">Available:</span>
+                      <span class="font-mono" :class="isPromptTooLong ? 'text-red-600' : 'text-green-600'">
+                        {{ MAX_TOKENS - promptTokenCount }}
+                      </span>
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t">
+                    CLIP automatically adds start/end tokens to every prompt
+                  </p>
+                </div>
+              </template>
+            </UPopover>
+          </div>
+        </div>
+        
+        <!-- Token Warning Alert -->
+        <div v-if="tokenWarningMessage" :class="['token-warning', { 'token-error': isPromptTooLong }]">
+          <UIcon :name="isPromptTooLong ? 'i-heroicons-exclamation-triangle-20-solid' : 'i-heroicons-information-circle-20-solid'" class="w-5 h-5" />
+          <div>
+            <p class="font-semibold">{{ isPromptTooLong ? 'Token Limit Exceeded' : 'Approaching Token Limit' }}</p>
+            <p class="text-sm">{{ tokenWarningMessage }}</p>
+            <p class="text-xs mt-1">Stable Diffusion's CLIP encoder has a maximum of {{ MAX_TOKENS }} tokens. Long prompts will be truncated or cause errors.</p>
+          </div>
+        </div>
+        
+        <div class="advanced-prompt-section">
+          <p class="advanced-prompt-label">Your Input:</p>
+          <pre class="advanced-prompt-text user-input-preview">{{ prompt }}</pre>
+        </div>
+          
+        <div class="advanced-prompt-section">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <p class="advanced-prompt-label mb-1">Stable Diffusion Prompt:</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ isEditingFullPrompt ? 'This exact text will be sent to Stable Diffusion for image generation' : 'This is the exact prompt that will be sent to Stable Diffusion' }}
+              </p>
+            </div>
+            <UButton
+              v-if="!isEditingFullPrompt"
+              variant="soft"
+              color="primary"
+              size="sm"
+              icon="i-heroicons-pencil-square-20-solid"
+              @click="startEditingFullPrompt"
+            >
+              Edit Template
+            </UButton>
+            <div v-else class="flex gap-2">
+              <UButton
+                variant="solid"
+                color="success"
+                size="sm"
+                icon="i-heroicons-check-20-solid"
+                @click="saveFullPrompt"
+              >
+                Apply Changes
+              </UButton>
+              <UButton
+                variant="outline"
+                color="neutral"
+                size="sm"
+                icon="i-heroicons-x-mark-20-solid"
+                @click="cancelEditingFullPrompt"
+              >
+                Cancel
+              </UButton>
+            </div>
+          </div>
+          
+          <div v-if="isEditingFullPrompt" class="prompt-editor-container">
+            <UTextarea
+              v-model="editableFullPrompt"
+              :rows="15"
+              class="advanced-prompt-textarea"
+              :class="{ 'textarea-error': isPromptTooLong }"
+              placeholder="Enter the full prompt sent to Stable Diffusion..."
+              autoresize
+              :maxrows="25"
+            />
+            <div class="editor-hint">
+              <UIcon name="i-heroicons-light-bulb-20-solid" class="w-4 h-4" />
+              <span>Tip: This exact text will be sent to Stable Diffusion. Modify it to control image style, quality, and details.</span>
+            </div>
+          </div>
+          <pre v-else class="advanced-prompt-text template-preview">{{ customFullPrompt || getStableDiffusionPrompt() }}</pre>
+        </div>
       </div>
     </div>
 
@@ -141,7 +283,13 @@
         <div class="images-list">
           <UCard v-for="img in images" :key="img.id" class="image-item">
             <div class="image-container">
-              <img :src="getImageUrl(img.image_url)" :alt="img.prompt" />
+              <img 
+                :src="getImageUrl(img.image_url)" 
+                :alt="img.prompt"
+                @error="onImageError"
+                @load="onImageLoad"
+                loading="lazy"
+              />
               <div v-if="canEdit" class="image-overlay">
                 <UButton
                   class="edit-image-btn"
@@ -265,7 +413,7 @@
         <UInput
           v-if="canGenerate"
           v-model="prompt"
-          placeholder="Describe your gaming moodboard..."
+          :placeholder="dropdownMode === 'gaming' ? 'Describe your gaming moodboard...' : 'Describe your creative moodboard...'"
           class="prompt-input"
           @keyup.enter="generateImages"
           @input="handlePromptInput"
@@ -327,6 +475,19 @@
           />
         </div>
 
+        <!-- Advanced Mode Toggle -->
+        <UButton
+          v-if="prompt && canGenerate"
+          variant="outline"
+          color="neutral"
+          size="sm"
+          icon="i-heroicons-code-bracket-20-solid"
+          class="ml-2"
+          @click="showAdvancedPrompt = !showAdvancedPrompt"
+        >
+          {{ showAdvancedPrompt ? 'Hide' : 'Advanced' }}
+        </UButton>
+
         <UButton
           v-if="canGenerate"
           :disabled="loading || !prompt"
@@ -344,6 +505,134 @@
         >
           Save Moodboard
         </UButton>
+      </div>
+
+      <!-- Advanced Prompt View (for active sessions) -->
+      <div v-if="showAdvancedPrompt && prompt" class="advanced-prompt-panel">
+        <div class="advanced-prompt-header">
+          <UIcon name="i-heroicons-code-bracket-20-solid" class="w-5 h-5" />
+          <span class="font-semibold text-base">Stable Diffusion Prompt</span>
+          <div class="ml-auto flex items-center gap-2">
+            <UPopover>
+              <div 
+                :class="[
+                  'token-counter cursor-help',
+                  {
+                    'token-counter-warning': promptTokenCount > MAX_TOKENS * 0.9 && promptTokenCount <= MAX_TOKENS,
+                    'token-counter-error': isPromptTooLong
+                  }
+                ]"
+              >
+                <UIcon name="i-heroicons-hashtag-20-solid" class="w-4 h-4" />
+                <span class="font-mono text-sm font-semibold">{{ promptTokenCount }}/{{ MAX_TOKENS }}</span>
+              </div>
+              <template #content>
+                <div class="p-3 max-w-xs">
+                  <p class="font-semibold text-sm mb-2">CLIP Token Count</p>
+                  <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    This uses the exact CLIP ViT-B/32 tokenizer from Stable Diffusion v1.5
+                  </p>
+                  <div class="text-xs space-y-1">
+                    <div class="flex justify-between">
+                      <span class="text-gray-500">Total tokens:</span>
+                      <span class="font-mono font-semibold">{{ promptTokenCount }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-500">Special tokens:</span>
+                      <span class="font-mono">2 (BOS + EOS)</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-1 mt-1">
+                      <span class="text-gray-500">Text tokens:</span>
+                      <span class="font-mono font-semibold">~{{ Math.max(0, promptTokenCount - 2) }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-500">Available:</span>
+                      <span class="font-mono" :class="isPromptTooLong ? 'text-red-600' : 'text-green-600'">
+                        {{ MAX_TOKENS - promptTokenCount }}
+                      </span>
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t">
+                    CLIP automatically adds start/end tokens to every prompt
+                  </p>
+                </div>
+              </template>
+            </UPopover>
+          </div>
+        </div>
+        
+        <!-- Token Warning Alert -->
+        <div v-if="tokenWarningMessage" :class="['token-warning', { 'token-error': isPromptTooLong }]">
+          <UIcon :name="isPromptTooLong ? 'i-heroicons-exclamation-triangle-20-solid' : 'i-heroicons-information-circle-20-solid'" class="w-5 h-5" />
+          <div>
+            <p class="font-semibold">{{ isPromptTooLong ? 'Token Limit Exceeded' : 'Approaching Token Limit' }}</p>
+            <p class="text-sm">{{ tokenWarningMessage }}</p>
+            <p class="text-xs mt-1">Stable Diffusion's CLIP encoder has a maximum of {{ MAX_TOKENS }} tokens. Long prompts will be truncated or cause errors.</p>
+          </div>
+        </div>
+        
+        <div class="advanced-prompt-section">
+          <p class="advanced-prompt-label">Your Input:</p>
+          <pre class="advanced-prompt-text user-input-preview">{{ prompt }}</pre>
+        </div>
+          
+        <div class="advanced-prompt-section">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <p class="advanced-prompt-label mb-1">Stable Diffusion Prompt:</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ isEditingFullPrompt ? 'This exact text will be sent to Stable Diffusion for image generation' : 'This is the exact prompt that will be sent to Stable Diffusion' }}
+              </p>
+            </div>
+            <UButton
+              v-if="!isEditingFullPrompt"
+              variant="soft"
+              color="primary"
+              size="sm"
+              icon="i-heroicons-pencil-square-20-solid"
+              @click="startEditingFullPrompt"
+            >
+              Edit Template
+            </UButton>
+            <div v-else class="flex gap-2">
+              <UButton
+                variant="solid"
+                color="success"
+                size="sm"
+                icon="i-heroicons-check-20-solid"
+                @click="saveFullPrompt"
+              >
+                Apply Changes
+              </UButton>
+              <UButton
+                variant="outline"
+                color="neutral"
+                size="sm"
+                icon="i-heroicons-x-mark-20-solid"
+                @click="cancelEditingFullPrompt"
+              >
+                Cancel
+              </UButton>
+            </div>
+          </div>
+          
+          <div v-if="isEditingFullPrompt" class="prompt-editor-container">
+            <UTextarea
+              v-model="editableFullPrompt"
+              :rows="15"
+              class="advanced-prompt-textarea"
+              :class="{ 'textarea-error': isPromptTooLong }"
+              placeholder="Enter the full prompt sent to Stable Diffusion..."
+              autoresize
+              :maxrows="25"
+            />
+            <div class="editor-hint">
+              <UIcon name="i-heroicons-light-bulb-20-solid" class="w-4 h-4" />
+              <span>Tip: This exact text will be sent to Stable Diffusion. Modify it to control image style, quality, and details.</span>
+            </div>
+          </div>
+          <pre v-else class="advanced-prompt-text template-preview">{{ customFullPrompt || getStableDiffusionPrompt() }}</pre>
+        </div>
       </div>
     </div>
 
@@ -458,6 +747,19 @@
 import { ref, computed, onMounted, onUnmounted, watch, inject, nextTick } from 'vue'
 import type { Ref } from 'vue'
 import { useRuntimeConfig, useRouter } from '#imports'
+
+// Import and configure transformers BEFORE any other imports
+import { AutoTokenizer, env } from '@xenova/transformers'
+
+// Configure transformers.js environment to use Hugging Face CDN
+// This MUST be set before any tokenizer calls to prevent local file loading
+if (typeof window !== 'undefined') {
+  env.allowLocalModels = false
+  env.allowRemoteModels = true
+  env.useBrowserCache = true
+  env.localModelPath = 'https://huggingface.co/'
+}
+
 import '@/assets/css/toast-loading-bar.css'
 import {
   useMoodboards,
@@ -498,6 +800,106 @@ const selectedImageIds = ref<string[]>([])
 const loading = inject('globalLoading') as Ref<boolean>
 const isInitialLoad = ref(true)
 const existingImageCount = ref(0)
+const showAdvancedPrompt = ref(false)
+const isEditingFullPrompt = ref(false)
+const editableFullPrompt = ref('')
+const customFullPrompt = ref('')
+
+// CLIP tokenizer instance (lazy loaded)
+const clipTokenizer = ref<any>(null)
+const isTokenizerLoading = ref(false)
+
+// Token limit constants (Stable Diffusion CLIP encoder limit)
+const MAX_TOKENS = 77
+
+// Load CLIP tokenizer (lazy initialization)
+async function loadTokenizer() {
+  if (clipTokenizer.value || isTokenizerLoading.value) return clipTokenizer.value
+  
+  isTokenizerLoading.value = true
+  try {
+    console.log('🔄 Loading CLIP tokenizer from Hugging Face CDN...')
+    
+    // Load the exact CLIP tokenizer used by Stable Diffusion v1.5
+    // This is the CLIP ViT-B/32 tokenizer from OpenAI
+    // Force remote loading with explicit options
+    clipTokenizer.value = await AutoTokenizer.from_pretrained('openai/clip-vit-base-patch32', {
+      local_files_only: false,
+      revision: 'main'
+    })
+    
+    console.log('✅ CLIP tokenizer loaded successfully (CLIP ViT-B/32 for SD 1.5)')
+    
+    // Test tokenization to verify behavior
+    const testPrompt = 'a beautiful landscape'
+    const testEncoding = clipTokenizer.value.encode(testPrompt)
+    console.log(`📊 Test tokenization: "${testPrompt}" → ${testEncoding.length} tokens`, testEncoding)
+    
+    return clipTokenizer.value
+  } catch (error) {
+    console.error('❌ Failed to load CLIP tokenizer:', error)
+    return null
+  } finally {
+    isTokenizerLoading.value = false
+  }
+}
+
+// Computed token count using actual CLIP tokenizer
+const promptTokenCount = computed(() => {
+  // Count tokens for the ACTUAL prompt that will be sent to Stable Diffusion
+  let text: string
+  
+  if (isEditingFullPrompt.value) {
+    // If editing, count the edited version
+    text = editableFullPrompt.value
+  } else {
+    // Count what will actually be sent to Stable Diffusion (NOT the AI suggestions prompt)
+    text = customFullPrompt.value || getStableDiffusionPrompt()
+  }
+  
+  if (!clipTokenizer.value) {
+    // Start loading tokenizer if not already loaded
+    if (!isTokenizerLoading.value) {
+      loadTokenizer()
+    }
+    // Fallback to rough approximation while loading
+    return Math.ceil(text.length / 4)
+  }
+  
+  try {
+    // Use actual CLIP tokenizer with exact SD behavior
+    // CLIP adds BOS (start) and EOS (end) tokens automatically
+    // The text is tokenized, then BOS/EOS are added, making the total 77 tokens max
+    const encoded = clipTokenizer.value.encode(text)
+    
+    // Debug: Log the tokenization for verification
+    if (import.meta.env.DEV) {
+      console.log(`🔍 Tokenizing SD prompt: "${text.substring(0, 60)}${text.length > 60 ? '...' : ''}"`)
+      console.log(`📊 Token count: ${encoded.length}`, encoded)
+    }
+    
+    // CLIP tokenizer returns the token IDs including special tokens
+    // SD uses exactly 77 tokens (including BOS/EOS), so effective limit is 75 text tokens
+    return encoded.length
+  } catch (error) {
+    console.error('Token encoding error:', error)
+    // Fallback to rough approximation if encoding fails
+    return Math.ceil(text.length / 4)
+  }
+})
+
+const isPromptTooLong = computed(() => promptTokenCount.value > MAX_TOKENS)
+
+const tokenWarningMessage = computed(() => {
+  const count = promptTokenCount.value
+  const excess = count - MAX_TOKENS
+  if (excess > 0) {
+    return `Prompt is ${excess} tokens too long. The model will truncate or error.`
+  } else if (count > MAX_TOKENS * 0.9) {
+    return `Approaching token limit (${count}/${MAX_TOKENS})`
+  }
+  return null
+})
 
 // View mode state
 const viewMode = ref<'grid' | 'canvas'>('grid')
@@ -1033,6 +1435,9 @@ onMounted(async () => {
   showSaveModal.value = false
   tempMoodboardName.value = ''
   saving.value = false
+  
+  // Preload CLIP tokenizer in background for token counting
+  loadTokenizer()
 
   // Check if we're editing an existing moodboard
   const route = useRoute()
@@ -1096,6 +1501,18 @@ watch(
     }
   },
   { immediate: false },
+)
+
+// Watch for prompt changes while in edit mode to keep the editable prompt in sync
+watch(
+  [() => prompt.value, () => colorPalette.value, () => dropdownMode.value],
+  () => {
+    // Only update if in edit mode and user hasn't customized the prompt
+    if (isEditingFullPrompt.value && !customFullPrompt.value) {
+      editableFullPrompt.value = getStableDiffusionPrompt()
+    }
+  },
+  { deep: true }
 )
 
 function onCheckboxChange(checked: boolean, id: string) {
@@ -1246,6 +1663,17 @@ function getImageUrl(url: string): string {
   return `${apiBase}${url}`
 }
 
+function onImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  console.error('Failed to load image:', img.src)
+  // Optionally set a fallback image or show an error indicator
+}
+
+function onImageLoad(event: Event) {
+  const img = event.target as HTMLImageElement
+  console.log('Image loaded successfully:', img.src)
+}
+
 function addColorToPaletteFromPicker() {
   const color = colorPickerValue.value.trim()
   if (colorPalette.value.length < maxPaletteColors && !colorPalette.value.includes(color)) {
@@ -1261,8 +1689,95 @@ function handlePromptInput() {
   // Simplified - no AI suggestions for now
 }
 
+// Advanced prompt helpers
+function getSystemPrompt(): string {
+  if (dropdownMode.value === 'gaming') {
+    return `Help expand this gaming prompt: "${prompt.value}"
+
+Provide 3 creative suggestions (2-8 words each) that could enhance this prompt for game art creation.
+
+Format as brief phrases only, one per line:`
+  } else {
+    // Default mode - more general creative approach
+    return `Analyze this creative prompt: "${prompt.value}"
+
+Provide 3 artistic suggestions (2-8 words each) that could enhance this visual concept.
+
+Format as brief phrases only, one per line:`
+  }
+}
+
+// This builds the prompt for AI text suggestions (NOT for Stable Diffusion)
+function getFullPrompt(): string {
+  const colorInfo = colorPalette.value.length > 0 
+    ? `\nColor palette: ${colorPalette.value.join(', ')}`
+    : ''
+  
+  if (dropdownMode.value === 'gaming') {
+    return `${getSystemPrompt()}${colorInfo}
+
+User's description: ${prompt.value}
+
+This will be used to generate visual moodboard images for game development.`
+  } else {
+    // Default mode - more general creative purpose
+    return `${getSystemPrompt()}${colorInfo}
+
+User's description: ${prompt.value}
+
+This will be used to create a visual moodboard for creative projects.`
+  }
+}
+
+// This builds the actual prompt sent to Stable Diffusion for image generation
+function getStableDiffusionPrompt(): string {
+  let sdPrompt = prompt.value
+  
+  // Add mode-specific style enhancements
+  if (dropdownMode.value === 'gaming') {
+    // Gaming mode: Add game art and concept art style modifiers
+    sdPrompt = `${sdPrompt}, game concept art, digital art, high quality, detailed, professional game design`
+  } else {
+    // Default mode: Add general artistic and creative style modifiers
+    sdPrompt = `${sdPrompt}, artistic, high quality, detailed, professional photography, creative composition`
+  }
+  
+  // Add color palette information if available
+  if (colorPalette.value.length > 0) {
+    sdPrompt += `, color palette: ${colorPalette.value.join(', ')}`
+  }
+  
+  return sdPrompt
+}
+
+function startEditingFullPrompt() {
+  editableFullPrompt.value = customFullPrompt.value || getStableDiffusionPrompt()
+  isEditingFullPrompt.value = true
+}
+
+function saveFullPrompt() {
+  customFullPrompt.value = editableFullPrompt.value.trim()
+  isEditingFullPrompt.value = false
+}
+
+function cancelEditingFullPrompt() {
+  editableFullPrompt.value = ''
+  isEditingFullPrompt.value = false
+}
+
 async function generateImages() {
   if (!sessionId.value || !prompt.value) return
+  
+  // Warn about token limit but allow generation
+  if (isPromptTooLong.value) {
+    const toast = useToast()
+    toast.add({
+      title: 'Warning: Prompt May Be Too Long',
+      description: `Your prompt exceeds the ${MAX_TOKENS} token limit. The model may truncate it or produce errors.`,
+      color: 'warning',
+    })
+  }
+  
   loading.value = true
   showMoodboardToast()
 
@@ -1273,21 +1788,37 @@ async function generateImages() {
       ? (preGenResponse as AISessionGetResponse).images.length
       : 0
 
-    let fullPrompt = prompt.value
-    if (colorPalette.value.length) {
-      fullPrompt += `, color palette: ${colorPalette.value.join(', ')}`
-    }
+    // Use the Stable Diffusion prompt (either custom or generated)
+    const sdPrompt = customFullPrompt.value || getStableDiffusionPrompt()
 
-    await generateAIImages(
+    const result = await generateAIImages(
       sessionId.value || '',
-      fullPrompt,
+      sdPrompt,
       selectedImageIds.value,
       dropdownMode.value,
     )
+    
+    // Check if generation actually succeeded
+    if (!result) {
+      throw new Error('Image generation returned no result')
+    }
+
+    // Reset existing image count since backend deletes old unselected images
+    // before generating new ones
+    existingImageCount.value = 0
 
     await fetchMoodboard()
     loading.value = false
     clearMoodboardToast()
+    
+    // Show success message
+    const toast = useToast()
+    toast.add({
+      title: 'Images Generated Successfully',
+      description: 'Your AI-generated images are ready!',
+      color: 'success',
+    })
+    
     prompt.value = ''
     selectedImageIds.value = []
   } catch (error: unknown) {
@@ -1296,8 +1827,16 @@ async function generateImages() {
     loading.value = false
     clearMoodboardToast()
 
-    const errorMessage = apiError.response?.data?.error || 'Failed to generate images'
-    showToast(errorMessage, 'error')
+    const errorMessage = apiError.response?.data?.error || 'Failed to generate images. Please check that Stable Diffusion is running correctly.'
+    
+    const toast = useToast()
+    toast.add({
+      title: 'Image Generation Failed',
+      description: errorMessage,
+      color: 'error',
+    })
+    
+    console.error('Image generation error:', error)
   }
 }
 
@@ -1768,6 +2307,7 @@ html[data-theme='dark'],
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 0.75rem;
   background: var(--prompt-bar-bg, #fff);
   padding: 1rem 2rem;
   box-shadow: 0 -2px 16px 0 rgba(0, 0, 0, 0.08);
@@ -1775,6 +2315,7 @@ html[data-theme='dark'],
   transition:
     background 0.3s,
     color 0.3s;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 900px) {
@@ -2109,4 +2650,280 @@ html[data-theme='dark'] .drawing-tools-toolbar,
   background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   border: 1px solid #374151;
 }
+
+/* Advanced Prompt Panel */
+.advanced-prompt-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.advanced-prompt-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+  color: #334155;
+}
+
+.token-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  color: #0369a1;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.token-counter-warning {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.token-counter-error {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+  animation: pulse-error 2s ease-in-out infinite;
+}
+
+@keyframes pulse-error {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.token-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0.5rem;
+  color: #92400e;
+}
+
+.token-error {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  border-left-color: #dc2626;
+  color: #991b1b;
+}
+
+.token-warning svg,
+.token-error svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.advanced-prompt-section {
+  margin-bottom: 1.5rem;
+}
+
+.advanced-prompt-section:last-child {
+  margin-bottom: 0;
+}
+
+.advanced-prompt-label {
+  font-size: 0.813rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.advanced-prompt-content {
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.813rem;
+  line-height: 1.6;
+}
+
+.advanced-prompt-text {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  color: #334155;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.813rem;
+  line-height: 1.6;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.user-input-preview {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.template-preview {
+  max-height: 400px;
+}
+
+.prompt-editor-container {
+  position: relative;
+}
+
+.advanced-prompt-textarea {
+  width: 100%;
+  min-height: 400px;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  padding: 1rem;
+  border: 2px solid #3b82f6;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #1e293b;
+  resize: vertical;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transition: all 0.2s ease;
+}
+
+.advanced-prompt-textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.textarea-error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+.textarea-error:focus {
+  border-color: #b91c1c !important;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2) !important;
+}
+
+.editor-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.editor-hint svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* Dark mode styles */
+html[data-theme='dark'] .advanced-prompt-panel,
+.dark .advanced-prompt-panel {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-color: #334155;
+}
+
+html[data-theme='dark'] .advanced-prompt-header,
+.dark .advanced-prompt-header {
+  color: #f1f5f9;
+  border-bottom-color: #334155;
+}
+
+html[data-theme='dark'] .advanced-prompt-label,
+.dark .advanced-prompt-label {
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .advanced-prompt-text,
+.dark .advanced-prompt-text {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .user-input-preview,
+.dark .user-input-preview {
+  background: #422006;
+  border-color: #92400e;
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .advanced-prompt-textarea,
+.dark .advanced-prompt-textarea {
+  background: #0f172a;
+  border-color: #3b82f6;
+  color: #e2e8f0;
+}
+
+html[data-theme='dark'] .advanced-prompt-textarea:focus,
+.dark .advanced-prompt-textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
+}
+
+html[data-theme='dark'] .editor-hint,
+.dark .editor-hint {
+  background: #1e3a8a;
+  border-color: #3b82f6;
+  color: #bfdbfe;
+}
+
+html[data-theme='dark'] .token-counter,
+.dark .token-counter {
+  background: #0c4a6e;
+  border-color: #0369a1;
+  color: #7dd3fc;
+}
+
+html[data-theme='dark'] .token-counter-warning,
+.dark .token-counter-warning {
+  background: #713f12;
+  border-color: #92400e;
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .token-counter-error,
+.dark .token-counter-error {
+  background: #7f1d1d;
+  border-color: #991b1b;
+  color: #fca5a5;
+}
+
+html[data-theme='dark'] .token-warning,
+.dark .token-warning {
+  background: #422006;
+  border-color: #92400e;
+  border-left-color: #f59e0b;
+  color: #fcd34d;
+}
+
+html[data-theme='dark'] .token-error,
+.dark .token-error {
+  background: #450a0a;
+  border-color: #991b1b;
+  border-left-color: #dc2626;
+  color: #fca5a5;
+}
+
 </style>

@@ -220,7 +220,7 @@
 
             <!-- Results counter -->
             <div class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-              {{ filteredMoodboards.length }} of {{ moodboards.length }} moodboards
+              {{ totalCount }} total moodboards
             </div>
           </div>
         </div>
@@ -236,9 +236,13 @@
               <MoodboardTable
                 :moodboards="filteredMoodboards"
                 :loading="loading"
+                :total-items="totalCount"
+                :page-size="pageSize"
+                :page="currentPage"
                 empty-title="No moodboards found"
                 empty-description="Create your first moodboard to get started"
                 @action="handleMoodboardAction"
+                @update:page="handlePageChange"
               />
             </div>
           </template>
@@ -248,9 +252,13 @@
               <MoodboardTable
                 :moodboards="filteredSharedMoodboards"
                 :loading="loadingShared"
+                :total-items="sharedTotalCount"
+                :page-size="pageSize"
+                :page="sharedCurrentPage"
                 empty-title="No shared moodboards"
                 empty-description="Moodboards shared with you will appear here"
                 @action="handleSharedMoodboardAction"
+                @update:page="handleSharedPageChange"
               />
             </div>
           </template>
@@ -260,9 +268,13 @@
               <MoodboardTable
                 :moodboards="filteredPublicMoodboards"
                 :loading="loadingPublic"
+                :total-items="publicTotalCount"
+                :page-size="pageSize"
+                :page="publicCurrentPage"
                 empty-title="No public moodboards"
                 empty-description="Public moodboards from the community will appear here"
                 @action="handlePublicMoodboardAction"
+                @update:page="handlePublicPageChange"
               />
             </div>
           </template>
@@ -292,7 +304,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useMoodboards } from '~/composables/useMoodboards'
 import { useUsers } from '~/composables/useUsers'
 import { useRouter } from '#app'
@@ -352,6 +364,7 @@ const {
   deleteMoodboard: deleteMoodboardApi,
   duplicateMoodboard: duplicateMoodboardApi,
   getSharedMoodboards,
+  getPublicMoodboards,
   refreshPublicMoodboards,
   getMoodboardAnalytics,
   shareMoodboardWithMultipleUsers,
@@ -369,6 +382,15 @@ const analytics = ref<Analytics | null>(null)
 const loadingShared = ref(false)
 const loadingPublic = ref(false)
 const loadingAnalytics = ref(false)
+
+// Pagination state
+const currentPage = ref(1)
+const sharedCurrentPage = ref(1)
+const publicCurrentPage = ref(1)
+const pageSize = 20
+const totalCount = ref(0)
+const sharedTotalCount = ref(0)
+const publicTotalCount = ref(0)
 
 // Share modal state
 const showShareModal = ref(false)
@@ -419,58 +441,27 @@ const tabs = [
   },
 ]
 
-// Filter helper function
-const applyFilters = (moodboards: Moodboard[]) => {
-  return moodboards.filter((moodboard) => {
-    // Search query filter
-    const searchMatch =
-      searchQuery.value.trim() === '' ||
-      moodboard.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      moodboard.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      moodboard.category.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      moodboard.tags.toLowerCase().includes(searchQuery.value.toLowerCase())
-
-    // Status filter
-    const statusMatch =
-      selectedStatuses.value.length === 0 ||
-      selectedStatuses.value.some((statusLabel) => {
-        if (statusLabel === 'Completed') {
-          return moodboard.status === 'completed' || moodboard.status === 'in_progress'
-        }
-        if (statusLabel === 'Draft') {
-          return moodboard.status === 'draft'
-        }
-        return false
-      })
-
-    // Visibility filter
-    const visibilityMatch =
-      selectedVisibility.value.length === 0 ||
-      selectedVisibility.value.some((visibility) => {
-        if (visibility === 'Public') return moodboard.is_public
-        if (visibility === 'Private') return !moodboard.is_public
-        return true
-      })
-
-    return searchMatch && statusMatch && visibilityMatch
-  })
-}
-
-// Filtered data for each table
-const filteredMoodboards = computed(() => applyFilters(moodboards.value || []))
-const filteredSharedMoodboards = computed(() => applyFilters(sharedMoodboards.value || []))
-const filteredPublicMoodboards = computed(() => applyFilters(publicMoodboards.value || []))
+// Filtered data for each table - now server-side filtering via query params
+const filteredMoodboards = computed(() => moodboards.value || [])
+const filteredSharedMoodboards = computed(() => sharedMoodboards.value || [])
+const filteredPublicMoodboards = computed(() => publicMoodboards.value || [])
 
 // Lifecycle hooks
 onMounted(async () => {
   await loadData()
 })
 
+// Watch for filter changes and reset to page 1
+watch([searchQuery, selectedStatuses, selectedVisibility], () => {
+  currentPage.value = 1
+  fetchMoodboardsPage(1)
+})
+
 // Data loading methods
 const loadData = async () => {
   try {
     await Promise.all([
-      fetchMoodboards(),
+      fetchMoodboardsPage(currentPage.value),
       loadSharedMoodboards(),
       loadPublicMoodboards(),
       loadAnalytics(),
@@ -480,13 +471,61 @@ const loadData = async () => {
   }
 }
 
+const fetchMoodboardsPage = async (page: number) => {
+  loading.value = true
+  try {
+    // Build query parameters with filters
+    const params: any = { page, page_size: pageSize }
+    
+    // Add search query
+    if (searchQuery.value.trim()) {
+      params.search = searchQuery.value.trim()
+    }
+    
+    // Add status filter (backend uses lowercase)
+    if (selectedStatuses.value.length > 0) {
+      const statuses = selectedStatuses.value.map(s => {
+        if (s === 'Completed') return 'completed,in_progress'
+        if (s === 'Draft') return 'draft'
+        return s.toLowerCase()
+      }).join(',')
+      params.status = statuses
+    }
+    
+    // Add visibility filter
+    if (selectedVisibility.value.length > 0) {
+      if (selectedVisibility.value.includes('Public') && !selectedVisibility.value.includes('Private')) {
+        params.is_public = 'true'
+      } else if (selectedVisibility.value.includes('Private') && !selectedVisibility.value.includes('Public')) {
+        params.is_public = 'false'
+      }
+      // If both selected, don't filter by is_public
+    }
+    
+    const result = await fetchMoodboards(params)
+    if (result) {
+      const paginatedResult = result as { results?: Moodboard[]; count?: number }
+      if (paginatedResult.count !== undefined) {
+        totalCount.value = paginatedResult.count
+      }
+    }
+  } catch (error) {
+    // Handle error silently for production
+  } finally {
+    loading.value = false
+  }
+}
+
 const loadSharedMoodboards = async () => {
   loadingShared.value = true
   try {
-    const result = await getSharedMoodboards()
+    const result = await getSharedMoodboards({ page: sharedCurrentPage.value, page_size: pageSize })
     if (result) {
-      sharedMoodboards.value =
-        (result as { results?: Moodboard[] }).results || (result as Moodboard[])
+      const paginatedResult = result as { results?: Moodboard[]; count?: number }
+      sharedMoodboards.value = paginatedResult.results || (result as Moodboard[])
+      if (paginatedResult.count !== undefined) {
+        sharedTotalCount.value = paginatedResult.count
+      }
     }
   } catch {
     // Handle error silently for production
@@ -498,10 +537,13 @@ const loadSharedMoodboards = async () => {
 const loadPublicMoodboards = async () => {
   loadingPublic.value = true
   try {
-    const result = await refreshPublicMoodboards()
+    const result = await getPublicMoodboards({ page: publicCurrentPage.value, page_size: pageSize })
     if (result) {
-      publicMoodboards.value =
-        (result as { results?: Moodboard[] }).results || (result as Moodboard[])
+      const paginatedResult = result as { results?: Moodboard[]; count?: number }
+      publicMoodboards.value = paginatedResult.results || (result as Moodboard[])
+      if (paginatedResult.count !== undefined) {
+        publicTotalCount.value = paginatedResult.count
+      }
     }
   } catch {
     // Handle error silently for production
@@ -542,6 +584,22 @@ const clearFilters = () => {
   selectedStatuses.value = []
   selectedVisibility.value = []
   searchQuery.value = ''
+}
+
+// Pagination handlers
+const handlePageChange = async (page: number) => {
+  currentPage.value = page
+  await fetchMoodboardsPage(page)
+}
+
+const handleSharedPageChange = async (page: number) => {
+  sharedCurrentPage.value = page
+  await loadSharedMoodboards()
+}
+
+const handlePublicPageChange = async (page: number) => {
+  publicCurrentPage.value = page
+  await loadPublicMoodboards()
 }
 
 // Action methods
@@ -585,7 +643,7 @@ const openMoodboard = async (id: string) => {
 const duplicateMoodboard = async (id: string) => {
   try {
     await duplicateMoodboardApi(id)
-    await fetchMoodboards()
+    await fetchMoodboardsPage(currentPage.value)
     toast.add({
       title: 'Success',
       description: 'Moodboard duplicated successfully',
@@ -658,31 +716,24 @@ const closeShareModal = () => {
   availableUsers.value = []
 }
 
-const handleShare = async () => {
-  if (!shareSelectedUsers.value?.length || !selectedMoodboardForShare.value) {
+const handleShare = async (data: { userId: string; permission: string }) => {
+  if (!data.userId || !selectedMoodboardForShare.value) {
+    toast.add({
+      title: 'Error',
+      description: 'Please select a user to share with',
+      color: 'error',
+    })
     return
   }
 
   try {
     sharingInProgress.value = true
 
-    if (shareSelectedUsers.value.length === 1) {
-      const user = shareSelectedUsers.value[0]
-      if (user) {
-        await shareMoodboardWithMultipleUsers(
-          String(selectedMoodboardForShare.value.id),
-          [user.id.toString()],
-          sharePermission.value as 'view' | 'edit',
-        )
-      }
-    } else {
-      const userIds = shareSelectedUsers.value.map((user) => user.id.toString())
-      await shareMoodboardWithMultipleUsers(
-        String(selectedMoodboardForShare.value.id),
-        userIds,
-        sharePermission.value as 'view' | 'edit',
-      )
-    }
+    await shareMoodboardWithMultipleUsers(
+      String(selectedMoodboardForShare.value.id),
+      [data.userId],
+      data.permission as 'view' | 'edit',
+    )
 
     closeShareModal()
     toast.add({
@@ -691,7 +742,6 @@ const handleShare = async () => {
       color: 'success',
     })
   } catch (error: unknown) {
-    // Handle error silently for production
     const apiError = error as { message?: string }
     toast.add({
       title: 'Error',

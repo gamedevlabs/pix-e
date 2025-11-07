@@ -45,12 +45,18 @@
             </label>
             <USelectMenu
               v-model="selectedUserId"
-              :options="userOptions"
+              :items="userOptions"
               :loading="loadingUsers"
               placeholder="Choose a user to share with..."
               searchable
               class="user-select"
             />
+            <p v-if="!loadingUsers && userOptions.length === 0" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              No other users available to share with.
+            </p>
+            <p v-if="loadingUsers" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Loading users...
+            </p>
           </div>
 
           <div class="form-group">
@@ -58,9 +64,9 @@
               <UIcon name="i-heroicons-shield-check-20-solid" class="label-icon" />
               Permission Level
             </label>
-            <USelect
+            <USelectMenu
               v-model="selectedPermission"
-              :options="permissionOptions"
+              :items="permissionOptions"
               class="permission-select"
             />
           </div>
@@ -70,12 +76,12 @@
             <div class="description-content">
               <UIcon name="i-heroicons-information-circle-20-solid" class="description-icon" />
               <div class="description-text">
-                <strong v-if="selectedPermission === 'view'">View Only:</strong>
-                <strong v-else-if="selectedPermission === 'edit'">Edit Access:</strong>
-                <span v-if="selectedPermission === 'view'">
+                <strong v-if="selectedPermission === 'View Only'">View Only:</strong>
+                <strong v-else-if="selectedPermission === 'Edit Access'">Edit Access:</strong>
+                <span v-if="selectedPermission === 'View Only'">
                   User can view the moodboard but cannot make changes.
                 </span>
-                <span v-else-if="selectedPermission === 'edit'">
+                <span v-else-if="selectedPermission === 'Edit Access'">
                   User can view and modify the moodboard.
                 </span>
               </div>
@@ -139,6 +145,7 @@ const emit = defineEmits<{
 // Composables
 const { fetchUsers } = useUsers()
 const config = useRuntimeConfig()
+const toast = useToast()
 
 // State
 const users = ref<LocalUser[]>([])
@@ -162,16 +169,21 @@ const modalDescription = computed(() => {
 })
 
 const userOptions = computed(() => {
-  return users.value.map((user) => ({
-    value: user.id,
-    label: user.username,
-  }))
+  console.log('Users loaded:', users.value)
+  const options = users.value.map((user) => user.username)
+  console.log('User options:', options)
+  return options
 })
 
-const permissionOptions = computed(() => [
-  { value: 'view', label: 'View Only' },
-  { value: 'edit', label: 'Edit Access' },
-])
+const userIdMap = computed(() => {
+  const map = new Map<string, string>()
+  users.value.forEach((user) => {
+    map.set(user.username, user.id)
+  })
+  return map
+})
+
+const permissionOptions = computed(() => ['View Only', 'Edit Access'])
 
 const canShare = computed(() => {
   return selectedUserId.value && selectedPermission.value && !sharing.value
@@ -181,7 +193,9 @@ const canShare = computed(() => {
 function getImageUrl(url?: string): string {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `${config.public.apiUrl}${url.startsWith('/') ? '' : '/'}${url}`
+  // Ensure URL starts with /
+  const imageUrl = url.startsWith('/') ? url : `/${url}`
+  return `${config.public.apiBase}${imageUrl}`
 }
 
 function getImageCount(moodboard: Moodboard): number {
@@ -200,9 +214,22 @@ async function loadUsers() {
         username: user.username,
         email: user.email,
       }))
+      
+      if (users.value.length === 0) {
+        toast.add({
+          title: 'No Users Found',
+          description: 'There are no other users to share with.',
+          color: 'warning',
+        })
+      }
     }
-  } catch {
-    // Handle error silently for production
+  } catch (error) {
+    console.error('Error loading users:', error)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to load users list',
+      color: 'error',
+    })
   } finally {
     loadingUsers.value = false
   }
@@ -214,18 +241,45 @@ function handleCancel() {
 }
 
 function handleShare() {
-  if (!canShare.value) return
+  if (!canShare.value) {
+    toast.add({
+      title: 'Error',
+      description: 'Please select a user and permission level',
+      color: 'error',
+    })
+    return
+  }
+
+  // Convert username to user ID
+  const userId = userIdMap.value.get(selectedUserId.value)
+  if (!userId) {
+    toast.add({
+      title: 'Error',
+      description: 'Selected user not found',
+      color: 'error',
+    })
+    return
+  }
+
+  // Convert permission label to value
+  const permissionValue = selectedPermission.value === 'View Only' ? 'view' : 'edit'
+
+  console.log('Sharing moodboard:', {
+    username: selectedUserId.value,
+    userId: userId,
+    permission: permissionValue,
+  })
 
   sharing.value = true
   emit('share', {
-    userId: selectedUserId.value,
-    permission: selectedPermission.value,
+    userId: userId,
+    permission: permissionValue,
   })
 }
 
 function resetForm() {
   selectedUserId.value = ''
-  selectedPermission.value = 'view'
+  selectedPermission.value = 'View Only'
   sharing.value = false
 }
 

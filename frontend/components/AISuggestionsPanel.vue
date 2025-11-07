@@ -89,6 +89,99 @@
           </div>
         </div>
       </div>
+      
+      <!-- Advanced Prompt Toggle -->
+      <div v-if="currentPrompt && currentPrompt.trim()" class="advanced-toggle">
+        <UButton
+          :variant="showAdvancedPrompt ? 'solid' : 'soft'"
+          :color="showAdvancedPrompt ? 'primary' : 'neutral'"
+          size="xs"
+          block
+          @click="showAdvancedPrompt = !showAdvancedPrompt"
+        >
+          <div class="advanced-toggle-content">
+            <UIcon name="i-heroicons-code-bracket-square-20-solid" class="w-3.5 h-3.5" />
+            <span class="advanced-toggle-text">{{ showAdvancedPrompt ? 'Hide' : 'View' }} Prompt Engineering</span>
+            <UIcon 
+              :name="showAdvancedPrompt ? 'i-heroicons-chevron-up-20-solid' : 'i-heroicons-chevron-down-20-solid'" 
+              class="w-3 h-3 ml-auto"
+            />
+          </div>
+        </UButton>
+      </div>
+    </div>
+    
+    <!-- Advanced Prompt View -->
+    <div v-if="showAdvancedPrompt && currentPrompt && currentPrompt.trim()" class="advanced-prompt-view">
+      <div class="advanced-prompt-header">
+        <div class="header-badge">
+          <UIcon name="i-heroicons-cpu-chip-20-solid" class="w-4 h-4" />
+          <span>AI Prompt Template</span>
+        </div>
+        <UButton
+          v-if="!isEditingPrompt"
+          variant="ghost"
+          size="xs"
+          icon="i-heroicons-pencil-square-20-solid"
+          @click="startEditingPrompt"
+        >
+          Customize
+        </UButton>
+        <div v-else class="edit-actions">
+          <UButton
+            variant="solid"
+            color="success"
+            size="xs"
+            icon="i-heroicons-check-20-solid"
+            @click="saveCustomPrompt"
+          />
+          <UButton
+            variant="ghost"
+            size="xs"
+            icon="i-heroicons-x-mark-20-solid"
+            @click="cancelEditingPrompt"
+          />
+        </div>
+      </div>
+      
+      <div class="advanced-prompt-body">
+        <div class="prompt-section">
+          <div class="section-label">
+            <UIcon name="i-heroicons-user-20-solid" class="w-3 h-3" />
+            <span>Your Input</span>
+          </div>
+          <div class="section-content user-input">
+            {{ currentPrompt }}
+          </div>
+        </div>
+        
+        <div class="prompt-divider">
+          <UIcon name="i-heroicons-arrow-down-20-solid" class="w-3 h-3" />
+        </div>
+        
+        <div class="prompt-section">
+          <div class="section-label">
+            <UIcon name="i-heroicons-sparkles-20-solid" class="w-3 h-3" />
+            <span>AI Enhancement Template</span>
+          </div>
+          <div v-if="!isEditingPrompt" class="section-content ai-template">
+            {{ customPromptTemplate || getFullAIPrompt() }}
+          </div>
+          <UTextarea
+            v-else
+            v-model="editablePromptTemplate"
+            :rows="8"
+            :maxrows="12"
+            autoresize
+            class="prompt-textarea"
+            placeholder="Enter your custom AI prompt template..."
+          />
+          <div class="template-hint">
+            <UIcon name="i-heroicons-information-circle-20-solid" class="w-3 h-3" />
+            <span>This template guides the AI to generate relevant suggestions for your moodboard</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Content Area -->
@@ -246,7 +339,7 @@
                 <div class="service-details">
                   <span class="service-name">{{ serviceType.label }}</span>
                   <span v-if="getTokenForService(serviceType.value)" class="token-status active">
-                    {{ getTokenForService(serviceType.value)?.masked_token }}
+                    ••••••••
                   </span>
                   <span v-else class="token-status inactive">Not configured</span>
                 </div>
@@ -499,6 +592,69 @@ const currentServiceType = ref('')
 const tokenInput = ref('')
 const editingToken = ref(false)
 const isTokenSaving = ref(false)
+
+// Advanced prompt state
+const showAdvancedPrompt = ref(false)
+const isEditingPrompt = ref(false)
+const editablePromptTemplate = ref('')
+const customPromptTemplate = ref('')
+
+// Build the full AI prompt template (matches backend _create_contextual_prompt)
+const getFullAIPrompt = () => {
+  let template = ''
+  
+  // Determine format instruction based on suggestion type
+  const wordCount = props.suggestionType === 'long' ? '10-20 words each' : '2-8 words each'
+  const formatInstruction = props.suggestionType === 'long' 
+    ? 'Format as complete descriptive sentences, one per line'
+    : 'Format as brief phrases only, one per line'
+  
+  // Always 3 suggestions (suggestion_type only affects length/format, not quantity)
+  const numSuggestions = '3'
+  
+  if (props.mode === 'gaming') {
+    template = `Help expand this gaming prompt: "${props.currentPrompt}"
+
+Provide ${numSuggestions} creative suggestions (${wordCount}) that could enhance this prompt for game art creation.
+
+${formatInstruction}`
+  } else {
+    template = `Help expand this artistic prompt: "${props.currentPrompt}"
+
+Provide ${numSuggestions} creative suggestions (${wordCount}) that could enhance this prompt for visual art creation.
+
+${formatInstruction}`
+  }
+  
+  return template
+}
+
+// Advanced prompt editing functions
+const startEditingPrompt = () => {
+  editablePromptTemplate.value = customPromptTemplate.value || getFullAIPrompt()
+  isEditingPrompt.value = true
+}
+
+const saveCustomPrompt = () => {
+  customPromptTemplate.value = editablePromptTemplate.value.trim()
+  isEditingPrompt.value = false
+}
+
+const cancelEditingPrompt = () => {
+  editablePromptTemplate.value = ''
+  isEditingPrompt.value = false
+}
+
+// Watch for mode/type changes to update the prompt preview
+watch(
+  [() => props.mode, () => props.suggestionType, () => props.currentPrompt],
+  () => {
+    // If user hasn't customized the prompt, update it when settings change
+    if (!customPromptTemplate.value && isEditingPrompt.value) {
+      editablePromptTemplate.value = getFullAIPrompt()
+    }
+  }
+)
 
 // Available service types that require tokens
 const availableServiceTypes = computed(() => [
@@ -995,5 +1151,243 @@ const handleGenerateFromInput = () => {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* Advanced Prompt Styles - Cyberpunk/Tech Aesthetic */
+.advanced-toggle {
+  margin-top: 8px;
+}
+
+.advanced-toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.advanced-toggle-text {
+  flex: 1;
+  text-align: left;
+}
+
+.advanced-prompt-view {
+  border-top: 2px solid #8b5cf6;
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+  padding: 16px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.dark .advanced-prompt-view {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-top-color: #a78bfa;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.advanced-prompt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e9d5ff;
+}
+
+.dark .advanced-prompt-header {
+  border-bottom-color: #4c1d95;
+}
+
+.header-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  color: white;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.advanced-prompt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-section {
+  background: white;
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .prompt-section {
+  background: #1f2937;
+  border-color: #6b21a8;
+}
+
+/* Glowing effect on hover */
+.prompt-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #8b5cf6, #a78bfa, #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.prompt-section:hover::before {
+  opacity: 1;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #7c3aed;
+  margin-bottom: 8px;
+}
+
+.dark .section-label {
+  color: #c4b5fd;
+}
+
+.section-content {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #374151;
+  white-space: pre-wrap;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.dark .section-content {
+  color: #d1d5db;
+}
+
+.section-content.user-input {
+  background: #faf5ff;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #8b5cf6;
+  font-weight: 500;
+}
+
+.dark .section-content.user-input {
+  background: #1e1b4b;
+  border-left-color: #a78bfa;
+}
+
+.section-content.ai-template {
+  background: #f5f3ff;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px dashed #c4b5fd;
+}
+
+.dark .section-content.ai-template {
+  background: #312e81;
+  border-color: #6b21a8;
+}
+
+.prompt-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  position: relative;
+}
+
+.prompt-divider::before,
+.prompt-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c4b5fd, transparent);
+}
+
+.dark .prompt-divider::before,
+.dark .prompt-divider::after {
+  background: linear-gradient(90deg, transparent, #6b21a8, transparent);
+}
+
+.prompt-divider svg {
+  color: #8b5cf6;
+  background: white;
+  padding: 4px;
+  border-radius: 50%;
+  border: 2px solid #e9d5ff;
+  margin: 0 12px;
+}
+
+.dark .prompt-divider svg {
+  color: #a78bfa;
+  background: #1f2937;
+  border-color: #6b21a8;
+}
+
+.prompt-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  background: #faf5ff !important;
+  border: 1px solid #c4b5fd !important;
+}
+
+.dark .prompt-textarea {
+  background: #1e1b4b !important;
+  border-color: #6b21a8 !important;
+}
+
+.template-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px;
+  background: #fef3c7;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #92400e;
+}
+
+.dark .template-hint {
+  background: #422006;
+  color: #fde68a;
+}
+
+.template-hint svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 </style>

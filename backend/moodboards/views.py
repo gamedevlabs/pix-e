@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
@@ -40,6 +41,9 @@ class CsrfExemptSessionAuthentication(SessionAuthentication):
 
     def enforce_csrf(self, request):
         return  # Skip CSRF check
+
+
+logger = logging.getLogger(__name__)
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -115,7 +119,25 @@ class MoodboardViewSet(viewsets.ModelViewSet):
                 return accessible_queryset
 
             # Return only user's own moodboards for list and other actions
-            return queryset.filter(user=user)
+            base_queryset = queryset.filter(user=user)
+            
+            # Apply query parameter filters for list action
+            if action == "list":
+                # Filter by status
+                status_param = self.request.query_params.get('status')
+                if status_param:
+                    status_values = [s.strip() for s in status_param.split(',')]
+                    base_queryset = base_queryset.filter(status__in=status_values)
+                
+                # Filter by is_public
+                is_public_param = self.request.query_params.get('is_public')
+                if is_public_param is not None:
+                    if is_public_param.lower() == 'true':
+                        base_queryset = base_queryset.filter(is_public=True)
+                    elif is_public_param.lower() == 'false':
+                        base_queryset = base_queryset.filter(is_public=False)
+            
+            return base_queryset
 
     def get_serializer_class(self):
         """Return appropriate serializer class based on action"""
@@ -444,34 +466,40 @@ class MoodboardViewSet(viewsets.ModelViewSet):
 
         return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
-    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     @action(detail=False, methods=["get"])
     def analytics(self, request):
         """Get analytics data for user's moodboards"""
-        queryset = self.get_queryset().filter(user=request.user)
+        # Use a fresh queryset without pre-existing annotations to get accurate counts
+        # Include ALL moodboards to match the list view
+        base_queryset = Moodboard.objects.filter(user=request.user)
 
-        # Basic stats
-        total_moodboards = queryset.count()
-        by_status = queryset.values("status").annotate(count=Count("id"))
-        by_category = queryset.values("category").annotate(count=Count("id"))
+        # Basic stats - count ALL moodboards (including archived)
+        total_moodboards = base_queryset.count()
+        by_status = base_queryset.values("status").annotate(count=Count("id"))
+        by_category = base_queryset.values("category").annotate(count=Count("id"))
 
-        # Images stats - count only selected images that are actually used in moodboards
+        # Images stats - count only selected images (including all statuses for accuracy)
         total_images = MoodboardImage.objects.filter(
-            moodboard__user=request.user, is_selected=True
+            moodboard__user=request.user,
+            is_selected=True
         ).count()
-        # Keep selected_images for potential future use, but use total_images for
-        # the main count
+        
+        # Keep selected_images for potential future use
         selected_images = total_images
 
-        # Recent activity
+        # Recent activity (last 30 days, all statuses)
         recent_date = datetime.now() - timedelta(days=30)
-        recent_moodboards = queryset.filter(created_at__gte=recent_date).count()
+        recent_moodboards = base_queryset.filter(created_at__gte=recent_date).count()
 
-        # Public moodboards count
-        public_moodboards = queryset.filter(is_public=True).count()
+        # Public moodboards count (all statuses)
+        public_moodboards = base_queryset.filter(is_public=True).count()
 
-        # Additional useful stats
-        completed_moodboards = queryset.filter(status="completed").count()
+        # Additional useful stats - count both completed and in_progress as "completed work"
+        # Exclude draft and archived from "completed" count for meaningful metric
+        completed_moodboards = base_queryset.filter(
+            status__in=["completed", "in_progress"]
+        ).count()
+        
         avg_images_per_moodboard = (
             total_images / total_moodboards if total_moodboards > 0 else 0
         )
@@ -600,6 +628,15 @@ class MoodboardViewSet(viewsets.ModelViewSet):
 
             # Import the image generation function
             from llm.views import generate_gaming_images
+
+            # Clear old unselected images before generating new ones
+            # This prevents accumulation of old AI-generated images
+            MoodboardImage.objects.filter(
+                moodboard=moodboard,
+                is_selected=False,
+                source="ai_generated"
+            ).delete()
+            logger.info(f"Cleared old unselected AI images for moodboard {session_id}")
 
             # Generate new images
             try:

@@ -442,14 +442,14 @@ export const useMoodboards = () => {
   }
 
   // Sharing Operations
-  const shareMoodboard = async (moodboardId: string, email: string, permission: string) => {
+  const shareMoodboard = async (moodboardId: string, userId: string, permission: string) => {
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/share/`, {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
         body: {
-          shared_with_email: email,
+          user_id: userId,
           permission,
         },
       })
@@ -459,7 +459,7 @@ export const useMoodboards = () => {
     if (result) {
       toast.add({
         title: 'Success',
-        description: `Moodboard shared with ${email}`,
+        description: `Moodboard shared successfully`,
         color: 'success',
       })
     }
@@ -468,26 +468,29 @@ export const useMoodboards = () => {
 
   const shareMoodboardWithMultipleUsers = async (
     moodboardId: string,
-    emails: string[],
+    userIds: string[],
     permission: string,
   ) => {
+    console.log('shareMoodboardWithMultipleUsers called with:', { moodboardId, userIds, permission })
+    
     const result = await handleApiCall(async () => {
-      const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/share_multiple/`, {
+      const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/bulk_share/`, {
         method: 'POST',
         credentials: 'include',
         headers: createHeaders(),
         body: {
-          emails,
+          user_ids: userIds,
           permission,
         },
       })
+      console.log('Share response:', response)
       return response
     })
 
     if (result) {
       toast.add({
         title: 'Success',
-        description: `Moodboard shared with ${emails.length} users`,
+        description: `Moodboard shared with ${userIds.length} user(s)`,
         color: 'success',
       })
     }

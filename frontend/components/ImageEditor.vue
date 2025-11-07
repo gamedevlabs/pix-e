@@ -182,7 +182,7 @@
 
               <UButton
                 :variant="cropMode ? 'solid' : 'outline'"
-                :color="cropMode ? 'primary' : 'neutral'"
+                :color="cropMode ? 'primary' : undefined"
                 icon="i-heroicons-scissors"
                 @click="toggleCropMode"
               >

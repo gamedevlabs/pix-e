@@ -54,12 +54,55 @@
                   {{ moodboard.title }}
                 </h3>
 
+                <!-- Description (only show if it's a real description, not AI-generated prompt) -->
                 <p
-                  v-if="moodboard.description"
-                  class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"
+                  v-if="getRealDescription(moodboard.description)"
+                  class="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2"
                 >
-                  {{ moodboard.description }}
+                  {{ getRealDescription(moodboard.description) }}
                 </p>
+
+                <!-- Prompt History -->
+                <div v-if="getAllPrompts(moodboard.description).length > 0" class="mb-2">
+                  <UButton
+                    variant="ghost"
+                    size="xs"
+                    color="neutral"
+                    class="text-xs"
+                    @click.stop="togglePrompts(moodboard.id)"
+                  >
+                    <UIcon
+                      :name="
+                        expandedPrompts[moodboard.id]
+                          ? 'i-heroicons-chevron-up-20-solid'
+                          : 'i-heroicons-chevron-down-20-solid'
+                      "
+                      class="w-3 h-3 mr-1"
+                    />
+                    {{ getAllPrompts(moodboard.description).length }} prompt{{
+                      getAllPrompts(moodboard.description).length !== 1 ? 's' : ''
+                    }}
+                  </UButton>
+                  
+                  <!-- Expanded prompts -->
+                  <div
+                    v-if="expandedPrompts[moodboard.id]"
+                    class="mt-2 space-y-1 pl-4 border-l-2 border-gray-200 dark:border-gray-700"
+                  >
+                    <div
+                      v-for="(prompt, idx) in getAllPrompts(moodboard.description)"
+                      :key="idx"
+                      class="flex items-start gap-2"
+                    >
+                      <UBadge color="primary" variant="subtle" size="xs" class="mt-0.5">
+                        {{ idx + 1 }}
+                      </UBadge>
+                      <span class="text-xs text-gray-600 dark:text-gray-400 flex-1">{{
+                        prompt
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- Metadata Row -->
                 <div class="flex items-center gap-3 mb-2">
@@ -135,6 +178,18 @@
         </div>
       </UCard>
     </div>
+
+    <!-- Pagination -->
+    <div v-if="!loading && moodboards.length > 0 && totalPages > 1" class="mt-6">
+      <UPagination
+        v-model:page="currentPage"
+        :total="totalItems"
+        :items-per-page="pageSize"
+        show-edges
+        :sibling-count="1"
+        class="flex justify-center"
+      />
+    </div>
   </div>
 </template>
 
@@ -174,24 +229,70 @@ interface Props {
   loading?: boolean
   emptyTitle?: string
   emptyDescription?: string
+  totalItems?: number
+  pageSize?: number
+  page?: number
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   loading: false,
   emptyTitle: 'No moodboards found',
   emptyDescription: 'Create your first moodboard to get started',
+  totalItems: 0,
+  pageSize: 20,
+  page: 1,
 })
 
 const emit = defineEmits<{
   action: [action: string, moodboard: Moodboard]
+  'update:page': [page: number]
 }>()
 
+// Pagination state - use computed for two-way binding
+const currentPage = computed({
+  get: () => props.page,
+  set: (value) => {
+    emit('update:page', value)
+  },
+})
+
+const totalPages = computed(() => Math.ceil(props.totalItems / props.pageSize))
+
 const { $config } = useNuxtApp()
+
+// State for expanded prompts
+const expandedPrompts = ref<Record<string | number, boolean>>({})
 
 // Helper functions
 const getImageUrl = (url: string) => {
   if (!url) return ''
   return url.startsWith('http') ? url : `${$config.public.apiBase}${url}`
+}
+
+const getRealDescription = (description: string): string => {
+  // Never show description in the description field - it's all prompts
+  return ''
+}
+
+const getAllPrompts = (description: string): string[] => {
+  if (!description) return []
+  
+  // Filter out AI boilerplate
+  if (description.toLowerCase() === 'ai-generated moodboard session') {
+    return []
+  }
+  
+  // If it contains pipes, split and return all parts as prompts
+  if (description.includes(' | ')) {
+    return description.split(' | ').map(p => p.trim()).filter(p => p)
+  }
+  
+  // Single prompt without pipes - return it as a single-item array
+  return [description.trim()]
+}
+
+const togglePrompts = (moodboardId: string | number) => {
+  expandedPrompts.value[moodboardId] = !expandedPrompts.value[moodboardId]
 }
 
 const getStatusColor = (
