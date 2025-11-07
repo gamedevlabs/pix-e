@@ -818,8 +818,6 @@ async function loadTokenizer() {
   
   isTokenizerLoading.value = true
   try {
-    console.log('🔄 Loading CLIP tokenizer from Hugging Face CDN...')
-    
     // Load the exact CLIP tokenizer used by Stable Diffusion v1.5
     // This is the CLIP ViT-B/32 tokenizer from OpenAI
     // Force remote loading with explicit options
@@ -827,13 +825,6 @@ async function loadTokenizer() {
       local_files_only: false,
       revision: 'main'
     })
-    
-    console.log('✅ CLIP tokenizer loaded successfully (CLIP ViT-B/32 for SD 1.5)')
-    
-    // Test tokenization to verify behavior
-    const testPrompt = 'a beautiful landscape'
-    const testEncoding = clipTokenizer.value.encode(testPrompt)
-    console.log(`📊 Test tokenization: "${testPrompt}" → ${testEncoding.length} tokens`, testEncoding)
     
     return clipTokenizer.value
   } catch (error) {
@@ -871,12 +862,6 @@ const promptTokenCount = computed(() => {
     // CLIP adds BOS (start) and EOS (end) tokens automatically
     // The text is tokenized, then BOS/EOS are added, making the total 77 tokens max
     const encoded = clipTokenizer.value.encode(text)
-    
-    // Debug: Log the tokenization for verification
-    if (import.meta.env.DEV) {
-      console.log(`🔍 Tokenizing SD prompt: "${text.substring(0, 60)}${text.length > 60 ? '...' : ''}"`)
-      console.log(`📊 Token count: ${encoded.length}`, encoded)
-    }
     
     // CLIP tokenizer returns the token IDs including special tokens
     // SD uses exactly 77 tokens (including BOS/EOS), so effective limit is 75 text tokens
@@ -1671,7 +1656,6 @@ function onImageError(event: Event) {
 
 function onImageLoad(event: Event) {
   const img = event.target as HTMLImageElement
-  console.log('Image loaded successfully:', img.src)
 }
 
 function addColorToPaletteFromPicker() {

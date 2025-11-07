@@ -471,8 +471,6 @@ export const useMoodboards = () => {
     userIds: string[],
     permission: string,
   ) => {
-    console.log('shareMoodboardWithMultipleUsers called with:', { moodboardId, userIds, permission })
-    
     const result = await handleApiCall(async () => {
       const response = await $fetch(`${apiBase}/moodboards/${moodboardId}/bulk_share/`, {
         method: 'POST',
@@ -483,7 +481,6 @@ export const useMoodboards = () => {
           permission,
         },
       })
-      console.log('Share response:', response)
       return response
     })
 
