@@ -1,12 +1,10 @@
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from rest_framework import filters, parsers, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
@@ -120,23 +118,23 @@ class MoodboardViewSet(viewsets.ModelViewSet):
 
             # Return only user's own moodboards for list and other actions
             base_queryset = queryset.filter(user=user)
-            
+
             # Apply query parameter filters for list action
             if action == "list":
                 # Filter by status
-                status_param = self.request.query_params.get('status')
+                status_param = self.request.query_params.get("status")
                 if status_param:
-                    status_values = [s.strip() for s in status_param.split(',')]
+                    status_values = [s.strip() for s in status_param.split(",")]
                     base_queryset = base_queryset.filter(status__in=status_values)
-                
+
                 # Filter by is_public
-                is_public_param = self.request.query_params.get('is_public')
+                is_public_param = self.request.query_params.get("is_public")
                 if is_public_param is not None:
-                    if is_public_param.lower() == 'true':
+                    if is_public_param.lower() == "true":
                         base_queryset = base_queryset.filter(is_public=True)
-                    elif is_public_param.lower() == 'false':
+                    elif is_public_param.lower() == "false":
                         base_queryset = base_queryset.filter(is_public=False)
-            
+
             return base_queryset
 
     def get_serializer_class(self):
@@ -478,12 +476,12 @@ class MoodboardViewSet(viewsets.ModelViewSet):
         by_status = base_queryset.values("status").annotate(count=Count("id"))
         by_category = base_queryset.values("category").annotate(count=Count("id"))
 
-        # Images stats - count only selected images (including all statuses for accuracy)
+        # Images stats - count only selected images
+        # (including all statuses for accuracy)
         total_images = MoodboardImage.objects.filter(
-            moodboard__user=request.user,
-            is_selected=True
+            moodboard__user=request.user, is_selected=True
         ).count()
-        
+
         # Keep selected_images for potential future use
         selected_images = total_images
 
@@ -494,12 +492,14 @@ class MoodboardViewSet(viewsets.ModelViewSet):
         # Public moodboards count (all statuses)
         public_moodboards = base_queryset.filter(is_public=True).count()
 
-        # Additional useful stats - count both completed and in_progress as "completed work"
-        # Exclude draft and archived from "completed" count for meaningful metric
+        # Additional useful stats - count both completed and in_progress
+        # as "completed work"
+        # Exclude draft and archived from "completed" count
+        # for meaningful metric
         completed_moodboards = base_queryset.filter(
             status__in=["completed", "in_progress"]
         ).count()
-        
+
         avg_images_per_moodboard = (
             total_images / total_moodboards if total_moodboards > 0 else 0
         )
@@ -632,9 +632,7 @@ class MoodboardViewSet(viewsets.ModelViewSet):
             # Clear old unselected images before generating new ones
             # This prevents accumulation of old AI-generated images
             MoodboardImage.objects.filter(
-                moodboard=moodboard,
-                is_selected=False,
-                source="ai_generated"
+                moodboard=moodboard, is_selected=False, source="ai_generated"
             ).delete()
             logger.info(f"Cleared old unselected AI images for moodboard {session_id}")
 

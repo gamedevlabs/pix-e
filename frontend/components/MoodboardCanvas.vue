@@ -158,7 +158,7 @@
             </div>
 
             <!-- Divider -->
-            <div class="toolbar-divider"></div>
+            <div class="toolbar-divider"/>
 
             <!-- Actions -->
             <div class="control-group">
@@ -409,8 +409,8 @@
           <h3>Properties</h3>
           <button 
             class="collapse-button" 
-            @click="propertiesPanelCollapsed = !propertiesPanelCollapsed"
             :title="propertiesPanelCollapsed ? 'Expand Properties' : 'Collapse Properties'"
+            @click="propertiesPanelCollapsed = !propertiesPanelCollapsed"
           >
             <span v-if="!propertiesPanelCollapsed">✕</span>
             <span v-else>⚙</span>
@@ -728,6 +728,7 @@
 </template>
 
 <script setup lang="ts">
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRuntimeConfig } from '#imports'
 import type { MoodboardImage, MoodboardTextElement, Moodboard } from '~/composables/useMoodboards'
@@ -1773,7 +1774,7 @@ async function exportCanvasAsImage(format: string) {
     try {
       const bgImage = new Image()
       bgImage.crossOrigin = 'anonymous'
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         bgImage.onload = () => {
           // Draw the entire background
           ctx.drawImage(
@@ -1823,7 +1824,7 @@ async function exportCanvasAsImage(format: string) {
     try {
       const bgImage = new Image()
       bgImage.crossOrigin = 'anonymous'
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         bgImage.onload = () => {
           // Draw only the visible portion of the background
           ctx.drawImage(
@@ -2276,7 +2277,7 @@ async function exportCanvasAsPDF() {
     try {
       const bgImage = new Image()
       bgImage.crossOrigin = 'anonymous'
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve) => {
         bgImage.onload = () => {
           ctx.drawImage(
             bgImage,

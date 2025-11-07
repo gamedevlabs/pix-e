@@ -286,9 +286,9 @@
               <img 
                 :src="getImageUrl(img.image_url)" 
                 :alt="img.prompt"
+                loading="lazy"
                 @error="onImageError"
                 @load="onImageLoad"
-                loading="lazy"
               />
               <div v-if="canEdit" class="image-overlay">
                 <UButton
@@ -751,15 +751,6 @@ import { useRuntimeConfig, useRouter } from '#imports'
 // Import and configure transformers BEFORE any other imports
 import { AutoTokenizer, env } from '@xenova/transformers'
 
-// Configure transformers.js environment to use Hugging Face CDN
-// This MUST be set before any tokenizer calls to prevent local file loading
-if (typeof window !== 'undefined') {
-  env.allowLocalModels = false
-  env.allowRemoteModels = true
-  env.useBrowserCache = true
-  env.localModelPath = 'https://huggingface.co/'
-}
-
 import '@/assets/css/toast-loading-bar.css'
 import {
   useMoodboards,
@@ -770,6 +761,15 @@ import {
 import { useAISuggestions } from '~/composables/useAISuggestions'
 import ImageEditor from '~/components/ImageEditor.vue'
 import MoodboardCanvas from '~/components/MoodboardCanvas.vue'
+
+// Configure transformers.js environment to use Hugging Face CDN
+// This MUST be set before any tokenizer calls to prevent local file loading
+if (typeof window !== 'undefined') {
+  env.allowLocalModels = false
+  env.allowRemoteModels = true
+  env.useBrowserCache = true
+  env.localModelPath = 'https://huggingface.co/'
+}
 
 definePageMeta({
   middleware: 'auth',
@@ -806,6 +806,7 @@ const editableFullPrompt = ref('')
 const customFullPrompt = ref('')
 
 // CLIP tokenizer instance (lazy loaded)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const clipTokenizer = ref<any>(null)
 const isTokenizerLoading = ref(false)
 
@@ -1096,7 +1097,7 @@ const setPenType = (type: 'pen' | 'marker' | 'pencil' | 'highlighter' | 'spray' 
   }
 }
 
-const getBrushSizeRange = () => {
+const _getBrushSizeRange = () => {
   switch (penType.value) {
     case 'pen':
       return { min: 1, max: 15 }
@@ -1115,15 +1116,15 @@ const getBrushSizeRange = () => {
   }
 }
 
-const showBrushHardness = () => {
+const _showBrushHardness = () => {
   return penType.value !== 'spray' && penType.value !== 'watercolor'
 }
 
-const showFlowRate = () => {
+const _showFlowRate = () => {
   return penType.value === 'spray' || penType.value === 'watercolor' || penType.value === 'marker'
 }
 
-const showBlendMode = () => {
+const _showBlendMode = () => {
   return (
     penType.value === 'watercolor' || penType.value === 'marker' || penType.value === 'highlighter'
   )
@@ -1654,8 +1655,8 @@ function onImageError(event: Event) {
   // Optionally set a fallback image or show an error indicator
 }
 
-function onImageLoad(event: Event) {
-  const img = event.target as HTMLImageElement
+function onImageLoad(_event: Event) {
+  // Image loaded successfully
 }
 
 function addColorToPaletteFromPicker() {
@@ -1692,7 +1693,7 @@ Format as brief phrases only, one per line:`
 }
 
 // This builds the prompt for AI text suggestions (NOT for Stable Diffusion)
-function getFullPrompt(): string {
+function _getFullPrompt(): string {
   const colorInfo = colorPalette.value.length > 0 
     ? `\nColor palette: ${colorPalette.value.join(', ')}`
     : ''

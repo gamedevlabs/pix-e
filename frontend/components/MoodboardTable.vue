@@ -269,7 +269,7 @@ const getImageUrl = (url: string) => {
   return url.startsWith('http') ? url : `${$config.public.apiBase}${url}`
 }
 
-const getRealDescription = (description: string): string => {
+const getRealDescription = (_description: string): string => {
   // Never show description in the description field - it's all prompts
   return ''
 }

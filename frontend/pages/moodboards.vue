@@ -365,7 +365,6 @@ const {
   duplicateMoodboard: duplicateMoodboardApi,
   getSharedMoodboards,
   getPublicMoodboards,
-  refreshPublicMoodboards,
   getMoodboardAnalytics,
   shareMoodboardWithMultipleUsers,
 } = useMoodboards()
@@ -415,11 +414,6 @@ const hasActiveFilters = computed(() => {
     selectedVisibility.value.length > 0 ||
     searchQuery.value.trim() !== ''
   )
-})
-
-// Computed to get full user objects from selected IDs
-const shareSelectedUsers = computed(() => {
-  return availableUsers.value.filter((user) => shareSelectedUserIds.value.includes(user.id))
 })
 
 // Tabs configuration
@@ -475,6 +469,7 @@ const fetchMoodboardsPage = async (page: number) => {
   loading.value = true
   try {
     // Build query parameters with filters
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: any = { page, page_size: pageSize }
     
     // Add search query
@@ -509,7 +504,7 @@ const fetchMoodboardsPage = async (page: number) => {
         totalCount.value = paginatedResult.count
       }
     }
-  } catch (error) {
+  } catch {
     // Handle error silently for production
   } finally {
     loading.value = false

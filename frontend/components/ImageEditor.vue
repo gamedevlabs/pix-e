@@ -4,7 +4,7 @@
       <div class="image-editor">
         <!-- Image Preview Section -->
         <div class="image-preview-section">
-          <div class="image-container" ref="imageContainerRef">
+          <div ref="imageContainerRef" class="image-container">
             <img
               v-if="previewUrl || originalImageUrl"
               ref="imageRef"
@@ -36,19 +36,19 @@
                 <div
                   class="crop-handle nw"
                   @mousedown.stop="onHandleMouseDown($event, 'nw')"
-                ></div>
+                />
                 <div
                   class="crop-handle ne"
                   @mousedown.stop="onHandleMouseDown($event, 'ne')"
-                ></div>
+                />
                 <div
                   class="crop-handle sw"
                   @mousedown.stop="onHandleMouseDown($event, 'sw')"
-                ></div>
+                />
                 <div
                   class="crop-handle se"
                   @mousedown.stop="onHandleMouseDown($event, 'se')"
-                ></div>
+                />
               </div>
               <div class="crop-info">
                 {{ Math.round(cropRect.width) }}×{{ Math.round(cropRect.height) }}
