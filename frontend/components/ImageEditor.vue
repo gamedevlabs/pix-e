@@ -33,22 +33,10 @@
               }"
             >
               <div class="crop-handles">
-                <div
-                  class="crop-handle nw"
-                  @mousedown.stop="onHandleMouseDown($event, 'nw')"
-                />
-                <div
-                  class="crop-handle ne"
-                  @mousedown.stop="onHandleMouseDown($event, 'ne')"
-                />
-                <div
-                  class="crop-handle sw"
-                  @mousedown.stop="onHandleMouseDown($event, 'sw')"
-                />
-                <div
-                  class="crop-handle se"
-                  @mousedown.stop="onHandleMouseDown($event, 'se')"
-                />
+                <div class="crop-handle nw" @mousedown.stop="onHandleMouseDown($event, 'nw')" />
+                <div class="crop-handle ne" @mousedown.stop="onHandleMouseDown($event, 'ne')" />
+                <div class="crop-handle sw" @mousedown.stop="onHandleMouseDown($event, 'sw')" />
+                <div class="crop-handle se" @mousedown.stop="onHandleMouseDown($event, 'se')" />
               </div>
               <div class="crop-info">
                 {{ Math.round(cropRect.width) }}×{{ Math.round(cropRect.height) }}

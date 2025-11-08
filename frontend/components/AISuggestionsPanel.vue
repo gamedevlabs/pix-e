@@ -89,7 +89,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Advanced Prompt Toggle -->
       <div v-if="currentPrompt && currentPrompt.trim()" class="advanced-toggle">
         <UButton
@@ -101,18 +101,27 @@
         >
           <div class="advanced-toggle-content">
             <UIcon name="i-heroicons-code-bracket-square-20-solid" class="w-3.5 h-3.5" />
-            <span class="advanced-toggle-text">{{ showAdvancedPrompt ? 'Hide' : 'View' }} Prompt Engineering</span>
-            <UIcon 
-              :name="showAdvancedPrompt ? 'i-heroicons-chevron-up-20-solid' : 'i-heroicons-chevron-down-20-solid'" 
+            <span class="advanced-toggle-text"
+              >{{ showAdvancedPrompt ? 'Hide' : 'View' }} Prompt Engineering</span
+            >
+            <UIcon
+              :name="
+                showAdvancedPrompt
+                  ? 'i-heroicons-chevron-up-20-solid'
+                  : 'i-heroicons-chevron-down-20-solid'
+              "
               class="w-3 h-3 ml-auto"
             />
           </div>
         </UButton>
       </div>
     </div>
-    
+
     <!-- Advanced Prompt View -->
-    <div v-if="showAdvancedPrompt && currentPrompt && currentPrompt.trim()" class="advanced-prompt-view">
+    <div
+      v-if="showAdvancedPrompt && currentPrompt && currentPrompt.trim()"
+      class="advanced-prompt-view"
+    >
       <div class="advanced-prompt-header">
         <div class="header-badge">
           <UIcon name="i-heroicons-cpu-chip-20-solid" class="w-4 h-4" />
@@ -143,7 +152,7 @@
           />
         </div>
       </div>
-      
+
       <div class="advanced-prompt-body">
         <div class="prompt-section">
           <div class="section-label">
@@ -154,11 +163,11 @@
             {{ currentPrompt }}
           </div>
         </div>
-        
+
         <div class="prompt-divider">
           <UIcon name="i-heroicons-arrow-down-20-solid" class="w-3 h-3" />
         </div>
-        
+
         <div class="prompt-section">
           <div class="section-label">
             <UIcon name="i-heroicons-sparkles-20-solid" class="w-3 h-3" />
@@ -178,7 +187,9 @@
           />
           <div class="template-hint">
             <UIcon name="i-heroicons-information-circle-20-solid" class="w-3 h-3" />
-            <span>This template guides the AI to generate relevant suggestions for your moodboard</span>
+            <span
+              >This template guides the AI to generate relevant suggestions for your moodboard</span
+            >
           </div>
         </div>
       </div>
@@ -602,16 +613,17 @@ const customPromptTemplate = ref('')
 // Build the full AI prompt template (matches backend _create_contextual_prompt)
 const getFullAIPrompt = () => {
   let template = ''
-  
+
   // Determine format instruction based on suggestion type
   const wordCount = props.suggestionType === 'long' ? '10-20 words each' : '2-8 words each'
-  const formatInstruction = props.suggestionType === 'long' 
-    ? 'Format as complete descriptive sentences, one per line'
-    : 'Format as brief phrases only, one per line'
-  
+  const formatInstruction =
+    props.suggestionType === 'long'
+      ? 'Format as complete descriptive sentences, one per line'
+      : 'Format as brief phrases only, one per line'
+
   // Always 3 suggestions (suggestion_type only affects length/format, not quantity)
   const numSuggestions = '3'
-  
+
   if (props.mode === 'gaming') {
     template = `Help expand this gaming prompt: "${props.currentPrompt}"
 
@@ -625,7 +637,7 @@ Provide ${numSuggestions} creative suggestions (${wordCount}) that could enhance
 
 ${formatInstruction}`
   }
-  
+
   return template
 }
 
@@ -646,15 +658,12 @@ const cancelEditingPrompt = () => {
 }
 
 // Watch for mode/type changes to update the prompt preview
-watch(
-  [() => props.mode, () => props.suggestionType, () => props.currentPrompt],
-  () => {
-    // If user hasn't customized the prompt, update it when settings change
-    if (!customPromptTemplate.value && isEditingPrompt.value) {
-      editablePromptTemplate.value = getFullAIPrompt()
-    }
+watch([() => props.mode, () => props.suggestionType, () => props.currentPrompt], () => {
+  // If user hasn't customized the prompt, update it when settings change
+  if (!customPromptTemplate.value && isEditingPrompt.value) {
+    editablePromptTemplate.value = getFullAIPrompt()
   }
-)
+})
 
 // Available service types that require tokens
 const availableServiceTypes = computed(() => [

@@ -31,7 +31,9 @@
               Image
             </UButton>
             <UButton
-              :variant="props.drawingMode === 'draw' || props.drawingMode === 'erase' ? 'solid' : 'outline'"
+              :variant="
+                props.drawingMode === 'draw' || props.drawingMode === 'erase' ? 'solid' : 'outline'
+              "
               icon="i-heroicons-pencil"
               color="primary"
               title="Toggle drawing mode"
@@ -43,7 +45,10 @@
         </div>
 
         <!-- Drawing Controls (shown when Draw mode is active) -->
-        <div v-if="props.drawingMode === 'draw' || props.drawingMode === 'erase'" class="drawing-toolbar-expanded">
+        <div
+          v-if="props.drawingMode === 'draw' || props.drawingMode === 'erase'"
+          class="drawing-toolbar-expanded"
+        >
           <div class="drawing-controls-row">
             <!-- Draw/Erase Toggle -->
             <div class="control-group">
@@ -158,7 +163,7 @@
             </div>
 
             <!-- Divider -->
-            <div class="toolbar-divider"/>
+            <div class="toolbar-divider" />
 
             <!-- Actions -->
             <div class="control-group">
@@ -206,18 +211,10 @@
             >
               Grid
             </UButton>
-            <UButton 
-              icon="i-heroicons-minus" 
-              title="Zoom out"
-              @click="zoomOut"
-            >
+            <UButton icon="i-heroicons-minus" title="Zoom out" @click="zoomOut">
               {{ Math.round(zoomLevel * 100) }}%
             </UButton>
-            <UButton 
-              icon="i-heroicons-plus" 
-              title="Zoom in"
-              @click="zoomIn" 
-            />
+            <UButton icon="i-heroicons-plus" title="Zoom in" @click="zoomIn" />
           </UButtonGroup>
         </div>
 
@@ -275,7 +272,11 @@
               {{ isSaving ? 'Saving...' : 'Save' }}
             </UButton>
             <UDropdownMenu :items="exportMenuItems">
-              <UButton icon="i-heroicons-arrow-down-tray" variant="outline" trailing-icon="i-heroicons-chevron-down">
+              <UButton
+                icon="i-heroicons-arrow-down-tray"
+                variant="outline"
+                trailing-icon="i-heroicons-chevron-down"
+              >
                 Export
               </UButton>
               <template #item="{ item }">
@@ -404,11 +405,15 @@
       </div>
 
       <!-- Properties Panel -->
-      <div v-if="selectedElements.length > 0" class="properties-panel" :class="{ collapsed: propertiesPanelCollapsed }">
+      <div
+        v-if="selectedElements.length > 0"
+        class="properties-panel"
+        :class="{ collapsed: propertiesPanelCollapsed }"
+      >
         <div class="properties-header">
           <h3>Properties</h3>
-          <button 
-            class="collapse-button" 
+          <button
+            class="collapse-button"
             :title="propertiesPanelCollapsed ? 'Expand Properties' : 'Collapse Properties'"
             @click="propertiesPanelCollapsed = !propertiesPanelCollapsed"
           >
@@ -417,275 +422,275 @@
           </button>
         </div>
         <div v-if="!propertiesPanelCollapsed" class="properties-content">
-        <div v-if="selectedElementData">
-          <!-- Position controls -->
-          <div class="property-group">
-            <label>Position</label>
-            <div class="input-row">
-              <UInput
-                v-model.number="selectedElementData.x_position"
-                placeholder="X"
-                @update:model-value="updateSelectedElement"
-              />
-              <UInput
-                v-model.number="selectedElementData.y_position"
-                placeholder="Y"
-                @update:model-value="updateSelectedElement"
-              />
-            </div>
-          </div>
-
-          <!-- Size controls -->
-          <div class="property-group">
-            <label>Size</label>
-            <div class="input-row">
-              <UInput
-                :model-value="getElementWidth(selectedElementData)"
-                placeholder="Width"
-                @update:model-value="updateElementWidth"
-              />
-              <UInput
-                :model-value="getElementHeight(selectedElementData)"
-                placeholder="Height"
-                @update:model-value="updateElementHeight"
-              />
-            </div>
-          </div>
-
-          <!-- Typography controls (for text elements) -->
-          <div v-if="isTextElement(selectedElementData)" class="property-group">
-            <label class="font-semibold text-gray-700 mb-3 block">Typography</label>
-
-            <!-- Font Family -->
-            <div class="mb-3">
-              <label class="text-sm text-gray-600 mb-1 block">Font Family</label>
-              <USelectMenu
-                :model-value="(selectedElementData as MoodboardTextElement).font_family"
-                :items="fontOptions"
-                value-key="value"
-                placeholder="Select font"
-                :ui="{ content: 'min-w-fit' }"
-                @update:model-value="updateTextProperty('font_family', $event)"
-              />
-            </div>
-
-            <!-- Font Size & Weight -->
-            <div class="grid grid-cols-2 gap-2 mb-3">
-              <div>
-                <label class="text-sm text-gray-600 mb-1 block">Size</label>
+          <div v-if="selectedElementData">
+            <!-- Position controls -->
+            <div class="property-group">
+              <label>Position</label>
+              <div class="input-row">
                 <UInput
-                  :model-value="(selectedElementData as MoodboardTextElement).font_size"
-                  placeholder="16"
-                  type="number"
-                  min="8"
-                  max="200"
-                  @update:model-value="updateTextProperty('font_size', Number($event))"
+                  v-model.number="selectedElementData.x_position"
+                  placeholder="X"
+                  @update:model-value="updateSelectedElement"
                 />
-              </div>
-              <div>
-                <label class="text-sm text-gray-600 mb-1 block">Weight</label>
-                <USelectMenu
-                  :model-value="(selectedElementData as MoodboardTextElement).font_weight"
-                  :items="fontWeightOptions"
-                  value-key="value"
-                  :ui="{ content: 'min-w-fit' }"
-                  @update:model-value="updateTextProperty('font_weight', Number($event))"
+                <UInput
+                  v-model.number="selectedElementData.y_position"
+                  placeholder="Y"
+                  @update:model-value="updateSelectedElement"
                 />
               </div>
             </div>
 
-            <!-- Text Alignment -->
-            <div class="mb-3">
-              <label class="text-sm text-gray-600 mb-1 block">Alignment</label>
-              <UButtonGroup class="w-full">
-                <UButton
-                  :variant="
-                    (selectedElementData as MoodboardTextElement).text_align === 'left'
-                      ? 'solid'
-                      : 'outline'
-                  "
-                  icon="i-heroicons-bars-3-bottom-left"
-                  size="sm"
-                  @click="updateTextProperty('text_align', 'left')"
-                />
-                <UButton
-                  :variant="
-                    (selectedElementData as MoodboardTextElement).text_align === 'center'
-                      ? 'solid'
-                      : 'outline'
-                  "
-                  icon="i-heroicons-bars-3"
-                  size="sm"
-                  @click="updateTextProperty('text_align', 'center')"
-                />
-                <UButton
-                  :variant="
-                    (selectedElementData as MoodboardTextElement).text_align === 'right'
-                      ? 'solid'
-                      : 'outline'
-                  "
-                  icon="i-heroicons-bars-3-bottom-right"
-                  size="sm"
-                  @click="updateTextProperty('text_align', 'right')"
-                />
-                <UButton
-                  :variant="
-                    (selectedElementData as MoodboardTextElement).text_align === 'justify'
-                      ? 'solid'
-                      : 'outline'
-                  "
-                  icon="i-heroicons-bars-4"
-                  size="sm"
-                  @click="updateTextProperty('text_align', 'justify')"
-                />
-              </UButtonGroup>
-            </div>
-
-            <!-- Line Height & Letter Spacing -->
-            <div class="grid grid-cols-2 gap-2 mb-3">
-              <div>
-                <label class="text-sm text-gray-600 mb-1 block">Line Height</label>
+            <!-- Size controls -->
+            <div class="property-group">
+              <label>Size</label>
+              <div class="input-row">
                 <UInput
-                  :model-value="(selectedElementData as MoodboardTextElement).line_height"
-                  placeholder="1.4"
-                  type="number"
-                  step="0.1"
-                  min="0.5"
-                  max="3"
-                  @update:model-value="updateTextProperty('line_height', Number($event))"
-                />
-              </div>
-              <div>
-                <label class="text-sm text-gray-600 mb-1 block">Letter Spacing</label>
-                <UInput
-                  :model-value="(selectedElementData as MoodboardTextElement).letter_spacing"
-                  placeholder="0"
-                  type="number"
-                  step="0.5"
-                  min="-5"
-                  max="10"
-                  @update:model-value="updateTextProperty('letter_spacing', Number($event))"
-                />
-              </div>
-            </div>
-
-            <!-- Colors -->
-            <div class="mb-3">
-              <label class="text-sm text-gray-600 mb-1 block">Text Color</label>
-              <div class="flex gap-2">
-                <UInput
-                  :model-value="(selectedElementData as MoodboardTextElement).text_color"
-                  type="color"
-                  class="w-16"
-                  @update:model-value="updateTextProperty('text_color', $event)"
-                />
-                <UInput
-                  :model-value="(selectedElementData as MoodboardTextElement).text_color"
-                  placeholder="#000000"
-                  class="flex-1"
-                  @update:model-value="updateTextProperty('text_color', $event)"
-                />
-              </div>
-            </div>
-
-            <!-- Background Color -->
-            <div class="mb-3">
-              <label class="text-sm text-gray-600 mb-1 block">Background</label>
-              <div class="flex gap-2">
-                <UInput
-                  :model-value="
-                    (selectedElementData as MoodboardTextElement).background_color || '#ffffff'
-                  "
-                  type="color"
-                  class="w-16"
-                  @update:model-value="updateTextProperty('background_color', $event)"
-                />
-                <UInput
-                  :model-value="
-                    (selectedElementData as MoodboardTextElement).background_color || ''
-                  "
-                  placeholder="Transparent"
-                  class="flex-1"
-                  @update:model-value="updateTextProperty('background_color', $event)"
-                />
-                <UButton
-                  size="sm"
-                  variant="outline"
-                  @click="updateTextProperty('background_color', '')"
-                >
-                  Clear
-                </UButton>
-              </div>
-            </div>
-
-            <!-- Border -->
-            <div class="mb-3">
-              <label class="text-sm text-gray-600 mb-1 block">Border</label>
-              <div class="grid grid-cols-2 gap-2 mb-2">
-                <UInput
-                  :model-value="(selectedElementData as MoodboardTextElement).border_width"
+                  :model-value="getElementWidth(selectedElementData)"
                   placeholder="Width"
-                  type="number"
-                  min="0"
-                  max="20"
-                  @update:model-value="updateTextProperty('border_width', Number($event))"
+                  @update:model-value="updateElementWidth"
                 />
                 <UInput
-                  :model-value="
-                    (selectedElementData as MoodboardTextElement).border_color || '#000000'
-                  "
-                  type="color"
-                  @update:model-value="updateTextProperty('border_color', $event)"
+                  :model-value="getElementHeight(selectedElementData)"
+                  placeholder="Height"
+                  @update:model-value="updateElementHeight"
                 />
               </div>
             </div>
 
-            <!-- Text Style Presets -->
-            <div class="mb-3">
-              <label class="text-sm text-gray-600 mb-1 block">Quick Styles</label>
-              <div class="grid grid-cols-2 gap-1">
-                <UButton size="xs" variant="outline" @click="applyTextStyle('heading')"
-                  >Heading</UButton
-                >
-                <UButton size="xs" variant="outline" @click="applyTextStyle('subheading')"
-                  >Subheading</UButton
-                >
-                <UButton size="xs" variant="outline" @click="applyTextStyle('body')"
-                  >Body Text</UButton
-                >
-                <UButton size="xs" variant="outline" @click="applyTextStyle('caption')"
-                  >Caption</UButton
-                >
-                <UButton size="xs" variant="outline" @click="applyTextStyle('quote')"
-                  >Quote</UButton
-                >
-                <UButton size="xs" variant="outline" @click="applyTextStyle('accent')"
-                  >Accent</UButton
-                >
+            <!-- Typography controls (for text elements) -->
+            <div v-if="isTextElement(selectedElementData)" class="property-group">
+              <label class="font-semibold text-gray-700 mb-3 block">Typography</label>
+
+              <!-- Font Family -->
+              <div class="mb-3">
+                <label class="text-sm text-gray-600 mb-1 block">Font Family</label>
+                <USelectMenu
+                  :model-value="(selectedElementData as MoodboardTextElement).font_family"
+                  :items="fontOptions"
+                  value-key="value"
+                  placeholder="Select font"
+                  :ui="{ content: 'min-w-fit' }"
+                  @update:model-value="updateTextProperty('font_family', $event)"
+                />
+              </div>
+
+              <!-- Font Size & Weight -->
+              <div class="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <label class="text-sm text-gray-600 mb-1 block">Size</label>
+                  <UInput
+                    :model-value="(selectedElementData as MoodboardTextElement).font_size"
+                    placeholder="16"
+                    type="number"
+                    min="8"
+                    max="200"
+                    @update:model-value="updateTextProperty('font_size', Number($event))"
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 mb-1 block">Weight</label>
+                  <USelectMenu
+                    :model-value="(selectedElementData as MoodboardTextElement).font_weight"
+                    :items="fontWeightOptions"
+                    value-key="value"
+                    :ui="{ content: 'min-w-fit' }"
+                    @update:model-value="updateTextProperty('font_weight', Number($event))"
+                  />
+                </div>
+              </div>
+
+              <!-- Text Alignment -->
+              <div class="mb-3">
+                <label class="text-sm text-gray-600 mb-1 block">Alignment</label>
+                <UButtonGroup class="w-full">
+                  <UButton
+                    :variant="
+                      (selectedElementData as MoodboardTextElement).text_align === 'left'
+                        ? 'solid'
+                        : 'outline'
+                    "
+                    icon="i-heroicons-bars-3-bottom-left"
+                    size="sm"
+                    @click="updateTextProperty('text_align', 'left')"
+                  />
+                  <UButton
+                    :variant="
+                      (selectedElementData as MoodboardTextElement).text_align === 'center'
+                        ? 'solid'
+                        : 'outline'
+                    "
+                    icon="i-heroicons-bars-3"
+                    size="sm"
+                    @click="updateTextProperty('text_align', 'center')"
+                  />
+                  <UButton
+                    :variant="
+                      (selectedElementData as MoodboardTextElement).text_align === 'right'
+                        ? 'solid'
+                        : 'outline'
+                    "
+                    icon="i-heroicons-bars-3-bottom-right"
+                    size="sm"
+                    @click="updateTextProperty('text_align', 'right')"
+                  />
+                  <UButton
+                    :variant="
+                      (selectedElementData as MoodboardTextElement).text_align === 'justify'
+                        ? 'solid'
+                        : 'outline'
+                    "
+                    icon="i-heroicons-bars-4"
+                    size="sm"
+                    @click="updateTextProperty('text_align', 'justify')"
+                  />
+                </UButtonGroup>
+              </div>
+
+              <!-- Line Height & Letter Spacing -->
+              <div class="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <label class="text-sm text-gray-600 mb-1 block">Line Height</label>
+                  <UInput
+                    :model-value="(selectedElementData as MoodboardTextElement).line_height"
+                    placeholder="1.4"
+                    type="number"
+                    step="0.1"
+                    min="0.5"
+                    max="3"
+                    @update:model-value="updateTextProperty('line_height', Number($event))"
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-600 mb-1 block">Letter Spacing</label>
+                  <UInput
+                    :model-value="(selectedElementData as MoodboardTextElement).letter_spacing"
+                    placeholder="0"
+                    type="number"
+                    step="0.5"
+                    min="-5"
+                    max="10"
+                    @update:model-value="updateTextProperty('letter_spacing', Number($event))"
+                  />
+                </div>
+              </div>
+
+              <!-- Colors -->
+              <div class="mb-3">
+                <label class="text-sm text-gray-600 mb-1 block">Text Color</label>
+                <div class="flex gap-2">
+                  <UInput
+                    :model-value="(selectedElementData as MoodboardTextElement).text_color"
+                    type="color"
+                    class="w-16"
+                    @update:model-value="updateTextProperty('text_color', $event)"
+                  />
+                  <UInput
+                    :model-value="(selectedElementData as MoodboardTextElement).text_color"
+                    placeholder="#000000"
+                    class="flex-1"
+                    @update:model-value="updateTextProperty('text_color', $event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Background Color -->
+              <div class="mb-3">
+                <label class="text-sm text-gray-600 mb-1 block">Background</label>
+                <div class="flex gap-2">
+                  <UInput
+                    :model-value="
+                      (selectedElementData as MoodboardTextElement).background_color || '#ffffff'
+                    "
+                    type="color"
+                    class="w-16"
+                    @update:model-value="updateTextProperty('background_color', $event)"
+                  />
+                  <UInput
+                    :model-value="
+                      (selectedElementData as MoodboardTextElement).background_color || ''
+                    "
+                    placeholder="Transparent"
+                    class="flex-1"
+                    @update:model-value="updateTextProperty('background_color', $event)"
+                  />
+                  <UButton
+                    size="sm"
+                    variant="outline"
+                    @click="updateTextProperty('background_color', '')"
+                  >
+                    Clear
+                  </UButton>
+                </div>
+              </div>
+
+              <!-- Border -->
+              <div class="mb-3">
+                <label class="text-sm text-gray-600 mb-1 block">Border</label>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                  <UInput
+                    :model-value="(selectedElementData as MoodboardTextElement).border_width"
+                    placeholder="Width"
+                    type="number"
+                    min="0"
+                    max="20"
+                    @update:model-value="updateTextProperty('border_width', Number($event))"
+                  />
+                  <UInput
+                    :model-value="
+                      (selectedElementData as MoodboardTextElement).border_color || '#000000'
+                    "
+                    type="color"
+                    @update:model-value="updateTextProperty('border_color', $event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Text Style Presets -->
+              <div class="mb-3">
+                <label class="text-sm text-gray-600 mb-1 block">Quick Styles</label>
+                <div class="grid grid-cols-2 gap-1">
+                  <UButton size="xs" variant="outline" @click="applyTextStyle('heading')"
+                    >Heading</UButton
+                  >
+                  <UButton size="xs" variant="outline" @click="applyTextStyle('subheading')"
+                    >Subheading</UButton
+                  >
+                  <UButton size="xs" variant="outline" @click="applyTextStyle('body')"
+                    >Body Text</UButton
+                  >
+                  <UButton size="xs" variant="outline" @click="applyTextStyle('caption')"
+                    >Caption</UButton
+                  >
+                  <UButton size="xs" variant="outline" @click="applyTextStyle('quote')"
+                    >Quote</UButton
+                  >
+                  <UButton size="xs" variant="outline" @click="applyTextStyle('accent')"
+                    >Accent</UButton
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Layer controls -->
+            <div class="property-group">
+              <label>Layer</label>
+              <div class="input-row">
+                <UInput
+                  v-model.number="selectedElementData.z_index"
+                  placeholder="Z-Index"
+                  @update:model-value="updateSelectedElement"
+                />
+                <UInput
+                  v-model.number="selectedElementData.opacity"
+                  placeholder="Opacity"
+                  step="0.1"
+                  min="0"
+                  max="1"
+                  @update:model-value="updateSelectedElement"
+                />
               </div>
             </div>
           </div>
-
-          <!-- Layer controls -->
-          <div class="property-group">
-            <label>Layer</label>
-            <div class="input-row">
-              <UInput
-                v-model.number="selectedElementData.z_index"
-                placeholder="Z-Index"
-                @update:model-value="updateSelectedElement"
-              />
-              <UInput
-                v-model.number="selectedElementData.opacity"
-                placeholder="Opacity"
-                step="0.1"
-                min="0"
-                max="1"
-                @update:model-value="updateSelectedElement"
-              />
-            </div>
-          </div>
-        </div>
         </div>
       </div>
     </div>
@@ -788,9 +793,7 @@ const emit = defineEmits<{
   'drawing-state-saved': [imageData: ImageData]
   'image-edit': [image: MoodboardImage]
   'update-drawing-mode': [mode: 'move' | 'draw' | 'erase']
-  'update-pen-type': [
-    penType: 'pen' | 'marker' | 'pencil' | 'highlighter' | 'spray' | 'watercolor',
-  ]
+  'update-pen-type': [penType: 'pen' | 'marker' | 'pencil' | 'highlighter' | 'spray' | 'watercolor']
   'update-brush-size': [size: number]
   'update-brush-color': [color: string]
   'update-brush-opacity': [opacity: number]
@@ -987,12 +990,12 @@ const textStylePresets = {
 function setCanvasMode(mode: typeof canvasMode.value) {
   canvasMode.value = mode
   lastModeChangeTime.value = Date.now()
-  
+
   // Reset drawing mode to 'move' when switching to any canvas mode
   if (props.drawingMode && props.drawingMode !== 'move') {
     emit('update-drawing-mode', 'move')
   }
-  
+
   // Close the image upload modal when switching away from image mode
   if (mode !== 'image') {
     closeImageModal()
@@ -1458,14 +1461,14 @@ const exportMenuItems = computed(() => [
 
 function bringToFront() {
   if (selectedElements.value.length !== 1) return
-  
+
   // Get all z-indexes from both images and text elements
   const allZIndexes = [
     ...canvasImages.value.map((img) => img.z_index || 0),
-    ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+    ...canvasTextElements.value.map((txt) => txt.z_index || 0),
   ]
   const maxZIndex = Math.max(...allZIndexes)
-  
+
   // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
   if (selectedImage) {
@@ -1473,7 +1476,7 @@ function bringToFront() {
     updateImagePosition(updatedImage)
     return
   }
-  
+
   // Check if it's a text element
   const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
   if (selectedText) {
@@ -1484,7 +1487,7 @@ function bringToFront() {
 
 function bringForward() {
   if (selectedElements.value.length !== 1) return
-  
+
   // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
   if (selectedImage) {
@@ -1492,11 +1495,9 @@ function bringForward() {
     // Find the next higher z-index from all elements
     const allZIndexes = [
       ...canvasImages.value.map((img) => img.z_index || 0),
-      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0),
     ]
-    const higherZIndexes = allZIndexes
-      .filter((z) => z > currentZIndex)
-      .sort((a, b) => a - b)
+    const higherZIndexes = allZIndexes.filter((z) => z > currentZIndex).sort((a, b) => a - b)
 
     if (higherZIndexes.length > 0) {
       const updatedImage = { ...selectedImage, z_index: higherZIndexes[0] + 1 }
@@ -1504,7 +1505,7 @@ function bringForward() {
     }
     return
   }
-  
+
   // Check if it's a text element
   const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
   if (selectedText) {
@@ -1512,11 +1513,9 @@ function bringForward() {
     // Find the next higher z-index from all elements
     const allZIndexes = [
       ...canvasImages.value.map((img) => img.z_index || 0),
-      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0),
     ]
-    const higherZIndexes = allZIndexes
-      .filter((z) => z > currentZIndex)
-      .sort((a, b) => a - b)
+    const higherZIndexes = allZIndexes.filter((z) => z > currentZIndex).sort((a, b) => a - b)
 
     if (higherZIndexes.length > 0) {
       const updatedText = { ...selectedText, z_index: higherZIndexes[0] + 1 }
@@ -1527,7 +1526,7 @@ function bringForward() {
 
 function sendBackward() {
   if (selectedElements.value.length !== 1) return
-  
+
   // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
   if (selectedImage) {
@@ -1535,11 +1534,9 @@ function sendBackward() {
     // Find the next lower z-index from all elements
     const allZIndexes = [
       ...canvasImages.value.map((img) => img.z_index || 0),
-      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0),
     ]
-    const lowerZIndexes = allZIndexes
-      .filter((z) => z < currentZIndex)
-      .sort((a, b) => b - a)
+    const lowerZIndexes = allZIndexes.filter((z) => z < currentZIndex).sort((a, b) => b - a)
 
     if (lowerZIndexes.length > 0) {
       const updatedImage = { ...selectedImage, z_index: lowerZIndexes[0] - 1 }
@@ -1547,7 +1544,7 @@ function sendBackward() {
     }
     return
   }
-  
+
   // Check if it's a text element
   const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
   if (selectedText) {
@@ -1555,11 +1552,9 @@ function sendBackward() {
     // Find the next lower z-index from all elements
     const allZIndexes = [
       ...canvasImages.value.map((img) => img.z_index || 0),
-      ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+      ...canvasTextElements.value.map((txt) => txt.z_index || 0),
     ]
-    const lowerZIndexes = allZIndexes
-      .filter((z) => z < currentZIndex)
-      .sort((a, b) => b - a)
+    const lowerZIndexes = allZIndexes.filter((z) => z < currentZIndex).sort((a, b) => b - a)
 
     if (lowerZIndexes.length > 0) {
       const updatedText = { ...selectedText, z_index: lowerZIndexes[0] - 1 }
@@ -1570,14 +1565,14 @@ function sendBackward() {
 
 function sendToBack() {
   if (selectedElements.value.length !== 1) return
-  
+
   // Get all z-indexes from both images and text elements
   const allZIndexes = [
     ...canvasImages.value.map((img) => img.z_index || 0),
-    ...canvasTextElements.value.map((txt) => txt.z_index || 0)
+    ...canvasTextElements.value.map((txt) => txt.z_index || 0),
   ]
   const minZIndex = Math.min(...allZIndexes)
-  
+
   // Check if it's an image
   const selectedImage = canvasImages.value.find((img) => img.id === selectedElements.value[0])
   if (selectedImage) {
@@ -1585,7 +1580,7 @@ function sendToBack() {
     updateImagePosition(updatedImage)
     return
   }
-  
+
   // Check if it's a text element
   const selectedText = canvasTextElements.value.find((txt) => txt.id === selectedElements.value[0])
   if (selectedText) {
@@ -1597,7 +1592,7 @@ function sendToBack() {
 // Save canvas function
 async function saveCanvas() {
   if (isSaving.value) return
-  
+
   const toast = useToast()
   isSaving.value = true
 
@@ -1605,16 +1600,16 @@ async function saveCanvas() {
     const savePromises: Promise<unknown>[] = []
     let drawingDataUrl = ''
     let failedSaves = 0
-    
+
     // Count items to save
     const totalItems = canvasTextElements.value.length + canvasImages.value.length
-    
+
     // 1. Save all text elements (to ensure any unsaved changes are persisted)
     for (const textElement of canvasTextElements.value) {
       const savePromise = apiUpdateTextElement(
         props.moodboard.id,
         textElement.id,
-        textElement
+        textElement,
       ).catch((error) => {
         console.error(`Failed to save text element ${textElement.id}:`, error)
         failedSaves++
@@ -1623,22 +1618,18 @@ async function saveCanvas() {
       })
       savePromises.push(savePromise)
     }
-    
+
     // 2. Save all images (to ensure any unsaved position/size changes are persisted)
     for (const image of canvasImages.value) {
-      const savePromise = apiUpdateImagePosition(
-        props.moodboard.id,
-        image.id,
-        {
-          x_position: image.x_position,
-          y_position: image.y_position,
-          canvas_width: image.canvas_width,
-          canvas_height: image.canvas_height,
-          rotation: image.rotation,
-          z_index: image.z_index,
-          opacity: image.opacity,
-        }
-      ).catch((error) => {
+      const savePromise = apiUpdateImagePosition(props.moodboard.id, image.id, {
+        x_position: image.x_position,
+        y_position: image.y_position,
+        canvas_width: image.canvas_width,
+        canvas_height: image.canvas_height,
+        rotation: image.rotation,
+        z_index: image.z_index,
+        opacity: image.opacity,
+      }).catch((error) => {
         console.error(`Failed to save image ${image.id}:`, error)
         failedSaves++
         // Continue with other saves even if one fails
@@ -1646,7 +1637,7 @@ async function saveCanvas() {
       })
       savePromises.push(savePromise)
     }
-    
+
     // 3. Convert drawing canvas to base64 image
     const canvas = drawingCanvas.value
     if (canvas) {
@@ -1656,15 +1647,16 @@ async function saveCanvas() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imageData.data
         let hasDrawing = false
-        
+
         // Check if any pixel is not transparent
         for (let i = 3; i < data.length; i += 4) {
-          if (data[i] > 0) { // Check alpha channel
+          if (data[i] > 0) {
+            // Check alpha channel
             hasDrawing = true
             break
           }
         }
-        
+
         // Only save if there are actual drawings
         if (hasDrawing) {
           drawingDataUrl = canvas.toDataURL('image/png')
@@ -1682,7 +1674,7 @@ async function saveCanvas() {
       await new Promise<void>((resolve) => {
         emit('moodboardUpdated', {
           ...props.moodboard,
-          canvas_drawing_layer: drawingDataUrl
+          canvas_drawing_layer: drawingDataUrl,
         })
         // Give the parent component time to save
         setTimeout(() => resolve(), 500)
@@ -1736,7 +1728,7 @@ async function exportCanvasAsImage(format: string) {
   if (!canvas) {
     throw new Error('Canvas element not found')
   }
-  
+
   const wrapper = canvas.parentElement
   if (!wrapper) {
     throw new Error('Canvas wrapper not found')
@@ -1752,14 +1744,14 @@ async function exportCanvasAsImage(format: string) {
   // Get the full canvas dimensions
   const canvasWidth = canvas.offsetWidth
   const canvasHeight = canvas.offsetHeight
-  
+
   // Set export dimensions to the full canvas size (at current zoom level)
   const exportWidth = Math.round(canvasWidth * zoomLevel.value)
   const exportHeight = Math.round(canvasHeight * zoomLevel.value)
 
   exportCanvas.width = exportWidth
   exportCanvas.height = exportHeight
-  
+
   // Source coordinates cover the entire canvas
   const sourceX = 0
   const sourceY = 0
@@ -1768,7 +1760,7 @@ async function exportCanvasAsImage(format: string) {
 
   ctx.fillStyle = props.moodboard.canvas_background_color || '#ffffff'
   ctx.fillRect(0, 0, exportWidth, exportHeight)
-  
+
   // Draw background image if exists (entire background)
   if (props.moodboard.canvas_background_image) {
     try {
@@ -1779,8 +1771,14 @@ async function exportCanvasAsImage(format: string) {
           // Draw the entire background
           ctx.drawImage(
             bgImage,
-            0, 0, canvasWidth, canvasHeight,  // source: full canvas
-            0, 0, exportWidth, exportHeight  // destination: full export canvas
+            0,
+            0,
+            canvasWidth,
+            canvasHeight, // source: full canvas
+            0,
+            0,
+            exportWidth,
+            exportHeight, // destination: full export canvas
           )
           resolve()
         }
@@ -1791,17 +1789,17 @@ async function exportCanvasAsImage(format: string) {
       // Continue without background
     }
   }
-  
+
   // Draw grid if enabled (only in visible area)
   if (showGrid.value) {
     const gridSize = canvasSettings.value.grid_size * zoomLevel.value
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
     ctx.lineWidth = 1
-    
+
     // Calculate grid starting points based on visible offset
     const gridStartX = (sourceX * zoomLevel.value) % gridSize
     const gridStartY = (sourceY * zoomLevel.value) % gridSize
-    
+
     // Draw vertical lines
     for (let x = gridStartX; x <= exportWidth; x += gridSize) {
       ctx.beginPath()
@@ -1809,7 +1807,7 @@ async function exportCanvasAsImage(format: string) {
       ctx.lineTo(x, exportHeight)
       ctx.stroke()
     }
-    
+
     // Draw horizontal lines
     for (let y = gridStartY; y <= exportHeight; y += gridSize) {
       ctx.beginPath()
@@ -1829,8 +1827,14 @@ async function exportCanvasAsImage(format: string) {
           // Draw only the visible portion of the background
           ctx.drawImage(
             bgImage,
-            sourceX, sourceY, sourceWidth, sourceHeight,  // source: visible area
-            0, 0, exportWidth, exportHeight  // destination: full export canvas
+            sourceX,
+            sourceY,
+            sourceWidth,
+            sourceHeight, // source: visible area
+            0,
+            0,
+            exportWidth,
+            exportHeight, // destination: full export canvas
           )
           resolve()
         }
@@ -1848,7 +1852,7 @@ async function exportCanvasAsImage(format: string) {
   const getActualElementDimensions = (elementId: string) => {
     // Get the element from data and scale by zoom level (no scroll offset needed for full canvas export)
     const imageElement = canvasImages.value.find((img) => img.id.toString() === elementId)
-    
+
     if (imageElement) {
       return {
         x: (imageElement.x_position || 0) * scale,
@@ -2075,7 +2079,7 @@ async function exportCanvasAsImage(format: string) {
 
       // Handle letter spacing (if supported)
       if ('letterSpacing' in ctx) {
-        (ctx as any).letterSpacing = `${letterSpacing}px`
+        ;(ctx as any).letterSpacing = `${letterSpacing}px`
       }
 
       // Calculate padding (8px like the component)
@@ -2084,7 +2088,7 @@ async function exportCanvasAsImage(format: string) {
       // Split text into lines based on content (handle \n) and word wrapping
       const lines: string[] = []
       const paragraphs = textEl.content.split('\n')
-      
+
       for (const paragraph of paragraphs) {
         if (paragraph.trim() === '') {
           lines.push('')
@@ -2120,7 +2124,7 @@ async function exportCanvasAsImage(format: string) {
       // Draw each line
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
-        
+
         if (line.trim() === '') {
           currentY += lineHeightPx
           continue
@@ -2190,12 +2194,18 @@ async function exportCanvasAsImage(format: string) {
         // Draw only the visible portion of the drawing canvas
         // Source: the visible area in the full-size drawing canvas
         // Destination: the entire export canvas
-        
+
         ctx.save()
         ctx.drawImage(
           drawingCanvas.value,
-          sourceX, sourceY, sourceWidth, sourceHeight,  // source: visible area in logical coords
-          0, 0, exportWidth, exportHeight  // destination: full export canvas
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight, // source: visible area in logical coords
+          0,
+          0,
+          exportWidth,
+          exportHeight, // destination: full export canvas
         )
         ctx.restore()
       }
@@ -2233,12 +2243,12 @@ async function exportCanvasAsImage(format: string) {
 async function exportCanvasAsPDF() {
   // Import jsPDF dynamically
   const { jsPDF } = await import('jspdf')
-  
+
   const canvas = canvasElement.value
   if (!canvas) {
     throw new Error('Canvas element not found')
   }
-  
+
   const wrapper = canvas.parentElement
   if (!wrapper) {
     throw new Error('Canvas wrapper not found')
@@ -2248,15 +2258,15 @@ async function exportCanvasAsPDF() {
   // Get the full canvas dimensions
   const canvasWidth = canvas.offsetWidth
   const canvasHeight = canvas.offsetHeight
-  
+
   // Create a temporary canvas for export
   const tempCanvas = document.createElement('canvas')
   const exportWidth = Math.round(canvasWidth * zoomLevel.value)
   const exportHeight = Math.round(canvasHeight * zoomLevel.value)
-  
+
   tempCanvas.width = exportWidth
   tempCanvas.height = exportHeight
-  
+
   const ctx = tempCanvas.getContext('2d')
   if (!ctx) {
     throw new Error('Could not get canvas context')
@@ -2267,11 +2277,11 @@ async function exportCanvasAsPDF() {
   const sourceY = 0
   const sourceWidth = canvasWidth
   const sourceHeight = canvasHeight
-  
+
   // Fill with background color
   ctx.fillStyle = props.moodboard.canvas_background_color || '#ffffff'
   ctx.fillRect(0, 0, exportWidth, exportHeight)
-  
+
   // Draw background image if exists (entire background)
   if (props.moodboard.canvas_background_image) {
     try {
@@ -2279,11 +2289,7 @@ async function exportCanvasAsPDF() {
       bgImage.crossOrigin = 'anonymous'
       await new Promise<void>((resolve) => {
         bgImage.onload = () => {
-          ctx.drawImage(
-            bgImage,
-            0, 0, canvasWidth, canvasHeight,
-            0, 0, exportWidth, exportHeight
-          )
+          ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight, 0, 0, exportWidth, exportHeight)
           resolve()
         }
         bgImage.onerror = () => resolve()
@@ -2299,7 +2305,7 @@ async function exportCanvasAsPDF() {
     const gridSize = canvasSettings.value.grid_size * zoomLevel.value
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
     ctx.lineWidth = 1
-    
+
     // Draw vertical lines
     for (let x = 0; x <= exportWidth; x += gridSize) {
       ctx.beginPath()
@@ -2307,7 +2313,7 @@ async function exportCanvasAsPDF() {
       ctx.lineTo(x, exportHeight)
       ctx.stroke()
     }
-    
+
     // Draw horizontal lines
     for (let y = 0; y <= exportHeight; y += gridSize) {
       ctx.beginPath()
@@ -2321,7 +2327,7 @@ async function exportCanvasAsPDF() {
 
   const getActualElementDimensions = (elementId: string) => {
     const imageElement = canvasImages.value.find((img) => img.id.toString() === elementId)
-    
+
     if (imageElement) {
       return {
         x: (imageElement.x_position || 0) * scale,
@@ -2343,13 +2349,13 @@ async function exportCanvasAsPDF() {
 
       const image = new Image()
       image.crossOrigin = 'anonymous'
-      
+
       image.onload = () => {
         const actualDimensions = getActualElementDimensions(img.id.toString())
-        const x = actualDimensions?.x || (img.x_position || 0)
-        const y = actualDimensions?.y || (img.y_position || 0)
-        const width = actualDimensions?.width || (img.canvas_width || 200)
-        const height = actualDimensions?.height || (img.canvas_height || 200)
+        const x = actualDimensions?.x || img.x_position || 0
+        const y = actualDimensions?.y || img.y_position || 0
+        const width = actualDimensions?.width || img.canvas_width || 200
+        const height = actualDimensions?.height || img.canvas_height || 200
 
         ctx.save()
 
@@ -2458,7 +2464,7 @@ async function exportCanvasAsPDF() {
 
       // Handle letter spacing (if supported)
       if ('letterSpacing' in ctx) {
-        (ctx as any).letterSpacing = `${letterSpacing}px`
+        ;(ctx as any).letterSpacing = `${letterSpacing}px`
       }
 
       // Calculate padding (8px like the component)
@@ -2467,7 +2473,7 @@ async function exportCanvasAsPDF() {
       // Split text into lines based on content (handle \n) and word wrapping
       const lines: string[] = []
       const paragraphs = textEl.content.split('\n')
-      
+
       for (const paragraph of paragraphs) {
         if (paragraph.trim() === '') {
           lines.push('')
@@ -2503,7 +2509,7 @@ async function exportCanvasAsPDF() {
       // Draw each line
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
-        
+
         if (line.trim() === '') {
           currentY += lineHeightPx
           continue
@@ -2557,7 +2563,8 @@ async function exportCanvasAsPDF() {
     const drawingCtx = drawingCanvas.value.getContext('2d')
     if (drawingCtx) {
       const drawingImageData = drawingCtx.getImageData(
-        0, 0,
+        0,
+        0,
         drawingCanvas.value.width,
         drawingCanvas.value.height,
       )
@@ -2570,8 +2577,14 @@ async function exportCanvasAsPDF() {
         ctx.save()
         ctx.drawImage(
           drawingCanvas.value,
-          sourceX, sourceY, sourceWidth, sourceHeight,
-          0, 0, exportWidth, exportHeight
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight,
+          0,
+          0,
+          exportWidth,
+          exportHeight,
         )
         ctx.restore()
       }
@@ -2580,41 +2593,41 @@ async function exportCanvasAsPDF() {
 
   // Convert canvas to data URL
   const imgData = tempCanvas.toDataURL('image/jpeg', 0.95)
-  
+
   // Calculate PDF dimensions (A4 or custom based on aspect ratio)
   const imgWidth = exportWidth
   const imgHeight = exportHeight
   const aspectRatio = imgWidth / imgHeight
-  
+
   // Use landscape or portrait based on aspect ratio
   const orientation = aspectRatio > 1 ? 'landscape' : 'portrait'
-  
+
   // Create PDF
   const pdf = new jsPDF({
     orientation,
     unit: 'mm',
-    format: 'a4'
+    format: 'a4',
   })
-  
+
   // Get PDF dimensions
   const pdfWidth = pdf.internal.pageSize.getWidth()
   const pdfHeight = pdf.internal.pageSize.getHeight()
-  
+
   // Calculate dimensions to fit image in PDF while maintaining aspect ratio
   let finalWidth = pdfWidth
   let finalHeight = pdfWidth / aspectRatio
-  
+
   if (finalHeight > pdfHeight) {
     finalHeight = pdfHeight
     finalWidth = pdfHeight * aspectRatio
   }
-  
+
   // Center the image
   const x = (pdfWidth - finalWidth) / 2
   const y = (pdfHeight - finalHeight) / 2
-  
+
   pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight)
-  
+
   // Save the PDF
   pdf.save(`moodboard-${props.moodboard.title || 'untitled'}.pdf`)
 }
@@ -3186,7 +3199,7 @@ function handleKeyDown(event: KeyboardEvent) {
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeyDown)
-  
+
   // Restore drawing layer if it exists
   restoreDrawingLayer()
 })
@@ -3200,18 +3213,18 @@ watch(
   () => props.moodboard?.canvas_drawing_layer,
   () => {
     restoreDrawingLayer()
-  }
+  },
 )
 
 // Function to restore drawing layer from saved data
 async function restoreDrawingLayer() {
   await nextTick() // Ensure canvas is mounted
-  
+
   if (!drawingCanvas.value || !props.moodboard?.canvas_drawing_layer) return
-  
+
   const ctx = drawingCanvas.value.getContext('2d')
   if (!ctx) return
-  
+
   // Load the image from base64
   const img = new Image()
   img.onload = () => {
@@ -3343,7 +3356,9 @@ async function restoreDrawingLayer() {
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .range-input-inline::-webkit-slider-thumb:hover {
@@ -3359,7 +3374,9 @@ async function restoreDrawingLayer() {
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .range-input-inline::-moz-range-thumb:hover {
@@ -3627,14 +3644,18 @@ async function restoreDrawingLayer() {
   border-radius: 12px;
   padding: 0;
   overflow: visible;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.12),
+    0 4px 8px rgba(0, 0, 0, 0.08);
   z-index: 1000;
   transition: all 0.3s ease;
   clip-path: none;
 }
 
 .properties-panel:hover {
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.15),
+    0 5px 10px rgba(0, 0, 0, 0.1);
 }
 
 .properties-panel.collapsed {
@@ -3728,7 +3749,7 @@ async function restoreDrawingLayer() {
     width: 280px;
     right: 1rem;
   }
-  
+
   .properties-panel.collapsed {
     width: 50px;
     height: 50px;
@@ -3741,7 +3762,7 @@ async function restoreDrawingLayer() {
   .properties-panel {
     max-height: calc(100vh - 80px);
   }
-  
+
   .properties-content {
     max-height: calc(100vh - 160px);
   }
@@ -3829,7 +3850,7 @@ async function restoreDrawingLayer() {
 
 /* Ensure dropdown text doesn't get clipped */
 .property-group :deep(.ui-select-menu-item),
-.property-group :deep([role="option"]) {
+.property-group :deep([role='option']) {
   white-space: nowrap;
   overflow: visible;
 }

@@ -302,7 +302,9 @@ onUnmounted(() => {
 
 .canvas-text-element.selected {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(59, 130, 246, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.3),
+    0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .text-content {
@@ -458,7 +460,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15), 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 12px rgba(59, 130, 246, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   font-size: 12px;
   min-width: 320px;

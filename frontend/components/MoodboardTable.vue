@@ -83,7 +83,7 @@
                       getAllPrompts(moodboard.description).length !== 1 ? 's' : ''
                     }}
                   </UButton>
-                  
+
                   <!-- Expanded prompts -->
                   <div
                     v-if="expandedPrompts[moodboard.id]"
@@ -276,17 +276,20 @@ const getRealDescription = (_description: string): string => {
 
 const getAllPrompts = (description: string): string[] => {
   if (!description) return []
-  
+
   // Filter out AI boilerplate
   if (description.toLowerCase() === 'ai-generated moodboard session') {
     return []
   }
-  
+
   // If it contains pipes, split and return all parts as prompts
   if (description.includes(' | ')) {
-    return description.split(' | ').map(p => p.trim()).filter(p => p)
+    return description
+      .split(' | ')
+      .map((p) => p.trim())
+      .filter((p) => p)
   }
-  
+
   // Single prompt without pipes - return it as a single-item array
   return [description.trim()]
 }

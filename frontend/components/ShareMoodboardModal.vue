@@ -51,7 +51,10 @@
               searchable
               class="user-select"
             />
-            <p v-if="!loadingUsers && userOptions.length === 0" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p
+              v-if="!loadingUsers && userOptions.length === 0"
+              class="text-sm text-gray-500 dark:text-gray-400 mt-1"
+            >
               No other users available to share with.
             </p>
             <p v-if="loadingUsers" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -214,7 +217,7 @@ async function loadUsers() {
         username: user.username,
         email: user.email,
       }))
-      
+
       if (users.value.length === 0) {
         toast.add({
           title: 'No Users Found',

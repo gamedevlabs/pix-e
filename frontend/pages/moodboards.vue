@@ -471,32 +471,40 @@ const fetchMoodboardsPage = async (page: number) => {
     // Build query parameters with filters
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: any = { page, page_size: pageSize }
-    
+
     // Add search query
     if (searchQuery.value.trim()) {
       params.search = searchQuery.value.trim()
     }
-    
+
     // Add status filter (backend uses lowercase)
     if (selectedStatuses.value.length > 0) {
-      const statuses = selectedStatuses.value.map(s => {
-        if (s === 'Completed') return 'completed,in_progress'
-        if (s === 'Draft') return 'draft'
-        return s.toLowerCase()
-      }).join(',')
+      const statuses = selectedStatuses.value
+        .map((s) => {
+          if (s === 'Completed') return 'completed,in_progress'
+          if (s === 'Draft') return 'draft'
+          return s.toLowerCase()
+        })
+        .join(',')
       params.status = statuses
     }
-    
+
     // Add visibility filter
     if (selectedVisibility.value.length > 0) {
-      if (selectedVisibility.value.includes('Public') && !selectedVisibility.value.includes('Private')) {
+      if (
+        selectedVisibility.value.includes('Public') &&
+        !selectedVisibility.value.includes('Private')
+      ) {
         params.is_public = 'true'
-      } else if (selectedVisibility.value.includes('Private') && !selectedVisibility.value.includes('Public')) {
+      } else if (
+        selectedVisibility.value.includes('Private') &&
+        !selectedVisibility.value.includes('Public')
+      ) {
         params.is_public = 'false'
       }
       // If both selected, don't filter by is_public
     }
-    
+
     const result = await fetchMoodboards(params)
     if (result) {
       const paginatedResult = result as { results?: Moodboard[]; count?: number }

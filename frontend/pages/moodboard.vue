@@ -63,7 +63,11 @@
 
         <UInput
           v-model="prompt"
-          :placeholder="dropdownMode === 'gaming' ? 'Describe your gaming moodboard...' : 'Describe your creative moodboard...'"
+          :placeholder="
+            dropdownMode === 'gaming'
+              ? 'Describe your gaming moodboard...'
+              : 'Describe your creative moodboard...'
+          "
           class="prompt-input"
           @keyup.enter="startSessionWithPrompt"
           @input="handlePromptInput"
@@ -147,17 +151,20 @@
           <span class="font-semibold text-base">Stable Diffusion Prompt</span>
           <div class="ml-auto flex items-center gap-2">
             <UPopover>
-              <div 
+              <div
                 :class="[
                   'token-counter cursor-help',
                   {
-                    'token-counter-warning': promptTokenCount > MAX_TOKENS * 0.9 && promptTokenCount <= MAX_TOKENS,
-                    'token-counter-error': isPromptTooLong
-                  }
+                    'token-counter-warning':
+                      promptTokenCount > MAX_TOKENS * 0.9 && promptTokenCount <= MAX_TOKENS,
+                    'token-counter-error': isPromptTooLong,
+                  },
                 ]"
               >
                 <UIcon name="i-heroicons-hashtag-20-solid" class="w-4 h-4" />
-                <span class="font-mono text-sm font-semibold">{{ promptTokenCount }}/{{ MAX_TOKENS }}</span>
+                <span class="font-mono text-sm font-semibold"
+                  >{{ promptTokenCount }}/{{ MAX_TOKENS }}</span
+                >
               </div>
               <template #content>
                 <div class="p-3 max-w-xs">
@@ -176,11 +183,16 @@
                     </div>
                     <div class="flex justify-between border-t pt-1 mt-1">
                       <span class="text-gray-500">Text tokens:</span>
-                      <span class="font-mono font-semibold">~{{ Math.max(0, promptTokenCount - 2) }}</span>
+                      <span class="font-mono font-semibold"
+                        >~{{ Math.max(0, promptTokenCount - 2) }}</span
+                      >
                     </div>
                     <div class="flex justify-between">
                       <span class="text-gray-500">Available:</span>
-                      <span class="font-mono" :class="isPromptTooLong ? 'text-red-600' : 'text-green-600'">
+                      <span
+                        class="font-mono"
+                        :class="isPromptTooLong ? 'text-red-600' : 'text-green-600'"
+                      >
                         {{ MAX_TOKENS - promptTokenCount }}
                       </span>
                     </div>
@@ -193,28 +205,47 @@
             </UPopover>
           </div>
         </div>
-        
+
         <!-- Token Warning Alert -->
-        <div v-if="tokenWarningMessage" :class="['token-warning', { 'token-error': isPromptTooLong }]">
-          <UIcon :name="isPromptTooLong ? 'i-heroicons-exclamation-triangle-20-solid' : 'i-heroicons-information-circle-20-solid'" class="w-5 h-5" />
+        <div
+          v-if="tokenWarningMessage"
+          :class="['token-warning', { 'token-error': isPromptTooLong }]"
+        >
+          <UIcon
+            :name="
+              isPromptTooLong
+                ? 'i-heroicons-exclamation-triangle-20-solid'
+                : 'i-heroicons-information-circle-20-solid'
+            "
+            class="w-5 h-5"
+          />
           <div>
-            <p class="font-semibold">{{ isPromptTooLong ? 'Token Limit Exceeded' : 'Approaching Token Limit' }}</p>
+            <p class="font-semibold">
+              {{ isPromptTooLong ? 'Token Limit Exceeded' : 'Approaching Token Limit' }}
+            </p>
             <p class="text-sm">{{ tokenWarningMessage }}</p>
-            <p class="text-xs mt-1">Stable Diffusion's CLIP encoder has a maximum of {{ MAX_TOKENS }} tokens. Long prompts will be truncated or cause errors.</p>
+            <p class="text-xs mt-1">
+              Stable Diffusion's CLIP encoder has a maximum of {{ MAX_TOKENS }} tokens. Long prompts
+              will be truncated or cause errors.
+            </p>
           </div>
         </div>
-        
+
         <div class="advanced-prompt-section">
           <p class="advanced-prompt-label">Your Input:</p>
           <pre class="advanced-prompt-text user-input-preview">{{ prompt }}</pre>
         </div>
-          
+
         <div class="advanced-prompt-section">
           <div class="flex items-center justify-between mb-3">
             <div>
               <p class="advanced-prompt-label mb-1">Stable Diffusion Prompt:</p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ isEditingFullPrompt ? 'This exact text will be sent to Stable Diffusion for image generation' : 'This is the exact prompt that will be sent to Stable Diffusion' }}
+                {{
+                  isEditingFullPrompt
+                    ? 'This exact text will be sent to Stable Diffusion for image generation'
+                    : 'This is the exact prompt that will be sent to Stable Diffusion'
+                }}
               </p>
             </div>
             <UButton
@@ -248,7 +279,7 @@
               </UButton>
             </div>
           </div>
-          
+
           <div v-if="isEditingFullPrompt" class="prompt-editor-container">
             <UTextarea
               v-model="editableFullPrompt"
@@ -261,10 +292,15 @@
             />
             <div class="editor-hint">
               <UIcon name="i-heroicons-light-bulb-20-solid" class="w-4 h-4" />
-              <span>Tip: This exact text will be sent to Stable Diffusion. Modify it to control image style, quality, and details.</span>
+              <span
+                >Tip: This exact text will be sent to Stable Diffusion. Modify it to control image
+                style, quality, and details.</span
+              >
             </div>
           </div>
-          <pre v-else class="advanced-prompt-text template-preview">{{ customFullPrompt || getStableDiffusionPrompt() }}</pre>
+          <pre v-else class="advanced-prompt-text template-preview">{{
+            customFullPrompt || getStableDiffusionPrompt()
+          }}</pre>
         </div>
       </div>
     </div>
@@ -283,8 +319,8 @@
         <div class="images-list">
           <UCard v-for="img in images" :key="img.id" class="image-item">
             <div class="image-container">
-              <img 
-                :src="getImageUrl(img.image_url)" 
+              <img
+                :src="getImageUrl(img.image_url)"
                 :alt="img.prompt"
                 loading="lazy"
                 @error="onImageError"
@@ -413,7 +449,11 @@
         <UInput
           v-if="canGenerate"
           v-model="prompt"
-          :placeholder="dropdownMode === 'gaming' ? 'Describe your gaming moodboard...' : 'Describe your creative moodboard...'"
+          :placeholder="
+            dropdownMode === 'gaming'
+              ? 'Describe your gaming moodboard...'
+              : 'Describe your creative moodboard...'
+          "
           class="prompt-input"
           @keyup.enter="generateImages"
           @input="handlePromptInput"
@@ -514,17 +554,20 @@
           <span class="font-semibold text-base">Stable Diffusion Prompt</span>
           <div class="ml-auto flex items-center gap-2">
             <UPopover>
-              <div 
+              <div
                 :class="[
                   'token-counter cursor-help',
                   {
-                    'token-counter-warning': promptTokenCount > MAX_TOKENS * 0.9 && promptTokenCount <= MAX_TOKENS,
-                    'token-counter-error': isPromptTooLong
-                  }
+                    'token-counter-warning':
+                      promptTokenCount > MAX_TOKENS * 0.9 && promptTokenCount <= MAX_TOKENS,
+                    'token-counter-error': isPromptTooLong,
+                  },
                 ]"
               >
                 <UIcon name="i-heroicons-hashtag-20-solid" class="w-4 h-4" />
-                <span class="font-mono text-sm font-semibold">{{ promptTokenCount }}/{{ MAX_TOKENS }}</span>
+                <span class="font-mono text-sm font-semibold"
+                  >{{ promptTokenCount }}/{{ MAX_TOKENS }}</span
+                >
               </div>
               <template #content>
                 <div class="p-3 max-w-xs">
@@ -543,11 +586,16 @@
                     </div>
                     <div class="flex justify-between border-t pt-1 mt-1">
                       <span class="text-gray-500">Text tokens:</span>
-                      <span class="font-mono font-semibold">~{{ Math.max(0, promptTokenCount - 2) }}</span>
+                      <span class="font-mono font-semibold"
+                        >~{{ Math.max(0, promptTokenCount - 2) }}</span
+                      >
                     </div>
                     <div class="flex justify-between">
                       <span class="text-gray-500">Available:</span>
-                      <span class="font-mono" :class="isPromptTooLong ? 'text-red-600' : 'text-green-600'">
+                      <span
+                        class="font-mono"
+                        :class="isPromptTooLong ? 'text-red-600' : 'text-green-600'"
+                      >
                         {{ MAX_TOKENS - promptTokenCount }}
                       </span>
                     </div>
@@ -560,28 +608,47 @@
             </UPopover>
           </div>
         </div>
-        
+
         <!-- Token Warning Alert -->
-        <div v-if="tokenWarningMessage" :class="['token-warning', { 'token-error': isPromptTooLong }]">
-          <UIcon :name="isPromptTooLong ? 'i-heroicons-exclamation-triangle-20-solid' : 'i-heroicons-information-circle-20-solid'" class="w-5 h-5" />
+        <div
+          v-if="tokenWarningMessage"
+          :class="['token-warning', { 'token-error': isPromptTooLong }]"
+        >
+          <UIcon
+            :name="
+              isPromptTooLong
+                ? 'i-heroicons-exclamation-triangle-20-solid'
+                : 'i-heroicons-information-circle-20-solid'
+            "
+            class="w-5 h-5"
+          />
           <div>
-            <p class="font-semibold">{{ isPromptTooLong ? 'Token Limit Exceeded' : 'Approaching Token Limit' }}</p>
+            <p class="font-semibold">
+              {{ isPromptTooLong ? 'Token Limit Exceeded' : 'Approaching Token Limit' }}
+            </p>
             <p class="text-sm">{{ tokenWarningMessage }}</p>
-            <p class="text-xs mt-1">Stable Diffusion's CLIP encoder has a maximum of {{ MAX_TOKENS }} tokens. Long prompts will be truncated or cause errors.</p>
+            <p class="text-xs mt-1">
+              Stable Diffusion's CLIP encoder has a maximum of {{ MAX_TOKENS }} tokens. Long prompts
+              will be truncated or cause errors.
+            </p>
           </div>
         </div>
-        
+
         <div class="advanced-prompt-section">
           <p class="advanced-prompt-label">Your Input:</p>
           <pre class="advanced-prompt-text user-input-preview">{{ prompt }}</pre>
         </div>
-          
+
         <div class="advanced-prompt-section">
           <div class="flex items-center justify-between mb-3">
             <div>
               <p class="advanced-prompt-label mb-1">Stable Diffusion Prompt:</p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                {{ isEditingFullPrompt ? 'This exact text will be sent to Stable Diffusion for image generation' : 'This is the exact prompt that will be sent to Stable Diffusion' }}
+                {{
+                  isEditingFullPrompt
+                    ? 'This exact text will be sent to Stable Diffusion for image generation'
+                    : 'This is the exact prompt that will be sent to Stable Diffusion'
+                }}
               </p>
             </div>
             <UButton
@@ -615,7 +682,7 @@
               </UButton>
             </div>
           </div>
-          
+
           <div v-if="isEditingFullPrompt" class="prompt-editor-container">
             <UTextarea
               v-model="editableFullPrompt"
@@ -628,10 +695,15 @@
             />
             <div class="editor-hint">
               <UIcon name="i-heroicons-light-bulb-20-solid" class="w-4 h-4" />
-              <span>Tip: This exact text will be sent to Stable Diffusion. Modify it to control image style, quality, and details.</span>
+              <span
+                >Tip: This exact text will be sent to Stable Diffusion. Modify it to control image
+                style, quality, and details.</span
+              >
             </div>
           </div>
-          <pre v-else class="advanced-prompt-text template-preview">{{ customFullPrompt || getStableDiffusionPrompt() }}</pre>
+          <pre v-else class="advanced-prompt-text template-preview">{{
+            customFullPrompt || getStableDiffusionPrompt()
+          }}</pre>
         </div>
       </div>
     </div>
@@ -816,7 +888,7 @@ const MAX_TOKENS = 77
 // Load CLIP tokenizer (lazy initialization)
 async function loadTokenizer() {
   if (clipTokenizer.value || isTokenizerLoading.value) return clipTokenizer.value
-  
+
   isTokenizerLoading.value = true
   try {
     // Load the exact CLIP tokenizer used by Stable Diffusion v1.5
@@ -824,9 +896,9 @@ async function loadTokenizer() {
     // Force remote loading with explicit options
     clipTokenizer.value = await AutoTokenizer.from_pretrained('openai/clip-vit-base-patch32', {
       local_files_only: false,
-      revision: 'main'
+      revision: 'main',
     })
-    
+
     return clipTokenizer.value
   } catch (error) {
     console.error('❌ Failed to load CLIP tokenizer:', error)
@@ -840,7 +912,7 @@ async function loadTokenizer() {
 const promptTokenCount = computed(() => {
   // Count tokens for the ACTUAL prompt that will be sent to Stable Diffusion
   let text: string
-  
+
   if (isEditingFullPrompt.value) {
     // If editing, count the edited version
     text = editableFullPrompt.value
@@ -848,7 +920,7 @@ const promptTokenCount = computed(() => {
     // Count what will actually be sent to Stable Diffusion (NOT the AI suggestions prompt)
     text = customFullPrompt.value || getStableDiffusionPrompt()
   }
-  
+
   if (!clipTokenizer.value) {
     // Start loading tokenizer if not already loaded
     if (!isTokenizerLoading.value) {
@@ -857,13 +929,13 @@ const promptTokenCount = computed(() => {
     // Fallback to rough approximation while loading
     return Math.ceil(text.length / 4)
   }
-  
+
   try {
     // Use actual CLIP tokenizer with exact SD behavior
     // CLIP adds BOS (start) and EOS (end) tokens automatically
     // The text is tokenized, then BOS/EOS are added, making the total 77 tokens max
     const encoded = clipTokenizer.value.encode(text)
-    
+
     // CLIP tokenizer returns the token IDs including special tokens
     // SD uses exactly 77 tokens (including BOS/EOS), so effective limit is 75 text tokens
     return encoded.length
@@ -939,12 +1011,12 @@ const handleMoodboardUpdate = async (moodboardData: Partial<Moodboard>) => {
   if (currentMoodboard.value) {
     // Update local state
     currentMoodboard.value = { ...currentMoodboard.value, ...moodboardData }
-    
+
     // If canvas_drawing_layer is being updated, persist to database
     if (moodboardData.canvas_drawing_layer !== undefined) {
       try {
         await updateMoodboard(currentMoodboard.value.id, {
-          canvas_drawing_layer: moodboardData.canvas_drawing_layer
+          canvas_drawing_layer: moodboardData.canvas_drawing_layer,
         })
       } catch (error) {
         console.error('Error saving canvas drawing layer:', error)
@@ -1288,7 +1360,7 @@ const handleDeleteElement = async (elementId: string) => {
 const loadTextElements = async (moodboardId: string) => {
   try {
     const response = await getTextElements(moodboardId)
-    
+
     // Handle both paginated response (with results) and direct array response
     if (response) {
       if (Array.isArray(response)) {
@@ -1421,7 +1493,7 @@ onMounted(async () => {
   showSaveModal.value = false
   tempMoodboardName.value = ''
   saving.value = false
-  
+
   // Preload CLIP tokenizer in background for token counting
   loadTokenizer()
 
@@ -1498,7 +1570,7 @@ watch(
       editableFullPrompt.value = getStableDiffusionPrompt()
     }
   },
-  { deep: true }
+  { deep: true },
 )
 
 function onCheckboxChange(checked: boolean, id: string) {
@@ -1694,10 +1766,9 @@ Format as brief phrases only, one per line:`
 
 // This builds the prompt for AI text suggestions (NOT for Stable Diffusion)
 function _getFullPrompt(): string {
-  const colorInfo = colorPalette.value.length > 0 
-    ? `\nColor palette: ${colorPalette.value.join(', ')}`
-    : ''
-  
+  const colorInfo =
+    colorPalette.value.length > 0 ? `\nColor palette: ${colorPalette.value.join(', ')}` : ''
+
   if (dropdownMode.value === 'gaming') {
     return `${getSystemPrompt()}${colorInfo}
 
@@ -1717,7 +1788,7 @@ This will be used to create a visual moodboard for creative projects.`
 // This builds the actual prompt sent to Stable Diffusion for image generation
 function getStableDiffusionPrompt(): string {
   let sdPrompt = prompt.value
-  
+
   // Add mode-specific style enhancements
   if (dropdownMode.value === 'gaming') {
     // Gaming mode: Add game art and concept art style modifiers
@@ -1726,12 +1797,12 @@ function getStableDiffusionPrompt(): string {
     // Default mode: Add general artistic and creative style modifiers
     sdPrompt = `${sdPrompt}, artistic, high quality, detailed, professional photography, creative composition`
   }
-  
+
   // Add color palette information if available
   if (colorPalette.value.length > 0) {
     sdPrompt += `, color palette: ${colorPalette.value.join(', ')}`
   }
-  
+
   return sdPrompt
 }
 
@@ -1752,7 +1823,7 @@ function cancelEditingFullPrompt() {
 
 async function generateImages() {
   if (!sessionId.value || !prompt.value) return
-  
+
   // Warn about token limit but allow generation
   if (isPromptTooLong.value) {
     const toast = useToast()
@@ -1762,7 +1833,7 @@ async function generateImages() {
       color: 'warning',
     })
   }
-  
+
   loading.value = true
   showMoodboardToast()
 
@@ -1782,7 +1853,7 @@ async function generateImages() {
       selectedImageIds.value,
       dropdownMode.value,
     )
-    
+
     // Check if generation actually succeeded
     if (!result) {
       throw new Error('Image generation returned no result')
@@ -1795,7 +1866,7 @@ async function generateImages() {
     await fetchMoodboard()
     loading.value = false
     clearMoodboardToast()
-    
+
     // Show success message
     const toast = useToast()
     toast.add({
@@ -1803,7 +1874,7 @@ async function generateImages() {
       description: 'Your AI-generated images are ready!',
       color: 'success',
     })
-    
+
     prompt.value = ''
     selectedImageIds.value = []
   } catch (error: unknown) {
@@ -1812,15 +1883,17 @@ async function generateImages() {
     loading.value = false
     clearMoodboardToast()
 
-    const errorMessage = apiError.response?.data?.error || 'Failed to generate images. Please check that Stable Diffusion is running correctly.'
-    
+    const errorMessage =
+      apiError.response?.data?.error ||
+      'Failed to generate images. Please check that Stable Diffusion is running correctly.'
+
     const toast = useToast()
     toast.add({
       title: 'Image Generation Failed',
       description: errorMessage,
       color: 'error',
     })
-    
+
     console.error('Image generation error:', error)
   }
 }
@@ -2643,7 +2716,9 @@ html[data-theme='dark'] .drawing-tools-toolbar,
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .advanced-prompt-header {
@@ -2683,7 +2758,8 @@ html[data-theme='dark'] .drawing-tools-toolbar,
 }
 
 @keyframes pulse-error {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -2910,5 +2986,4 @@ html[data-theme='dark'] .token-error,
   border-left-color: #dc2626;
   color: #fca5a5;
 }
-
 </style>
