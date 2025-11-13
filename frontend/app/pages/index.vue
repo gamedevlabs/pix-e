@@ -1,5 +1,4 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <UContainer class="py-10 space-y-10">
@@ -94,8 +93,8 @@
           <h2 class="font-semibold text-lg">Workflow and Usability Layer</h2>
         </template>
         <p>
-          Lets users structure their PX process with a clear, step-by-step workflow that connects existing pix:e modules
-          and design artifacts into a smooth, unified process.
+          Lets users structure their PX process with a clear, step-by-step workflow that connects
+          existing pix:e modules and design artifacts into a smooth, unified process.
         </p>
         <!--
         <template #footer>
