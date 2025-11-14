@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { v4 } from 'uuid'
+import PxCardSection from '~/components/PxComponents/PxCardSection.vue'
 
 definePageMeta({
   middleware: 'authentication',
@@ -12,20 +12,19 @@ const {
   deleteItem: deletePxNode,
 } = usePxNodes()
 
-const state = ref({
-  name: '',
-  description: '',
-})
-
 onMounted(() => {
   fetchPxNodes()
 })
 
-async function handleCreate() {
-  const newUuid = v4()
-  await createPxNode({ id: newUuid, ...state.value })
-  state.value.name = ''
-  state.value.description = ''
+const newItem = ref<NamedEntity | null>(null)
+
+function addItem() {
+  newItem.value = { name: '', description: '' }
+}
+
+async function createItem(newEntityDraft: Partial<NamedEntity>) {
+  await createPxNode({ ...newEntityDraft })
+  newItem.value = null
 }
 
 // Not particularly efficient, but works for now.
@@ -37,32 +36,30 @@ async function handleForeignAddComponent() {
 </script>
 
 <template>
-  <div class="p-4">
-    <h1 class="text-2xl font-bold mb-6">Px Nodes</h1>
+  <div>
+    <SimpleContentWrapper>
+      <template #header>Px Nodes</template>
 
-    <!-- Create Form -->
-    <UForm :state="state" class="mb-6 space-y-4" @submit.prevent="handleCreate">
-      <UFormField>
-        <UInput v-model="state.name" type="text" placeholder="Name" class="w-full xl:w-1/2" />
-      </UFormField>
-
-      <UFormField>
-        <UTextarea v-model="state.description" placeholder="Description" class="w-full xl:w-1/2" />
-      </UFormField>
-
-      <UButton type="submit">Create Node</UButton>
-    </UForm>
-
-    <!-- Cards Section -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
-      <PxNodeCard
-        v-for="node in pxNodes"
-        :key="node.id"
-        :node-id="node.id"
-        :visualization-style="'detailed'"
-        @delete="deletePxNode"
-        @add-foreign-component="handleForeignAddComponent"
-      />
-    </section>
+      <PxCardSection use-add-button @add-clicked="addItem">
+        <div v-for="node in pxNodes" :key="node.id">
+          <PxNodeCard
+            :key="node.id"
+            :node-id="node.id"
+            :visualization-style="'detailed'"
+            @delete="deletePxNode"
+            @add-foreign-component="handleForeignAddComponent"
+          />
+        </div>
+        <div v-if="newItem">
+          <PxNamedEntityCard
+            :named-entity="newItem"
+            :is-being-edited="true"
+            @edit="newItem = null"
+            @update="createItem"
+            @delete="newItem = null"
+          />
+        </div>
+      </PxCardSection>
+    </SimpleContentWrapper>
   </div>
 </template>

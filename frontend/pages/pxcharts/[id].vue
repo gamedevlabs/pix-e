@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-import PxChartCanvas from '~/components/PxChartComponents/PxChartCanvas.vue'
 
 definePageMeta({
   middleware: 'authentication',

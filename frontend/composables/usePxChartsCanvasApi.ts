@@ -1,6 +1,5 @@
 ﻿import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
 import { useVueFlow, MarkerType } from '@vue-flow/core'
-import { v4 } from 'uuid'
 import merge from 'lodash.merge'
 
 export function usePxChartsCanvasApi(chartId: string) {
@@ -95,10 +94,8 @@ export function usePxChartsCanvasApi(chartId: string) {
    */
 
   async function addContainer(position_x = 0, position_y = 0) {
-    const newId = v4()
 
     const newContainerPayload = {
-      id: newId,
       name: containerDefaultValues.name,
       content: containerDefaultValues.content,
       layout: {
@@ -109,8 +106,9 @@ export function usePxChartsCanvasApi(chartId: string) {
       },
     }
 
+    let newId
     try {
-      await createPxChartContainer(newContainerPayload)
+      newId = await createPxChartContainer(newContainerPayload)
     } catch (err) {
       alert('Failed to add container: ' + err.message)
       error.value = 'Failed to add container'
@@ -247,10 +245,9 @@ export function usePxChartsCanvasApi(chartId: string) {
       return
     }
 
-    const newUuid = v4()
+    let newUuid
     try {
-      await createPxEdge({
-        id: newUuid,
+      newUuid = await createPxEdge({
         source: connection.source,
         sourceHandle: connection.sourceHandle!,
         target: connection.target,

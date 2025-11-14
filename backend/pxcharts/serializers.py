@@ -18,7 +18,6 @@ class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
 
 
 class PxChartContainerSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
     content = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
@@ -42,7 +41,6 @@ class PxChartContainerSerializer(serializers.ModelSerializer):
 
 
 class PxChartContainerDetailSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
     layout = PxChartContainerLayoutSerializer()
 
     class Meta:
@@ -91,8 +89,6 @@ class PxChartContainerDetailSerializer(serializers.ModelSerializer):
 
 
 class PxChartEdgeSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-
     class Meta:
         model = PxChartEdge
         fields = [
@@ -128,8 +124,6 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
 
 
 class PxChartSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-
     class Meta:
         model = PxChart
         fields = [

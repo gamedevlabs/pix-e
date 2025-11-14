@@ -48,7 +48,7 @@ async function handleDelete(id: string) {
 </script>
 
 <template>
-  <div v-if="!associatedNode || !associatedDefinition">Loading...</div>
+  <div v-if="!associatedNode || !associatedDefinition">Loading Px Component {{ component.id }}</div>
   <PxComponentCardPreview
     v-else-if="visualizationStyle === 'preview'"
     :component="component"

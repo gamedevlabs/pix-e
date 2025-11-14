@@ -1,63 +1,65 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 const props = defineProps<{
-  chart: PxChart
+  namedEntity: Partial<NamedEntity>
+  isBeingEdited?: boolean
+  showEdit?: boolean
+  showDelete?: boolean
+  variant?: 'compact'
 }>()
 
 const emit = defineEmits<{
-  (event: 'update', namedEntityDraft: Partial<PxChart>): void
-  (event: 'edit' | 'delete', graphId: string): void
+  (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
+  (event: 'edit' | 'delete'): void
 }>()
 
-const draft = ref({ ...props.chart })
-
-const isBeingEdited = ref(false)
+const draft = ref({ ...props.namedEntity })
 
 watch(
-  () => isBeingEdited.value,
+  () => props.isBeingEdited,
   (newVal) => {
     if (newVal) {
-      draft.value = { ...props.chart }
+      draft.value = { ...props.namedEntity }
     }
   },
 )
 
-function startEdit() {
-  isBeingEdited.value = true
+function emitEdit() {
+  emit('edit')
 }
 
-function confirmEdit() {
-  emit('update', { ...props.chart, ...draft.value })
-  isBeingEdited.value = false
-}
-
-function cancelEdit() {
-  isBeingEdited.value = false
-  draft.value.name = props.chart.name
+function emitUpdate() {
+  emit('update', draft.value)
 }
 
 function emitDelete() {
-  emit('delete', props.chart.id)
+  emit('delete')
 }
 </script>
 
 <template>
-  <UCard :class="['hover:shadow-lg transition']">
+  <UCard
+    :class="[
+      'w-72 hover:shadow-lg transition',
+      variant !== null && variant === 'compact' ? 'min-h-35' : 'min-h-55',
+    ]"
+    variant="subtle"
+  >
     <template #header>
       <div v-if="!isBeingEdited" class="header">
         <h2 class="font-semibold text-lg">
-          <NuxtLink :to="{ name: 'pxcharts-id', params: { id: props.chart.id } }">
-            {{ props.chart.name }}
-          </NuxtLink>
+          {{ props.namedEntity.name }}
         </h2>
         <div>
           <UButton
+            v-if="showEdit"
             aria-label="Edit"
             icon="i-lucide-pencil"
             color="primary"
             variant="ghost"
-            @click="startEdit"
+            @click="emitEdit"
           />
           <UButton
+            v-if="showDelete"
             aria-label="Delete"
             icon="i-lucide-trash-2"
             color="error"
@@ -80,25 +82,22 @@ function emitDelete() {
             icon="i-lucide-save"
             color="primary"
             variant="ghost"
-            @click="confirmEdit"
+            @click="emitUpdate"
           />
           <UButton
             aria-label="Cancel"
             icon="i-lucide-x"
             color="error"
             variant="ghost"
-            @click="cancelEdit"
+            @click="emitEdit"
           />
         </div>
       </div>
     </template>
 
     <template #default>
-      <div v-if="'description' in props.chart">
-        <div v-if="!isBeingEdited">
-          <h2 class="font-semibold text-lg">Description</h2>
-          <p>{{ props.chart.description }}</p>
-        </div>
+      <div v-if="'description' in namedEntity">
+        <p v-if="!isBeingEdited">{{ namedEntity.description }}</p>
         <UTextarea
           v-else
           v-model="draft.description"
@@ -116,6 +115,15 @@ function emitDelete() {
       </div>
       <div v-else>
         <slot name="defaultEdit" />
+      </div>
+    </template>
+
+    <template v-if="$slots.footerExtra || $slots.footerExtraEdit" #footer>
+      <div v-if="!isBeingEdited">
+        <slot name="footerExtra" />
+      </div>
+      <div v-else>
+        <slot name="footerExtraEdit" />
       </div>
     </template>
   </UCard>

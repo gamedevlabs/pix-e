@@ -6,8 +6,6 @@ from .models import PxComponent, PxComponentDefinition, PxNode
 
 
 class PxComponentSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-
     class Meta:
         model = PxComponent
         fields = "__all__"
@@ -21,8 +19,6 @@ class PxComponentSerializer(serializers.ModelSerializer):
 
 
 class PxComponentDefinitionSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-
     class Meta:
         model = PxComponentDefinition
         fields = "__all__"
@@ -36,8 +32,6 @@ class PxComponentDefinitionSerializer(serializers.ModelSerializer):
 
 
 class PxNodeSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-
     class Meta:
         model = PxNode
         fields = [

@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-import { v4 } from 'uuid'
 
 const props = defineProps<{ selectedNodeId: string }>()
 
@@ -69,9 +68,7 @@ async function onSubmit() {
 
   if (enteredValue === undefined) return
 
-  const componentId = v4()
-  await createPxComponent({
-    id: componentId,
+  const componentId = await createPxComponent({
     node: state.value.nodeRef,
     definition: state.value.definitionRef,
     value: enteredValue,
