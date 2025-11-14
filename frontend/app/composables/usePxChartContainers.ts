@@ -1,3 +1,3 @@
 export function usePxChartContainers(chartId: string | number) {
-  return useCrudWithAuthentication<PxChartContainer>(`api/pxcharts/${chartId}/pxcontainers/`)
+  return useCrudForPxWithAuthentication<PxChartContainer>(`api/pxcharts/${chartId}/pxcontainers/`)
 }

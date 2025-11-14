@@ -1,3 +1,3 @@
 export function usePxNodes() {
-  return useCrudWithAuthentication<PxNode>('pxnodes/')
+  return useCrudForPxWithAuthentication<PxNode>('pxnodes/')
 }

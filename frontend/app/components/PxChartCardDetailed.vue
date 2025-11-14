@@ -70,7 +70,7 @@ async function emitRemoveNode() {
 </script>
 
 <template>
-  <UCard :class="['w-72 hover:shadow-lg transition']">
+  <UCard :class="['hover:shadow-lg transition']">
     <template #header>
       <div v-if="!isBeingEdited" class="header">
         <h2 class="font-semibold text-lg">

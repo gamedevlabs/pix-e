@@ -9,9 +9,7 @@ import {
   type NodeChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import PxChartContainer from '~/components/PxChartComponents/PxChartContainer.vue'
-import PxChartEdge from '~/components/PxChartComponents/PxChartEdge.vue'
-import PxChartContainerNode from '~/components/PxChartComponents/PxChartContainerNode.vue'
+import { PxChartEdge } from '#components'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 

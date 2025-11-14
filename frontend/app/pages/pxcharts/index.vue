@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { v4 } from 'uuid'
+import PxCardSection from '~/app/components/PxComponents/PxCardSection.vue'
 
 definePageMeta({
   middleware: 'authentication',
@@ -23,8 +23,7 @@ function addItem() {
 }
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  const newUuid = v4()
-  await createPxChart({ id: newUuid, ...newEntityDraft })
+  await createPxChart({ ...newEntityDraft })
   newItem.value = null
 }
 </script>
@@ -34,7 +33,7 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
     <SimpleContentWrapper>
       <template #header>Px Charts</template>
 
-      <SimpleCardSection use-add-button @add-clicked="addItem">
+      <PxCardSection use-add-button @add-clicked="addItem">
         <div v-for="chart in pxCharts" :key="chart.id">
           <PxChartCard
             :px-chart="chart"
@@ -45,7 +44,7 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
           />
         </div>
         <div v-if="newItem">
-          <NamedEntityCard
+          <PxNamedEntityCard
             :named-entity="newItem"
             :is-being-edited="true"
             @edit="newItem = null"
@@ -53,7 +52,7 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
             @delete="newItem = null"
           />
         </div>
-      </SimpleCardSection>
+      </PxCardSection>
     </SimpleContentWrapper>
   </div>
 </template>

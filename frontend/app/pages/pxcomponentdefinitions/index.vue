@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { v4 } from 'uuid'
+import PxCardSection from '~/app/components/PxComponents/PxCardSection.vue'
 
 definePageMeta({
   middleware: 'authentication',
@@ -25,8 +25,7 @@ const state = ref<{ name: string; type: PxValueType }>({
 })
 
 async function handleCreate() {
-  const newUuid = v4()
-  await createPxComponentDefinition({ id: newUuid, ...state.value })
+  await createPxComponentDefinition({ ...state.value })
   state.value.name = ''
   state.value.type = 'none'
 }
@@ -50,16 +49,19 @@ async function handleUpdate(updatedDefinition: PxComponentDefinition) {
       <UButton type="submit">Create Component</UButton>
     </UForm>
 
-    <!-- Cards Section -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      <div v-for="definition in pxComponentDefinitions" :key="definition.id">
-        <PxComponentDefinitionCardDetailed
-          :definition="definition"
-          @edit="handleUpdate"
-          @delete="deletePxDefinition"
-        />
-      </div>
-    </section>
+    <div>
+      <SimpleContentWrapper>
+        <PxCardSection>
+          <div v-for="definition in pxComponentDefinitions" :key="definition.id">
+            <PxComponentDefinitionCardDetailed
+              :definition="definition"
+              @edit="handleUpdate"
+              @delete="deletePxDefinition"
+            />
+          </div>
+        </PxCardSection>
+      </SimpleContentWrapper>
+    </div>
   </div>
 </template>
 

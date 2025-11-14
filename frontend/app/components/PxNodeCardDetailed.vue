@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { LazyPxComponentCreationForm } from '#components'
+import { PxComponentCreationForm } from '#components'
 
 const props = defineProps<{
   node: PxNode
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 const isBeingEdited = ref(false)
 
 const overlay = useOverlay()
-const modal = overlay.create(LazyPxComponentCreationForm)
+const modal = overlay.create(PxComponentCreationForm)
 
 const editForm = ref({
   name: props.node.name,
