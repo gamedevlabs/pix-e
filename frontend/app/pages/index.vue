@@ -107,7 +107,8 @@
           <h2 class="font-semibold text-lg">Diagram-Based Pacing Analysis</h2>
         </template>
         <p>
-          The pacing diagram helps you with planning your game's levels and overall course, offering useful insights and visualizations.
+          The pacing diagram helps you with planning your game's levels and overall course, offering
+          useful insights and visualizations.
         </p>
       </UCard>
     </section>
