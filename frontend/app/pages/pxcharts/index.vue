@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-import PxCardSection from '~/app/components/PxComponents/PxCardSection.vue'
 
 definePageMeta({
   middleware: 'authentication',

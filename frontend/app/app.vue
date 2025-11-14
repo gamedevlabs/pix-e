@@ -13,24 +13,31 @@ const items = ref<NavigationMenuItem[]>([
     to: '/',
   },
   {
-    label: 'PxNodes',
-    icon: 'i-lucide-hexagon',
-    to: '/pxnodes',
-  },
-  {
-    label: 'PxComponents',
-    icon: 'i-lucide-component',
-    to: '/pxcomponents',
-  },
-  {
-    label: 'PxComponentsDefinitions',
-    icon: 'i-lucide-library-big',
-    to: '/pxcomponentdefinitions',
-  },
-  {
-    label: 'PxCharts',
-    icon: 'i-lucide-chart-network',
-    to: '/pxcharts',
+    label: 'Player Experience',
+    icon: 'i-lucide-brain-cog',
+    to: '/player-experience',
+    children: [
+      {
+        label: 'Charts',
+        icon: 'i-lucide-chart-network',
+        to: '/pxcharts',
+      },
+      {
+        label: 'Nodes',
+        icon: 'i-lucide-hexagon',
+        to: '/pxnodes',
+      },
+      {
+        label: 'Components',
+        icon: 'i-lucide-component',
+        to: '/pxcomponents',
+      },
+      {
+        label: 'Component Definitions',
+        icon: 'i-lucide-library-big',
+        to: '/pxcomponentdefinitions',
+      },
+    ],
   },
   {
     label: 'Player Expectations',
