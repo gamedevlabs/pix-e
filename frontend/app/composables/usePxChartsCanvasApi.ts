@@ -94,7 +94,6 @@ export function usePxChartsCanvasApi(chartId: string) {
    */
 
   async function addContainer(position_x = 0, position_y = 0) {
-
     const newContainerPayload = {
       name: containerDefaultValues.name,
       content: containerDefaultValues.content,
