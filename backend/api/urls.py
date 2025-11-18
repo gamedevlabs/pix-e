@@ -22,6 +22,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("llm/", include("pillars.urls")),
     path("api/sparc/", include("sparc.urls")),
+    path("api/", include("game_concept.urls")),
     path("accounts/", include("accounts.urls")),
     path("", include("pxnodes.urls")),
     path("api/player-expectations-new/", include("player_expectations_new.urls")),
