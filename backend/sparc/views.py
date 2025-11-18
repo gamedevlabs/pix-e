@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from backend.llm import LLMOrchestrator, get_config
 from backend.llm.types import LLMRequest
+from game_concept.models import GameConcept
 
 # Import handlers and graphs to trigger auto-registration
 from sparc.llm import graphs, handlers  # noqa: F401
@@ -19,6 +20,26 @@ def get_model_id(model_name: str) -> str:
     """Map frontend model names to actual model IDs using orchestrator config."""
     config = get_config()
     return config.resolve_model_alias(model_name)
+
+
+def save_game_concept(user, game_text: str) -> None:
+    """
+    Auto-save game concept after SPARC evaluation.
+
+    Args:
+        user: The authenticated user
+        game_text: The game concept text to save
+    """
+    if not user.is_authenticated:
+        return
+
+    # Mark all existing concepts as not current
+    GameConcept.objects.filter(user=user, is_current=True).update(is_current=False)
+
+    # Create new current concept
+    GameConcept.objects.create(
+        user=user, content=game_text, is_current=True, last_sparc_evaluation=None
+    )
 
 
 class SPARCQuickScanView(APIView):
@@ -86,6 +107,9 @@ class SPARCQuickScanView(APIView):
                     {"error": "Evaluation failed", "details": error_messages},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+
+            # Auto-save game concept after successful evaluation
+            save_game_concept(request.user, game_text)
 
             return JsonResponse(response.results, status=status.HTTP_200_OK)
 
@@ -159,6 +183,9 @@ class SPARCMonolithicView(APIView):
                     {"error": "Evaluation failed", "details": error_messages},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+
+            # Auto-save game concept after successful evaluation
+            save_game_concept(request.user, game_text)
 
             return JsonResponse(response.results, status=status.HTTP_200_OK)
 
