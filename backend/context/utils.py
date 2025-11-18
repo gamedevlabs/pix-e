@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from django.contrib.auth.models import User
 
-from .schemas import CoherenceReport, PillarData, SPARCData, UserContext
+from .schemas import CoherenceReport, PillarData, UserContext
 
 
 def get_user_context(
@@ -28,7 +28,6 @@ def get_user_context(
     """
     from game_concept.models import GameConcept
     from pillars.models import Pillar
-    from sparc.models import SPARCEvaluation
 
     context_data: Dict[str, Any] = {
         "game_concept": None,
