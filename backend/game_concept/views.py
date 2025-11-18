@@ -1,1 +1,79 @@
-# Create your views here.
+"""
+Views for the game_concept app.
+"""
+
+from rest_framework import permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+
+from .models import GameConcept
+from .serializers import (
+    GameConceptCreateSerializer,
+    GameConceptListSerializer,
+    GameConceptSerializer,
+)
+
+
+class GameConceptViewSet(ModelViewSet):
+    """
+    ViewSet for managing game concepts.
+
+    Endpoints:
+    - GET /api/game-concept/ - List all concepts for the user
+    - GET /api/game-concept/current/ - Get current concept
+    - GET /api/game-concept/history/ - Get concept history
+    - POST /api/game-concept/ - Create new concept
+    - GET /api/game-concept/{id}/ - Get specific concept
+    - PUT/PATCH /api/game-concept/{id}/ - Update concept
+    - DELETE /api/game-concept/{id}/ - Delete concept
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Return concepts for the current user."""
+        return GameConcept.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == "create":
+            return GameConceptCreateSerializer
+        elif self.action == "list" or self.action == "history":
+            return GameConceptListSerializer
+        return GameConceptSerializer
+
+    def perform_create(self, serializer):
+        """Create a new game concept with user from request."""
+        serializer.save()
+
+    @action(detail=False, methods=["get"])
+    def current(self, request):
+        """
+        Get the current game concept for the user.
+
+        Returns 404 if no current concept exists.
+        """
+        try:
+            concept = GameConcept.objects.get(user=request.user, is_current=True)
+            serializer = GameConceptSerializer(concept)
+            return Response(serializer.data)
+        except GameConcept.DoesNotExist:
+            return Response(
+                {"detail": "No current game concept found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    @action(detail=False, methods=["get"])
+    def history(self, request):
+        """
+        Get all past game concepts for the user (not current).
+
+        Returns list ordered by most recent first.
+        """
+        concepts = GameConcept.objects.filter(
+            user=request.user, is_current=False
+        ).order_by("-updated_at")
+
+        serializer = self.get_serializer(concepts, many=True)
+        return Response(serializer.data)
