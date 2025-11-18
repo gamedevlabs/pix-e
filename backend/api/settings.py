@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "llm",
     "pillars",
     "sparc",
+    "game_concept",
     "accounts",
     "pxcharts",
     "player_expectations",
