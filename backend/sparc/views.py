@@ -51,7 +51,7 @@ class SPARCQuickScanView(APIView):
     POST /api/sparc/quick-scan/
     Body: {
         "game_text": "...",
-        "model": "gemini" | "openai" (optional, defaults to "gemini")
+        "model": "gemini" | "openai" (optional, defaults to "openai")
     }
 
     Response: {
@@ -87,7 +87,7 @@ class SPARCQuickScanView(APIView):
                 )
 
             # Get model preference
-            model_name = request.data.get("model", "gemini")
+            model_name = request.data.get("model", "openai")
             model_id = get_model_id(model_name)
 
             # Create orchestrator request for agentic execution
@@ -96,6 +96,7 @@ class SPARCQuickScanView(APIView):
                 operation="quick_scan",
                 data={"game_text": game_text},
                 model_id=model_id,
+                mode="agentic",  # Explicitly use agentic mode for graph execution
             )
 
             # Execute through orchestrator (will use agent graph)
@@ -132,7 +133,7 @@ class SPARCMonolithicView(APIView):
     POST /api/sparc/monolithic/
     Body: {
         "game_text": "...",
-        "model": "gemini" | "openai" (optional, defaults to "gemini")
+        "model": "gemini" | "openai" (optional, defaults to "openai")
     }
 
     Response: {
@@ -163,7 +164,7 @@ class SPARCMonolithicView(APIView):
                 )
 
             # Get model preference
-            model_name = request.data.get("model", "gemini")
+            model_name = request.data.get("model", "openai")
             model_id = get_model_id(model_name)
 
             # Create orchestrator request for monolithic execution

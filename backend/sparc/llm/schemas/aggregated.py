@@ -7,7 +7,7 @@ multiple aspects with consistency checking and synthesis.
 
 from typing import List
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from sparc.llm.schemas.gameplay import GameplayResponse, GoalsChallengesRewardsResponse
 from sparc.llm.schemas.player_experience import (
@@ -26,8 +26,6 @@ from sparc.llm.schemas.world import PlaceResponse, StoryNarrativeResponse
 class AspectScore(BaseModel):
     """Score and metadata for a single SPARC aspect."""
 
-    model_config = ConfigDict(extra="forbid")
-
     aspect: str = Field(description="Aspect name")
     score: int = Field(ge=0, le=100, description="Completeness score (0-100)")
     status: str = Field(description="Status: strong, adequate, weak, missing")
@@ -39,8 +37,6 @@ class AspectScore(BaseModel):
 
 class ConsistencyIssue(BaseModel):
     """A consistency issue found between SPARC aspects."""
-
-    model_config = ConfigDict(extra="forbid")
 
     aspects_involved: List[str] = Field(
         description="Which aspects have the inconsistency"
@@ -122,8 +118,6 @@ class SPARCComprehensiveResponse(BaseModel):
 
 class AspectEvaluation(BaseModel):
     """Brief evaluation of a single SPARC aspect."""
-
-    model_config = ConfigDict(extra="forbid")
 
     aspect_name: str = Field(description="Name of the aspect")
     assessment: str = Field(description="Brief assessment of this aspect")

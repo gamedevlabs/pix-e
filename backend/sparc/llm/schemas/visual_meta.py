@@ -6,13 +6,11 @@ Contains schemas for art direction, unique features, and opportunities/risks.
 
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class ColorPalette(BaseModel):
     """Color palette for the game."""
-
-    model_config = ConfigDict(extra="forbid")
 
     primary: str = Field(description="Primary color")
     secondary: str = Field(description="Secondary color")
@@ -63,8 +61,6 @@ class ArtDirectionResponse(BaseModel):
 class UniquenessItem(BaseModel):
     """Validation of a unique feature claim."""
 
-    model_config = ConfigDict(extra="forbid")
-
     feature: str = Field(description="The claimed unique feature")
     is_unique: bool = Field(description="Whether this feature is truly unique")
     reasoning: str = Field(description="Reasoning for the uniqueness assessment")
@@ -111,8 +107,6 @@ class UniqueFeaturesResponse(BaseModel):
 class OpportunityItem(BaseModel):
     """An opportunity for the game concept."""
 
-    model_config = ConfigDict(extra="forbid")
-
     opportunity: str = Field(description="The opportunity identified")
     description: str = Field(description="Description of the opportunity")
     how_to_use: str = Field(description="How to leverage this opportunity")
@@ -120,8 +114,6 @@ class OpportunityItem(BaseModel):
 
 class RiskItem(BaseModel):
     """A risk for the game concept."""
-
-    model_config = ConfigDict(extra="forbid")
 
     risk: str = Field(description="The risk identified")
     likelihood: str = Field(description="Likelihood of risk (low, medium, high)")
