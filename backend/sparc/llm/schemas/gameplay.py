@@ -6,7 +6,7 @@ Contains schemas for gameplay mechanics and goals/challenges/rewards.
 
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class GameplayResponse(BaseModel):
@@ -53,8 +53,6 @@ class GameplayResponse(BaseModel):
 class ObjectiveItem(BaseModel):
     """An objective in the game."""
 
-    model_config = ConfigDict(extra="forbid")
-
     description: str = Field(description="Objective description")
     start_point: str = Field(description="Where the objective begins")
     end_point: str = Field(description="Where/how the objective completes")
@@ -63,8 +61,6 @@ class ObjectiveItem(BaseModel):
 class ObstacleItem(BaseModel):
     """Obstacles for an objective."""
 
-    model_config = ConfigDict(extra="forbid")
-
     objective: str = Field(description="Which objective this relates to")
     obstacles: List[str] = Field(description="List of obstacles for this objective")
     challenge_type: str = Field(description="Type of challenge presented")
@@ -72,8 +68,6 @@ class ObstacleItem(BaseModel):
 
 class RewardItem(BaseModel):
     """Reward for completing an objective."""
-
-    model_config = ConfigDict(extra="forbid")
 
     objective: str = Field(description="Which objective this reward is for")
     reward_type: str = Field(description="Type of reward (intrinsic, extrinsic, etc.)")
