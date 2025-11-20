@@ -10,6 +10,6 @@ from rest_framework.routers import DefaultRouter
 from .views import GameConceptViewSet
 
 router = DefaultRouter()
-router.register(r"game-concept", GameConceptViewSet, basename="game-concept")
+router.register(r"", GameConceptViewSet, basename="game-concept")
 
 urlpatterns: List[Union[URLPattern, URLResolver]] = router.urls

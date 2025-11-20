@@ -85,6 +85,7 @@ class SPARCEvaluationResult(models.Model):
             ("art_direction", "Art Direction"),
             ("purpose", "Purpose"),
             ("opportunities_risks", "Opportunities & Risks"),
+            ("aggregated", "Aggregated Results"),
         ],
         help_text="Which SPARC aspect this result covers",
     )
@@ -107,6 +108,21 @@ class SPARCEvaluationResult(models.Model):
     )
     execution_time_ms = models.IntegerField(
         null=True, blank=True, help_text="Execution time for this aspect in ms"
+    )
+    prompt_tokens = models.IntegerField(
+        default=0, help_text="Number of prompt/input tokens used"
+    )
+    completion_tokens = models.IntegerField(
+        default=0, help_text="Number of completion/output tokens used"
+    )
+    total_tokens = models.IntegerField(
+        default=0, help_text="Total tokens used (prompt + completion)"
+    )
+    estimated_cost_eur = models.DecimalField(
+        max_digits=10,
+        decimal_places=8,
+        default=0,
+        help_text="Estimated cost in EUR for this aspect",
     )
     result_data = models.JSONField(
         help_text="Full evaluation result as JSON (structured output from LLM)"

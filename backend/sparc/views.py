@@ -6,7 +6,7 @@ SPARC evaluations.
 """
 
 from django.http import JsonResponse
-from rest_framework import permissions, status
+from rest_framework import permissions, status, viewsets
 from rest_framework.views import APIView
 
 from backend.llm import LLMOrchestrator, get_config
@@ -16,6 +16,7 @@ from game_concept.models import GameConcept
 # Import handlers and graphs to trigger auto-registration
 from sparc.llm import graphs, handlers  # noqa: F401
 from sparc.models import SPARCEvaluation, SPARCEvaluationResult
+from sparc.serializers import SPARCEvaluationSerializer
 
 
 def get_model_id(model_name: str) -> str:
@@ -117,9 +118,12 @@ def save_sparc_evaluation(
             if aspect_key in aspect_mapping and aspect_key in response.results:
                 aspect_data = response.results[aspect_key]
                 score = (
-                    aspect_data.get("completeness_score")
-                    if isinstance(aspect_data, dict)
-                    else None
+                    aspect_data.get("score") if isinstance(aspect_data, dict) else None
+                )
+
+                # Calculate per-agent cost
+                agent_cost = calculate_cost_eur(
+                    agent.model, agent.prompt_tokens, agent.completion_tokens
                 )
 
                 SPARCEvaluationResult.objects.create(
@@ -129,8 +133,27 @@ def save_sparc_evaluation(
                     agent_name=agent.name,
                     model_used=agent.model,
                     execution_time_ms=agent.execution_time_ms,
+                    prompt_tokens=agent.prompt_tokens,
+                    completion_tokens=agent.completion_tokens,
+                    total_tokens=agent.total_tokens,
+                    estimated_cost_eur=agent_cost,
                     result_data=aspect_data,
                 )
+
+        # Also save the full aggregated response with token totals
+        SPARCEvaluationResult.objects.create(
+            evaluation=evaluation,
+            aspect="aggregated",
+            score=response.results.get("readiness_score"),
+            agent_name="aggregator",
+            model_used=model_name,
+            execution_time_ms=metadata.execution_time_ms,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+            estimated_cost_eur=cost_eur,
+            result_data=response.results,
+        )
 
     # For monolithic, save as a single aggregated result
     elif mode == "monolithic":
@@ -142,6 +165,10 @@ def save_sparc_evaluation(
             agent_name="monolithic",
             model_used=model_used,
             execution_time_ms=metadata.execution_time_ms,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+            estimated_cost_eur=cost_eur,
             result_data=response.results,
         )
 
@@ -340,3 +367,19 @@ class SPARCMonolithicView(APIView):
             return JsonResponse(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class SPARCEvaluationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for retrieving SPARC evaluations.
+
+    Endpoints:
+    - GET /api/sparc/evaluations/ - List all evaluations
+    - GET /api/sparc/evaluations/{id}/ - Get specific evaluation
+
+    Read-only access to evaluation history.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    serializer_class = SPARCEvaluationSerializer
+    queryset = SPARCEvaluation.objects.all().order_by("-created_at")

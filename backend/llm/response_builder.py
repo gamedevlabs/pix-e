@@ -120,6 +120,9 @@ def build_agent_response(
                 name=agent_result.agent_name,
                 execution_time_ms=agent_result.execution_time_ms,
                 model=agent_result.model_used or "unknown",
+                prompt_tokens=agent_result.prompt_tokens,
+                completion_tokens=agent_result.completion_tokens,
+                total_tokens=agent_result.total_tokens,
             )
         )
 
