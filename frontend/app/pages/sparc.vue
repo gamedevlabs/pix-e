@@ -45,6 +45,17 @@ function getScoreColor(score: number) {
   if (score >= 40) return 'text-yellow-500'
   return 'text-red-500'
 }
+
+// Handler functions for button clicks
+function handleQuickScan() {
+  runQuickScan()
+  selectedTab.value = 'quick_scan'
+}
+
+function handleMonolithic() {
+  runMonolithic()
+  selectedTab.value = 'monolithic'
+}
 </script>
 
 <template>
@@ -65,10 +76,7 @@ function getScoreColor(score: number) {
             size="lg"
             :loading="isLoadingQuickScan"
             :disabled="!gameConcept || isLoadingQuickScan || isLoadingMonolithic"
-            @click="
-              runQuickScan()
-              selectedTab = 'quick_scan'
-            "
+            @click="handleQuickScan"
           />
           <UButton
             icon="i-lucide-cpu"
@@ -78,10 +86,7 @@ function getScoreColor(score: number) {
             size="lg"
             :loading="isLoadingMonolithic"
             :disabled="!gameConcept || isLoadingQuickScan || isLoadingMonolithic"
-            @click="
-              runMonolithic()
-              selectedTab = 'monolithic'
-            "
+            @click="handleMonolithic"
           />
         </div>
 

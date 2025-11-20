@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "build:check": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -11,7 +12,9 @@
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "lint-check": "eslint .",
-    "format-check": "prettier . --check"
+    "format-check": "prettier . --check",
+    "type-check": "nuxt typecheck",
+    "check": "npm run lint-check && npm run format-check && npm run build:check"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.5",
