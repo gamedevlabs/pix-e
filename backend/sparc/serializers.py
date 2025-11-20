@@ -17,6 +17,10 @@ class SPARCEvaluationResultSerializer(serializers.ModelSerializer):
             "agent_name",
             "model_used",
             "execution_time_ms",
+            "prompt_tokens",
+            "completion_tokens",
+            "total_tokens",
+            "estimated_cost_eur",
             "result_data",
             "created_at",
         ]

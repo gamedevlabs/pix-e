@@ -5,7 +5,7 @@ Contains schemas for comprehensive evaluation responses that combine
 multiple aspects with consistency checking and synthesis.
 """
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -73,17 +73,17 @@ class SPARCQuickScanResponse(BaseModel):
     )
     next_steps: List[str] = Field(description="Prioritized list of next steps (top 5)")
 
-    # Full aspect results
-    player_experience: PlayerExperienceResponse
-    theme: ThemeResponse
-    gameplay: GameplayResponse
-    place: PlaceResponse
-    unique_features: UniqueFeaturesResponse
-    story_narrative: StoryNarrativeResponse
-    goals_challenges_rewards: GoalsChallengesRewardsResponse
-    art_direction: ArtDirectionResponse
-    purpose: PurposeResponse
-    opportunities_risks: OpportunitiesRisksResponse
+    # Full aspect results (optional to handle partial failures)
+    player_experience: Optional[PlayerExperienceResponse] = None
+    theme: Optional[ThemeResponse] = None
+    gameplay: Optional[GameplayResponse] = None
+    place: Optional[PlaceResponse] = None
+    unique_features: Optional[UniqueFeaturesResponse] = None
+    story_narrative: Optional[StoryNarrativeResponse] = None
+    goals_challenges_rewards: Optional[GoalsChallengesRewardsResponse] = None
+    art_direction: Optional[ArtDirectionResponse] = None
+    purpose: Optional[PurposeResponse] = None
+    opportunities_risks: Optional[OpportunitiesRisksResponse] = None
 
 
 class SPARCComprehensiveResponse(BaseModel):

@@ -177,6 +177,9 @@ class AgentInfo(BaseModel):
     name: str = Field(..., description="Agent name")
     execution_time_ms: int = Field(..., ge=0)
     model: str = Field(..., description="Model name used by this agent")
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
 
 
 class TokenUsage(BaseModel):

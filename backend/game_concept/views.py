@@ -77,3 +77,31 @@ class GameConceptViewSet(ModelViewSet):
 
         serializer = self.get_serializer(concepts, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["post"])
+    def update_current(self, request):
+        """
+        Update or create the current game concept.
+
+        Marks all existing concepts as not current and creates
+        a new current concept with the provided content.
+        """
+        content = request.data.get("content")
+        if not content:
+            return Response(
+                {"error": "Content is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Mark all existing concepts as not current
+        GameConcept.objects.filter(user=request.user, is_current=True).update(
+            is_current=False
+        )
+
+        # Create new current concept
+        concept = GameConcept.objects.create(
+            user=request.user, content=content, is_current=True
+        )
+
+        serializer = GameConceptSerializer(concept)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

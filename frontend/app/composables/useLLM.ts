@@ -4,14 +4,14 @@ import { defineStore } from 'pinia'
 export const useLLM = defineStore('llm', () => {
   const llm_models = ref([
     {
+      label: 'ChatGPT (GPT-4o-mini)',
+      value: 'openai',
+      icon: 'i-simple-icons-openai',
+    },
+    {
       label: 'Google Gemini',
       value: 'gemini',
       icon: 'i-simple-icons-googlegemini',
-    },
-    {
-      label: 'ChatGPT (GPT-4)',
-      value: 'openai',
-      icon: 'i-simple-icons-openai',
     },
     {
       label: 'Unknown Local Model',

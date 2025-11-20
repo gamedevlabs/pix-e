@@ -54,6 +54,11 @@ const items = ref<NavigationMenuItem[]>([
     icon: 'i-lucide-landmark',
     to: '/pillars',
   },
+  {
+    label: 'SPARC',
+    icon: 'i-lucide-sparkles',
+    to: '/sparc',
+  },
 ])
 
 const dropdownItems = ref([
