@@ -65,3 +65,50 @@ Idea: %s
 
 Design Pillars: %s
 """
+
+# noqa: E501
+ImprovePillarWithExplanationPrompt = """
+Improve the following Game Design Pillar and explain your improvements.
+
+VALIDATION ISSUES DETECTED:
+%s
+
+CURRENT PILLAR:
+Name: %s
+Description: %s
+
+INSTRUCTIONS:
+1. Fix the structural issues listed above
+2. For each change you make, explain WHY it improves the pillar
+3. Reference which validation issue(s) each change addresses
+
+RULES FOR GOOD PILLARS:
+- Title must directly reflect what the description talks about
+- Intent must be clear and unambiguous
+- Focus on ONE aspect only (not multiple concerns)
+- Use flowing prose, NOT bullet points or lists
+
+RESPOND WITH THIS EXACT JSON STRUCTURE:
+{
+  "name": "Improved pillar name",
+  "description": "Improved pillar description in prose form",
+  "changes": [
+    {
+      "field": "name",
+      "after": "The new name value",
+      "reasoning": "Explanation of why this name is better",
+      "issues_addressed": e.g. ["Title Mismatch"]
+    },
+    {
+      "field": "description",
+      "after": "The new description value",
+      "reasoning": "Explanation of why this description is better",
+      "issues_addressed": e.g. ["Unclear Intent", "Use of Bullet Points"]
+    }
+  ],
+  "overall_summary": "Summary of why improved pillar is better",
+  "validation_issues_fixed": ["Title Mismatch", "Unclear Intent"]
+}
+
+Only include changes for fields you actually modified.
+"""

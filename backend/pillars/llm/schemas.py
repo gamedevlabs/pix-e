@@ -6,6 +6,8 @@ All schemas are migrated from backend/llm/llm_links/responseSchemes.py to centra
 pillar-specific logic in the orchestrator.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -72,4 +74,36 @@ class ContextInPillarsResponse(BaseModel):
     )
     feedback: str = Field(
         description="Feedback on how the context fits with the pillars"
+    )
+
+
+# --- Schemas for improved pillar with explanations ---
+
+
+class PillarChange(BaseModel):
+    """Describes a specific change made to improve a pillar."""
+
+    field: Literal["name", "description"] = Field(description="Which field was changed")
+    after: str = Field(description="The new value after improvement")
+    reasoning: str = Field(description="Why this change improves the pillar")
+    issues_addressed: list[str] = Field(
+        default_factory=list,
+        description="Which validation issues this change fixes",
+    )
+
+
+class ImprovedPillarResponse(BaseModel):
+    """Response containing improved pillar with explanations."""
+
+    name: str = Field(description="Improved pillar name")
+    description: str = Field(description="Improved pillar description")
+    changes: list[PillarChange] = Field(
+        description="List of changes made with explanations"
+    )
+    overall_summary: str = Field(
+        description="High-level summary of why the improved pillar is better"
+    )
+    validation_issues_fixed: list[str] = Field(
+        default_factory=list,
+        description="List of validation issue titles that were fixed",
     )
