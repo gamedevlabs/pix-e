@@ -8,12 +8,12 @@ pillar-specific logic in the orchestrator.
 
 ValidationPrompt = """Validate the following Game Design Pillar.
 Check for structural issues regarding the following points:
-1. The name does not match the description.
+1. The title does not match the description.
 2. The intent of the pillar is not clear.
 3. The pillar focuses on more than one aspect.
 4. The description uses bullet points or lists.
-Name: %s
-Description: %s
+Pillar Title: %s
+Pillar Description: %s
 For each feedback limit your answer to one sentence.
 Answer as if you were talking directly to the designer.
 """

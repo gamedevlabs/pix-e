@@ -1,17 +1,17 @@
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from backend.llm import LLMOrchestrator, get_config
-from backend.llm.types import LLMRequest
+from game_concept.models import GameConcept
+from llm import LLMOrchestrator, get_config
+from llm.types import LLMRequest
 
 # Import handlers to trigger auto-registration
-from backend.pillars.llm import handlers  # noqa: F401
+from pillars.llm import handlers  # noqa: F401
 
-from .models import GameDesignDescription, Pillar
-from .serializers import GameDesignSerializer, PillarSerializer
+from .models import Pillar
+from .serializers import PillarSerializer
 
 # Create your views here.
 
@@ -38,28 +38,6 @@ class PillarViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-class DesignView(ModelViewSet):
-    serializer_class = GameDesignSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return GameDesignDescription.objects.filter(user=self.request.user)
-
-    def get_object(self):
-        return GameDesignDescription.objects.get(user=self.request.user)
-
-    @action(detail=False, methods=["GET"], url_path="get_or_create")
-    def get_or_create(self, request):
-        obj, created = GameDesignDescription.objects.get_or_create(
-            user=self.request.user, defaults={"description": ""}
-        )
-        serializer = self.get_serializer(obj)
-        return Response(
-            serializer.data,
-            status=201 if created else 200,
-        )
 
 
 class PillarFeedbackView(ViewSet):
@@ -146,15 +124,13 @@ class LLMFeedbackView(ViewSet):
         This replicates the old evaluate_pillars_in_context behavior.
         """
         try:
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
+            game_concept = GameConcept.objects.filter(
+                user=self.request.user, is_current=True
             ).first()
             pillars = list(Pillar.objects.filter(user=request.user))
 
-            if not design:
-                return JsonResponse(
-                    {"error": "No game design description found"}, status=404
-                )
+            if not game_concept:
+                return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
@@ -163,19 +139,19 @@ class LLMFeedbackView(ViewSet):
             completeness_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_completeness",
-                data={"pillars_text": pillars_text, "context": design.description},
+                data={"pillars_text": pillars_text, "context": game_concept.content},
                 model_id=model_id,
             )
             contradictions_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_contradictions",
-                data={"pillars_text": pillars_text, "context": design.description},
+                data={"pillars_text": pillars_text, "context": game_concept.content},
                 model_id=model_id,
             )
             additions_request = LLMRequest(
                 feature="pillars",
                 operation="suggest_additions",
-                data={"pillars_text": pillars_text, "context": design.description},
+                data={"pillars_text": pillars_text, "context": game_concept.content},
                 model_id=model_id,
             )
 
@@ -202,14 +178,12 @@ class LLMFeedbackView(ViewSet):
     def completeness(self, request):
         try:
             pillars = list(Pillar.objects.filter(user=request.user))
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
+            game_concept = GameConcept.objects.filter(
+                user=self.request.user, is_current=True
             ).first()
 
-            if not design:
-                return JsonResponse(
-                    {"error": "No game design description found"}, status=404
-                )
+            if not game_concept:
+                return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
 
@@ -218,7 +192,7 @@ class LLMFeedbackView(ViewSet):
                 operation="evaluate_completeness",
                 data={
                     "pillars_text": format_pillars_text(pillars),
-                    "context": design.description,
+                    "context": game_concept.content,
                 },
                 model_id=get_model_id(model),
             )
@@ -237,14 +211,12 @@ class LLMFeedbackView(ViewSet):
     def contradictions(self, request):
         try:
             pillars = list(Pillar.objects.filter(user=request.user))
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
+            game_concept = GameConcept.objects.filter(
+                user=self.request.user, is_current=True
             ).first()
 
-            if not design:
-                return JsonResponse(
-                    {"error": "No game design description found"}, status=404
-                )
+            if not game_concept:
+                return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
 
@@ -253,7 +225,7 @@ class LLMFeedbackView(ViewSet):
                 operation="evaluate_contradictions",
                 data={
                     "pillars_text": format_pillars_text(pillars),
-                    "context": design.description,
+                    "context": game_concept.content,
                 },
                 model_id=get_model_id(model),
             )
@@ -272,14 +244,12 @@ class LLMFeedbackView(ViewSet):
     def additions(self, request):
         try:
             pillars = list(Pillar.objects.filter(user=request.user))
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
+            game_concept = GameConcept.objects.filter(
+                user=self.request.user, is_current=True
             ).first()
 
-            if not design:
-                return JsonResponse(
-                    {"error": "No game design description found"}, status=404
-                )
+            if not game_concept:
+                return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
 
@@ -288,7 +258,7 @@ class LLMFeedbackView(ViewSet):
                 operation="suggest_additions",
                 data={
                     "pillars_text": format_pillars_text(pillars),
-                    "context": design.description,
+                    "context": game_concept.content,
                 },
                 model_id=get_model_id(model),
             )
