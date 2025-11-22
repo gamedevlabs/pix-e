@@ -12,6 +12,7 @@ from pillars.llm import handlers  # noqa: F401
 
 from .models import Pillar
 from .serializers import PillarSerializer
+from .utils import save_pillar_llm_call
 
 # Create your views here.
 
@@ -65,6 +66,14 @@ class PillarFeedbackView(ViewSet):
             # Execute through orchestrator
             response = self.orchestrator.execute(llm_request)
 
+            # Save metrics
+            save_pillar_llm_call(
+                user=request.user,
+                operation="validate",
+                response=response,
+                pillar=pillar,
+            )
+
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
@@ -113,6 +122,14 @@ class PillarFeedbackView(ViewSet):
             # Execute through orchestrator
             response = self.orchestrator.execute(llm_request)
 
+            # Save metrics
+            save_pillar_llm_call(
+                user=request.user,
+                operation="improve_explained",
+                response=response,
+                pillar=pillar,
+            )
+
             # Return enriched response (don't save - user decides)
             return JsonResponse(
                 {
@@ -125,7 +142,7 @@ class PillarFeedbackView(ViewSet):
                     "metadata": {
                         "execution_time_ms": response.metadata.execution_time_ms,
                         "model_used": (
-                            response.metadata.models_used[0]
+                            response.metadata.models_used[0].name
                             if response.metadata.models_used
                             else None
                         ),
@@ -231,6 +248,23 @@ class LLMFeedbackView(ViewSet):
             contradictions_response = self.orchestrator.execute(contradictions_request)
             additions_response = self.orchestrator.execute(additions_request)
 
+            # Save metrics for each call
+            save_pillar_llm_call(
+                user=request.user,
+                operation="evaluate_completeness",
+                response=completeness_response,
+            )
+            save_pillar_llm_call(
+                user=request.user,
+                operation="evaluate_contradictions",
+                response=contradictions_response,
+            )
+            save_pillar_llm_call(
+                user=request.user,
+                operation="suggest_additions",
+                response=additions_response,
+            )
+
             combined_result = {
                 "coverage": completeness_response.results,
                 "contradictions": contradictions_response.results,
@@ -270,6 +304,14 @@ class LLMFeedbackView(ViewSet):
             )
 
             response = self.orchestrator.execute(llm_request)
+
+            # Save metrics
+            save_pillar_llm_call(
+                user=request.user,
+                operation="evaluate_completeness",
+                response=response,
+            )
+
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
@@ -303,6 +345,14 @@ class LLMFeedbackView(ViewSet):
             )
 
             response = self.orchestrator.execute(llm_request)
+
+            # Save metrics
+            save_pillar_llm_call(
+                user=request.user,
+                operation="evaluate_contradictions",
+                response=response,
+            )
+
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
@@ -336,6 +386,14 @@ class LLMFeedbackView(ViewSet):
             )
 
             response = self.orchestrator.execute(llm_request)
+
+            # Save metrics
+            save_pillar_llm_call(
+                user=request.user,
+                operation="suggest_additions",
+                response=response,
+            )
+
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
@@ -367,6 +425,14 @@ class LLMFeedbackView(ViewSet):
             )
 
             response = self.orchestrator.execute(llm_request)
+
+            # Save metrics
+            save_pillar_llm_call(
+                user=request.user,
+                operation="evaluate_context",
+                response=response,
+            )
+
             return JsonResponse(response.results, status=200)
 
         except Exception as e:

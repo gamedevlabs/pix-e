@@ -100,17 +100,44 @@
     )
   }
 
-  async function fixPillarWithAIAPICall(pillar: Pillar) {
-    return await $fetch<PillarDTO>(`${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`, {
-      method: 'POST',
-      body: {
-        model: llm.active_llm,
+  async function fixPillarWithAIAPICall(
+    pillar: Pillar,
+    validationIssues: StructuralIssue[] = [],
+  ) {
+    return await $fetch<FixPillarAPIResponse>(
+      `${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+          validation_issues: validationIssues.map((issue) => ({
+            title: issue.title,
+            description: issue.description,
+          })),
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+    )
+  }
+
+  async function acceptPillarFixAPICall(pillarId: number, name: string, description: string) {
+    return await $fetch<Pillar>(
+      `${config.public.apiBase}/llm/pillars/${pillarId}/accept-fix/`,
+      {
+        method: 'POST',
+        body: {
+          name,
+          description,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
+    )
   }
 
   async function getContextInPillarsAPICall(context: string) {
@@ -138,6 +165,7 @@
     getPillarsCompletenessAPICall,
     getPillarsAdditionsAPICall,
     fixPillarWithAIAPICall,
+    acceptPillarFixAPICall,
     getContextInPillarsAPICall,
   }
 }

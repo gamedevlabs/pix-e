@@ -11,7 +11,6 @@ from llm import BaseOperationHandler
 from llm.exceptions import InvalidRequestError
 from pillars.llm.prompts import (
     ContextInPillarsPrompt,
-    ImprovePillarPrompt,
     ImprovePillarWithExplanationPrompt,
     PillarAdditionPrompt,
     PillarCompletenessPrompt,
@@ -21,7 +20,6 @@ from pillars.llm.prompts import (
 from pillars.llm.schemas import (
     ContextInPillarsResponse,
     ImprovedPillarResponse,
-    LLMPillar,
     PillarAdditionsFeedback,
     PillarCompletenessResponse,
     PillarContradictionResponse,
@@ -47,24 +45,6 @@ class ValidatePillarHandler(BaseOperationHandler):
             )
 
 
-class ImprovePillarHandler(BaseOperationHandler):
-    """Improve a game design pillar by fixing structural issues."""
-
-    operation_id = "pillars.improve"
-    description = "Generate an improved version of a pillar by fixing structural issues"
-    version = "1.0.0"
-    response_schema = LLMPillar
-
-    def build_prompt(self, data: Dict[str, Any]) -> str:
-        return ImprovePillarPrompt % (data["name"], data["description"])
-
-    def validate_input(self, data: Dict[str, Any]) -> None:
-        if "name" not in data or "description" not in data:
-            raise InvalidRequestError(
-                message="Missing required fields: 'name' and 'description'"
-            )
-
-
 class ImprovePillarWithExplanationHandler(BaseOperationHandler):
     """Improve a pillar and explain the improvements made."""
 
@@ -77,12 +57,15 @@ class ImprovePillarWithExplanationHandler(BaseOperationHandler):
         # Format validation issues for the prompt
         issues = data.get("validation_issues", [])
         if issues:
+            # Format as numbered list to make it clear all must be addressed
             issues_text = "\n".join(
                 [
-                    f"- {issue.get('title', 'Unknown')}: {issue.get('description', '')}"
-                    for issue in issues
+                    f"{i+1}. {issue.get('title', 'Unknown')}: {issue.get('description', '')}"
+                    for i, issue in enumerate(issues)
                 ]
             )
+            # Add explicit count at the top
+            issues_text = f"Total issues to fix: {len(issues)}\n\n{issues_text}"
         else:
             issues_text = (
                 "No specific issues provided. Improve for clarity and structure."

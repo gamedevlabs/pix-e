@@ -87,8 +87,7 @@ class PillarChange(BaseModel):
     after: str = Field(description="The new value after improvement")
     reasoning: str = Field(description="Why this change improves the pillar")
     issues_addressed: list[str] = Field(
-        default_factory=list,
-        description="Which validation issues this change fixes",
+        description="Which validation issues this change fixes (can be empty list)"
     )
 
 
@@ -104,6 +103,5 @@ class ImprovedPillarResponse(BaseModel):
         description="High-level summary of why the improved pillar is better"
     )
     validation_issues_fixed: list[str] = Field(
-        default_factory=list,
-        description="List of validation issue titles that were fixed",
+        description="List of validation issue titles that were fixed"
     )

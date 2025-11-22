@@ -62,3 +62,39 @@ type ContextInPillarsFeedback = {
   rating: number
   feedback: string
 }
+
+// --- Types for improved pillar with explanations ---
+
+type PillarChange = {
+  field: 'name' | 'description'
+  after: string
+  reasoning: string
+  issues_addressed: string[]
+}
+
+type ImprovedPillarResponse = {
+  name: string
+  description: string
+  changes: PillarChange[]
+  overall_summary: string
+  validation_issues_fixed: string[]
+}
+
+type FixPillarAPIResponse = {
+  pillar_id: number
+  original: {
+    name: string
+    description: string
+  }
+  improved: ImprovedPillarResponse
+  metadata: {
+    execution_time_ms: number
+    model_used: string | null
+  }
+}
+
+type StructuralIssue = {
+  title: string
+  description: string
+  severity: number
+}

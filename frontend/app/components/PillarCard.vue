@@ -19,11 +19,21 @@ const toast = useToast()
 const pillars = usePillars()
 const overlay = useOverlay()
 
-async function open() {
+async function openFixModal() {
   const modal = overlay.create(PillarFixModal, {
     props: {
       originalPillar: props.pillar,
-      onClose: (pillar) => emit('update', pillar),
+      validationIssues: props.pillar.llm_feedback?.structuralIssues ?? [],
+      onClose: () => modal.close(),
+      onAccepted: (updatedPillar: Pillar) => {
+        emit('update', updatedPillar)
+        modal.close()
+        toast.add({
+          title: 'Pillar Updated',
+          description: 'The AI improvement has been applied.',
+          color: 'success',
+        })
+      },
     },
   })
   modal.open()
@@ -81,6 +91,8 @@ async function handleValidation() {
             @click="handleValidation"
           />
         </div>
+        
+        <!-- Show issues list -->
         <div v-for="(issue, index) in pillar.llm_feedback?.structuralIssues" :key="index">
           <UAlert
             class="mb-2"
@@ -89,12 +101,6 @@ async function handleValidation() {
             :title="issue.title"
             :description="'Severity ' + issue.severity"
             :actions="[
-              {
-                label: 'Fix with AI',
-                color: 'primary',
-                variant: 'subtle',
-                onClick: () => open(),
-              },
               {
                 label: 'Dismiss',
                 color: 'warning',
@@ -105,6 +111,16 @@ async function handleValidation() {
             ]"
           />
         </div>
+        
+        <!-- Single "Fix All Issues" button (only show if there are issues) -->
+        <UButton
+          v-if="(pillar.llm_feedback?.structuralIssues?.length ?? 0) > 0"
+          class="mt-3 w-full"
+          color="primary"
+          icon="i-heroicons-sparkles"
+          label="Fix All Issues with AI"
+          @click="openFixModal"
+        />
       </div>
     </template>
   </NamedEntityCard>
