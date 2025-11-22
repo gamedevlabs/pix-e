@@ -11,22 +11,16 @@ Check for structural issues regarding the following points:
 1. The title does not match the description.
 2. The intent of the pillar is not clear.
 3. The pillar focuses on more than one aspect.
-4. The description uses bullet points or lists.
+4. The description uses bullet points or lists (e.g., lines starting with •, -, *, or numbered items like 1. 2. 3., or line breaks creating a list structure).
+
+IMPORTANT: For issue #4, only flag actual bullet points, dashes, asterisks, or numbered lists. Do NOT flag prose text that uses "and" or has multiple clauses. Prose paragraphs are NOT lists.
+
 Pillar Title: %s
 Pillar Description: %s
+
+For each issue found, provide feedback. If no issues are found for a point, do not mention it.
 For each feedback limit your answer to one sentence.
 Answer as if you were talking directly to the designer.
-"""
-
-ImprovePillarPrompt = """Improve the following Game Design Pillar.
-Check for structural issues regarding the following points:
-1. The title does not match the description.
-2. The intent of the pillar is not clear.
-3. The pillar focuses on more than one aspect.
-4. The description uses bullet points or lists.
-Pillar Title: %s
-Pillar Description: %s
-Rewrite erroneous parts of the pillar and return a new pillar object.
 """
 
 PillarCompletenessPrompt = """Assume the role of a game design expert.
@@ -70,23 +64,47 @@ Design Pillars: %s
 ImprovePillarWithExplanationPrompt = """
 Improve the following Game Design Pillar and explain your improvements.
 
-VALIDATION ISSUES DETECTED:
+VALIDATION ISSUES DETECTED BY VALIDATION SYSTEM (YOU MUST ADDRESS ALL OF THESE):
 %s
 
 CURRENT PILLAR:
 Name: %s
 Description: %s
 
-INSTRUCTIONS:
-1. Fix the structural issues listed above
-2. For each change you make, explain WHY it improves the pillar
-3. Reference which validation issue(s) each change addresses
+CRITICAL INSTRUCTIONS:
+1. You MUST address ALL validation issues listed above. The validation system has already determined these issues exist, so you must fix them all.
+2. Do NOT skip any issues. Do NOT decide that an issue "doesn't apply" - the validation system has already flagged it.
+3. For each issue, make appropriate changes to fix it. If multiple issues can be addressed with the same change, that's fine, but ensure ALL issues are addressed.
 
-RULES FOR GOOD PILLARS:
+4. FOR EACH CHANGE YOU MAKE:
+   - Explain WHY it improves the pillar
+   - Identify which validation issues this change fixes (a single change can fix multiple issues)
+   - List ALL of those issues in the "issues_addressed" array for that change
+   - Use the EXACT issue titles from the validation issues list above
+   - IMPORTANT: If your description change fixes "Issue A" AND "Issue B", then that change's "issues_addressed" must be ["Issue A", "Issue B"] - include BOTH
+
+5. In your response, list ALL issues in the "validation_issues_fixed" array - you must fix all of them, using their exact titles from the list above.
+
+6. VERIFICATION STEP (CRITICAL): Before finalizing your response:
+   - Count the issues in "validation_issues_fixed" 
+   - For each issue in that list, verify it appears in at least one change's "issues_addressed" array
+   - If any issue is missing from all "issues_addressed" arrays, you MUST add it to the appropriate change's array
+   - Example: If "validation_issues_fixed" = ["Issue 1", "Issue 2", "Issue 3"], then:
+     * "Issue 1" must appear in at least one change's "issues_addressed"
+     * "Issue 2" must appear in at least one change's "issues_addressed"  
+     * "Issue 3" must appear in at least one change's "issues_addressed"
+
+RULES FOR GOOD PILLARS (use these to guide your fixes):
 - Title must directly reflect what the description talks about
 - Intent must be clear and unambiguous
 - Focus on ONE aspect only (not multiple concerns)
 - Use flowing prose, NOT bullet points or lists
+
+MAPPING ISSUES TO CHANGES:
+- Issues related to title/name mismatch typically require name changes
+- Issues related to clarity, intent, focus, or structure typically require description changes
+- A single description change can fix MULTIPLE issues (e.g., if you rewrite the description to be clearer and more focused, it may fix both an "Unclear Intent" issue AND a "Focus on Multiple Aspects" issue simultaneously)
+- When a description change fixes multiple issues, ALL of them must be listed in that change's "issues_addressed" array - do not list only the "primary" issue
 
 RESPOND WITH THIS EXACT JSON STRUCTURE:
 {
@@ -97,18 +115,24 @@ RESPOND WITH THIS EXACT JSON STRUCTURE:
       "field": "name",
       "after": "The new name value",
       "reasoning": "Explanation of why this name is better",
-      "issues_addressed": e.g. ["Title Mismatch"]
+      "issues_addressed": ["<use exact issue title from the list above>"]
     },
     {
       "field": "description",
       "after": "The new description value",
       "reasoning": "Explanation of why this description is better",
-      "issues_addressed": e.g. ["Unclear Intent", "Use of Bullet Points"]
+      "issues_addressed": ["<use exact issue titles from the list above, can include multiple>"]
     }
   ],
   "overall_summary": "Summary of why improved pillar is better",
-  "validation_issues_fixed": ["Title Mismatch", "Unclear Intent"]
+  "validation_issues_fixed": ["<must include ALL issue titles from the list above>"]
 }
 
-Only include changes for fields you actually modified.
+IMPORTANT RULES:
+1. The "validation_issues_fixed" array must include ALL issues from the list above (use their exact titles).
+2. If you address multiple issues with one change, list ALL of them in that change's "issues_addressed" array (use exact issue titles). DO NOT list only the "primary" issue - list ALL issues that change addresses.
+3. Every issue in "validation_issues_fixed" MUST appear in at least one change's "issues_addressed" array. This is non-negotiable.
+4. Use the EXACT issue titles from the validation issues list above - do not make up new issue names or use examples from this prompt.
+5. If a single change (e.g., a description rewrite) fixes multiple issues from the list above, ALL of those issues must be included in that change's "issues_addressed" array. Do not list only one issue if the change actually fixes multiple issues.
+6. Before submitting, double-check: every issue title in "validation_issues_fixed" must appear in at least one "issues_addressed" array in the "changes" array.
 """

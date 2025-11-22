@@ -36,8 +36,12 @@ export function usePillars() {
     return await pillarsApi.validatePillarAPICall(pillar)
   }
 
-  async function fixPillarWithAI(pillar: Pillar) {
-    return await pillarsApi.fixPillarWithAIAPICall(pillar)
+  async function fixPillarWithAI(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
+    return await pillarsApi.fixPillarWithAIAPICall(pillar, validationIssues)
+  }
+
+  async function acceptPillarFix(pillarId: number, name: string, description: string) {
+    return await pillarsApi.acceptPillarFixAPICall(pillarId, name, description)
   }
 
   async function getPillarContradictions() {
@@ -66,6 +70,7 @@ export function usePillars() {
     updateDesignIdea,
     getPillarsInContextFeedback,
     fixPillarWithAI,
+    acceptPillarFix,
     getPillarContradictions,
     getPillarsCompleteness,
     getPillarsAdditions,
