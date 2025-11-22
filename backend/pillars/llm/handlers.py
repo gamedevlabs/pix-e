@@ -60,7 +60,8 @@ class ImprovePillarWithExplanationHandler(BaseOperationHandler):
             # Format as numbered list to make it clear all must be addressed
             issues_text = "\n".join(
                 [
-                    f"{i+1}. {issue.get('title', 'Unknown')}: {issue.get('description', '')}"
+                    f"{i+1}. {issue.get('title', 'Unknown')}: "
+                    f"{issue.get('description', '')}"
                     for i, issue in enumerate(issues)
                 ]
             )
