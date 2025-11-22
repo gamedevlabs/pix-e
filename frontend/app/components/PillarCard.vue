@@ -91,7 +91,7 @@ async function handleValidation() {
             @click="handleValidation"
           />
         </div>
-        
+
         <!-- Show issues list -->
         <div v-for="(issue, index) in pillar.llm_feedback?.structuralIssues" :key="index">
           <UAlert
@@ -111,7 +111,7 @@ async function handleValidation() {
             ]"
           />
         </div>
-        
+
         <!-- Single "Fix All Issues" button (only show if there are issues) -->
         <UButton
           v-if="(pillar.llm_feedback?.structuralIssues?.length ?? 0) > 0"
