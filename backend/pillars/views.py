@@ -76,36 +76,108 @@ class PillarFeedbackView(ViewSet):
 
     @action(detail=True, methods=["POST"], url_path="fix")
     def fix_pillar(self, request, pk):
+        """
+        Generate an improved pillar with explanations.
+
+        Expects request body:
+        {
+            "model": "gemini" | "openai | "ollama",
+            "validation_issues": [{"title": "...", "description": "..."}]  # optional
+        }
+
+        Returns enriched response with original, improved, and explanations.
+        """
         try:
             pillar = Pillar.objects.filter(id=pk).first()
             if not pillar:
                 return JsonResponse({"error": "Pillar not found"}, status=404)
 
-            model = request.data.get("model", "gemini")
+            model = request.data.get("model", "openai")
+            model_id = get_model_id(model)
 
-            # Create orchestrator request
+            # Get validation issues from request (frontend caches these)
+            validation_issues = request.data.get("validation_issues", [])
+
+            # Create orchestrator request with explanation handler
             llm_request = LLMRequest(
                 feature="pillars",
-                operation="improve",
-                data={"name": pillar.name, "description": pillar.description},
-                model_id=get_model_id(model),
+                operation="improve_explained",
+                data={
+                    "name": pillar.name,
+                    "description": pillar.description,
+                    "validation_issues": validation_issues,
+                },
+                model_id=model_id,
             )
 
             # Execute through orchestrator
             response = self.orchestrator.execute(llm_request)
 
-            # Update pillar with improved version
-            improved = response.results
-            pillar.name = improved.get("name", pillar.name)
-            pillar.description = improved.get("description", pillar.description)
+            # Return enriched response (don't save - user decides)
+            return JsonResponse(
+                {
+                    "pillar_id": pillar.id,
+                    "original": {
+                        "name": pillar.name,
+                        "description": pillar.description,
+                    },
+                    "improved": response.results,
+                    "metadata": {
+                        "execution_time_ms": response.metadata.execution_time_ms,
+                        "model_used": (
+                            response.metadata.models_used[0]
+                            if response.metadata.models_used
+                            else None
+                        ),
+                    },
+                },
+                status=200,
+            )
+
+        except Exception as e:
+            print(f"Error in fix_pillar: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return JsonResponse({"error": str(e)}, status=500)
+
+    @action(detail=True, methods=["POST"], url_path="accept-fix")
+    def accept_fix(self, request, pk):
+        """
+        Accept and persist an AI-generated improvement.
+
+        Expects request body:
+        {
+            "name": "...",
+            "description": "..."
+        }
+        """
+        try:
+            pillar = Pillar.objects.filter(id=pk).first()
+            if not pillar:
+                return JsonResponse({"error": "Pillar not found"}, status=404)
+
+            # Validate required fields
+            name = request.data.get("name")
+            description = request.data.get("description")
+
+            if not name or not description:
+                return JsonResponse(
+                    {"error": "Missing required fields: 'name' and 'description'"},
+                    status=400,
+                )
+
+            # Update pillar with accepted improvement
+            pillar.name = name
+            pillar.description = description
             pillar.save()
 
-            # Return serialized pillar
+            # Return updated pillar
             data = PillarSerializer(pillar).data
             return JsonResponse(data, status=200)
 
         except Exception as e:
-            print(f"Error in fix_pillar: {e}")
+            print(f"Error in accept_fix: {e}")
             import traceback
 
             traceback.print_exc()

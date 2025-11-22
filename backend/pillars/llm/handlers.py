@@ -12,6 +12,7 @@ from llm.exceptions import InvalidRequestError
 from pillars.llm.prompts import (
     ContextInPillarsPrompt,
     ImprovePillarPrompt,
+    ImprovePillarWithExplanationPrompt,
     PillarAdditionPrompt,
     PillarCompletenessPrompt,
     PillarContradictionPrompt,
@@ -19,6 +20,7 @@ from pillars.llm.prompts import (
 )
 from pillars.llm.schemas import (
     ContextInPillarsResponse,
+    ImprovedPillarResponse,
     LLMPillar,
     PillarAdditionsFeedback,
     PillarCompletenessResponse,
@@ -55,6 +57,42 @@ class ImprovePillarHandler(BaseOperationHandler):
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         return ImprovePillarPrompt % (data["name"], data["description"])
+
+    def validate_input(self, data: Dict[str, Any]) -> None:
+        if "name" not in data or "description" not in data:
+            raise InvalidRequestError(
+                message="Missing required fields: 'name' and 'description'"
+            )
+
+
+class ImprovePillarWithExplanationHandler(BaseOperationHandler):
+    """Improve a pillar and explain the improvements made."""
+
+    operation_id = "pillars.improve_explained"
+    description = "Generate improved pillar with detailed explanations of changes"
+    version = "1.0.0"
+    response_schema = ImprovedPillarResponse
+
+    def build_prompt(self, data: Dict[str, Any]) -> str:
+        # Format validation issues for the prompt
+        issues = data.get("validation_issues", [])
+        if issues:
+            issues_text = "\n".join(
+                [
+                    f"- {issue.get('title', 'Unknown')}: {issue.get('description', '')}"
+                    for issue in issues
+                ]
+            )
+        else:
+            issues_text = (
+                "No specific issues provided. Improve for clarity and structure."
+            )
+
+        return ImprovePillarWithExplanationPrompt % (
+            issues_text,
+            data["name"],
+            data["description"],
+        )
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "name" not in data or "description" not in data:
