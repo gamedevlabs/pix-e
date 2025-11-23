@@ -1,28 +1,112 @@
 ﻿import { usePillarsApi } from '@/composables/api/pillarsApi'
 
+// Shared state - singleton pattern for cross-component reactivity
+const items = ref<Pillar[]>([])
+const loading = ref(false)
+const error = ref<unknown>(null)
+
+const designIdea = ref<string>('')
+const llmFeedback = ref<PillarsInContextFeedback>({
+  coverage: {
+    pillarFeedback: [],
+  },
+  contradictions: {
+    contradictions: [],
+  },
+  proposedAdditions: {
+    additions: [],
+  },
+})
+
+const featureFeedback = ref<ContextInPillarsFeedback>({
+  rating: 0,
+  feedback: '',
+})
+
+const additionalFeature = ref<string>('')
+
+// Agentic evaluation state
+const evaluationResult = ref<EvaluateAllResponse | null>(null)
+const isEvaluating = ref(false)
+const evaluationError = ref<string | null>(null)
+
 export function usePillars() {
-  const basics = useCrud<Pillar>('llm/pillars/')
-
+  const config = useRuntimeConfig()
   const pillarsApi = usePillarsApi()
-  const designIdea = ref<string>('')
-  const llmFeedback = ref<PillarsInContextFeedback>({
-    coverage: {
-      pillarFeedback: [],
-    },
-    contradictions: {
-      contradictions: [],
-    },
-    proposedAdditions: {
-      additions: [],
-    },
-  })
+  const { success, error: errorToast } = usePixeToast()
+  const API_URL = `${config.public.apiBase}/llm/pillars/`
 
-  const featureFeedback = ref<ContextInPillarsFeedback>({
-    rating: 0,
-    feedback: '',
-  })
+  // Shared fetch function
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const data = await $fetch<Pillar[]>(API_URL, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
+      items.value = data || []
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    } finally {
+      loading.value = false
+    }
+  }
 
-  const additionalFeature = ref<string>('')
+  async function createItem(payload: Partial<Pillar>) {
+    try {
+      const result = await $fetch<Pillar>(API_URL, {
+        method: 'POST',
+        body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Item created successfully!')
+      await fetchAll()
+      return result
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+      return null
+    }
+  }
+
+  async function updateItem(id: number | string, payload: Partial<Pillar>) {
+    try {
+      await $fetch<Pillar>(`${API_URL}${id}/`, {
+        method: 'PATCH',
+        body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Item updated successfully!')
+      await fetchAll()
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    }
+  }
+
+  async function deleteItem(id: number | string) {
+    try {
+      await $fetch<null>(`${API_URL}${id}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Item deleted successfully!')
+      await fetchAll()
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    }
+  }
 
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
@@ -60,12 +144,49 @@ export function usePillars() {
     featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
   }
 
+  // --- New agentic evaluation methods ---
+
+  async function evaluateAll() {
+    isEvaluating.value = true
+    evaluationError.value = null
+    try {
+      evaluationResult.value = await pillarsApi.evaluateAllAPICall()
+    } catch (err) {
+      console.error('Error evaluating pillars:', err)
+      evaluationError.value = 'Failed to evaluate pillars. Please try again.'
+    } finally {
+      isEvaluating.value = false
+    }
+  }
+
+  async function resolveContradictions(contradictions: ContradictionsResponse) {
+    return await pillarsApi.resolveContradictionsAPICall(contradictions)
+  }
+
+  async function acceptAddition(name: string, description: string) {
+    return await pillarsApi.acceptAdditionAPICall(name, description)
+  }
+
+  function clearEvaluation() {
+    evaluationResult.value = null
+    evaluationError.value = null
+  }
+
   return {
-    ...basics,
+    // CRUD operations with shared state
+    items,
+    loading,
+    error,
+    fetchAll,
+    createItem,
+    updateItem,
+    deleteItem,
+    // Pillar-specific state
     designIdea,
     llmFeedback,
     featureFeedback,
     additionalFeature,
+    // Pillar operations
     validatePillar,
     updateDesignIdea,
     getPillarsInContextFeedback,
@@ -75,5 +196,13 @@ export function usePillars() {
     getPillarsCompleteness,
     getPillarsAdditions,
     getContextInPillarsFeedback,
+    // Agentic evaluation
+    evaluationResult,
+    isEvaluating,
+    evaluationError,
+    evaluateAll,
+    resolveContradictions,
+    acceptAddition,
+    clearEvaluation,
   }
 }

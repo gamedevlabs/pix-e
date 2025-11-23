@@ -13,13 +13,8 @@ const {
   deleteItem: deletePillar,
   additionalFeature,
   designIdea,
-  llmFeedback,
   featureFeedback,
-  getPillarsInContextFeedback,
   updateDesignIdea,
-  getPillarsCompleteness,
-  getPillarsAdditions,
-  getPillarContradictions,
   getContextInPillarsFeedback,
 } = usePillars()
 
@@ -84,92 +79,14 @@ async function dismissIssue(pillar: Pillar, index: number) {
         </div>
       </SimpleCardSection>
 
-      <!-- Overall LLM Feedback -->
+      <!-- Agentic Evaluation Panel -->
       <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
-        <h2 class="text-2xl font-bold">
-          LLM Feedback
-          <UButton
-            icon="i-lucide-refresh-cw"
-            label="Refresh All"
-            color="secondary"
-            variant="soft"
-            loading-auto
-            @click="getPillarsInContextFeedback"
-          />
-        </h2>
+        <PillarEvaluationPanel />
+      </div>
 
-        <div class="w-full p-4 gap-4">
-          <h2 class="text-2xl font-bold">
-            Coverage:
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="getPillarsCompleteness"
-            />
-          </h2>
-          <!-- Coverage Feedback -->
-          <div class="w-full p-4 gap-4">
-            <div
-              v-for="pillar in llmFeedback.coverage.pillarFeedback"
-              :key="pillar.name"
-              class="border-b mb-4 border-neutral-500 pb-4"
-            >
-              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
-              <p>{{ pillar.reasoning }}</p>
-            </div>
-          </div>
-          <!-- Contradictions Feedback -->
-          <h2 class="text-2xl font-bold">
-            Contradictions:
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="getPillarContradictions"
-            />
-          </h2>
-          <div class="w-full p-4 gap-4">
-            <div
-              v-for="contradiction in llmFeedback.contradictions.contradictions"
-              :key="contradiction.pillarOneId"
-              class="border-b mb-4 border-neutral-500 pb-4"
-            >
-              <h3 class="text-lg font-semibold">
-                {{ contradiction.pillarOneTitle + ' vs ' + contradiction.pillarTwoTitle }}
-              </h3>
-              <p>{{ contradiction.reason }}</p>
-            </div>
-          </div>
-
-          <!-- Additions Feedback -->
-          <h2 class="text-2xl font-bold">
-            Additions:
-
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="getPillarsAdditions"
-            />
-          </h2>
-          <div class="w-full p-4 gap-4">
-            <div
-              v-for="pillar in llmFeedback.proposedAdditions.additions"
-              :key="pillar.name"
-              class="border-b mb-4 border-neutral-500 pb-4"
-            >
-              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
-              <p>{{ pillar.description }}</p>
-            </div>
-          </div>
-        </div>
+      <!-- Monolithic Feedback Panel -->
+      <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
+        <PillarMonolithicFeedbackPanel />
       </div>
     </div>
 

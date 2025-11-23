@@ -40,7 +40,15 @@ existing pillars. These are gaps that might need additional pillars.
 
 Game Design Idea: %s
 
-Design Pillars: %s
+Design Pillars:
+%s
+
+CRITICAL INSTRUCTIONS:
+- Each pillar has a unique ID in the format [ID: X] followed by its name.
+- When providing pillarFeedback, you MUST use the EXACT pillarId and name
+  from the list above.
+- Do NOT invent or guess IDs. Use ONLY the IDs provided.
+- If pillar "Foo" has [ID: 42], then use pillarId: 42 and name: "Foo"
 
 Respond with:
 - hasGaps: true if there are important aspects of the game concept not covered
@@ -57,7 +65,17 @@ towards each other. Use the Game Design Idea as context.
 
 Game Design Idea: %s
 
-Design Pillars: %s
+Design Pillars:
+%s
+
+CRITICAL INSTRUCTIONS:
+- Each pillar has a unique ID in the format [ID: X] followed by its name.
+- When reporting contradictions, you MUST use the EXACT ID numbers and EXACT
+  pillar names from the list above.
+- Do NOT invent or guess IDs. Use ONLY the IDs provided.
+- pillarOneId and pillarTwoId must be the actual IDs from the [ID: X] format.
+- pillarOneTitle and pillarTwoTitle must match the exact pillar names.
+- If pillar "Foo" has [ID: 42], then use pillarOneId: 42 and pillarOneTitle: "Foo"
 """
 
 PillarAdditionPrompt = """Assume the role of a game design expert.

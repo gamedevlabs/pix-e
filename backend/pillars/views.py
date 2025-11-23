@@ -28,10 +28,11 @@ def get_model_id(model_name: str) -> str:
 
 
 def format_pillars_text(pillars: list[Pillar]) -> str:
-    """Format pillars as text for orchestrator."""
-    return "\n".join(
-        [f"{i+1}. {p.name}: {p.description}" for i, p in enumerate(pillars)]
-    )
+    """Format pillars as text for orchestrator.
+
+    Uses actual database IDs so the LLM can reference them correctly.
+    """
+    return "\n".join([f"[ID: {p.id}] {p.name}: {p.description}" for p in pillars])
 
 
 class PillarViewSet(ModelViewSet):

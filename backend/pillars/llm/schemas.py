@@ -55,8 +55,8 @@ class PillarCompletenessResponse(BaseModel):
         description="Reasoning for each pillar's fit with the concept"
     )
     missingAspects: list[str] = Field(
-        default_factory=list,
-        description="List of aspects from the game concept not covered by pillars",
+        description="List of aspects from the game concept not covered by pillars. "
+        "Empty list if no gaps."
     )
 
 

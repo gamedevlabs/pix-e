@@ -12,7 +12,7 @@ from llm.exceptions import InvalidRequestError
 from pillars.llm.prompts import (
     ContextInPillarsPrompt,
     ImprovePillarWithExplanationPrompt,
-    PillarAdditionPrompt,
+    PillarAdditionPromptSimple,
     PillarCompletenessPrompt,
     PillarContradictionPrompt,
     ValidationPrompt,
@@ -136,7 +136,8 @@ class SuggestAdditionsHandler(BaseOperationHandler):
     def build_prompt(self, data: Dict[str, Any]) -> str:
         pillars_text = data["pillars_text"]
         context = data["context"]
-        return PillarAdditionPrompt % (context, pillars_text)
+        # Use simple prompt for standalone handler (no concept fit context)
+        return PillarAdditionPromptSimple % (context, pillars_text)
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "pillars_text" not in data or "context" not in data:
