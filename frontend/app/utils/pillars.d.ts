@@ -98,3 +98,45 @@ type StructuralIssue = {
   description: string
   severity: number
 }
+
+// --- Types for new agentic pillar evaluation ---
+
+type ConceptFitResponse = {
+  hasGaps: boolean
+  pillarFeedback: CompletenessAnswer[]
+  missingAspects: string[]
+}
+
+type ContradictionsResponse = {
+  hasContradictions: boolean
+  contradictions: ContradictionIssue[]
+}
+
+type ResolutionSuggestion = {
+  pillarOneId: number
+  pillarTwoId: number
+  pillarOneTitle: string
+  pillarTwoTitle: string
+  resolutionStrategy: string
+  suggestedChanges: string[]
+  alternativeApproach: string
+}
+
+type ContradictionResolutionResponse = {
+  resolutions: ResolutionSuggestion[]
+  overallRecommendation: string
+}
+
+type EvaluateAllMetadata = {
+  execution_time_ms: number
+  agents_run: string[]
+  all_succeeded: boolean
+}
+
+type EvaluateAllResponse = {
+  concept_fit: ConceptFitResponse | null
+  contradictions: ContradictionsResponse | null
+  additions: PillarAdditionsFeedback | null
+  resolution: ContradictionResolutionResponse | null
+  metadata: EvaluateAllMetadata
+}

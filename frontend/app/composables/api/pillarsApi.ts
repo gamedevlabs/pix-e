@@ -151,6 +151,55 @@
     )
   }
 
+  // --- New agentic evaluation endpoints ---
+
+  async function evaluateAllAPICall() {
+    return await $fetch<EvaluateAllResponse>(
+      `${config.public.apiBase}/llm/feedback/evaluate-all/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
+    )
+  }
+
+  async function resolveContradictionsAPICall(contradictions: ContradictionsResponse) {
+    return await $fetch<ContradictionResolutionResponse>(
+      `${config.public.apiBase}/llm/feedback/resolve-contradictions/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+          contradictions: contradictions,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      },
+    )
+  }
+
+  async function acceptAdditionAPICall(name: string, description: string) {
+    return await $fetch<Pillar>(`${config.public.apiBase}/llm/feedback/accept-addition/`, {
+      method: 'POST',
+      body: {
+        name,
+        description,
+      },
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
+  }
+
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
@@ -161,5 +210,8 @@
     fixPillarWithAIAPICall,
     acceptPillarFixAPICall,
     getContextInPillarsAPICall,
+    evaluateAllAPICall,
+    resolveContradictionsAPICall,
+    acceptAdditionAPICall,
   }
 }
