@@ -32,6 +32,12 @@ class PillarLLMCall(models.Model):
         ("evaluate_contradictions", "Evaluate Contradictions"),
         ("suggest_additions", "Suggest Additions"),
         ("evaluate_context", "Evaluate Context"),
+        ("evaluate_all", "Evaluate All (Aggregated)"),
+        ("concept_fit", "Concept Fit Agent"),
+        ("contradictions", "Contradictions Agent"),
+        ("suggest_additions_agent", "Suggest Additions Agent"),
+        ("contradiction_resolution", "Contradiction Resolution Agent"),
+        ("resolve_contradictions", "Resolve Contradictions"),
     ]
 
     user = models.ForeignKey(
@@ -46,6 +52,14 @@ class PillarLLMCall(models.Model):
         blank=True,
         related_name="llm_calls",
         help_text="The pillar this call relates to (if applicable)",
+    )
+    parent_call = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="agent_calls",
+        help_text="Parent aggregated call (for agent sub-calls)",
     )
 
     # Operation info
@@ -67,8 +81,17 @@ class PillarLLMCall(models.Model):
         default=0,
     )
 
-    # Store full response for debugging/analysis
-    result_data = models.JSONField(null=True, blank=True)
+    # Store input and output for debugging/analysis
+    input_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Input data sent to the LLM",
+    )
+    result_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Output data returned by the LLM",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

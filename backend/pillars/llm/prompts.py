@@ -27,15 +27,29 @@ For each feedback limit your answer to one sentence.
 Answer as if you were talking directly to the designer.
 """
 
-PillarCompletenessPrompt = """Assume the role of a game design expert.
-Evaluate if the following Game Design Pillars are a good fit
-for the game idea, explain why.
-Also check if the pillar contradicts the direction of the game idea.
+ConceptFitPrompt = """Assume the role of a game design expert.
+Evaluate if the following Game Design Pillars are a good fit for the game idea.
+
+For each pillar, analyze:
+1. Does it align with the core concept?
+2. Does it support the intended player experience?
+3. Is it appropriate for this type of game?
+
+Also identify any aspects of the game concept that are NOT covered by the
+existing pillars. These are gaps that might need additional pillars.
 
 Game Design Idea: %s
 
 Design Pillars: %s
+
+Respond with:
+- hasGaps: true if there are important aspects of the game concept not covered
+- pillarFeedback: for each pillar, explain how well it fits the concept
+- missingAspects: list specific aspects of the game concept that need pillar coverage
 """
+
+# Keep old name as alias for backwards compatibility
+PillarCompletenessPrompt = ConceptFitPrompt
 
 PillarContradictionPrompt = """Assume the role of a game design expert.
 Evaluate if the following Game Design Pillars stand in contradiction
@@ -47,13 +61,34 @@ Design Pillars: %s
 """
 
 PillarAdditionPrompt = """Assume the role of a game design expert.
+Based on the analysis below, suggest new pillars to cover missing aspects
+of the game design.
+
+Game Design Idea: %s
+
+Current Design Pillars: %s
+
+CONCEPT FIT ANALYSIS (gaps identified):
+%s
+
+Based on the identified gaps and missing aspects above, suggest new pillars that:
+1. Address the specific gaps mentioned in the concept fit analysis
+2. Complement the existing pillars without overlapping
+3. Are clear, focused, and actionable
+
+For each suggested pillar, provide a clear name and description.
+"""
+
+# Simple version without concept fit context (for standalone use)
+PillarAdditionPromptSimple = """Assume the role of a game design expert.
 Evaluate if the following Game Design Idea is sufficiently
 covered by the following Game Design Pillars.
 
 Game Design Idea: %s
 
 Design Pillars: %s
-If not, add new pillars to cover the missing aspects.
+
+If there are gaps in coverage, suggest new pillars to address them.
 """
 
 ContextInPillarsPrompt = """Assume the role of a game design expert.
@@ -62,6 +97,31 @@ Evaluate how well the following idea aligns with the given Game Design Pillars.
 Idea: %s
 
 Design Pillars: %s
+"""
+
+ContradictionResolutionPrompt = """Assume the role of a game design expert.
+Help resolve contradictions between the following Game Design Pillars.
+
+Game Design Idea: %s
+
+Design Pillars: %s
+
+CONTRADICTIONS DETECTED:
+%s
+
+For each contradiction identified above, suggest how to resolve it:
+1. Explain a strategy to reconcile the conflicting pillars
+2. Provide specific changes that could be made to one or both pillars
+3. Offer an alternative approach if the primary strategy isn't feasible
+
+Consider:
+- Can the pillars coexist with minor adjustments?
+- Should one pillar take priority over the other?
+- Is there a way to reframe one pillar to eliminate the conflict?
+- Could the scope of one or both pillars be narrowed?
+
+Provide actionable suggestions that maintain the core intent of both pillars
+while eliminating the contradiction.
 """
 
 # noqa: E501
