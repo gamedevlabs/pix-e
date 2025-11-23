@@ -12,7 +12,11 @@ from pillars.llm import handlers  # noqa: F401
 
 from .models import Pillar
 from .serializers import PillarSerializer
-from .utils import save_pillar_llm_call
+from .utils import (
+    save_agent_result_llm_call,
+    save_execution_result_llm_calls,
+    save_pillar_llm_call,
+)
 
 # Create your views here.
 
@@ -437,6 +441,239 @@ class LLMFeedbackView(ViewSet):
 
         except Exception as e:
             print(f"Error in context: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return JsonResponse({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=["POST"], url_path="evaluate-all")
+    def evaluate_all(self, request):
+        """
+        Run comprehensive pillar evaluation using agent graph.
+
+        Execution flow:
+        1. Run ConceptFit and Contradictions agents in parallel
+        2. If gaps found: auto-run SuggestAdditions with concept fit context
+        3. If contradictions found: auto-run ContradictionResolution
+
+        Returns all results in a unified response.
+        """
+        import asyncio
+
+        from llm.agent_registry import get_graph
+
+        try:
+            game_concept = GameConcept.objects.filter(
+                user=self.request.user, is_current=True
+            ).first()
+            pillars = list(Pillar.objects.filter(user=request.user))
+
+            if not game_concept:
+                return JsonResponse({"error": "No game concept found"}, status=404)
+
+            if not pillars:
+                return JsonResponse({"error": "No pillars found"}, status=404)
+
+            model = request.data.get("model", "gemini")
+            model_id = get_model_id(model)
+            pillars_text = format_pillars_text(pillars)
+
+            # Create request for the graph
+            llm_request = LLMRequest(
+                feature="pillars",
+                operation="evaluate_all",
+                data={
+                    "pillars_text": pillars_text,
+                    "context": game_concept.content,
+                },
+                model_id=model_id,
+                mode="agentic",
+            )
+
+            # Get the graph and run it
+            graph_class = get_graph("pillars.evaluate_all")
+            graph = graph_class(
+                model_manager=self.orchestrator.model_manager,
+                config=self.orchestrator.config,
+            )
+
+            # Run the async graph
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(graph.run(llm_request))
+            finally:
+                loop.close()
+
+            # Save LLM calls (aggregated + per-agent)
+            input_data = {
+                "pillars_text": pillars_text,
+                "context": game_concept.content,
+            }
+            save_execution_result_llm_calls(
+                user=request.user,
+                result=result,
+                input_data=input_data,
+            )
+
+            # Build response
+            response_data = {
+                "concept_fit": result.aggregated_data.get("concept_fit"),
+                "contradictions": result.aggregated_data.get("contradictions"),
+                "additions": result.aggregated_data.get("additions"),
+                "resolution": result.aggregated_data.get("resolution"),
+                "metadata": {
+                    "execution_time_ms": result.total_execution_time_ms,
+                    "agents_run": [r.agent_name for r in result.agent_results],
+                    "all_succeeded": result.success,
+                },
+            }
+
+            return JsonResponse(response_data, status=200)
+
+        except Exception as e:
+            print(f"Error in evaluate_all: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return JsonResponse({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=["POST"], url_path="resolve-contradictions")
+    def resolve_contradictions(self, request):
+        """
+        Suggest resolutions for detected contradictions.
+
+        Expects request body:
+        {
+            "model": "gemini" | "openai",
+            "contradictions": {
+                "hasContradictions": true,
+                "contradictions": [...]
+            }
+        }
+
+        The contradictions object should be the output from the contradictions endpoint.
+        """
+        try:
+            game_concept = GameConcept.objects.filter(
+                user=self.request.user, is_current=True
+            ).first()
+            pillars = list(Pillar.objects.filter(user=request.user))
+
+            if not game_concept:
+                return JsonResponse({"error": "No game concept found"}, status=404)
+
+            contradictions_data = request.data.get("contradictions")
+            if not contradictions_data:
+                return JsonResponse(
+                    {"error": "No contradictions data provided"}, status=400
+                )
+
+            # Check if there are actually contradictions to resolve
+            if not contradictions_data.get("hasContradictions"):
+                return JsonResponse(
+                    {"message": "No contradictions to resolve", "resolutions": []},
+                    status=200,
+                )
+
+            model = request.data.get("model", "gemini")
+            model_id = get_model_id(model)
+            pillars_text = format_pillars_text(pillars)
+
+            # Use the contradiction resolution handler
+            llm_request = LLMRequest(
+                feature="pillars",
+                operation="resolve_contradictions",
+                data={
+                    "pillars_text": pillars_text,
+                    "context": game_concept.content,
+                    "contradictions_feedback": contradictions_data,
+                },
+                model_id=model_id,
+            )
+
+            # Run the contradiction resolution agent directly
+            import asyncio
+
+            from pillars.llm.agents import ContradictionResolutionAgent
+
+            agent = ContradictionResolutionAgent()
+            context = {
+                "model_manager": self.orchestrator.model_manager,
+                "data": llm_request.data,
+                "model_id": model_id,
+                "model_preference": "auto",
+            }
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(agent.run(context))
+            finally:
+                loop.close()
+
+            if not result.success:
+                return JsonResponse(
+                    {"error": "Failed to generate resolution suggestions"},
+                    status=500,
+                )
+
+            # Save LLM call
+            input_data = {
+                "pillars_text": pillars_text,
+                "context": game_concept.content,
+                "contradictions_feedback": contradictions_data,
+            }
+            save_agent_result_llm_call(
+                user=request.user,
+                operation="resolve_contradictions",
+                result=result,
+                input_data=input_data,
+            )
+
+            return JsonResponse(result.data, status=200)
+
+        except Exception as e:
+            print(f"Error in resolve_contradictions: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return JsonResponse({"error": str(e)}, status=500)
+
+    @action(detail=False, methods=["POST"], url_path="accept-addition")
+    def accept_addition(self, request):
+        """
+        Accept a suggested pillar and create it in the database.
+
+        Expects request body:
+        {
+            "name": "...",
+            "description": "..."
+        }
+        """
+        try:
+            name = request.data.get("name")
+            description = request.data.get("description")
+
+            if not name or not description:
+                return JsonResponse(
+                    {"error": "Missing required fields: 'name' and 'description'"},
+                    status=400,
+                )
+
+            # Create new pillar
+            pillar = Pillar.objects.create(
+                user=request.user,
+                name=name,
+                description=description,
+            )
+
+            # Return serialized pillar
+            data = PillarSerializer(pillar).data
+            return JsonResponse(data, status=201)
+
+        except Exception as e:
+            print(f"Error in accept_addition: {e}")
             import traceback
 
             traceback.print_exc()

@@ -46,8 +46,17 @@ class ContradictionIssue(BaseModel):
 
 
 class PillarCompletenessResponse(BaseModel):
+    """Response for concept fit evaluation."""
+
+    hasGaps: bool = Field(
+        description="Whether there are gaps in pillar coverage for the game concept"
+    )
     pillarFeedback: list[CompletenessAnswer] = Field(
-        description="Reasoning for each pillar"
+        description="Reasoning for each pillar's fit with the concept"
+    )
+    missingAspects: list[str] = Field(
+        default_factory=list,
+        description="List of aspects from the game concept not covered by pillars",
     )
 
 
@@ -57,7 +66,39 @@ class PillarContradictionResponse(BaseModel):
 
 
 class PillarAdditionsFeedback(BaseModel):
+    """Response for suggesting additional pillars."""
+
     additions: list[LLMPillar]  # ignore given pillarId, needs to be created by DB
+
+
+class ResolutionSuggestion(BaseModel):
+    """A suggestion for resolving a contradiction between two pillars."""
+
+    pillarOneId: int = Field(description="ID of the first pillar in the contradiction")
+    pillarTwoId: int = Field(description="ID of the second pillar in the contradiction")
+    pillarOneTitle: str = Field(description="Title of the first pillar")
+    pillarTwoTitle: str = Field(description="Title of the second pillar")
+    resolutionStrategy: str = Field(
+        description="Suggested approach to resolve the contradiction"
+    )
+    suggestedChanges: list[str] = Field(
+        description="Specific changes to make to resolve the contradiction"
+    )
+    alternativeApproach: str = Field(
+        default="",
+        description="Alternative approach if the primary strategy doesn't work",
+    )
+
+
+class ContradictionResolutionResponse(BaseModel):
+    """Response for contradiction resolution suggestions."""
+
+    resolutions: list[ResolutionSuggestion] = Field(
+        description="List of resolution suggestions for each contradiction"
+    )
+    overallRecommendation: str = Field(
+        description="Overall recommendation for handling the contradictions"
+    )
 
 
 class PillarsInContextResponse(BaseModel):
