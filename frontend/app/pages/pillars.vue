@@ -18,6 +18,8 @@ const {
   getContextInPillarsFeedback,
 } = usePillars()
 
+const showHistoryModal = ref(false)
+
 await pillarsFetchAll()
 await fetchGameConcept()
 
@@ -89,15 +91,25 @@ async function dismissIssue(pillar: Pillar, index: number) {
     >
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-2xl font-semibold">Core Design Idea:</h2>
-        <UButton
-          icon="i-heroicons-arrow-down-tray"
-          label="Save"
-          color="primary"
-          size="sm"
-          :loading="isSavingConcept"
-          :disabled="!designIdea.trim()"
-          @click="saveGameConcept"
-        />
+        <div class="flex items-center gap-2">
+          <UButton
+            icon="i-heroicons-clock"
+            label="History"
+            color="secondary"
+            variant="soft"
+            size="sm"
+            @click="showHistoryModal = true"
+          />
+          <UButton
+            icon="i-heroicons-arrow-down-tray"
+            label="Save"
+            color="primary"
+            size="sm"
+            :loading="isSavingConcept"
+            :disabled="!designIdea.trim()"
+            @click="saveGameConcept"
+          />
+        </div>
       </div>
       <UTextarea
         v-model="designIdea"
@@ -139,5 +151,8 @@ async function dismissIssue(pillar: Pillar, index: number) {
         {{ featureFeedback.feedback }}
       </p>
     </div>
+
+    <!-- History Modal -->
+    <GameConceptHistoryModal v-model="showHistoryModal" />
   </div>
 </template>

@@ -67,15 +67,14 @@ class GameConceptViewSet(ModelViewSet):
     @action(detail=False, methods=["get"])
     def history(self, request):
         """
-        Get all past game concepts for the user (not current).
+        Get all past game concepts for the user (including current).
 
         Returns list ordered by most recent first.
+        Uses full serializer to include complete content.
         """
-        concepts = GameConcept.objects.filter(
-            user=request.user, is_current=False
-        ).order_by("-updated_at")
+        concepts = GameConcept.objects.filter(user=request.user).order_by("-updated_at")
 
-        serializer = self.get_serializer(concepts, many=True)
+        serializer = GameConceptSerializer(concepts, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["post"])
@@ -105,3 +104,31 @@ class GameConceptViewSet(ModelViewSet):
 
         serializer = GameConceptSerializer(concept)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        """
+        Restore a past game concept as the current one.
+
+        Marks all existing concepts as not current and sets
+        the specified concept as current.
+        """
+        try:
+            concept = GameConcept.objects.get(pk=pk, user=request.user)
+        except GameConcept.DoesNotExist:
+            return Response(
+                {"error": "Game concept not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Mark all existing concepts as not current
+        GameConcept.objects.filter(user=request.user, is_current=True).update(
+            is_current=False
+        )
+
+        # Set selected concept as current
+        concept.is_current = True
+        concept.save()
+
+        serializer = GameConceptSerializer(concept)
+        return Response(serializer.data)

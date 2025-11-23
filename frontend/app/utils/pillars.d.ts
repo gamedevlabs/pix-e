@@ -30,6 +30,15 @@ type GameDesign = {
   description: string
 }
 
+type GameConcept = {
+  id: number
+  user: string
+  content: string
+  is_current: boolean
+  created_at: string
+  updated_at: string
+}
+
 type PillarFeedback = {
   hasStructureIssue: boolean
   structuralIssues: {
