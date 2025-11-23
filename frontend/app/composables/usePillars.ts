@@ -108,6 +108,47 @@ export function usePillars() {
     }
   }
 
+  // Game concept operations
+  const isSavingConcept = ref(false)
+
+  async function fetchGameConcept() {
+    try {
+      const data = await $fetch<{ content: string }>(
+        `${config.public.apiBase}/game-concept/current/`,
+        {
+          credentials: 'include',
+          headers: useRequestHeaders(['cookie']),
+        },
+      )
+      designIdea.value = data?.content ?? ''
+    } catch {
+      // No current concept exists, that's ok
+      designIdea.value = ''
+    }
+  }
+
+  async function saveGameConcept() {
+    if (!designIdea.value.trim()) return
+
+    isSavingConcept.value = true
+    try {
+      await $fetch(`${config.public.apiBase}/game-concept/update_current/`, {
+        method: 'POST',
+        body: { content: designIdea.value },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Game concept saved!')
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    } finally {
+      isSavingConcept.value = false
+    }
+  }
+
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
@@ -181,8 +222,12 @@ export function usePillars() {
     createItem,
     updateItem,
     deleteItem,
-    // Pillar-specific state
+    // Game concept
     designIdea,
+    isSavingConcept,
+    fetchGameConcept,
+    saveGameConcept,
+    // Pillar-specific state
     llmFeedback,
     featureFeedback,
     additionalFeature,

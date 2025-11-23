@@ -3,8 +3,6 @@ definePageMeta({
   middleware: 'authentication',
 })
 
-const config = useRuntimeConfig()
-
 const {
   items: pillars,
   fetchAll: pillarsFetchAll,
@@ -14,19 +12,14 @@ const {
   additionalFeature,
   designIdea,
   featureFeedback,
-  updateDesignIdea,
+  isSavingConcept,
+  fetchGameConcept,
+  saveGameConcept,
   getContextInPillarsFeedback,
 } = usePillars()
 
 await pillarsFetchAll()
-
-await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`, {
-  method: 'GET',
-  credentials: 'include',
-  headers: useRequestHeaders(['cookie']),
-}).then((data) => {
-  designIdea.value = data.data.value?.description ?? ''
-})
+await fetchGameConcept()
 
 const selectedPillar = ref(-1)
 const newItem = ref<NamedEntity | null>(null)
@@ -94,18 +87,28 @@ async function dismissIssue(pillar: Pillar, index: number) {
     <div
       class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
     >
-      <h2 class="text-2xl font-semibold mb-4">Core Design Idea:</h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-semibold">Core Design Idea:</h2>
+        <UButton
+          icon="i-heroicons-arrow-down-tray"
+          label="Save"
+          color="primary"
+          size="sm"
+          :loading="isSavingConcept"
+          :disabled="!designIdea.trim()"
+          @click="saveGameConcept"
+        />
+      </div>
       <UTextarea
         v-model="designIdea"
         placeholder="Enter your game design idea here..."
         variant="outline"
         color="secondary"
         size="xl"
-        :rows="25"
+        :rows="20"
         :max-rows="0"
         autoresize
         class="w-full"
-        @focusout="updateDesignIdea"
       />
 
       <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Feature:</h2>
