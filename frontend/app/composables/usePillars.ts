@@ -110,6 +110,9 @@ export function usePillars() {
 
   // Game concept operations
   const isSavingConcept = ref(false)
+  const conceptHistory = ref<GameConcept[]>([])
+  const isLoadingHistory = ref(false)
+  const isRestoringConcept = ref(false)
 
   async function fetchGameConcept() {
     try {
@@ -141,11 +144,54 @@ export function usePillars() {
         } as HeadersInit,
       })
       success('Game concept saved!')
+      // Refresh history after save
+      await fetchConceptHistory()
     } catch (err) {
       error.value = err
       errorToast(err)
     } finally {
       isSavingConcept.value = false
+    }
+  }
+
+  async function fetchConceptHistory() {
+    isLoadingHistory.value = true
+    try {
+      const data = await $fetch<GameConcept[]>(`${config.public.apiBase}/game-concept/history/`, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
+      conceptHistory.value = data || []
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    } finally {
+      isLoadingHistory.value = false
+    }
+  }
+
+  async function restoreConcept(conceptId: number) {
+    isRestoringConcept.value = true
+    try {
+      const data = await $fetch<GameConcept>(
+        `${config.public.apiBase}/game-concept/${conceptId}/restore/`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-CSRFToken': useCookie('csrftoken').value,
+          } as HeadersInit,
+        },
+      )
+      designIdea.value = data.content
+      success('Game concept restored!')
+      // Refresh history
+      await fetchConceptHistory()
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    } finally {
+      isRestoringConcept.value = false
     }
   }
 
@@ -227,6 +273,12 @@ export function usePillars() {
     isSavingConcept,
     fetchGameConcept,
     saveGameConcept,
+    // Game concept history
+    conceptHistory,
+    isLoadingHistory,
+    isRestoringConcept,
+    fetchConceptHistory,
+    restoreConcept,
     // Pillar-specific state
     llmFeedback,
     featureFeedback,
