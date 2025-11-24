@@ -21,12 +21,16 @@ class SPARCEvaluation(models.Model):
         blank=True, default="", help_text="Additional context or constraints"
     )
     mode = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=[
             ("monolithic", "Monolithic"),
             ("quick_scan", "Quick Scan (Agentic)"),
             ("deep_dive", "Deep Dive (Agentic)"),
             ("interactive", "Interactive (Agentic)"),
+            # V2 modes (router-based)
+            ("router_v2", "Router V2 (Full)"),
+            ("router_v2_single", "Router V2 (Single Aspect)"),
+            ("router_v2_multiple", "Router V2 (Multiple Aspects)"),
         ],
         help_text="Execution mode used for evaluation",
     )
@@ -86,6 +90,9 @@ class SPARCEvaluationResult(models.Model):
             ("purpose", "Purpose"),
             ("opportunities_risks", "Opportunities & Risks"),
             ("aggregated", "Aggregated Results"),
+            # V2 specific aspects
+            ("router", "Router (V2)"),
+            ("synthesis", "Synthesis (V2)"),
         ],
         help_text="Which SPARC aspect this result covers",
     )
@@ -123,6 +130,11 @@ class SPARCEvaluationResult(models.Model):
         decimal_places=8,
         default=0,
         help_text="Estimated cost in EUR for this aspect",
+    )
+    input_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Input data sent to the agent as JSON",
     )
     result_data = models.JSONField(
         help_text="Full evaluation result as JSON (structured output from LLM)"

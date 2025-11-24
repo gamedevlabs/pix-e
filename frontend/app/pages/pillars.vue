@@ -10,15 +10,11 @@ const {
   updateItem: updatePillar,
   deleteItem: deletePillar,
   additionalFeature,
-  designIdea,
   featureFeedback,
-  isSavingConcept,
-  fetchGameConcept,
-  saveGameConcept,
   getContextInPillarsFeedback,
 } = usePillars()
 
-const showHistoryModal = ref(false)
+const { fetchGameConcept } = useGameConcept()
 
 await pillarsFetchAll()
 await fetchGameConcept()
@@ -86,43 +82,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
     </div>
 
     <!-- Game Design Idea Section -->
-    <div
-      class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-semibold">Core Design Idea:</h2>
-        <div class="flex items-center gap-2">
-          <UButton
-            icon="i-heroicons-clock"
-            label="History"
-            color="secondary"
-            variant="soft"
-            size="sm"
-            @click="showHistoryModal = true"
-          />
-          <UButton
-            icon="i-heroicons-arrow-down-tray"
-            label="Save"
-            color="primary"
-            size="sm"
-            :loading="isSavingConcept"
-            :disabled="!designIdea.trim()"
-            @click="saveGameConcept"
-          />
-        </div>
-      </div>
-      <UTextarea
-        v-model="designIdea"
-        placeholder="Enter your game design idea here..."
-        variant="outline"
-        color="secondary"
-        size="xl"
-        :rows="20"
-        :max-rows="0"
-        autoresize
-        class="w-full"
-      />
-
+    <GameConceptSidebar>
       <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Feature:</h2>
       <UTextarea
         v-model="additionalFeature"
@@ -150,9 +110,6 @@ async function dismissIssue(pillar: Pillar, index: number) {
       <p>
         {{ featureFeedback.feedback }}
       </p>
-    </div>
-
-    <!-- History Modal -->
-    <GameConceptHistoryModal v-model="showHistoryModal" />
+    </GameConceptSidebar>
   </div>
 </template>

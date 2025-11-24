@@ -10,14 +10,13 @@ const {
   monolithicResult,
   isLoadingQuickScan,
   isLoadingMonolithic,
-  loadCurrentGameConcept,
-  updateGameConcept,
+  fetchGameConcept,
   runQuickScan,
   runMonolithic,
   loadEvaluations,
 } = useSparc()
 
-await loadCurrentGameConcept()
+await fetchGameConcept()
 await loadEvaluations()
 
 const selectedTab = ref<'quick_scan' | 'monolithic'>('quick_scan')
@@ -439,23 +438,7 @@ function handleMonolithic() {
     </div>
 
     <!-- Game Concept Sidebar -->
-    <div
-      class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
-    >
-      <h2 class="text-2xl font-semibold mb-4">Game Concept</h2>
-      <UTextarea
-        v-model="gameConcept"
-        placeholder="Enter your game concept here..."
-        variant="outline"
-        color="secondary"
-        size="xl"
-        :rows="25"
-        :max-rows="0"
-        autoresize
-        class="w-full"
-        @focusout="updateGameConcept"
-      />
-
+    <GameConceptSidebar>
       <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Context</h2>
       <UTextarea
         v-model="context"
@@ -476,6 +459,6 @@ function handleMonolithic() {
           Risks.
         </p>
       </div>
-    </div>
+    </GameConceptSidebar>
   </div>
 </template>
