@@ -3,7 +3,9 @@ import { useSparcApi } from '@/composables/api/sparcApi'
 export function useSparc() {
   const sparcApi = useSparcApi()
 
-  const gameConcept = ref<string>('')
+  // Use shared game concept state
+  const { designIdea: gameConcept, fetchGameConcept } = useGameConcept()
+
   const context = ref<string>('')
   const quickScanResult = ref<SPARCQuickScanResponse | null>(null)
   const monolithicResult = ref<SPARCMonolithicResponse | null>(null)
@@ -11,26 +13,6 @@ export function useSparc() {
 
   const isLoadingQuickScan = ref(false)
   const isLoadingMonolithic = ref(false)
-
-  async function loadCurrentGameConcept() {
-    try {
-      const concept = await sparcApi.getCurrentGameConceptAPICall()
-      if (concept) {
-        gameConcept.value = concept.content
-      }
-    } catch (error) {
-      console.error('Error loading game concept:', error)
-    }
-  }
-
-  async function updateGameConcept() {
-    if (gameConcept.value.trim() === '') return
-    try {
-      await sparcApi.updateGameConceptAPICall(gameConcept.value.trim())
-    } catch (error) {
-      console.error('Error updating game concept:', error)
-    }
-  }
 
   async function runQuickScan() {
     if (gameConcept.value.trim() === '') {
@@ -110,8 +92,7 @@ export function useSparc() {
     evaluations,
     isLoadingQuickScan,
     isLoadingMonolithic,
-    loadCurrentGameConcept,
-    updateGameConcept,
+    fetchGameConcept,
     runQuickScan,
     runMonolithic,
     loadEvaluations,

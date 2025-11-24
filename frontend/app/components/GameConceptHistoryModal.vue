@@ -13,7 +13,7 @@ const {
   isRestoringConcept,
   fetchConceptHistory,
   restoreConcept,
-} = usePillars()
+} = useGameConcept()
 
 const isOpen = computed({
   get: () => props.modelValue,
