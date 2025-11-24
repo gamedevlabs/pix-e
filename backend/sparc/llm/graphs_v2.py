@@ -162,6 +162,7 @@ class SPARCRouterGraph:
             model_id=model_id,
             execution_time_ms=total_time,
             total_tokens=total_tokens,
+            agent_results=agent_results,
         )
 
         if self.event_collector:
@@ -199,7 +200,7 @@ class SPARCRouterGraph:
 
         # Save to DB if evaluation exists
         if self.evaluation and result.success:
-            router._save_result(
+            await router._save_result_async(
                 evaluation=self.evaluation,
                 input_data=router_context["data"],
                 result=result,
@@ -298,7 +299,7 @@ class SPARCRouterGraph:
 
             # Save to DB
             if self.evaluation:
-                agent._save_result(
+                await agent._save_result_async(
                     evaluation=self.evaluation,
                     input_data={"extracted_sections": sections},
                     result=result,
@@ -327,7 +328,7 @@ class SPARCRouterGraph:
 
         # Save to DB
         if self.evaluation:
-            synthesis._save_result(
+            await synthesis._save_result_async(
                 evaluation=self.evaluation,
                 input_data={"aspect_results": aspect_results},
                 result=result,
@@ -346,11 +347,26 @@ class SPARCRouterGraph:
         model_id: str,
         execution_time_ms: int,
         total_tokens: int,
+        agent_results: List[AgentResult],
     ) -> Dict[str, Any]:
         """Build the final response."""
         from sparc.llm.agents.v2.base import calculate_cost_eur
+        from sparc.llm.schemas.v2.synthesis import AgentExecutionDetail
 
         cost = calculate_cost_eur(model_id, total_tokens // 2, total_tokens // 2)
+
+        # Build agent execution details
+        agent_execution_details = [
+            AgentExecutionDetail(
+                agent_name=result.agent_name,
+                execution_time_ms=result.execution_time_ms,
+                total_tokens=result.total_tokens,
+                prompt_tokens=result.prompt_tokens or 0,
+                completion_tokens=result.completion_tokens or 0,
+                success=result.success,
+            )
+            for result in agent_results
+        ]
 
         return SPARCV2Response(
             aspect_results=aspect_results,
@@ -360,6 +376,7 @@ class SPARCRouterGraph:
             execution_time_ms=execution_time_ms,
             total_tokens=total_tokens,
             estimated_cost_eur=cost,
+            agent_execution_details=agent_execution_details,
         ).model_dump()
 
     def _build_error_result(

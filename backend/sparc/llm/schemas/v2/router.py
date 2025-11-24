@@ -21,7 +21,6 @@ class AspectExtraction(BaseModel):
         description="Name of the aspect (e.g., 'player_experience', 'gameplay')"
     )
     extracted_sections: List[str] = Field(
-        default_factory=list,
         description=(
             "Relevant text sections for this aspect. "
             "Empty list if aspect is not mentioned in the game concept."

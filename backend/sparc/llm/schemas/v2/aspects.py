@@ -33,9 +33,9 @@ class SimplifiedAspectResponse(BaseModel):
     )
 
     suggestions: List[str] = Field(
-        default_factory=list,
         description=(
             "Concrete suggestions for improvement. "
-            "Can include suggestions even for well_defined aspects."
+            "Can include suggestions even for well_defined aspects. "
+            "Use an empty list if no suggestions."
         ),
     )

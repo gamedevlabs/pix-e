@@ -5,7 +5,6 @@ Provides BaseAgent class for individual agent execution.
 Supports both synchronous (execute) and asynchronous (run) execution.
 """
 
-import asyncio
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Type
@@ -195,17 +194,62 @@ class BaseAgent(ABC):
 
     async def run(self, context: Dict[str, Any]) -> AgentResult:
         """
-        Execute the agent asynchronously.
+        Execute the agent asynchronously using native async providers.
 
-        This wraps the synchronous execute() method using asyncio.to_thread()
-        to make it non-blocking in async contexts. This is necessary because
-        our LLM providers are currently synchronous.
+        Uses async LLM provider methods for true parallel execution.
 
         Args:
             context: Execution context (same as execute())
         """
-        # Run synchronous execute() in a thread pool to avoid blocking
-        return await asyncio.to_thread(self.execute, context)
+        start_time = time.time()
+        model_manager: ModelManager = context["model_manager"]
+        data: Dict[str, Any] = context.get("data", {})
+
+        try:
+            self.validate_input(data)
+            prompt = self.build_prompt(data)
+            model_name = self._select_model(model_manager, context)
+
+            # Use async method for true parallel execution
+            result = await model_manager.generate_structured_with_model_async(
+                model_name=model_name,
+                prompt=prompt,
+                response_schema=self.response_schema,
+                temperature=self.temperature,
+            )
+
+            # Extract token usage if result is StructuredResult
+            prompt_tokens = 0
+            completion_tokens = 0
+            total_tokens = 0
+            actual_result = result
+
+            if isinstance(result, StructuredResult):
+                prompt_tokens = result.prompt_tokens
+                completion_tokens = result.completion_tokens
+                total_tokens = result.total_tokens
+                actual_result = result.data
+
+            execution_time_ms = int((time.time() - start_time) * 1000)
+            return AgentResult(
+                agent_name=self.name,
+                success=True,
+                data=(
+                    actual_result.model_dump()
+                    if hasattr(actual_result, "model_dump")
+                    else actual_result
+                ),
+                model_used=model_name,
+                execution_time_ms=execution_time_ms,
+                error=None,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+            )
+
+        except Exception as e:
+            execution_time_ms = int((time.time() - start_time) * 1000)
+            return self._build_error_result(e, execution_time_ms)
 
     def __str__(self) -> str:
         """String representation."""

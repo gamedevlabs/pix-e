@@ -6,6 +6,8 @@ Extends BaseAgent to automatically persist each LLM call to the database.
 
 from typing import Any, Dict, Optional
 
+from asgiref.sync import sync_to_async
+
 from llm.agent_runtime import BaseAgent
 from llm.types import AgentResult
 from sparc.models import SPARCEvaluation, SPARCEvaluationResult
@@ -110,7 +112,47 @@ class V2BaseAgent(BaseAgent):
         result: AgentResult,
     ) -> SPARCEvaluationResult:
         """
-        Persist LLM call result to database.
+        Persist LLM call result to database (sync version).
+
+        Args:
+            evaluation: Parent evaluation session
+            input_data: What was sent to the agent
+            result: AgentResult from execution
+
+        Returns:
+            Created SPARCEvaluationResult instance
+        """
+        return self._create_db_result(evaluation, input_data, result)
+
+    async def _save_result_async(
+        self,
+        evaluation: SPARCEvaluation,
+        input_data: Dict[str, Any],
+        result: AgentResult,
+    ) -> SPARCEvaluationResult:
+        """
+        Persist LLM call result to database (async version).
+
+        Args:
+            evaluation: Parent evaluation session
+            input_data: What was sent to the agent
+            result: AgentResult from execution
+
+        Returns:
+            Created SPARCEvaluationResult instance
+        """
+        return await sync_to_async(self._create_db_result)(
+            evaluation, input_data, result
+        )
+
+    def _create_db_result(
+        self,
+        evaluation: SPARCEvaluation,
+        input_data: Dict[str, Any],
+        result: AgentResult,
+    ) -> SPARCEvaluationResult:
+        """
+        Create the database result record.
 
         Args:
             evaluation: Parent evaluation session

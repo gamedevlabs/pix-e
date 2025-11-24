@@ -288,6 +288,56 @@ class ModelManager:
             **kwargs,
         )
 
+    async def generate_structured_with_model_async(
+        self,
+        model_name: str,
+        prompt: str,
+        response_schema: type,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Generate structured output asynchronously for parallel execution.
+
+        Args:
+            model_name: Exact model name to use
+            prompt: Text prompt
+            response_schema: Pydantic model for response structure
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens to generate
+            **kwargs: Provider-specific parameters
+        """
+        model = self._find_model_by_name(model_name)
+        provider = self.providers[model.provider]
+
+        if not model.capabilities.json_strict:
+            logger.warning(f"Model {model_name} may not have strict JSON support")
+
+        # Use async method if available, fall back to sync wrapped in thread
+        if hasattr(provider, "generate_structured_async"):
+            return await provider.generate_structured_async(
+                model_name=model.name,
+                prompt=prompt,
+                response_schema=response_schema,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
+            )
+        else:
+            # Fall back to sync method in thread for providers without async
+            import asyncio
+
+            return await asyncio.to_thread(
+                provider.generate_structured,
+                model_name=model.name,
+                prompt=prompt,
+                response_schema=response_schema,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
+            )
+
     def auto_select_model(
         self,
         requirements: CapabilityRequirements,

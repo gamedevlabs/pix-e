@@ -37,11 +37,18 @@ Analyze all aspect evaluations above and provide a synthesis that:
 Provide:
 1. overall_status: "ready", "nearly_ready", or "needs_work"
 2. overall_reasoning: 2-3 sentence summary of the concept's state
-3. strongest_aspects: Top 3 best-defined aspects (list of aspect names)
-4. weakest_aspects: Top 3 aspects needing most work (list of aspect names)
-5. critical_gaps: Aspects that are blockers for prototyping (list of aspect names)
+3. strongest_aspects: Up to 3 aspects with "well_defined" status (list of aspect names)
+4. weakest_aspects: ONLY aspects with "needs_work" or "not_provided" status
+   (list of aspect names, can be empty if all aspects are well-defined)
+5. critical_gaps: Aspects that are blockers for prototyping (list of aspect names,
+   only include aspects with "not_provided" status or critical "needs_work")
 6. next_steps: 3-5 prioritized actions to improve the concept
-7. consistency_notes: Any cross-aspect inconsistencies or synergies (optional)
+7. consistency_notes: Any cross-aspect inconsistencies or synergies
+   (optional, null if none)
+
+**IMPORTANT**: Do not include well-defined aspects in weakest_aspects
+just because they are relatively weaker. Only include aspects that
+actually need work.
 
 Return a JSON object with these fields.
 """

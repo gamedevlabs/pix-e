@@ -109,19 +109,19 @@ Return a JSON object with an "extractions" array. Each extraction has:
 - "extracted_sections": Array of relevant text sections (empty if none found)
 
 Example:
-{
+{{
   "extractions": [
-    {
+    {{
       "aspect_name": "player_experience",
       "extracted_sections": [
         "Players will feel a sense of wonder as they explore the ancient "
         "ruins.", "The game creates tension through resource scarcity."
       ]
-    },
-    {
+    }},
+    {{
       "aspect_name": "theme",
       "extracted_sections": []
-    }
+    }}
   ]
-}
+}}
 """
