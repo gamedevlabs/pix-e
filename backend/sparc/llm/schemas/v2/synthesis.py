@@ -48,9 +48,22 @@ class SPARCSynthesis(BaseModel):
     )
 
     consistency_notes: Optional[str] = Field(
-        default=None,
-        description="Any cross-aspect inconsistencies or synergies identified",
+        description=(
+            "Any cross-aspect inconsistencies or synergies identified. "
+            "Use null if none."
+        )
     )
+
+
+class AgentExecutionDetail(BaseModel):
+    """Execution details for a single agent."""
+
+    agent_name: str = Field(description="Name of the agent")
+    execution_time_ms: int = Field(description="Execution time in milliseconds")
+    total_tokens: int = Field(description="Total tokens used")
+    prompt_tokens: int = Field(default=0, description="Prompt tokens used")
+    completion_tokens: int = Field(default=0, description="Completion tokens used")
+    success: bool = Field(description="Whether the agent succeeded")
 
 
 class SPARCV2Response(BaseModel):
@@ -76,3 +89,9 @@ class SPARCV2Response(BaseModel):
     execution_time_ms: int = Field(description="Total execution time in milliseconds")
     total_tokens: int = Field(description="Total tokens used across all agents")
     estimated_cost_eur: float = Field(description="Estimated total cost in EUR")
+
+    # Agent execution details
+    agent_execution_details: List[AgentExecutionDetail] = Field(
+        default_factory=list,
+        description="Execution details for each agent (router, aspects, synthesis)",
+    )

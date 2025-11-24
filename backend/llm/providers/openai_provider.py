@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from openai import (
     APIError,
     APITimeoutError,
+    AsyncOpenAI,
     OpenAI,
 )
 from openai import RateLimitError as OpenAIRateLimitError
@@ -84,6 +85,14 @@ class OpenAIProvider(BaseProvider):
             organization=config.get("organization"),
             timeout=config.get("timeout", 60),
             base_url=config.get("base_url"),  # Allow custom base URL
+        )
+
+        # Async client for parallel execution
+        self.async_client = AsyncOpenAI(
+            api_key=api_key,
+            organization=config.get("organization"),
+            timeout=config.get("timeout", 60),
+            base_url=config.get("base_url"),
         )
 
     @property
@@ -288,6 +297,104 @@ class OpenAIProvider(BaseProvider):
                     )
 
                 # Return with token tracking
+                return StructuredResult(
+                    data=validated,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=model_name,
+                    provider="openai",
+                )
+            except (json.JSONDecodeError, ValidationError) as e:
+                raise ProviderError(
+                    provider="openai",
+                    message=f"Failed to parse structured response: {str(e)}",
+                    context={"model": model_name},
+                )
+
+        except OpenAIRateLimitError as e:
+            raise RateLimitError(
+                message=f"OpenAI rate limit exceeded: {str(e)}",
+                context={"provider": "openai", "model": model_name},
+            )
+        except APITimeoutError as e:
+            raise ProviderError(
+                provider="openai",
+                message=f"Request timed out: {str(e)}",
+                context={"model": model_name},
+            )
+        except APIError as e:
+            if "does not exist" in str(e).lower():
+                raise ModelUnavailableError(
+                    model=model_name, provider="openai", reason=str(e)
+                )
+            raise ProviderError(
+                provider="openai",
+                message=f"Structured generation failed: {str(e)}",
+                context={"model": model_name},
+            )
+
+    async def generate_structured_async(
+        self,
+        model_name: str,
+        prompt: str,
+        response_schema: type,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Generate structured JSON output asynchronously for parallel execution."""
+        try:
+            messages = [{"role": "user", "content": prompt}]
+
+            params: Dict[str, Any] = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": temperature,
+            }
+
+            if max_tokens:
+                params["max_tokens"] = max_tokens
+
+            if "top_p" in kwargs:
+                params["top_p"] = kwargs["top_p"]
+            if "seed" in kwargs:
+                params["seed"] = kwargs["seed"]
+
+            if self._supports_json_schema(model_name):
+                schema = self._extract_json_schema(response_schema)
+                params["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "response",
+                        "strict": True,
+                        "schema": schema,
+                    },
+                }
+            else:
+                params["response_format"] = {"type": "json_object"}
+                messages[0]["content"] = self._build_json_prompt(
+                    prompt, response_schema
+                )
+
+            # Use async client
+            response = await self.async_client.chat.completions.create(**params)
+            content = response.choices[0].message.content or "{}"
+
+            usage = response.usage
+            prompt_tokens = usage.prompt_tokens if usage else 0
+            completion_tokens = usage.completion_tokens if usage else 0
+
+            try:
+                parsed_data = json.loads(content)
+                if hasattr(response_schema, "model_validate"):
+                    validated = response_schema.model_validate(parsed_data)
+                else:
+                    validated = (
+                        response_schema(**parsed_data)
+                        if callable(response_schema)
+                        else parsed_data
+                    )
+
                 return StructuredResult(
                     data=validated,
                     prompt_tokens=prompt_tokens,
