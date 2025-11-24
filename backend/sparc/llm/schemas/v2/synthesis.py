@@ -95,3 +95,15 @@ class SPARCV2Response(BaseModel):
         default_factory=list,
         description="Execution details for each agent (router, aspects, synthesis)",
     )
+
+    # Pillar integration metadata
+    pillar_mode: Optional[Literal["all", "filtered", "none"]] = Field(
+        default=None,
+        description=(
+            "Pillar integration mode used " "('all', 'filtered', or None if disabled)"
+        ),
+    )
+
+    pillars_count: int = Field(
+        default=0, description="Number of pillars available for evaluation"
+    )

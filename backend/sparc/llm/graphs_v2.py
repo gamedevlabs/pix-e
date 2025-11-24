@@ -111,8 +111,27 @@ class SPARCRouterGraph:
         errors: List[ErrorInfo] = []
         agent_results: List[AgentResult] = []
 
-        # Step 1: Run router
-        router_result = await self._run_router(context, target_aspects)
+        # Step 1: Run router and pillar context in parallel
+        router_task = self._run_router(context, target_aspects)
+        pillar_task = self._run_pillar_context(context, request.data)
+
+        router_result, pillar_result = await asyncio.gather(
+            router_task, pillar_task, return_exceptions=True
+        )
+
+        # Handle router result
+        if isinstance(router_result, Exception):
+            errors.append(
+                ErrorInfo(
+                    code="ROUTER_EXCEPTION",
+                    message=str(router_result),
+                    severity="error",
+                )
+            )
+            return self._build_error_result(errors, agent_results, start_time)
+
+        # At this point, router_result is guaranteed to be AgentResult
+        assert isinstance(router_result, AgentResult)
         agent_results.append(router_result)
 
         if not router_result.success:
@@ -125,9 +144,18 @@ class SPARCRouterGraph:
 
         router_response = RouterResponse(**router_result.data)
 
+        # Handle pillar context result
+        pillar_context = None
+        if not isinstance(pillar_result, Exception):
+            # At this point, pillar_result is guaranteed to be AgentResult
+            assert isinstance(pillar_result, AgentResult)
+            if pillar_result.success:
+                agent_results.append(pillar_result)
+                pillar_context = pillar_result.data
+
         # Step 2: Run aspect agents in parallel
         aspect_results = await self._run_aspect_agents(
-            context, router_response, target_aspects
+            context, router_response, target_aspects, pillar_context
         )
         agent_results.extend(aspect_results)
 
@@ -163,6 +191,7 @@ class SPARCRouterGraph:
             execution_time_ms=total_time,
             total_tokens=total_tokens,
             agent_results=agent_results,
+            pillar_context=pillar_context,
         )
 
         if self.event_collector:
@@ -211,11 +240,141 @@ class SPARCRouterGraph:
 
         return result
 
+    async def _run_pillar_context(
+        self, context: Dict[str, Any], request_data: Dict[str, Any]
+    ) -> AgentResult:
+        """
+        Run pillar context agent to prepare pillar information for aspect agents.
+
+        Returns empty result if no pillars or pillar_mode is 'none'.
+        """
+        from pillars.models import Pillar
+        from pillars.views import format_pillars_text
+        from sparc.llm.agents.v2.pillar_context import PillarContextAgent
+        from sparc.llm.schemas.v2.pillar_context import PillarContextResponse
+
+        # Check pillar mode
+        pillar_mode = request_data.get("pillar_mode", "filtered")
+        if pillar_mode == "none":
+            # Return empty result - no pillar integration
+            return AgentResult(
+                agent_name="pillar_context",
+                success=True,
+                data=PillarContextResponse(
+                    mode="filtered",
+                    pillars_available=False,
+                    all_pillars_text="",
+                    filtered_assignments={},
+                    pillars_count=0,
+                ).model_dump(),
+                model_used=None,
+                execution_time_ms=0,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            )
+
+        # Get user from evaluation (if available)
+        user = None
+        if self.evaluation and hasattr(self.evaluation, "user"):
+            user = self.evaluation.user
+
+        if not user:
+            # No user context, skip pillar integration
+            return AgentResult(
+                agent_name="pillar_context",
+                success=True,
+                data=PillarContextResponse(
+                    mode=pillar_mode,
+                    pillars_available=False,
+                    all_pillars_text="",
+                    filtered_assignments={},
+                    pillars_count=0,
+                ).model_dump(),
+                model_used=None,
+                execution_time_ms=0,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            )
+
+        # Fetch user's pillars
+        pillars = list(Pillar.objects.filter(user=user))
+
+        if not pillars:
+            # No pillars available
+            return AgentResult(
+                agent_name="pillar_context",
+                success=True,
+                data=PillarContextResponse(
+                    mode=pillar_mode,
+                    pillars_available=False,
+                    all_pillars_text="",
+                    filtered_assignments={},
+                    pillars_count=0,
+                ).model_dump(),
+                model_used=None,
+                execution_time_ms=0,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            )
+
+        # Format pillars
+        pillars_text = format_pillars_text(pillars)
+
+        # For "all" mode, no LLM call needed
+        if pillar_mode == "all":
+            return AgentResult(
+                agent_name="pillar_context",
+                success=True,
+                data=PillarContextResponse(
+                    mode="all",
+                    pillars_available=True,
+                    all_pillars_text=pillars_text,
+                    filtered_assignments={},
+                    pillars_count=len(pillars),
+                ).model_dump(),
+                model_used=None,
+                execution_time_ms=0,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            )
+
+        # For "filtered" mode, run agent to assign pillars to aspects
+        agent = PillarContextAgent()
+
+        if self.event_collector:
+            self.event_collector.add_agent_started(agent.name)
+
+        agent_context = {
+            **context,
+            "data": {
+                "pillars_text": pillars_text,
+                "mode": "filtered",
+            },
+        }
+
+        result = await agent.run(agent_context)
+
+        # Add pillars_count and all_pillars_text to result
+        if result.success and result.data:
+            result.data["all_pillars_text"] = pillars_text
+            result.data["pillars_count"] = len(pillars)
+            result.data["pillars_available"] = True
+
+        if self.event_collector:
+            self.event_collector.add_agent_finished(agent.name)
+
+        return result
+
     async def _run_aspect_agents(
         self,
         context: Dict[str, Any],
         router_response: RouterResponse,
         target_aspects: List[str],
+        pillar_context: Optional[Dict[str, Any]] = None,
     ) -> List[AgentResult]:
         """Run aspect agents in parallel."""
         max_parallel = getattr(self.config, "max_parallel_agents", 5)
@@ -232,7 +391,12 @@ class SPARCRouterGraph:
 
             tasks.append(
                 self._run_single_aspect(
-                    context, agent_class, aspect_name, sections, semaphore
+                    context,
+                    agent_class,
+                    aspect_name,
+                    sections,
+                    semaphore,
+                    pillar_context,
                 )
             )
 
@@ -267,6 +431,7 @@ class SPARCRouterGraph:
         aspect_name: str,
         sections: List[str],
         semaphore: asyncio.Semaphore,
+        pillar_context: Optional[Dict[str, Any]] = None,
     ) -> AgentResult:
         """Run a single aspect agent."""
         async with semaphore:
@@ -290,10 +455,18 @@ class SPARCRouterGraph:
                     total_tokens=0,
                 )
             else:
+                # Build agent data with extracted sections and optional pillar context
+                agent_data: Dict[str, Any] = {"extracted_sections": sections}
+
+                # Add pillar context if available
+                if pillar_context:
+                    agent_data["pillar_context"] = pillar_context
+                    agent_data["aspect_name"] = aspect_name
+
                 # Run agent with extracted sections
                 agent_context = {
                     **context,
-                    "data": {"extracted_sections": sections},
+                    "data": agent_data,
                 }
                 result = await agent.run(agent_context)
 
@@ -348,6 +521,7 @@ class SPARCRouterGraph:
         execution_time_ms: int,
         total_tokens: int,
         agent_results: List[AgentResult],
+        pillar_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Build the final response."""
         from sparc.llm.agents.v2.base import calculate_cost_eur
@@ -368,6 +542,13 @@ class SPARCRouterGraph:
             for result in agent_results
         ]
 
+        # Extract pillar metadata
+        pillar_mode = None
+        pillars_count = 0
+        if pillar_context:
+            pillar_mode = pillar_context.get("mode")
+            pillars_count = pillar_context.get("pillars_count", 0)
+
         return SPARCV2Response(
             aspect_results=aspect_results,
             synthesis=synthesis,
@@ -377,6 +558,8 @@ class SPARCRouterGraph:
             total_tokens=total_tokens,
             estimated_cost_eur=cost,
             agent_execution_details=agent_execution_details,
+            pillar_mode=pillar_mode,
+            pillars_count=pillars_count,
         ).model_dump()
 
     def _build_error_result(

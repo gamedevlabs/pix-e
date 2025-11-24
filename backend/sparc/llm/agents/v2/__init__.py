@@ -10,6 +10,7 @@ from sparc.llm.agents.v2.base import V2BaseAgent
 from sparc.llm.agents.v2.gameplay import GameplayAgentV2
 from sparc.llm.agents.v2.goals_challenges import GoalsChallengesRewardsAgentV2
 from sparc.llm.agents.v2.opportunities_risks import OpportunitiesRisksAgentV2
+from sparc.llm.agents.v2.pillar_context import PillarContextAgent
 from sparc.llm.agents.v2.place import PlaceAgentV2
 from sparc.llm.agents.v2.player_experience import PlayerExperienceAgentV2
 from sparc.llm.agents.v2.purpose import PurposeAgentV2
@@ -25,6 +26,8 @@ __all__ = [
     "AspectAgentV2",
     # Router
     "RouterAgent",
+    # Pillar context
+    "PillarContextAgent",
     # Aspect agents
     "PlayerExperienceAgentV2",
     "ThemeAgentV2",
