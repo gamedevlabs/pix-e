@@ -7,7 +7,7 @@ THEME_PROMPT = """You are a game design expert evaluating the THEME definition.
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
-
+{pillar_section}
 ## EVALUATION CRITERIA
 
 A well-defined theme should:

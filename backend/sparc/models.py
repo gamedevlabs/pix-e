@@ -34,6 +34,17 @@ class SPARCEvaluation(models.Model):
         ],
         help_text="Execution mode used for evaluation",
     )
+    pillar_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ("all", "All Pillars"),
+            ("filtered", "Filtered Pillars"),
+            ("none", "No Pillar Integration"),
+        ],
+        null=True,
+        blank=True,
+        help_text="Pillar integration mode (V2 only)",
+    )
     model_id = models.CharField(
         max_length=100, help_text="LLM model used for evaluation"
     )
@@ -93,6 +104,7 @@ class SPARCEvaluationResult(models.Model):
             # V2 specific aspects
             ("router", "Router (V2)"),
             ("synthesis", "Synthesis (V2)"),
+            ("pillar_context", "Pillar Context (V2)"),
         ],
         help_text="Which SPARC aspect this result covers",
     )

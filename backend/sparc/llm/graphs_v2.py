@@ -70,12 +70,14 @@ class SPARCRouterGraph:
         config: Config,
         event_collector: Optional[EventCollector] = None,
         evaluation: Optional[SPARCEvaluation] = None,
+        user=None,
     ):
         """Initialize the graph."""
         self.model_manager = model_manager
         self.config = config
         self.event_collector = event_collector
         self.evaluation = evaluation
+        self.user = user
 
     async def run(
         self,
@@ -146,11 +148,23 @@ class SPARCRouterGraph:
 
         # Handle pillar context result
         pillar_context = None
-        if not isinstance(pillar_result, Exception):
+        if isinstance(pillar_result, Exception):
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Pillar context task raised exception: "
+                f"{type(pillar_result).__name__}: {pillar_result}",
+                exc_info=True,
+            )
+        else:
             # At this point, pillar_result is guaranteed to be AgentResult
             assert isinstance(pillar_result, AgentResult)
-            if pillar_result.success:
-                agent_results.append(pillar_result)
+            # Always add to agent_results for tracking
+            agent_results.append(pillar_result)
+            # Use pillar context if we have valid data
+            # (even if success=False, data might be usable)
+            if pillar_result.data and isinstance(pillar_result.data, dict):
                 pillar_context = pillar_result.data
 
         # Step 2: Run aspect agents in parallel
@@ -248,126 +262,155 @@ class SPARCRouterGraph:
 
         Returns empty result if no pillars or pillar_mode is 'none'.
         """
+        from asgiref.sync import sync_to_async
+
         from pillars.models import Pillar
         from pillars.views import format_pillars_text
         from sparc.llm.agents.v2.pillar_context import PillarContextAgent
         from sparc.llm.schemas.v2.pillar_context import PillarContextResponse
 
-        # Check pillar mode
         pillar_mode = request_data.get("pillar_mode", "filtered")
-        if pillar_mode == "none":
-            # Return empty result - no pillar integration
-            return AgentResult(
-                agent_name="pillar_context",
-                success=True,
-                data=PillarContextResponse(
-                    mode="filtered",
+
+        try:
+            agent = PillarContextAgent()
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create agent: {e}", exc_info=True)
+            raise
+
+        try:
+
+            def build_empty_response(mode: str) -> Dict[str, Any]:
+                normalized = mode if mode in {"all", "filtered", "none"} else "filtered"
+                return PillarContextResponse(
+                    mode=normalized,
                     pillars_available=False,
                     all_pillars_text="",
                     filtered_assignments={},
                     pillars_count=0,
-                ).model_dump(),
-                model_used=None,
-                execution_time_ms=0,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-            )
+                ).model_dump()
 
-        # Get user from evaluation (if available)
-        user = None
-        if self.evaluation and hasattr(self.evaluation, "user"):
-            user = self.evaluation.user
+            def build_result(data: Dict[str, Any]) -> AgentResult:
+                return AgentResult(
+                    agent_name="pillar_context",
+                    success=True,
+                    data=data,
+                    model_used=None,
+                    execution_time_ms=0,
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    total_tokens=0,
+                )
 
-        if not user:
-            # No user context, skip pillar integration
-            return AgentResult(
-                agent_name="pillar_context",
-                success=True,
-                data=PillarContextResponse(
-                    mode=pillar_mode,
-                    pillars_available=False,
-                    all_pillars_text="",
-                    filtered_assignments={},
-                    pillars_count=0,
-                ).model_dump(),
-                model_used=None,
-                execution_time_ms=0,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-            )
+            async def persist_result(
+                input_payload: Dict[str, Any], agent_result: AgentResult
+            ) -> None:
+                if not self.evaluation:
+                    return
 
-        # Fetch user's pillars
-        pillars = list(Pillar.objects.filter(user=user))
+                try:
+                    await agent._save_result_async(
+                        evaluation=self.evaluation,
+                        input_data=input_payload,
+                        result=agent_result,
+                    )
+                except Exception as e:
+                    import logging
 
-        if not pillars:
-            # No pillars available
-            return AgentResult(
-                agent_name="pillar_context",
-                success=True,
-                data=PillarContextResponse(
-                    mode=pillar_mode,
-                    pillars_available=False,
-                    all_pillars_text="",
-                    filtered_assignments={},
-                    pillars_count=0,
-                ).model_dump(),
-                model_used=None,
-                execution_time_ms=0,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-            )
+                    logger = logging.getLogger(__name__)
+                    logger.error(
+                        f"Failed to persist pillar result: {e}",
+                        exc_info=True,
+                    )
+                    raise
 
-        # Format pillars
-        pillars_text = format_pillars_text(pillars)
+            if pillar_mode == "none":
+                result = build_result(build_empty_response("none"))
+                await persist_result({"pillar_mode": pillar_mode}, result)
+                return result
 
-        # For "all" mode, no LLM call needed
-        if pillar_mode == "all":
-            return AgentResult(
-                agent_name="pillar_context",
-                success=True,
-                data=PillarContextResponse(
+            # Resolve user either from explicit graph user or evaluation
+            user = self.user
+            if not user and self.evaluation and hasattr(self.evaluation, "user"):
+                user = self.evaluation.user
+
+            if not user or not getattr(user, "is_authenticated", False):
+                result = build_result(build_empty_response(pillar_mode))
+                await persist_result(
+                    {"pillar_mode": pillar_mode, "has_user": False}, result
+                )
+                return result
+
+            # Fetch pillars asynchronously
+            @sync_to_async
+            def get_user_pillars(user_obj):
+                return list(Pillar.objects.filter(user=user_obj))
+
+            pillars = await get_user_pillars(user)
+            if not pillars:
+                result = build_result(build_empty_response(pillar_mode))
+                await persist_result(
+                    {"pillar_mode": pillar_mode, "pillars_available": False}, result
+                )
+                return result
+
+            pillars_text = format_pillars_text(pillars)
+
+            if pillar_mode == "all":
+                response = PillarContextResponse(
                     mode="all",
                     pillars_available=True,
                     all_pillars_text=pillars_text,
                     filtered_assignments={},
                     pillars_count=len(pillars),
-                ).model_dump(),
-                model_used=None,
-                execution_time_ms=0,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-            )
+                ).model_dump()
+                result = build_result(response)
+                await persist_result(
+                    {"pillar_mode": pillar_mode, "pillars_text": pillars_text}, result
+                )
+                return result
 
-        # For "filtered" mode, run agent to assign pillars to aspects
-        agent = PillarContextAgent()
+            # For "filtered" mode, run agent to assign pillars to aspects
+            if self.event_collector:
+                self.event_collector.add_agent_started(agent.name)
 
-        if self.event_collector:
-            self.event_collector.add_agent_started(agent.name)
+            agent_context = {
+                **context,
+                "data": {
+                    "pillars_text": pillars_text,
+                    "mode": "filtered",
+                    "pillar_mode": pillar_mode,
+                },
+            }
 
-        agent_context = {
-            **context,
-            "data": {
-                "pillars_text": pillars_text,
-                "mode": "filtered",
-            },
-        }
+            result = await agent.run(agent_context)
 
-        result = await agent.run(agent_context)
+            if result.success and result.data:
+                # Agent returns PillarAssignmentsResponse, construct full response
+                assignments = result.data.get("filtered_assignments", {})
+                full_response = PillarContextResponse(
+                    mode="filtered",
+                    pillars_available=True,
+                    all_pillars_text=pillars_text,
+                    filtered_assignments=assignments,
+                    pillars_count=len(pillars),
+                )
+                result.data = full_response.model_dump()
 
-        # Add pillars_count and all_pillars_text to result
-        if result.success and result.data:
-            result.data["all_pillars_text"] = pillars_text
-            result.data["pillars_count"] = len(pillars)
-            result.data["pillars_available"] = True
+            if self.event_collector:
+                self.event_collector.add_agent_finished(agent.name)
 
-        if self.event_collector:
-            self.event_collector.add_agent_finished(agent.name)
+            await persist_result(agent_context["data"], result)
 
-        return result
+            return result
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Exception in _run_pillar_context: {e}", exc_info=True)
+            raise
 
     async def _run_aspect_agents(
         self,
@@ -440,6 +483,48 @@ class SPARCRouterGraph:
             if self.event_collector:
                 self.event_collector.add_agent_started(agent.name)
 
+            # Build agent data with extracted sections and optional pillar context
+            agent_data: Dict[str, Any] = {"extracted_sections": sections}
+
+            # Extract only relevant pillars for this aspect (if available)
+            if pillar_context and isinstance(pillar_context, dict):
+                mode = pillar_context.get("mode", "all")
+                all_pillars_text = pillar_context.get("all_pillars_text", "")
+                pillars_available = pillar_context.get("pillars_available", False)
+
+                if pillars_available and all_pillars_text:
+                    relevant_pillars_text = ""
+
+                    if mode == "filtered":
+                        # Extract only pillars assigned to this aspect
+                        filtered_assignments = pillar_context.get(
+                            "filtered_assignments", {}
+                        )
+                        relevant_pillar_ids = filtered_assignments.get(aspect_name, [])
+
+                        if relevant_pillar_ids:
+                            # Extract only relevant pillar lines
+                            pillar_lines = all_pillars_text.split("\n")
+                            relevant_pillars = []
+                            for line in pillar_lines:
+                                for pillar_id in relevant_pillar_ids:
+                                    if line.startswith(f"[ID: {pillar_id}]"):
+                                        relevant_pillars.append(line)
+                                        break
+                            relevant_pillars_text = "\n".join(relevant_pillars)
+                    elif mode == "all":
+                        # Use all pillars
+                        relevant_pillars_text = all_pillars_text
+
+                    # Only add pillar context if we have relevant pillars
+                    if relevant_pillars_text:
+                        agent_data["pillar_context"] = {
+                            "mode": mode,
+                            "pillars_available": True,
+                            "pillars_text": relevant_pillars_text,
+                            "pillars_count": len(relevant_pillars_text.split("\n")),
+                        }
+
             # Check if we should skip LLM call
             if len(sections) == 0:
                 # Return not_provided without LLM call
@@ -455,26 +540,19 @@ class SPARCRouterGraph:
                     total_tokens=0,
                 )
             else:
-                # Build agent data with extracted sections and optional pillar context
-                agent_data: Dict[str, Any] = {"extracted_sections": sections}
-
-                # Add pillar context if available
-                if pillar_context:
-                    agent_data["pillar_context"] = pillar_context
-                    agent_data["aspect_name"] = aspect_name
-
-                # Run agent with extracted sections
+                # Run agent with extracted sections and pillar context
                 agent_context = {
                     **context,
                     "data": agent_data,
                 }
                 result = await agent.run(agent_context)
 
-            # Save to DB
+            # Save to DB - use the full agent_data that was actually sent to the agent
             if self.evaluation:
+                # Use agent_data directly - it already has the filtered pillar context
                 await agent._save_result_async(
                     evaluation=self.evaluation,
-                    input_data={"extracted_sections": sections},
+                    input_data=agent_data,
                     result=result,
                 )
 

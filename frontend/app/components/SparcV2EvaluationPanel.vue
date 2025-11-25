@@ -7,6 +7,7 @@ const {
   progressMessage,
   progressCurrent,
   progressTotal,
+  pillarMode,
   runV2Evaluation,
   runAspectEvaluation,
   sortedAspectResults,
@@ -14,6 +15,16 @@ const {
   needsWorkCount,
   notProvidedCount,
 } = useSparcV2()
+
+const pillarModeOptions = [
+  {
+    value: 'filtered',
+    label: 'Filtered',
+    description: 'Intelligent pillar assignment per aspect',
+  },
+  { value: 'all', label: 'All', description: 'All pillars to all aspects' },
+  { value: 'none', label: 'None', description: 'No pillar integration' },
+]
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`
@@ -25,47 +36,70 @@ function formatDuration(ms: number): string {
   <div class="space-y-6">
     <!-- Controls -->
     <UCard>
-      <div class="flex items-center justify-between gap-4 flex-wrap">
-        <div class="flex items-center gap-4">
-          <UButton
-            size="lg"
-            color="primary"
-            icon="i-heroicons-play"
-            label="Run Full Evaluation"
-            :loading="isEvaluating"
-            @click="runV2Evaluation"
-          />
+      <div class="space-y-4">
+        <!-- Action bar -->
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <div class="flex items-center gap-4">
+            <UButton
+              size="lg"
+              color="primary"
+              icon="i-heroicons-play"
+              label="Run Full Evaluation"
+              :loading="isEvaluating"
+              @click="runV2Evaluation"
+            />
 
-          <!-- Status counts -->
-          <div v-if="v2Result" class="flex items-center gap-3 text-sm">
-            <span class="text-green-400">
-              <UIcon name="i-heroicons-check-circle" class="mr-1" />
-              {{ wellDefinedCount }} defined
+            <!-- Status counts -->
+            <div v-if="v2Result" class="flex items-center gap-3 text-sm">
+              <span class="text-green-400">
+                <UIcon name="i-heroicons-check-circle" class="mr-1" />
+                {{ wellDefinedCount }} defined
+              </span>
+              <span class="text-yellow-400">
+                <UIcon name="i-heroicons-exclamation-triangle" class="mr-1" />
+                {{ needsWorkCount }} need work
+              </span>
+              <span class="text-neutral-400">
+                <UIcon name="i-heroicons-minus-circle" class="mr-1" />
+                {{ notProvidedCount }} missing
+              </span>
+            </div>
+          </div>
+
+          <!-- Metadata -->
+          <div v-if="v2Result" class="flex items-center gap-4 text-sm text-neutral-400">
+            <span>
+              <UIcon name="i-heroicons-clock" class="mr-1" />
+              {{ formatDuration(v2Result.execution_time_ms) }}
             </span>
-            <span class="text-yellow-400">
-              <UIcon name="i-heroicons-exclamation-triangle" class="mr-1" />
-              {{ needsWorkCount }} need work
+            <span>
+              <UIcon name="i-heroicons-cpu-chip" class="mr-1" />
+              {{ v2Result.total_tokens.toLocaleString() }} tokens
             </span>
-            <span class="text-neutral-400">
-              <UIcon name="i-heroicons-minus-circle" class="mr-1" />
-              {{ notProvidedCount }} missing
+            <span v-if="v2Result.estimated_cost_eur > 0">
+              <UIcon name="i-heroicons-currency-euro" class="mr-1" />
+              {{ v2Result.estimated_cost_eur.toFixed(4) }}
+            </span>
+            <span v-if="v2Result.pillars_count > 0" class="text-blue-400">
+              <UIcon name="i-heroicons-square-3-stack-3d" class="mr-1" />
+              {{ v2Result.pillars_count }} pillars
             </span>
           </div>
         </div>
 
-        <!-- Metadata -->
-        <div v-if="v2Result" class="flex items-center gap-4 text-sm text-neutral-400">
-          <span>
-            <UIcon name="i-heroicons-clock" class="mr-1" />
-            {{ formatDuration(v2Result.execution_time_ms) }}
-          </span>
-          <span>
-            <UIcon name="i-heroicons-cpu-chip" class="mr-1" />
-            {{ v2Result.total_tokens.toLocaleString() }} tokens
-          </span>
-          <span v-if="v2Result.estimated_cost_eur > 0">
-            <UIcon name="i-heroicons-currency-euro" class="mr-1" />
-            {{ v2Result.estimated_cost_eur.toFixed(4) }}
+        <!-- Pillar Mode Selector -->
+        <div class="flex items-center gap-3">
+          <label class="text-sm text-neutral-400 font-medium">Pillar Mode:</label>
+          <USelectMenu
+            v-model="pillarMode"
+            :options="pillarModeOptions"
+            value-attribute="value"
+            option-attribute="label"
+            :disabled="isEvaluating"
+            size="sm"
+          />
+          <span class="text-xs text-neutral-500">
+            {{ pillarModeOptions.find((o) => o.value === pillarMode)?.description }}
           </span>
         </div>
       </div>

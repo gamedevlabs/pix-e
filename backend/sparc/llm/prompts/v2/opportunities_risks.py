@@ -8,7 +8,7 @@ OPPORTUNITIES & RISKS.
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
-
+{pillar_section}
 ## EVALUATION CRITERIA
 
 Well-defined opportunities/risks should:

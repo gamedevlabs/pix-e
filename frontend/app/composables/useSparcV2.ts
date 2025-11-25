@@ -8,6 +8,7 @@ const reEvaluatingAspect = ref<string | null>(null)
 const progressMessage = ref<string | null>(null)
 const progressCurrent = ref<number>(0)
 const progressTotal = ref<number>(10)
+const pillarMode = ref<PillarMode>('filtered')
 
 export function useSparcV2() {
   const api = useSparcV2Api()
@@ -35,6 +36,7 @@ export function useSparcV2() {
       await api.runV2EvaluateStreamAPICall(
         gameConcept.value,
         context.value,
+        pillarMode.value,
         (event: ProgressEvent) => {
           // Handle progress updates
           progressMessage.value = event.message
@@ -150,6 +152,7 @@ export function useSparcV2() {
     progressMessage,
     progressCurrent,
     progressTotal,
+    pillarMode,
 
     // Actions
     runV2Evaluation,

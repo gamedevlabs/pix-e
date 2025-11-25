@@ -21,6 +21,8 @@ from sparc.llm import graphs, graphs_v2  # noqa: F401
 from sparc.llm.graphs_v2 import SPARCRouterGraph
 from sparc.models import SPARCEvaluation
 
+VALID_PILLAR_MODES = {"all", "filtered", "none"}
+
 
 def get_model_id(model_name: str) -> str:
     """Map frontend model names to actual model IDs using config."""
@@ -93,11 +95,21 @@ class SPARCV2EvaluateView(APIView):
             model_name = request.data.get("model", "openai")
             model_id = get_model_id(model_name)
 
+            # Resolve optional inputs
+            context_text = request.data.get("context", "")
+            pillar_mode = request.data.get("pillar_mode", "filtered")
+            if pillar_mode not in VALID_PILLAR_MODES:
+                return JsonResponse(
+                    {"error": "Invalid pillar_mode"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # Create evaluation record
             evaluation = SPARCEvaluation.objects.create(
                 game_text=game_text,
-                context=request.data.get("context", ""),
+                context=context_text,
                 mode="router_v2",
+                pillar_mode=pillar_mode,
                 model_id=model_id,
                 execution_time_ms=0,
                 total_tokens=0,
@@ -107,9 +119,12 @@ class SPARCV2EvaluateView(APIView):
             # Execute graph
             result = self._execute_graph(
                 game_text=game_text,
+                context_text=context_text,
                 model_id=model_id,
                 mode="full",
                 evaluation=evaluation,
+                pillar_mode=pillar_mode,
+                user=request.user if request.user.is_authenticated else None,
             )
 
             if not result["success"]:
@@ -141,9 +156,12 @@ class SPARCV2EvaluateView(APIView):
     def _execute_graph(
         self,
         game_text: str,
+        context_text: str,
         model_id: str,
         mode: str,
         evaluation: SPARCEvaluation,
+        pillar_mode: str,
+        user,
         target_aspects: Optional[List[str]] = None,
     ) -> dict:
         """Execute the V2 graph."""
@@ -158,12 +176,17 @@ class SPARCV2EvaluateView(APIView):
             config=config,
             event_collector=event_collector,
             evaluation=evaluation,
+            user=user,
         )
 
         request = LLMRequest(
             feature="sparc",
             operation="router_v2",
-            data={"game_text": game_text},
+            data={
+                "game_text": game_text,
+                "context": context_text,
+                "pillar_mode": pillar_mode,
+            },
             model_id=model_id,
             mode="agentic",
         )
@@ -221,6 +244,15 @@ class SPARCV2AspectView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # Resolve optional inputs
+            context_text = request.data.get("context", "")
+            pillar_mode = request.data.get("pillar_mode", "filtered")
+            if pillar_mode not in VALID_PILLAR_MODES:
+                return JsonResponse(
+                    {"error": "Invalid pillar_mode"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # Get target aspects
             single_aspect = request.data.get("aspect")
             multiple_aspects = request.data.get("aspects")
@@ -264,8 +296,9 @@ class SPARCV2AspectView(APIView):
             # Create evaluation record
             evaluation = SPARCEvaluation.objects.create(
                 game_text=game_text,
-                context=request.data.get("context", ""),
+                context=context_text,
                 mode=f"router_v2_{mode}",
+                pillar_mode=pillar_mode,
                 model_id=model_id,
                 execution_time_ms=0,
                 total_tokens=0,
@@ -275,9 +308,12 @@ class SPARCV2AspectView(APIView):
             # Execute graph
             result = self._execute_graph(
                 game_text=game_text,
+                context_text=context_text,
                 model_id=model_id,
                 mode=mode,
                 evaluation=evaluation,
+                pillar_mode=pillar_mode,
+                user=request.user if request.user.is_authenticated else None,
                 target_aspects=target_aspects,
             )
 
@@ -307,9 +343,12 @@ class SPARCV2AspectView(APIView):
     def _execute_graph(
         self,
         game_text: str,
+        context_text: str,
         model_id: str,
         mode: str,
         evaluation: SPARCEvaluation,
+        pillar_mode: str,
+        user,
         target_aspects: List[str],
     ) -> dict:
         """Execute the V2 graph for specific aspects."""
@@ -324,12 +363,17 @@ class SPARCV2AspectView(APIView):
             config=config,
             event_collector=event_collector,
             evaluation=evaluation,
+            user=user,
         )
 
         request = LLMRequest(
             feature="sparc",
             operation="router_v2",
-            data={"game_text": game_text},
+            data={
+                "game_text": game_text,
+                "context": context_text,
+                "pillar_mode": pillar_mode,
+            },
             model_id=model_id,
             mode="agentic",
         )

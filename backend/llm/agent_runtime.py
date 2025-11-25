@@ -248,6 +248,15 @@ class BaseAgent(ABC):
             )
 
         except Exception as e:
+            import logging
+            import traceback
+
+            logger = logging.getLogger(__name__)
+            error_type = type(e).__name__
+            logger.error(
+                f"[AGENT_ERROR] {self.name} async run failed: "
+                f"{error_type}: {str(e)}\nTraceback:\n{traceback.format_exc()}"
+            )
             execution_time_ms = int((time.time() - start_time) * 1000)
             return self._build_error_result(e, execution_time_ms)
 

@@ -7,7 +7,7 @@ ART_DIRECTION_PROMPT = """You are a game design expert evaluating ART DIRECTION.
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
-
+{pillar_section}
 ## EVALUATION CRITERIA
 
 Well-defined art direction should:

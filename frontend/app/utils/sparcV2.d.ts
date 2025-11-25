@@ -33,6 +33,9 @@ type AgentExecutionDetail = {
   success: boolean
 }
 
+// Pillar mode type
+type PillarMode = 'all' | 'filtered' | 'none'
+
 // Full V2 response
 type SPARCV2Response = {
   aspect_results: Record<string, SimplifiedAspectResponse>
@@ -43,6 +46,8 @@ type SPARCV2Response = {
   total_tokens: number
   estimated_cost_eur: number
   agent_execution_details: AgentExecutionDetail[]
+  pillar_mode?: PillarMode | null
+  pillars_count: number
 }
 
 // Aspect names for V2
