@@ -96,9 +96,7 @@ def validate_file_size(file_size: int, max_size_mb: int = 10) -> None:
         )
 
 
-def validate_file_type(
-    filename: str, allowed_types: Optional[list] = None
-) -> str:
+def validate_file_type(filename: str, allowed_types: Optional[list] = None) -> str:
     """
     Validate file type is supported.
 

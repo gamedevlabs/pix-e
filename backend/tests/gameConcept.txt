@@ -1,0 +1,59 @@
+Game Title: Chronos Down
+
+High Concept Statement
+In Chronos Down, the player takes on the role of a tiny, sentient maintenance bot named "Cog," waking up in the bowels of a city-sized clock tower that has mysteriously stopped. The player experiences the overwhelming scale of the machinery and a sense of fragility, transforming into a feeling of empowerment as they repair the colossal mechanisms and bring the dead city back to life, one gear at a time.
+
+Theme
+The dominant theme is Entropy vs. Order. The world is falling into chaos and rust, and the player is the agent of restoration. Secondary themes include the importance of small roles in grand systems and the isolation of duty.
+
+Purpose
+Project Purpose: To create a vertical slice that demonstrates our unique "gravity-gear" physics system.
+Personal Purpose: I want to work on this to explore mechanical storytelling—how machinery can have personality without dialogue.
+Team Purpose: This project allows our level designers to experiment with verticality and our engineers to perfect rigid body physics.
+
+Gameplay
+Verbs: Climb, Rotate, Magnetize, Swing, Repair.
+
+Core Mechanics:
+- Magnetic Boots: Walk on metallic surfaces upside down or sideways.
+- Gear Syncing: The player must manually rotate gears to create platforms.
+
+30 Seconds of Gameplay: Cog enters the "Fractured Shaft." The path ahead is a series of floating, disconnected cogs. Cog activates magnetic boots to run up a vertical piston. At the top, Cog jumps onto a spinning gear, rides it to the apex, and uses the "Wrench" tool to tighten a loose bolt. Suddenly, the gear shifts speed, the music swells in tempo, and a new path unlocks above.
+
+Place
+The setting is The Grand Spire, a Victorian-industrial megastructure that houses millions of residents living inside the clockwork mechanisms.
+
+Key Locations:
+- The Sludge Sump: The oil-filled basement where the game begins.
+- The Pendulum District: A residential area built on a massive, swinging platform.
+- The Face: The exterior clock face, exposed to wind and weather.
+
+Unique Features
+- Rhythmic Platforming: The environment moves to the beat of the background soundtrack; if the clock is broken, the music is discordant and the platforms are erratic.
+- Scale: The protagonist is only 6 inches tall, making everyday tools like screwdrivers serve as bridges or weapons.
+- No Enemies, Only Hazards: The challenge comes from the environment (crushing gears, steam vents), not combat.
+
+Story & Narrative
+The player wakes up in the Sump with no memory, only a directive: "Fix the Mainspring." As Cog ascends, they find "Rust Echoes"—holographic residuals of the humans who used to maintain the tower.
+
+Arrival: The player didn't arrive; they were built here. They were activated by a backup power surge.
+
+Backstory: The "Timekeeper" (the AI running the tower) went insane 50 years ago and locked the gears. The humans trapped inside have devolved into tribal scavengers.
+
+Narrative Delivery: The story is told entirely through environmental storytelling (graffiti, skeletons holding tools) and the changing state of the machine (lights turning on, steam clearing).
+
+Goals, Challenges & Rewards
+Objective: Reach the top of the Spire and release the Mainspring brake.
+
+Obstacle: The "Rust Rot"—a corrosive moss that eats metal and makes surfaces unclimbable. The player must reroute steam pipes to burn the moss away.
+
+Reward: Clearing a section restores power to that district. The reward is visual and auditory: lights flicker on, inhabitants cheer from windows, and the music becomes harmonious.
+
+Opportunities & Risks
+Opportunities: The rhythmic platforming aspect has high viral potential on TikTok/YouTube if we nail the audio-visual sync. It fills a niche for "cozy but intense" precision platformers (like Celeste but mechanical).
+
+Risks:
+- Physics Bugs: Building a game entirely on moving platforms is a nightmare for collision detection (High Risk).
+- Motion Sickness: The rotating camera required for the magnetic boots might make players sick (Medium Risk).
+- Mitigation: We will implement a "fixed camera" accessibility mode and use simple capsule colliders for the player to reduce physics glitches.
+
