@@ -8,7 +8,7 @@ const reEvaluatingAspect = ref<string | null>(null)
 const progressMessage = ref<string | null>(null)
 const progressCurrent = ref<number>(0)
 const progressTotal = ref<number>(10)
-const pillarMode = ref<PillarMode>('filtered')
+const pillarMode = ref<PillarMode>('smart')
 
 export function useSparcV2() {
   const api = useSparcV2Api()

@@ -34,7 +34,7 @@ type AgentExecutionDetail = {
 }
 
 // Pillar mode type
-type PillarMode = 'all' | 'filtered' | 'none'
+type PillarMode = 'all' | 'smart' | 'none'
 
 // Full V2 response
 type SPARCV2Response = {

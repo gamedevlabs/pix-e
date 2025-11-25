@@ -42,13 +42,13 @@ A pillar is relevant to an aspect if:
 
 ## RESPONSE FORMAT
 
-Return a JSON object with a "filtered_assignments" key containing a
+Return a JSON object with a "smart_assignments" key containing a
 mapping of aspect names to lists of relevant pillar IDs.
 
 Example:
 ```json
 {{
-  "filtered_assignments": {{
+  "smart_assignments": {{
     "player_experience": [1, 3],
     "theme": [2],
     "gameplay": [1, 4],

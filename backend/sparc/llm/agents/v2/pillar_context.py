@@ -18,7 +18,7 @@ class PillarContextAgent(V2BaseAgent):
 
     Supports two modes:
     - "all": All pillars provided to all aspects
-    - "filtered": Intelligently assigns pillars to relevant aspects
+    - "smart": Intelligently assigns pillars to relevant aspects
     """
 
     name = "pillar_context"
@@ -37,11 +37,11 @@ class PillarContextAgent(V2BaseAgent):
             raise ValueError("pillars_text is required")
         if "mode" not in data:
             raise ValueError("mode is required")
-        if data["mode"] not in ["all", "filtered"]:
-            raise ValueError("mode must be 'all' or 'filtered'")
+        if data["mode"] not in ["all", "smart"]:
+            raise ValueError("mode must be 'all' or 'smart'")
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
-        """Build prompt for pillar assignment (filtered mode only)."""
+        """Build prompt for pillar assignment (smart mode only)."""
         pillars_text = data["pillars_text"]
         mode = data["mode"]
 
@@ -50,5 +50,5 @@ class PillarContextAgent(V2BaseAgent):
             # Just return a dummy prompt (won't be used)
             return ""
 
-        # Filtered mode: use LLM to assign pillars to aspects
+        # Smart mode: use LLM to assign pillars to aspects
         return PILLAR_ASSIGNMENT_PROMPT.format(pillars_text=pillars_text)

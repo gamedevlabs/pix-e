@@ -38,7 +38,7 @@ class SPARCEvaluation(models.Model):
         max_length=20,
         choices=[
             ("all", "All Pillars"),
-            ("filtered", "Filtered Pillars"),
+            ("smart", "Smart Pillars"),
             ("none", "No Pillar Integration"),
         ],
         null=True,

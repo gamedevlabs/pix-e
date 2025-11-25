@@ -97,10 +97,10 @@ class SPARCV2Response(BaseModel):
     )
 
     # Pillar integration metadata
-    pillar_mode: Optional[Literal["all", "filtered", "none"]] = Field(
+    pillar_mode: Optional[Literal["all", "smart", "none"]] = Field(
         default=None,
         description=(
-            "Pillar integration mode used " "('all', 'filtered', or None if disabled)"
+            "Pillar integration mode used " "('all', 'smart', or None if disabled)"
         ),
     )
 

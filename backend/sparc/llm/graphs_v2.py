@@ -269,7 +269,7 @@ class SPARCRouterGraph:
         from sparc.llm.agents.v2.pillar_context import PillarContextAgent
         from sparc.llm.schemas.v2.pillar_context import PillarContextResponse
 
-        pillar_mode = request_data.get("pillar_mode", "filtered")
+        pillar_mode = request_data.get("pillar_mode", "smart")
 
         try:
             agent = PillarContextAgent()
@@ -283,12 +283,12 @@ class SPARCRouterGraph:
         try:
 
             def build_empty_response(mode: str) -> Dict[str, Any]:
-                normalized = mode if mode in {"all", "filtered", "none"} else "filtered"
+                normalized = mode if mode in {"all", "smart", "none"} else "smart"
                 return PillarContextResponse(
                     mode=normalized,
                     pillars_available=False,
                     all_pillars_text="",
-                    filtered_assignments={},
+                    smart_assignments={},
                     pillars_count=0,
                 ).model_dump()
 
@@ -363,7 +363,7 @@ class SPARCRouterGraph:
                     mode="all",
                     pillars_available=True,
                     all_pillars_text=pillars_text,
-                    filtered_assignments={},
+                    smart_assignments={},
                     pillars_count=len(pillars),
                 ).model_dump()
                 result = build_result(response)
@@ -372,7 +372,7 @@ class SPARCRouterGraph:
                 )
                 return result
 
-            # For "filtered" mode, run agent to assign pillars to aspects
+            # For "smart" mode, run agent to assign pillars to aspects
             if self.event_collector:
                 self.event_collector.add_agent_started(agent.name)
 
@@ -380,7 +380,7 @@ class SPARCRouterGraph:
                 **context,
                 "data": {
                     "pillars_text": pillars_text,
-                    "mode": "filtered",
+                    "mode": "smart",
                     "pillar_mode": pillar_mode,
                 },
             }
@@ -389,12 +389,12 @@ class SPARCRouterGraph:
 
             if result.success and result.data:
                 # Agent returns PillarAssignmentsResponse, construct full response
-                assignments = result.data.get("filtered_assignments", {})
+                assignments = result.data.get("smart_assignments", {})
                 full_response = PillarContextResponse(
-                    mode="filtered",
+                    mode="smart",
                     pillars_available=True,
                     all_pillars_text=pillars_text,
-                    filtered_assignments=assignments,
+                    smart_assignments=assignments,
                     pillars_count=len(pillars),
                 )
                 result.data = full_response.model_dump()
@@ -495,12 +495,10 @@ class SPARCRouterGraph:
                 if pillars_available and all_pillars_text:
                     relevant_pillars_text = ""
 
-                    if mode == "filtered":
+                    if mode == "smart":
                         # Extract only pillars assigned to this aspect
-                        filtered_assignments = pillar_context.get(
-                            "filtered_assignments", {}
-                        )
-                        relevant_pillar_ids = filtered_assignments.get(aspect_name, [])
+                        smart_assignments = pillar_context.get("smart_assignments", {})
+                        relevant_pillar_ids = smart_assignments.get(aspect_name, [])
 
                         if relevant_pillar_ids:
                             # Extract only relevant pillar lines
@@ -549,7 +547,7 @@ class SPARCRouterGraph:
 
             # Save to DB - use the full agent_data that was actually sent to the agent
             if self.evaluation:
-                # Use agent_data directly - it already has the filtered pillar context
+                # Use agent_data directly - it already has the smart pillar context
                 await agent._save_result_async(
                     evaluation=self.evaluation,
                     input_data=agent_data,

@@ -18,12 +18,12 @@ const {
 
 const pillarModeOptions = [
   {
-    value: 'filtered',
-    label: 'Filtered',
+    value: 'smart',
+    label: 'Smart',
     description: 'Intelligent pillar assignment per aspect',
   },
   { value: 'all', label: 'All', description: 'All pillars to all aspects' },
-  { value: 'none', label: 'None', description: 'No pillar integration' },
+  { value: 'none', label: 'None', description: 'No pillar context' },
 ]
 
 function formatDuration(ms: number): string {
@@ -90,11 +90,11 @@ function formatDuration(ms: number): string {
         <!-- Pillar Mode Selector -->
         <div class="flex items-center gap-3">
           <label class="text-sm text-neutral-400 font-medium">Pillar Mode:</label>
-          <USelectMenu
+          <USelect
             v-model="pillarMode"
-            :options="pillarModeOptions"
-            value-attribute="value"
-            option-attribute="label"
+            :items="pillarModeOptions"
+            value-key="value"
+            label-key="label"
             :disabled="isEvaluating"
             size="sm"
           />
