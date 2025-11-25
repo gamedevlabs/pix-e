@@ -18,7 +18,7 @@ from llm.events import EventCollector
 from llm.providers.manager import ModelManager
 from llm.types import AgentOutputEvent, AgentStartedEvent
 from sparc.llm.graphs_v2 import SPARCRouterGraph
-from sparc.llm.views.v2 import get_model_id, save_game_concept
+from sparc.llm.views.v2 import VALID_PILLAR_MODES, get_model_id, save_game_concept
 from sparc.models import SPARCEvaluation
 
 
@@ -82,12 +82,20 @@ class SPARCV2StreamView(APIView):
             model_name = request.data.get("model", "openai")
             model_id = get_model_id(model_name)
             context_text = request.data.get("context", "")
+            pillar_mode = request.data.get("pillar_mode", "filtered")
+            if pillar_mode not in VALID_PILLAR_MODES:
+                return StreamingHttpResponse(
+                    self._error_stream("Invalid pillar_mode"),
+                    content_type="text/event-stream",
+                    status=400,
+                )
 
             # Create evaluation record
             evaluation = SPARCEvaluation.objects.create(
                 game_text=game_text,
                 context=context_text,
                 mode="router_v2",
+                pillar_mode=pillar_mode,
                 model_id=model_id,
                 execution_time_ms=0,
                 total_tokens=0,
@@ -96,7 +104,14 @@ class SPARCV2StreamView(APIView):
 
             # Stream the evaluation with progress
             return StreamingHttpResponse(
-                self._stream_evaluation(game_text, model_id, evaluation, request.user),
+                self._stream_evaluation(
+                    game_text,
+                    context_text,
+                    pillar_mode,
+                    model_id,
+                    evaluation,
+                    request.user,
+                ),
                 content_type="text/event-stream",
             )
 
@@ -108,7 +123,13 @@ class SPARCV2StreamView(APIView):
             )
 
     def _stream_evaluation(
-        self, game_text: str, model_id: str, evaluation: SPARCEvaluation, user
+        self,
+        game_text: str,
+        context_text: str,
+        pillar_mode: str,
+        model_id: str,
+        evaluation: SPARCEvaluation,
+        user,
     ) -> Generator[str, None, None]:
         """Stream evaluation progress and results."""
         config = get_config()
@@ -120,6 +141,7 @@ class SPARCV2StreamView(APIView):
             config=config,
             event_collector=event_collector,
             evaluation=evaluation,
+            user=user if user.is_authenticated else None,
         )
 
         from llm.types import LLMRequest
@@ -127,7 +149,11 @@ class SPARCV2StreamView(APIView):
         request = LLMRequest(
             feature="sparc",
             operation="router_v2",
-            data={"game_text": game_text},
+            data={
+                "game_text": game_text,
+                "context": context_text,
+                "pillar_mode": pillar_mode,
+            },
             model_id=model_id,
             mode="agentic",
         )

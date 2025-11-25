@@ -7,7 +7,7 @@ STORY_NARRATIVE_PROMPT = """You are a game design expert evaluating STORY & NARR
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
-
+{pillar_section}
 ## EVALUATION CRITERIA
 
 A well-defined story/narrative should:

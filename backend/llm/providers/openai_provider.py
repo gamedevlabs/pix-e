@@ -277,6 +277,9 @@ class OpenAIProvider(BaseProvider):
             response = self.client.chat.completions.create(**params)
             content = response.choices[0].message.content or "{}"
 
+            # Strip markdown code blocks if present
+            content = self._strip_markdown_json(content)
+
             # Extract token usage
             usage = response.usage
             prompt_tokens = usage.prompt_tokens if usage else 0
@@ -305,10 +308,17 @@ class OpenAIProvider(BaseProvider):
                     provider="openai",
                 )
             except (json.JSONDecodeError, ValidationError) as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to parse structured response from {model_name}: {str(e)}\n"
+                    f"Raw content (first 500 chars): {content[:500]}"
+                )
                 raise ProviderError(
                     provider="openai",
                     message=f"Failed to parse structured response: {str(e)}",
-                    context={"model": model_name},
+                    context={"model": model_name, "content_preview": content[:200]},
                 )
 
         except OpenAIRateLimitError as e:
@@ -384,6 +394,9 @@ class OpenAIProvider(BaseProvider):
             prompt_tokens = usage.prompt_tokens if usage else 0
             completion_tokens = usage.completion_tokens if usage else 0
 
+            # Strip markdown code blocks if present
+            content = self._strip_markdown_json(content)
+
             try:
                 parsed_data = json.loads(content)
                 if hasattr(response_schema, "model_validate"):
@@ -403,10 +416,17 @@ class OpenAIProvider(BaseProvider):
                     provider="openai",
                 )
             except (json.JSONDecodeError, ValidationError) as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to parse structured response from {model_name}: {str(e)}\n"
+                    f"Raw content (first 500 chars): {content[:500]}"
+                )
                 raise ProviderError(
                     provider="openai",
                     message=f"Failed to parse structured response: {str(e)}",
-                    context={"model": model_name},
+                    context={"model": model_name, "content_preview": content[:200]},
                 )
 
         except OpenAIRateLimitError as e:
@@ -520,6 +540,21 @@ class OpenAIProvider(BaseProvider):
                         )
 
         return schema
+
+    def _strip_markdown_json(self, content: str) -> str:
+        """Strip markdown code blocks from JSON content if present."""
+        content = content.strip()
+        # Remove markdown code blocks (```json ... ``` or ``` ... ```)
+        if content.startswith("```"):
+            # Find the first newline after ```
+            start_idx = content.find("\n")
+            if start_idx != -1:
+                content = content[start_idx + 1 :]
+            # Remove trailing ```
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+        return content
 
     def _build_json_prompt(self, prompt: str, response_schema: type) -> str:
         """Build a prompt with JSON schema instructions for non-strict models."""

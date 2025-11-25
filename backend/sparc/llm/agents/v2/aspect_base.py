@@ -41,7 +41,8 @@ class AspectAgentV2(V2BaseAgent):
         Build the evaluation prompt.
 
         Args:
-            data: Contains 'extracted_sections' from router
+            data: Contains 'extracted_sections' from router and optional
+                  'pillar_context'
 
         Returns:
             Formatted prompt string
@@ -55,10 +56,57 @@ class AspectAgentV2(V2BaseAgent):
         # Join sections for context
         aspect_text = "\n\n".join(extracted_sections)
 
+        # Build pillar section if available
+        pillar_section = self._build_pillar_section(data)
+
         return self.prompt_template.format(
             aspect_name=self.aspect_name,
             aspect_text=aspect_text,
+            pillar_section=pillar_section,
         )
+
+    def _build_pillar_section(self, data: Dict[str, Any]) -> str:
+        """
+        Build the pillar context section for the prompt.
+
+        Args:
+            data: May contain 'pillar_context' with pillar information.
+                  In filtered mode, pillar_context already contains only
+                  relevant pillars. In all mode, pillar_context contains
+                  all pillars.
+
+        Returns:
+            Formatted pillar section or empty string if no pillars
+        """
+        pillar_context = data.get("pillar_context")
+        if not pillar_context:
+            return ""
+
+        # Check if pillars are available
+        if not pillar_context.get("pillars_available", False):
+            return ""
+
+        # Get pillars_text (already filtered for this aspect if in filtered mode)
+        pillars_text = pillar_context.get("pillars_text", "")
+
+        # Fallback to all_pillars_text for backward compatibility
+        if not pillars_text:
+            pillars_text = pillar_context.get("all_pillars_text", "")
+
+        if not pillars_text:
+            return ""
+
+        return f"""
+## DESIGN PILLARS
+
+The game has the following established design pillars:
+
+{pillars_text}
+
+**IMPORTANT**: Ensure your evaluation aligns with these design pillars.
+Do not suggest changes that would contradict the established pillars.
+Consider how this aspect supports or relates to the pillars.
+"""
 
     def _build_not_provided_prompt(self) -> str:
         """Build prompt for when no content was extracted."""

@@ -6,13 +6,13 @@ Fetches user's pillars and prepares context for aspect agents.
 
 from typing import Any, Dict
 
-from llm.agent_runtime import BaseAgent
 from llm.types import CapabilityRequirements
+from sparc.llm.agents.v2.base import V2BaseAgent
 from sparc.llm.prompts.v2.pillar_context import PILLAR_ASSIGNMENT_PROMPT
-from sparc.llm.schemas.v2.pillar_context import PillarContextResponse
+from sparc.llm.schemas.v2.pillar_context import PillarAssignmentsResponse
 
 
-class PillarContextAgent(BaseAgent):
+class PillarContextAgent(V2BaseAgent):
     """
     Agent that prepares pillar context for aspect evaluation.
 
@@ -22,7 +22,8 @@ class PillarContextAgent(BaseAgent):
     """
 
     name = "pillar_context"
-    response_schema = PillarContextResponse
+    aspect_name = "pillar_context"  # For DB storage
+    response_schema = PillarAssignmentsResponse  # LLM returns just assignments
 
     capability_requirements = CapabilityRequirements(
         min_context_window=8000, json_strict=True

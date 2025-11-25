@@ -7,7 +7,7 @@ PLACE_PROMPT = """You are a game design expert evaluating the PLACE/SETTING defi
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
-
+{pillar_section}
 ## EVALUATION CRITERIA
 
 A well-defined place/setting should:

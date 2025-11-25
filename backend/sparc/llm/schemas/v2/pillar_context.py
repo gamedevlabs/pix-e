@@ -9,6 +9,22 @@ from typing import Dict, List, Literal
 from pydantic import BaseModel, Field
 
 
+class PillarAssignmentsResponse(BaseModel):
+    """
+    LLM response schema for pillar assignments.
+
+    This is what the LLM returns - just the mapping of aspects to pillar IDs.
+    """
+
+    filtered_assignments: Dict[str, List[int]] = Field(
+        default_factory=dict,
+        description=(
+            "Mapping of aspect names to relevant pillar IDs. "
+            "Keys are aspect names, values are lists of pillar IDs."
+        ),
+    )
+
+
 class PillarContextResponse(BaseModel):
     """
     Response from PillarContextAgent.
@@ -16,7 +32,7 @@ class PillarContextResponse(BaseModel):
     Contains pillar information formatted for aspect agent consumption.
     """
 
-    mode: Literal["all", "filtered"] = Field(
+    mode: Literal["all", "filtered", "none"] = Field(
         description="Mode used for pillar assignment"
     )
 

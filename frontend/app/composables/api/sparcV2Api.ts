@@ -9,13 +9,18 @@ export function useSparcV2Api() {
   const config = useRuntimeConfig()
   const llm = useLLM()
 
-  async function runV2EvaluateAPICall(gameText: string, context: string = '') {
+  async function runV2EvaluateAPICall(
+    gameText: string,
+    context: string = '',
+    pillarMode: PillarMode = 'filtered',
+  ) {
     return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
       method: 'POST',
       body: {
         game_text: gameText,
         context: context,
         model: llm.active_llm,
+        pillar_mode: pillarMode,
       },
       credentials: 'include',
       headers: {
@@ -27,6 +32,7 @@ export function useSparcV2Api() {
   async function runV2EvaluateStreamAPICall(
     gameText: string,
     context: string = '',
+    pillarMode: PillarMode = 'filtered',
     onProgress: (event: ProgressEvent) => void,
     onComplete: (result: SPARCV2Response) => void,
     onError: (error: string) => void,
@@ -45,6 +51,7 @@ export function useSparcV2Api() {
           game_text: gameText,
           context: context,
           model: llm.active_llm,
+          pillar_mode: pillarMode,
         }),
       })
 

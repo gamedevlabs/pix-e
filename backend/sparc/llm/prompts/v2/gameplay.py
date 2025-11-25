@@ -7,7 +7,7 @@ GAMEPLAY_PROMPT = """You are a game design expert evaluating the GAMEPLAY defini
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
-
+{pillar_section}
 ## EVALUATION CRITERIA
 
 A well-defined gameplay should:
