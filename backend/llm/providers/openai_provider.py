@@ -502,7 +502,134 @@ class OpenAIProvider(BaseProvider):
         schema = copy.deepcopy(schema)
 
         # OpenAI requires additionalProperties=false at ALL levels for strict mode
-        return self._add_additional_properties(schema)
+        schema = self._add_additional_properties(schema)
+
+        # OpenAI strict mode requires all fields in properties to be in required
+        schema = self._ensure_required_fields(schema)
+
+        return schema
+
+    def _ensure_required_fields(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Ensure all fields in properties are in required for OpenAI strict mode.
+
+        OpenAI's strict JSON schema requires that if a field is in properties,
+        it must also be in required. This handles nested schemas recursively.
+        Also removes any fields from required that are not in properties.
+        """
+        if not isinstance(schema, dict):
+            return schema
+
+        # First, recursively process nested schemas BEFORE modifying this one
+        # This ensures we don't modify parent schemas based on incomplete
+        # child processing
+
+        # Handle arrays first
+        if schema.get("type") == "array":
+            if "items" in schema:
+                schema["items"] = self._ensure_required_fields(schema["items"])
+            return schema
+
+        # Handle additionalProperties when it's a schema (for Dict types)
+        # Process it recursively but don't add required to it if it has no properties
+        if "additionalProperties" in schema:
+            ap = schema["additionalProperties"]
+            # Only process if it's a schema object (not a boolean)
+            if isinstance(ap, dict):
+                schema["additionalProperties"] = self._ensure_required_fields(ap)
+
+        # For objects with additionalProperties but no properties, add empty properties
+        # This might be required for OpenAI strict mode validation
+        if (
+            schema.get("type") == "object"
+            and "additionalProperties" in schema
+            and "properties" not in schema
+        ):
+            schema["properties"] = {}
+
+        # Handle anyOf, oneOf, allOf
+        for key in ["anyOf", "oneOf", "allOf"]:
+            if key in schema:
+                schema[key] = [self._ensure_required_fields(s) for s in schema[key]]
+
+        # Handle $defs or definitions
+        for key in ["$defs", "definitions"]:
+            if key in schema:
+                for def_name, def_schema in schema[key].items():
+                    schema[key][def_name] = self._ensure_required_fields(def_schema)
+
+        # Now handle properties and required at THIS level
+        # Only process if this schema has properties
+        if "properties" in schema:
+            properties = schema["properties"]
+            # Ensure properties is a dict and not empty
+            if isinstance(properties, dict) and properties:
+                # For OpenAI strict mode, ALL properties must be in required
+                # Create required array with ONLY property names that exist
+                # Filter properties: only include those that have valid schemas
+                # OpenAI strict mode may reject properties with type="object"
+                # and only additionalProperties
+                valid_property_names = []
+                for prop_name, prop_schema in properties.items():
+                    if isinstance(prop_schema, dict):
+                        # If it's an object with only additionalProperties
+                        # (no properties), it might not be valid for strict mode
+                        # when in required. But let's include it anyway and see
+                        # if the recursive processing fixes it
+                        valid_property_names.append(prop_name)
+                    else:
+                        valid_property_names.append(prop_name)
+
+                # Start with existing required, filter to only include valid properties
+                existing_required = schema.get("required", [])
+                if existing_required:
+                    # Remove any required fields that don't exist in valid properties
+                    filtered_required = [
+                        r for r in existing_required if r in valid_property_names
+                    ]
+                    # Add any missing valid properties to required
+                    for prop_name in valid_property_names:
+                        if prop_name not in filtered_required:
+                            filtered_required.append(prop_name)
+                    required = filtered_required
+                else:
+                    # No existing required, so create new one with all valid properties
+                    required = list(valid_property_names)
+
+                # Set required array - ONLY if we have valid properties
+                if required and valid_property_names:
+                    schema["required"] = required
+                elif "required" in schema:
+                    # Remove required if no valid properties
+                    del schema["required"]
+
+                # Recursively process nested properties AFTER setting required
+                for prop_name, prop_schema in properties.items():
+                    processed_prop = self._ensure_required_fields(prop_schema)
+                    # If a property is type="object" with additionalProperties
+                    # but no properties, add empty properties for OpenAI strict
+                    # mode compatibility
+                    if (
+                        isinstance(processed_prop, dict)
+                        and processed_prop.get("type") == "object"
+                        and "additionalProperties" in processed_prop
+                        and "properties" not in processed_prop
+                    ):
+                        processed_prop["properties"] = {}
+                    schema["properties"][prop_name] = processed_prop
+            else:
+                # If properties is empty or not a dict, remove required
+                if "required" in schema:
+                    del schema["required"]
+        else:
+            # No properties in this schema, so remove required if it exists
+            # (unless this is a nested schema that shouldn't have required anyway)
+            if "required" in schema and schema.get("type") == "object":
+                # Only remove required if this is explicitly an object type
+                # (not a nested schema like additionalProperties value)
+                del schema["required"]
+
+        return schema
 
     def _add_additional_properties(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         """Recursively add additionalProperties=false to all objects in schema."""

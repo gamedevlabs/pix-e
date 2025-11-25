@@ -9,6 +9,7 @@ const progressMessage = ref<string | null>(null)
 const progressCurrent = ref<number>(0)
 const progressTotal = ref<number>(10)
 const pillarMode = ref<PillarMode>('smart')
+const uploadedDocument = ref<File | null>(null)
 
 export function useSparcV2() {
   const api = useSparcV2Api()
@@ -58,6 +59,7 @@ export function useSparcV2() {
           evaluationError.value = error
           toast.error('Evaluation failed: ' + error)
         },
+        uploadedDocument.value, // Pass the uploaded document
       )
     } catch (error) {
       evaluationError.value = error instanceof Error ? error.message : 'Evaluation failed'
@@ -153,6 +155,7 @@ export function useSparcV2() {
     progressCurrent,
     progressTotal,
     pillarMode,
+    uploadedDocument,
 
     // Actions
     runV2Evaluation,

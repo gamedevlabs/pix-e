@@ -6,9 +6,13 @@ Provides real-time progress updates via Server-Sent Events (SSE).
 
 import asyncio
 import json
+import logging
+import os
+import tempfile
 import time
-from typing import Any, Dict, Generator
+from typing import Any, Dict, Generator, Optional
 
+from django.conf import settings
 from django.http import StreamingHttpResponse
 from rest_framework import permissions
 from rest_framework.views import APIView
@@ -18,8 +22,11 @@ from llm.events import EventCollector
 from llm.providers.manager import ModelManager
 from llm.types import AgentOutputEvent, AgentStartedEvent
 from sparc.llm.graphs_v2 import SPARCRouterGraph
+from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
 from sparc.llm.views.v2 import VALID_PILLAR_MODES, get_model_id, save_game_concept
 from sparc.models import SPARCEvaluation
+
+logger = logging.getLogger(__name__)
 
 
 class ProgressEventCollector(EventCollector):
@@ -70,6 +77,9 @@ class SPARCV2StreamView(APIView):
 
     def post(self, request):
         """Execute V2 evaluation with streaming progress."""
+        document_data = None
+        temp_file_path = None
+
         try:
             game_text = request.data.get("game_text")
             if not game_text:
@@ -89,6 +99,49 @@ class SPARCV2StreamView(APIView):
                     content_type="text/event-stream",
                     status=400,
                 )
+
+            # Handle optional document upload
+            uploaded_file = request.FILES.get("document")
+            if uploaded_file:
+                try:
+                    # Validate file type
+                    file_type = validate_file_type(
+                        uploaded_file.name, settings.ALLOWED_DOCUMENT_TYPES
+                    )
+
+                    # Validate file size
+                    validate_file_size(
+                        uploaded_file.size, settings.DOCUMENT_MAX_SIZE_MB
+                    )
+
+                    # Save to temporary file
+                    with tempfile.NamedTemporaryFile(
+                        delete=False, suffix=f".{file_type}", dir=tempfile.gettempdir()
+                    ) as tmp_file:
+                        for chunk in uploaded_file.chunks():
+                            tmp_file.write(chunk)
+                        temp_file_path = tmp_file.name
+
+                    document_data = {
+                        "file_path": temp_file_path,
+                        "file_type": file_type,
+                        "original_name": uploaded_file.name,
+                    }
+
+                except ValueError as e:
+                    logger.error(f"File validation failed: {e}")
+                    return StreamingHttpResponse(
+                        self._error_stream(f"File validation failed: {str(e)}"),
+                        content_type="text/event-stream",
+                        status=400,
+                    )
+                except Exception as e:
+                    logger.error(f"File upload failed: {e}", exc_info=True)
+                    return StreamingHttpResponse(
+                        self._error_stream(f"File upload failed: {str(e)}"),
+                        content_type="text/event-stream",
+                        status=500,
+                    )
 
             # Create evaluation record
             evaluation = SPARCEvaluation.objects.create(
@@ -111,11 +164,20 @@ class SPARCV2StreamView(APIView):
                     model_id,
                     evaluation,
                     request.user,
+                    document_data,
+                    temp_file_path,
                 ),
                 content_type="text/event-stream",
             )
 
         except Exception as e:
+            logger.error(f"Evaluation failed: {e}", exc_info=True)
+            # Clean up temp file on error
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temp file: {cleanup_error}")
             return StreamingHttpResponse(
                 self._error_stream(str(e)),
                 content_type="text/event-stream",
@@ -130,6 +192,8 @@ class SPARCV2StreamView(APIView):
         model_id: str,
         evaluation: SPARCEvaluation,
         user,
+        document_data: Optional[Dict[str, Any]] = None,
+        temp_file_path: Optional[str] = None,
     ) -> Generator[str, None, None]:
         """Stream evaluation progress and results."""
         config = get_config()
@@ -146,14 +210,20 @@ class SPARCV2StreamView(APIView):
 
         from llm.types import LLMRequest
 
+        request_data: Dict[str, Any] = {
+            "game_text": game_text,
+            "context": context_text,
+            "pillar_mode": pillar_mode,
+        }
+
+        # Add document data if provided
+        if document_data:
+            request_data["document_file"] = document_data
+
         request = LLMRequest(
             feature="sparc",
             operation="router_v2",
-            data={
-                "game_text": game_text,
-                "context": context_text,
-                "pillar_mode": pillar_mode,
-            },
+            data=request_data,
             model_id=model_id,
             mode="agentic",
         )
@@ -251,6 +321,12 @@ class SPARCV2StreamView(APIView):
             yield self._format_sse("error", {"message": str(e)})
 
         finally:
+            # Clean up temporary file after graph execution completes
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temp file: {cleanup_error}")
             loop.close()
 
     def _format_sse(self, event_type: str, data: Dict[str, Any]) -> str:

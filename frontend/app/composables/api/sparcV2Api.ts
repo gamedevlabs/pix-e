@@ -13,20 +13,41 @@ export function useSparcV2Api() {
     gameText: string,
     context: string = '',
     pillarMode: PillarMode = 'smart',
+    document?: File,
   ) {
-    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
-      method: 'POST',
-      body: {
-        game_text: gameText,
-        context: context,
-        model: llm.active_llm,
-        pillar_mode: pillarMode,
-      },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+    // Use FormData if document is provided, otherwise use JSON
+    if (document) {
+      const formData = new FormData()
+      formData.append('game_text', gameText)
+      formData.append('context', context)
+      formData.append('model', llm.active_llm || 'openai')
+      formData.append('pillar_mode', pillarMode)
+      formData.append('document', document)
+
+      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+    } else {
+      // Keep existing JSON approach when no document
+      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
+        method: 'POST',
+        body: {
+          game_text: gameText,
+          context: context,
+          model: llm.active_llm,
+          pillar_mode: pillarMode,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+    }
   }
 
   async function runV2EvaluateStreamAPICall(
@@ -36,23 +57,44 @@ export function useSparcV2Api() {
     onProgress: (event: ProgressEvent) => void,
     onComplete: (result: SPARCV2Response) => void,
     onError: (error: string) => void,
+    document?: File | null,
   ) {
     const url = `${config.public.apiBase}/sparc/v2/evaluate-stream/`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Use FormData if document is provided, otherwise use JSON
+      let body: FormData | string
+      let headers: HeadersInit
+
+      if (document) {
+        const formData = new FormData()
+        formData.append('game_text', gameText)
+        formData.append('context', context)
+        formData.append('model', llm.active_llm || 'openai')
+        formData.append('pillar_mode', pillarMode)
+        formData.append('document', document)
+        body = formData
+        headers = {
           'X-CSRFToken': useCookie('csrftoken').value || '',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
+        }
+      } else {
+        body = JSON.stringify({
           game_text: gameText,
           context: context,
           model: llm.active_llm,
           pillar_mode: pillarMode,
-        }),
+        })
+        headers = {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': useCookie('csrftoken').value || '',
+        }
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body,
       })
 
       if (!response.body) {
