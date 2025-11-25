@@ -1,0 +1,15 @@
+Title: BBQ Burger
+Desc: Combat encounters should be quick and intense, keeping players engaged.
+
+Title: Dynamic Environmental Interaction
+Desc: Players will engage with the environment in meaningful ways, using their tools to manipulate machinery, solve puzzles, and navigate the world, creating a sense of agency and investment in the restoration of the clock tower.
+
+Title: Inclusive Accessibility Design
+Desc: Inclusive Accessibility Design
+
+Title: Mechanical Narrative Weaving
+Desc: The game should utilize environmental storytelling to convey the narrative, allowing players to piece together the history and emotions of the clock tower's past through interactions with its mechanisms and the remnants of its former inhabitants.
+
+Title: Scale and Perspective
+Desc: Design elements should emphasize the vastness of the environment relative to the tiny protagonist, creating a sense of wonder and challenge through unique perspectives and interactions.
+
