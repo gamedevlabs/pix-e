@@ -21,7 +21,7 @@ from sparc.llm import graphs, graphs_v2  # noqa: F401
 from sparc.llm.graphs_v2 import SPARCRouterGraph
 from sparc.models import SPARCEvaluation
 
-VALID_PILLAR_MODES = {"all", "filtered", "none"}
+VALID_PILLAR_MODES = {"all", "smart", "none"}
 
 
 def get_model_id(model_name: str) -> str:
@@ -97,7 +97,7 @@ class SPARCV2EvaluateView(APIView):
 
             # Resolve optional inputs
             context_text = request.data.get("context", "")
-            pillar_mode = request.data.get("pillar_mode", "filtered")
+            pillar_mode = request.data.get("pillar_mode", "smart")
             if pillar_mode not in VALID_PILLAR_MODES:
                 return JsonResponse(
                     {"error": "Invalid pillar_mode"},
@@ -246,7 +246,7 @@ class SPARCV2AspectView(APIView):
 
             # Resolve optional inputs
             context_text = request.data.get("context", "")
-            pillar_mode = request.data.get("pillar_mode", "filtered")
+            pillar_mode = request.data.get("pillar_mode", "smart")
             if pillar_mode not in VALID_PILLAR_MODES:
                 return JsonResponse(
                     {"error": "Invalid pillar_mode"},

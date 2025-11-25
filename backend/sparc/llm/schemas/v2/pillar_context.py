@@ -16,7 +16,7 @@ class PillarAssignmentsResponse(BaseModel):
     This is what the LLM returns - just the mapping of aspects to pillar IDs.
     """
 
-    filtered_assignments: Dict[str, List[int]] = Field(
+    smart_assignments: Dict[str, List[int]] = Field(
         default_factory=dict,
         description=(
             "Mapping of aspect names to relevant pillar IDs. "
@@ -32,7 +32,7 @@ class PillarContextResponse(BaseModel):
     Contains pillar information formatted for aspect agent consumption.
     """
 
-    mode: Literal["all", "filtered", "none"] = Field(
+    mode: Literal["all", "smart", "none"] = Field(
         description="Mode used for pillar assignment"
     )
 
@@ -45,11 +45,11 @@ class PillarContextResponse(BaseModel):
         description="All pillars formatted as '[ID: X] Name: desc' list",
     )
 
-    filtered_assignments: Dict[str, List[int]] = Field(
+    smart_assignments: Dict[str, List[int]] = Field(
         default_factory=dict,
         description=(
             "Mapping of aspect names to relevant pillar IDs. "
-            "Only populated in 'filtered' mode."
+            "Only populated in 'smart' mode."
         ),
     )
 

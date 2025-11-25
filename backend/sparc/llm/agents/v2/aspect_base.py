@@ -71,7 +71,7 @@ class AspectAgentV2(V2BaseAgent):
 
         Args:
             data: May contain 'pillar_context' with pillar information.
-                  In filtered mode, pillar_context already contains only
+                  In smart mode, pillar_context already contains only
                   relevant pillars. In all mode, pillar_context contains
                   all pillars.
 
@@ -86,7 +86,7 @@ class AspectAgentV2(V2BaseAgent):
         if not pillar_context.get("pillars_available", False):
             return ""
 
-        # Get pillars_text (already filtered for this aspect if in filtered mode)
+        # Get pillars_text (already smartly assigned for this aspect if in smart mode)
         pillars_text = pillar_context.get("pillars_text", "")
 
         # Fallback to all_pillars_text for backward compatibility

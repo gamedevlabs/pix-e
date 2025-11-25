@@ -82,7 +82,7 @@ class SPARCV2StreamView(APIView):
             model_name = request.data.get("model", "openai")
             model_id = get_model_id(model_name)
             context_text = request.data.get("context", "")
-            pillar_mode = request.data.get("pillar_mode", "filtered")
+            pillar_mode = request.data.get("pillar_mode", "smart")
             if pillar_mode not in VALID_PILLAR_MODES:
                 return StreamingHttpResponse(
                     self._error_stream("Invalid pillar_mode"),

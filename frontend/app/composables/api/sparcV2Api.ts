@@ -12,7 +12,7 @@ export function useSparcV2Api() {
   async function runV2EvaluateAPICall(
     gameText: string,
     context: string = '',
-    pillarMode: PillarMode = 'filtered',
+    pillarMode: PillarMode = 'smart',
   ) {
     return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
       method: 'POST',
@@ -32,7 +32,7 @@ export function useSparcV2Api() {
   async function runV2EvaluateStreamAPICall(
     gameText: string,
     context: string = '',
-    pillarMode: PillarMode = 'filtered',
+    pillarMode: PillarMode = 'smart',
     onProgress: (event: ProgressEvent) => void,
     onComplete: (result: SPARCV2Response) => void,
     onError: (error: string) => void,
