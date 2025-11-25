@@ -5,6 +5,7 @@ Coordinates: Router → Parallel Aspect Agents → Synthesis
 """
 
 import asyncio
+import logging
 import time
 from typing import Any, Dict, List, Optional, Type
 
@@ -28,6 +29,8 @@ from sparc.llm.agents.v2 import (
     UniqueFeaturesAgentV2,
 )
 from sparc.llm.agents.v2.aspect_base import AspectAgentV2
+from sparc.llm.agents.v2.document_context import DocumentContextAgent
+from sparc.llm.schemas.v2.document_context import DocumentContextResponse
 from sparc.llm.schemas.v2.router import RouterResponse
 from sparc.llm.schemas.v2.synthesis import SPARCV2Response
 from sparc.models import SPARCEvaluation
@@ -113,13 +116,25 @@ class SPARCRouterGraph:
         errors: List[ErrorInfo] = []
         agent_results: List[AgentResult] = []
 
-        # Step 1: Run router and pillar context in parallel
+        # Step 1: Run router, pillar context, and document context in parallel
         router_task = self._run_router(context, target_aspects)
         pillar_task = self._run_pillar_context(context, request.data)
 
-        router_result, pillar_result = await asyncio.gather(
-            router_task, pillar_task, return_exceptions=True
-        )
+        # Document task is optional
+        document_file = request.data.get("document_file")
+
+        if document_file:
+            document_task = self._run_document_context(
+                context, document_file, target_aspects
+            )
+            router_result, pillar_result, document_result = await asyncio.gather(
+                router_task, pillar_task, document_task, return_exceptions=True
+            )
+        else:
+            router_result, pillar_result = await asyncio.gather(
+                router_task, pillar_task, return_exceptions=True
+            )
+            document_result = None
 
         # Handle router result
         if isinstance(router_result, Exception):
@@ -149,8 +164,6 @@ class SPARCRouterGraph:
         # Handle pillar context result
         pillar_context = None
         if isinstance(pillar_result, Exception):
-            import logging
-
             logger = logging.getLogger(__name__)
             logger.error(
                 f"Pillar context task raised exception: "
@@ -167,9 +180,40 @@ class SPARCRouterGraph:
             if pillar_result.data and isinstance(pillar_result.data, dict):
                 pillar_context = pillar_result.data
 
+        # Handle document context result
+        document_context = None
+        if document_result is not None:
+            if isinstance(document_result, Exception):
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Document context task raised exception: "
+                    f"{type(document_result).__name__}: {document_result}",
+                    exc_info=True,
+                )
+            else:
+                # At this point, document_result is guaranteed to be AgentResult
+                assert isinstance(document_result, AgentResult)
+                agent_results.append(document_result)
+                # Use document context if we have valid data
+                if document_result.success and document_result.data:
+                    try:
+                        document_context = DocumentContextResponse(
+                            **document_result.data
+                        )
+                    except Exception as e:
+                        import logging
+
+                        logger = logging.getLogger(__name__)
+                        logger.error(
+                            f"Failed to parse document context response: {e}",
+                            exc_info=True,
+                        )
+
         # Step 2: Run aspect agents in parallel
         aspect_results = await self._run_aspect_agents(
-            context, router_response, target_aspects, pillar_context
+            context, router_response, target_aspects, pillar_context, document_context
         )
         agent_results.extend(aspect_results)
 
@@ -412,12 +456,122 @@ class SPARCRouterGraph:
             logger.error(f"Exception in _run_pillar_context: {e}", exc_info=True)
             raise
 
+    async def _run_document_context(
+        self,
+        context: Dict[str, Any],
+        document_file: Dict[str, Any],
+        target_aspects: List[str],
+    ) -> AgentResult:
+        """
+        Run document context agent to extract aspect-relevant content from
+        uploaded document.
+
+        Args:
+            context: Execution context
+            document_file: Dict with file_path, file_type, original_name
+            target_aspects: List of aspect names to extract for
+
+        Returns:
+            AgentResult with document extractions
+        """
+        logger = logging.getLogger(__name__)
+
+        try:
+            agent = DocumentContextAgent()
+
+            if self.event_collector:
+                self.event_collector.add_agent_started(agent.name)
+
+            # Prepare agent context
+            agent_context = {
+                **context,
+                "data": {
+                    "file_path": document_file["file_path"],
+                    "file_type": document_file.get("file_type", "pdf"),
+                    "target_aspects": target_aspects,
+                },
+            }
+
+            # Execute agent
+            result = await agent.run(agent_context)
+
+            # Save to DB if evaluation exists (save even if not successful,
+            # like pillar context)
+            if self.evaluation:
+                try:
+                    await agent._save_result_async(
+                        evaluation=self.evaluation,
+                        input_data=agent_context["data"],
+                        result=result,
+                    )
+                except Exception as e:
+                    import logging
+
+                    logger = logging.getLogger(__name__)
+                    logger.error(
+                        f"Failed to save document context result: {e}",
+                        exc_info=True,
+                    )
+
+            if self.event_collector:
+                self.event_collector.add_agent_finished(agent.name)
+
+            return result
+
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Exception in _run_document_context: {e}",
+                exc_info=True,
+            )
+            # Return error result instead of raising
+            error_result = AgentResult(
+                agent_name="document_context",
+                success=False,
+                data=None,
+                error=ErrorInfo(
+                    code="DOCUMENT_CONTEXT_ERROR",
+                    message=str(e),
+                    severity="error",
+                ),
+                execution_time_ms=0,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            )
+
+            # Try to save error result to DB
+            if self.evaluation:
+                try:
+                    agent = DocumentContextAgent()
+                    await agent._save_result_async(
+                        evaluation=self.evaluation,
+                        input_data={
+                            "file_path": document_file.get("file_path", "unknown")
+                        },
+                        result=error_result,
+                    )
+                    pass
+                except Exception as save_error:
+                    import logging
+
+                    logger = logging.getLogger(__name__)
+                    logger.error(
+                        f"Failed to save error result: {save_error}",
+                        exc_info=True,
+                    )
+
+            return error_result
+
     async def _run_aspect_agents(
         self,
         context: Dict[str, Any],
         router_response: RouterResponse,
         target_aspects: List[str],
         pillar_context: Optional[Dict[str, Any]] = None,
+        document_context: Optional[DocumentContextResponse] = None,
     ) -> List[AgentResult]:
         """Run aspect agents in parallel."""
         max_parallel = getattr(self.config, "max_parallel_agents", 5)
@@ -432,6 +586,16 @@ class SPARCRouterGraph:
             extraction = router_response.get_extraction(aspect_name)
             sections = extraction.extracted_sections if extraction else []
 
+            # Get document extraction for this aspect
+            document_sections = []
+            document_insights = []
+            if document_context:
+                for doc_extraction in document_context.extractions:
+                    if doc_extraction.aspect_name == aspect_name:
+                        document_sections = doc_extraction.extracted_sections
+                        document_insights = doc_extraction.key_insights
+                        break
+
             tasks.append(
                 self._run_single_aspect(
                     context,
@@ -440,6 +604,8 @@ class SPARCRouterGraph:
                     sections,
                     semaphore,
                     pillar_context,
+                    document_sections,
+                    document_insights,
                 )
             )
 
@@ -475,6 +641,8 @@ class SPARCRouterGraph:
         sections: List[str],
         semaphore: asyncio.Semaphore,
         pillar_context: Optional[Dict[str, Any]] = None,
+        document_sections: Optional[List[str]] = None,
+        document_insights: Optional[List[str]] = None,
     ) -> AgentResult:
         """Run a single aspect agent."""
         async with semaphore:
@@ -485,6 +653,12 @@ class SPARCRouterGraph:
 
             # Build agent data with extracted sections and optional pillar context
             agent_data: Dict[str, Any] = {"extracted_sections": sections}
+
+            # Add document context if available (Option A: backward compatible)
+            if document_sections:
+                agent_data["document_sections"] = document_sections
+            if document_insights:
+                agent_data["document_insights"] = document_insights
 
             # Extract only relevant pillars for this aspect (if available)
             if pillar_context and isinstance(pillar_context, dict):

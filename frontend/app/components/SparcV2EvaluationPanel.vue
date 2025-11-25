@@ -8,6 +8,7 @@ const {
   progressCurrent,
   progressTotal,
   pillarMode,
+  uploadedDocument,
   runV2Evaluation,
   runAspectEvaluation,
   sortedAspectResults,
@@ -26,9 +27,54 @@ const pillarModeOptions = [
   { value: 'none', label: 'None', description: 'No pillar context' },
 ]
 
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const fileError = ref<string>('')
+
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(1)}s`
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function handleFileChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  // Validate file type
+  const allowedTypes = ['pdf', 'docx', 'txt', 'md']
+  const fileExt = file.name.split('.').pop()?.toLowerCase()
+
+  if (!fileExt || !allowedTypes.includes(fileExt)) {
+    fileError.value = `Invalid file type. Allowed: ${allowedTypes.join(', ')}`
+    uploadedDocument.value = null
+    return
+  }
+
+  // Validate file size (10MB)
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    fileError.value = 'File too large. Maximum size is 10MB'
+    uploadedDocument.value = null
+    return
+  }
+
+  fileError.value = ''
+  uploadedDocument.value = file
+}
+
+function clearFile() {
+  uploadedDocument.value = null
+  fileError.value = ''
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
 }
 </script>
 
@@ -101,6 +147,57 @@ function formatDuration(ms: number): string {
           <span class="text-xs text-neutral-500">
             {{ pillarModeOptions.find((o) => o.value === pillarMode)?.description }}
           </span>
+        </div>
+
+        <!-- Document Upload -->
+        <div class="space-y-2">
+          <label class="text-sm text-neutral-400 font-medium flex items-center gap-2">
+            <UIcon name="i-heroicons-document-text" />
+            Design Document (Optional)
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              :disabled="isEvaluating"
+              class="block w-full text-sm text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-500 file:text-white hover:file:bg-primary-600 file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              @change="handleFileChange"
+            />
+          </div>
+
+          <!-- File preview -->
+          <div
+            v-if="uploadedDocument"
+            class="flex items-center justify-between p-3 bg-neutral-800 rounded-lg"
+          >
+            <div class="flex items-center gap-3">
+              <UIcon name="i-heroicons-document" class="text-primary-400" />
+              <div>
+                <p class="text-sm font-medium text-neutral-200">{{ uploadedDocument.name }}</p>
+                <p class="text-xs text-neutral-500">{{ formatFileSize(uploadedDocument.size) }}</p>
+              </div>
+            </div>
+            <UButton
+              icon="i-heroicons-x-mark"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              :disabled="isEvaluating"
+              @click="clearFile"
+            />
+          </div>
+
+          <!-- File error -->
+          <UAlert
+            v-if="fileError"
+            color="error"
+            variant="subtle"
+            :description="fileError"
+            class="text-sm"
+          />
+
+          <p class="text-xs text-neutral-500">Supported: PDF, DOCX, TXT, MD • Max 10MB</p>
         </div>
       </div>
 

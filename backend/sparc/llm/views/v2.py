@@ -5,8 +5,12 @@ Router-based agentic evaluation endpoints.
 """
 
 import asyncio
-from typing import List, Optional
+import logging
+import os
+import tempfile
+from typing import Any, Dict, List, Optional
 
+from django.conf import settings
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.views import APIView
@@ -19,7 +23,10 @@ from llm.providers.manager import ModelManager
 # Import to trigger graph registration
 from sparc.llm import graphs, graphs_v2  # noqa: F401
 from sparc.llm.graphs_v2 import SPARCRouterGraph
+from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
 from sparc.models import SPARCEvaluation
+
+logger = logging.getLogger(__name__)
 
 VALID_PILLAR_MODES = {"all", "smart", "none"}
 
@@ -82,6 +89,7 @@ class SPARCV2EvaluateView(APIView):
 
     def post(self, request):
         """Execute full V2 evaluation."""
+        temp_file_path = None  # Track temp file for cleanup
         try:
             # Validate input
             game_text = request.data.get("game_text")
@@ -104,6 +112,52 @@ class SPARCV2EvaluateView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # Handle optional document upload
+            document_data = None
+            uploaded_file = request.FILES.get("document")
+
+            if uploaded_file:
+                try:
+                    # Validate file type
+                    file_type = validate_file_type(
+                        uploaded_file.name, settings.ALLOWED_DOCUMENT_TYPES
+                    )
+
+                    # Validate file size
+                    validate_file_size(
+                        uploaded_file.size, settings.DOCUMENT_MAX_SIZE_MB
+                    )
+
+                    # Save to temporary file
+                    with tempfile.NamedTemporaryFile(
+                        delete=False, suffix=f".{file_type}", dir=tempfile.gettempdir()
+                    ) as tmp_file:
+                        for chunk in uploaded_file.chunks():
+                            tmp_file.write(chunk)
+                        temp_file_path = tmp_file.name
+
+                    document_data = {
+                        "file_path": temp_file_path,
+                        "file_type": file_type,
+                        "original_name": uploaded_file.name,
+                    }
+
+                    logger.info(
+                        f"Document uploaded: {uploaded_file.name} "
+                        f"({uploaded_file.size} bytes, type: {file_type})"
+                    )
+
+                except ValueError as e:
+                    return JsonResponse(
+                        {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                    )
+                except Exception as e:
+                    logger.error(f"File upload failed: {str(e)}")
+                    return JsonResponse(
+                        {"error": f"File upload failed: {str(e)}"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
             # Create evaluation record
             evaluation = SPARCEvaluation.objects.create(
                 game_text=game_text,
@@ -125,6 +179,7 @@ class SPARCV2EvaluateView(APIView):
                 evaluation=evaluation,
                 pillar_mode=pillar_mode,
                 user=request.user if request.user.is_authenticated else None,
+                document_data=document_data,
             )
 
             if not result["success"]:
@@ -153,6 +208,15 @@ class SPARCV2EvaluateView(APIView):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+        finally:
+            # Clean up temporary file
+            if temp_file_path:
+                try:
+                    os.unlink(temp_file_path)
+                    logger.debug(f"Cleaned up temp file: {temp_file_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to clean up temp file: {str(e)}")
+
     def _execute_graph(
         self,
         game_text: str,
@@ -163,6 +227,7 @@ class SPARCV2EvaluateView(APIView):
         pillar_mode: str,
         user,
         target_aspects: Optional[List[str]] = None,
+        document_data: Optional[dict] = None,
     ) -> dict:
         """Execute the V2 graph."""
         from llm.types import LLMRequest
@@ -179,14 +244,21 @@ class SPARCV2EvaluateView(APIView):
             user=user,
         )
 
+        # Build request data
+        request_data: Dict[str, Any] = {
+            "game_text": game_text,
+            "context": context_text,
+            "pillar_mode": pillar_mode,
+        }
+
+        # Add document data if provided
+        if document_data:
+            request_data["document_file"] = document_data
+
         request = LLMRequest(
             feature="sparc",
             operation="router_v2",
-            data={
-                "game_text": game_text,
-                "context": context_text,
-                "pillar_mode": pillar_mode,
-            },
+            data=request_data,
             model_id=model_id,
             mode="agentic",
         )
