@@ -61,7 +61,7 @@ class PillarsEvaluationGraph(BaseAgentGraph):
         # Phase 1: Run detection agents in parallel
         detection_agents = self.build_agents(request)
         detection_results = await self._run_agents_parallel(
-            detection_agents, request.data
+            detection_agents, request.data, request
         )
         all_agent_results.extend(detection_results)
 
@@ -159,7 +159,7 @@ class PillarsEvaluationGraph(BaseAgentGraph):
         )
 
     async def _run_agents_parallel(
-        self, agents: List[BaseAgent], data: Dict[str, Any]
+        self, agents: List[BaseAgent], data: Dict[str, Any], request: LLMRequest
     ) -> List[Any]:
         """Run a list of agents in parallel and return their results."""
         from llm.types import AgentResult
@@ -169,8 +169,8 @@ class PillarsEvaluationGraph(BaseAgentGraph):
             context = {
                 "model_manager": self.model_manager,
                 "data": data,
-                "model_id": None,  # Will be resolved by agent
-                "model_preference": "auto",
+                "model_id": getattr(request, "model_id", None),
+                "model_preference": getattr(request, "model_preference", "auto"),
             }
             coroutines.append(agent.run(context))
 
