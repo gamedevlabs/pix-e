@@ -315,9 +315,7 @@ class SPARCV2StreamView(APIView):
             yield self._format_sse("complete", aggregated)
 
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in SPARC V2 streaming evaluation: {e}")
             yield self._format_sse("error", {"message": str(e)})
 
         finally:

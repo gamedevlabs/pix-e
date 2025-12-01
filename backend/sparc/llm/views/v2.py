@@ -201,9 +201,7 @@ class SPARCV2EvaluateView(APIView):
             return JsonResponse(aggregated, status=status.HTTP_200_OK)
 
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in SPARC V2 evaluation: {e}")
             return JsonResponse(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -405,9 +403,7 @@ class SPARCV2AspectView(APIView):
             return JsonResponse(aggregated, status=status.HTTP_200_OK)
 
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in SPARC V2 evaluation: {e}")
             return JsonResponse(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
