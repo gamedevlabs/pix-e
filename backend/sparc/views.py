@@ -5,6 +5,8 @@ Provides endpoints for both agentic (quick scan) and monolithic
 SPARC evaluations.
 """
 
+import logging
+
 from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
 from rest_framework.views import APIView
@@ -17,6 +19,8 @@ from game_concept.models import GameConcept
 from sparc.llm import graphs, handlers  # noqa: F401
 from sparc.models import SPARCEvaluation, SPARCEvaluationResult
 from sparc.serializers import SPARCEvaluationSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def get_model_id(model_name: str) -> str:
@@ -279,9 +283,7 @@ class SPARCQuickScanView(APIView):
             return JsonResponse(response.results, status=status.HTTP_200_OK)
 
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in SPARC evaluation: {e}")
             return JsonResponse(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -361,9 +363,7 @@ class SPARCMonolithicView(APIView):
             return JsonResponse(response.results, status=status.HTTP_200_OK)
 
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in SPARC evaluation: {e}")
             return JsonResponse(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

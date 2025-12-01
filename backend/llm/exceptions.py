@@ -124,7 +124,7 @@ class UnknownFeatureError(OrchestratorError):
         # Auto-populate available features from registry if not provided
         if available_features is None:
             try:
-                from backend.llm import list_features
+                from llm.handler_registry import list_features
 
                 available_features = list_features()
             except Exception:
@@ -170,11 +170,11 @@ class UnknownOperationError(OrchestratorError):
         # Auto-populate available operations from registry if not provided
         if available_operations is None:
             try:
-                from backend.llm.features import list_operations
+                from llm.handler_registry import list_operations
 
                 ops = list_operations(feature)
-                available_operations = [op.id for op in ops]
-            except ImportError:
+                available_operations = ops
+            except Exception:
                 available_operations = []
 
         context: Dict[str, Any] = {

@@ -1,3 +1,5 @@
+import logging
+
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
@@ -17,6 +19,8 @@ from .utils import (
     save_execution_result_llm_calls,
     save_pillar_llm_call,
 )
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -82,10 +86,7 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in validate_pillar: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in validate_pillar: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=True, methods=["POST"], url_path="fix")
@@ -157,10 +158,7 @@ class PillarFeedbackView(ViewSet):
             )
 
         except Exception as e:
-            print(f"Error in fix_pillar: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in fix_pillar: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=True, methods=["POST"], url_path="accept-fix")
@@ -199,10 +197,7 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse(data, status=200)
 
         except Exception as e:
-            print(f"Error in accept_fix: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in accept_fix: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -279,10 +274,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(combined_result, status=200)
 
         except Exception as e:
-            print(f"Error in overall_feedback: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in overall_feedback: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="completeness")
@@ -320,10 +312,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in completeness: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in completeness: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="contradictions")
@@ -361,10 +350,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in contradictions: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in contradictions: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="additions")
@@ -402,10 +388,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in additions: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in additions: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="context")
@@ -441,10 +424,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in context: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in context: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="evaluate-all")
@@ -533,10 +513,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(response_data, status=200)
 
         except Exception as e:
-            print(f"Error in evaluate_all: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in evaluate_all: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="resolve-contradictions")
@@ -635,10 +612,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(result.data, status=200)
 
         except Exception as e:
-            print(f"Error in resolve_contradictions: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in resolve_contradictions: {e}")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="accept-addition")
@@ -674,8 +648,5 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(data, status=201)
 
         except Exception as e:
-            print(f"Error in accept_addition: {e}")
-            import traceback
-
-            traceback.print_exc()
+            logger.exception(f"Error in accept_addition: {e}")
             return JsonResponse({"error": str(e)}, status=500)
