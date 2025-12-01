@@ -8,11 +8,13 @@ import asyncio
 import logging
 import os
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import permissions, status
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from game_concept.models import GameConcept
@@ -37,7 +39,9 @@ def get_model_id(model_name: str) -> str:
     return config.resolve_model_alias(model_name)
 
 
-def save_game_concept(user, game_text: str, evaluation=None) -> None:
+def save_game_concept(
+    user: User, game_text: str, evaluation: Optional[SPARCEvaluation] = None
+) -> None:
     """Auto-save game concept after SPARC evaluation."""
     if not user.is_authenticated:
         return
@@ -87,7 +91,7 @@ class SPARCV2EvaluateView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request) -> JsonResponse:
         """Execute full V2 evaluation."""
         temp_file_path = None  # Track temp file for cleanup
         try:
@@ -196,7 +200,8 @@ class SPARCV2EvaluateView(APIView):
             evaluation.save()
 
             # Auto-save game concept
-            save_game_concept(request.user, game_text, evaluation)
+            if request.user.is_authenticated:
+                save_game_concept(cast(User, request.user), game_text, evaluation)
 
             return JsonResponse(aggregated, status=status.HTTP_200_OK)
 
@@ -223,10 +228,10 @@ class SPARCV2EvaluateView(APIView):
         mode: str,
         evaluation: SPARCEvaluation,
         pillar_mode: str,
-        user,
+        user: Optional[User],
         target_aspects: Optional[List[str]] = None,
-        document_data: Optional[dict] = None,
-    ) -> dict:
+        document_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Execute the V2 graph."""
         from llm.types import LLMRequest
 
@@ -303,7 +308,7 @@ class SPARCV2AspectView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request) -> JsonResponse:
         """Execute single or multiple aspect evaluation."""
         try:
             # Validate input
@@ -416,9 +421,9 @@ class SPARCV2AspectView(APIView):
         mode: str,
         evaluation: SPARCEvaluation,
         pillar_mode: str,
-        user,
+        user: Optional[User],
         target_aspects: List[str],
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Execute the V2 graph for specific aspects."""
         from llm.types import LLMRequest
 

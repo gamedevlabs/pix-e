@@ -6,9 +6,12 @@ SPARC evaluations.
 """
 
 import logging
+from typing import Any, Optional, cast
 
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from backend.llm import LLMOrchestrator
@@ -140,7 +143,9 @@ def save_sparc_evaluation(
     return evaluation
 
 
-def save_game_concept(user, game_text: str, evaluation=None) -> None:
+def save_game_concept(
+    user: User, game_text: str, evaluation: Optional[SPARCEvaluation] = None
+) -> None:
     """
     Auto-save game concept after SPARC evaluation.
 
@@ -194,11 +199,11 @@ class SPARCQuickScanView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.orchestrator = LLMOrchestrator()
 
-    def post(self, request):
+    def post(self, request: Request) -> JsonResponse:
         """Execute quick scan evaluation with agentic execution."""
         try:
             # Validate input
@@ -239,7 +244,8 @@ class SPARCQuickScanView(APIView):
             )
 
             # Auto-save game concept with linked evaluation
-            save_game_concept(request.user, game_text, evaluation)
+            if request.user.is_authenticated:
+                save_game_concept(cast(User, request.user), game_text, evaluation)
 
             return JsonResponse(response.results, status=status.HTTP_200_OK)
 
@@ -275,11 +281,11 @@ class SPARCMonolithicView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.orchestrator = LLMOrchestrator()
 
-    def post(self, request):
+    def post(self, request: Request) -> JsonResponse:
         """Execute monolithic evaluation with handler-based execution."""
         try:
             # Validate input
@@ -319,7 +325,8 @@ class SPARCMonolithicView(APIView):
             )
 
             # Auto-save game concept with linked evaluation
-            save_game_concept(request.user, game_text, evaluation)
+            if request.user.is_authenticated:
+                save_game_concept(cast(User, request.user), game_text, evaluation)
 
             return JsonResponse(response.results, status=status.HTTP_200_OK)
 

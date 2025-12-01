@@ -10,11 +10,13 @@ import logging
 import os
 import tempfile
 import time
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional, cast
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
 from rest_framework import permissions
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from llm.config import get_config
@@ -32,10 +34,10 @@ logger = logging.getLogger(__name__)
 class ProgressEventCollector(EventCollector):
     """Event collector that yields progress updates for SSE."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with a queue for progress events."""
         super().__init__()
-        self.progress_queue = []
+        self.progress_queue: List[Dict[str, Any]] = []
 
     def add_agent_started(self, agent_name: str) -> AgentStartedEvent:
         """Track agent start and emit progress."""
@@ -53,7 +55,7 @@ class ProgressEventCollector(EventCollector):
         )
         return event
 
-    def get_progress_events(self) -> list:
+    def get_progress_events(self) -> List[Dict[str, Any]]:
         """Get all queued progress events and clear queue."""
         events = self.progress_queue.copy()
         self.progress_queue.clear()
@@ -75,7 +77,7 @@ class SPARCV2StreamView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request) -> StreamingHttpResponse:
         """Execute V2 evaluation with streaming progress."""
         document_data = None
         temp_file_path = None
@@ -163,7 +165,7 @@ class SPARCV2StreamView(APIView):
                     pillar_mode,
                     model_id,
                     evaluation,
-                    request.user,
+                    cast(User, request.user),
                     document_data,
                     temp_file_path,
                 ),
@@ -191,7 +193,7 @@ class SPARCV2StreamView(APIView):
         pillar_mode: str,
         model_id: str,
         evaluation: SPARCEvaluation,
-        user,
+        user: User,
         document_data: Optional[Dict[str, Any]] = None,
         temp_file_path: Optional[str] = None,
     ) -> Generator[str, None, None]:
