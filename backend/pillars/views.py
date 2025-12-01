@@ -6,8 +6,9 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from game_concept.models import GameConcept
-from llm import LLMOrchestrator, get_config
+from llm import LLMOrchestrator
 from llm.types import LLMRequest
+from llm.view_utils import get_model_id
 
 # Import handlers to trigger auto-registration
 from pillars.llm import handlers  # noqa: F401
@@ -23,12 +24,6 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 # Create your views here.
-
-
-def get_model_id(model_name: str) -> str:
-    """Map frontend model names to actual model IDs using orchestrator config."""
-    config = get_config()
-    return config.resolve_model_alias(model_name)
 
 
 def format_pillars_text(pillars: list[Pillar]) -> str:

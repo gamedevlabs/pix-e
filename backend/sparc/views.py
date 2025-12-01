@@ -11,8 +11,10 @@ from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
 from rest_framework.views import APIView
 
-from backend.llm import LLMOrchestrator, get_config
+from backend.llm import LLMOrchestrator
+from backend.llm.cost_tracking import calculate_cost_eur
 from backend.llm.types import LLMRequest, LLMResponse
+from backend.llm.view_utils import get_model_id
 from game_concept.models import GameConcept
 
 # Import handlers and graphs to trigger auto-registration
@@ -21,47 +23,6 @@ from sparc.models import SPARCEvaluation, SPARCEvaluationResult
 from sparc.serializers import SPARCEvaluationSerializer
 
 logger = logging.getLogger(__name__)
-
-
-def get_model_id(model_name: str) -> str:
-    """
-    Map frontend model names to actual model IDs using config.
-    """
-    config = get_config()
-    return config.resolve_model_alias(model_name)
-
-
-def calculate_cost_eur(
-    model_name: str, prompt_tokens: int = 0, completion_tokens: int = 0
-) -> float:
-    """
-    Calculate cost in EUR based on actual token usage and model pricing.
-
-    Args:
-        model_name: Name of the model used
-        prompt_tokens: Number of input tokens
-        completion_tokens: Number of output tokens
-
-    Returns:
-        Cost in EUR (8 decimal precision)
-    """
-    # Model costs per 1M tokens in EUR
-    # Based on current pricing (converted from USD at ~0.90 EUR/USD)
-    MODEL_COSTS = {
-        "gemini-2.0-flash-exp": {"input": 0.0, "output": 0.0},  # Free
-        "gpt-4o-mini": {
-            "input": 0.135,
-            "output": 0.540,
-        },  # $0.150/$0.600
-        "gpt-4o": {"input": 2.25, "output": 9.00},  # $2.50/$10.00
-    }
-
-    costs = MODEL_COSTS.get(model_name, {"input": 0.0, "output": 0.0})
-
-    input_cost = (prompt_tokens / 1_000_000) * costs["input"]
-    output_cost = (completion_tokens / 1_000_000) * costs["output"]
-
-    return round(input_cost + output_cost, 8)
 
 
 def save_sparc_evaluation(
