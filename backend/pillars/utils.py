@@ -8,40 +8,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from django.contrib.auth.models import User
 
+from llm.cost_tracking import calculate_cost_eur
 from llm.types import AgentResult, ExecutionResult, LLMResponse
 
 from .models import Pillar, PillarLLMCall
-
-# Model pricing per 1M tokens (EUR)
-MODEL_COSTS = {
-    "gemini-2.0-flash-exp": {"input": 0.0, "output": 0.0},  # Free tier
-    "gemini-1.5-flash": {"input": 0.075, "output": 0.30},
-    "gemini-1.5-pro": {"input": 1.25, "output": 5.00},
-    "gpt-4o-mini": {"input": 0.135, "output": 0.540},
-    "gpt-4o": {"input": 2.25, "output": 9.00},
-    "gpt-4-turbo": {"input": 9.00, "output": 27.00},
-}
-
-
-def calculate_cost_eur(
-    model_name: str, prompt_tokens: int = 0, completion_tokens: int = 0
-) -> float:
-    """
-    Calculate cost in EUR based on token usage and model pricing.
-
-    Args:
-        model_name: The model identifier
-        prompt_tokens: Number of input tokens
-        completion_tokens: Number of output tokens
-
-    Returns:
-        Estimated cost in EUR (rounded to 8 decimal places)
-    """
-    costs = MODEL_COSTS.get(model_name, {"input": 0.0, "output": 0.0})
-    input_cost = (prompt_tokens / 1_000_000) * costs["input"]
-    output_cost = (completion_tokens / 1_000_000) * costs["output"]
-
-    return round(input_cost + output_cost, 8)
 
 
 def save_pillar_llm_call(
