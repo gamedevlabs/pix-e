@@ -19,7 +19,7 @@ class AgentRegistry:
     Manages graph registration and discovery for agentic execution mode.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty registry."""
         self._graphs: Dict[str, Type] = {}
 

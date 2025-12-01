@@ -1,8 +1,13 @@
 import logging
+from typing import Any, Optional, cast
 
+from django.contrib.auth.models import User
+from django.db.models import QuerySet
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
+from rest_framework.request import Request
+from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from game_concept.models import GameConcept
@@ -38,21 +43,28 @@ class PillarViewSet(ModelViewSet):
     serializer_class = PillarSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return Pillar.objects.filter(user=self.request.user)
+    def get_queryset(self) -> QuerySet[Pillar]:
+        user = cast(User, self.request.user)
+        return Pillar.objects.filter(user=user)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def perform_create(self, serializer: BaseSerializer[Any]) -> None:
+        user = cast(User, self.request.user)
+        serializer.save(user=user)
 
 
 class PillarFeedbackView(ViewSet):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__()
         self.orchestrator = LLMOrchestrator()
 
     @action(detail=True, methods=["POST"], url_path="validate")
-    def validate_pillar(self, request, pk):
+    def validate_pillar(
+        self, request: Request, pk: Optional[int] = None
+    ) -> JsonResponse:
         try:
+            if pk is None:
+                return JsonResponse({"error": "Pillar ID is required"}, status=400)
+
             pillar = Pillar.objects.filter(id=pk).first()
             if not pillar:
                 return JsonResponse({"error": "Pillar not found"}, status=404)
@@ -71,8 +83,9 @@ class PillarFeedbackView(ViewSet):
             response = self.orchestrator.execute(llm_request)
 
             # Save metrics
+            user = cast(User, request.user)
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="validate",
                 response=response,
                 pillar=pillar,
@@ -85,7 +98,7 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=True, methods=["POST"], url_path="fix")
-    def fix_pillar(self, request, pk):
+    def fix_pillar(self, request: Request, pk: Optional[int] = None) -> JsonResponse:
         """
         Generate an improved pillar with explanations.
 
@@ -98,6 +111,9 @@ class PillarFeedbackView(ViewSet):
         Returns enriched response with original, improved, and explanations.
         """
         try:
+            if pk is None:
+                return JsonResponse({"error": "Pillar ID is required"}, status=400)
+
             pillar = Pillar.objects.filter(id=pk).first()
             if not pillar:
                 return JsonResponse({"error": "Pillar not found"}, status=404)
@@ -124,8 +140,9 @@ class PillarFeedbackView(ViewSet):
             response = self.orchestrator.execute(llm_request)
 
             # Save metrics
+            user = cast(User, request.user)
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="improve_explained",
                 response=response,
                 pillar=pillar,
@@ -157,7 +174,7 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=True, methods=["POST"], url_path="accept-fix")
-    def accept_fix(self, request, pk):
+    def accept_fix(self, request: Request, pk: Optional[int] = None) -> JsonResponse:
         """
         Accept and persist an AI-generated improvement.
 
@@ -168,6 +185,9 @@ class PillarFeedbackView(ViewSet):
         }
         """
         try:
+            if pk is None:
+                return JsonResponse({"error": "Pillar ID is required"}, status=400)
+
             pillar = Pillar.objects.filter(id=pk).first()
             if not pillar:
                 return JsonResponse({"error": "Pillar not found"}, status=404)
@@ -197,21 +217,22 @@ class PillarFeedbackView(ViewSet):
 
 
 class LLMFeedbackView(ViewSet):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__()
         self.orchestrator = LLMOrchestrator()
 
     @action(detail=False, methods=["POST"], url_path="overall")
-    def overall_feedback(self, request):
+    def overall_feedback(self, request: Request) -> JsonResponse:
         """
         Overall feedback - calls 3 operations sequentially.
         This replicates the old evaluate_pillars_in_context behavior.
         """
         try:
+            user = cast(User, self.request.user)
             game_concept = GameConcept.objects.filter(
-                user=self.request.user, is_current=True
+                user=user, is_current=True
             ).first()
-            pillars = list(Pillar.objects.filter(user=request.user))
+            pillars = list(Pillar.objects.filter(user=user))
 
             if not game_concept:
                 return JsonResponse({"error": "No game concept found"}, status=404)
@@ -245,17 +266,17 @@ class LLMFeedbackView(ViewSet):
 
             # Save metrics for each call
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="evaluate_completeness",
                 response=completeness_response,
             )
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="evaluate_contradictions",
                 response=contradictions_response,
             )
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="suggest_additions",
                 response=additions_response,
             )
@@ -273,11 +294,12 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="completeness")
-    def completeness(self, request):
+    def completeness(self, request: Request) -> JsonResponse:
         try:
-            pillars = list(Pillar.objects.filter(user=request.user))
+            user = cast(User, self.request.user)
+            pillars = list(Pillar.objects.filter(user=user))
             game_concept = GameConcept.objects.filter(
-                user=self.request.user, is_current=True
+                user=user, is_current=True
             ).first()
 
             if not game_concept:
@@ -299,7 +321,7 @@ class LLMFeedbackView(ViewSet):
 
             # Save metrics
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="evaluate_completeness",
                 response=response,
             )
@@ -311,11 +333,12 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="contradictions")
-    def contradictions(self, request):
+    def contradictions(self, request: Request) -> JsonResponse:
         try:
-            pillars = list(Pillar.objects.filter(user=request.user))
+            user = cast(User, self.request.user)
+            pillars = list(Pillar.objects.filter(user=user))
             game_concept = GameConcept.objects.filter(
-                user=self.request.user, is_current=True
+                user=user, is_current=True
             ).first()
 
             if not game_concept:
@@ -337,7 +360,7 @@ class LLMFeedbackView(ViewSet):
 
             # Save metrics
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="evaluate_contradictions",
                 response=response,
             )
@@ -349,11 +372,12 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="additions")
-    def additions(self, request):
+    def additions(self, request: Request) -> JsonResponse:
         try:
-            pillars = list(Pillar.objects.filter(user=request.user))
+            user = cast(User, self.request.user)
+            pillars = list(Pillar.objects.filter(user=user))
             game_concept = GameConcept.objects.filter(
-                user=self.request.user, is_current=True
+                user=user, is_current=True
             ).first()
 
             if not game_concept:
@@ -375,7 +399,7 @@ class LLMFeedbackView(ViewSet):
 
             # Save metrics
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="suggest_additions",
                 response=response,
             )
@@ -387,9 +411,10 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="context")
-    def context(self, request):
+    def context(self, request: Request) -> JsonResponse:
         try:
-            pillars = list(Pillar.objects.filter(user=request.user))
+            user = cast(User, self.request.user)
+            pillars = list(Pillar.objects.filter(user=user))
             context_text = request.data.get("context", "")
 
             if not context_text:
@@ -411,7 +436,7 @@ class LLMFeedbackView(ViewSet):
 
             # Save metrics
             save_pillar_llm_call(
-                user=request.user,
+                user=user,
                 operation="evaluate_context",
                 response=response,
             )
@@ -423,7 +448,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="evaluate-all")
-    def evaluate_all(self, request):
+    def evaluate_all(self, request: Request) -> JsonResponse:
         """
         Run comprehensive pillar evaluation using agent graph.
 
@@ -439,10 +464,11 @@ class LLMFeedbackView(ViewSet):
         from llm.agent_registry import get_graph
 
         try:
+            user = cast(User, self.request.user)
             game_concept = GameConcept.objects.filter(
-                user=self.request.user, is_current=True
+                user=user, is_current=True
             ).first()
-            pillars = list(Pillar.objects.filter(user=request.user))
+            pillars = list(Pillar.objects.filter(user=user))
 
             if not game_concept:
                 return JsonResponse({"error": "No game concept found"}, status=404)
@@ -487,7 +513,7 @@ class LLMFeedbackView(ViewSet):
                 "context": game_concept.content,
             }
             save_execution_result_llm_calls(
-                user=request.user,
+                user=user,
                 result=result,
                 input_data=input_data,
             )
@@ -512,7 +538,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="resolve-contradictions")
-    def resolve_contradictions(self, request):
+    def resolve_contradictions(self, request: Request) -> JsonResponse:
         """
         Suggest resolutions for detected contradictions.
 
@@ -528,10 +554,11 @@ class LLMFeedbackView(ViewSet):
         The contradictions object should be the output from the contradictions endpoint.
         """
         try:
+            user = cast(User, self.request.user)
             game_concept = GameConcept.objects.filter(
-                user=self.request.user, is_current=True
+                user=user, is_current=True
             ).first()
-            pillars = list(Pillar.objects.filter(user=request.user))
+            pillars = list(Pillar.objects.filter(user=user))
 
             if not game_concept:
                 return JsonResponse({"error": "No game concept found"}, status=404)
@@ -598,7 +625,7 @@ class LLMFeedbackView(ViewSet):
                 "contradictions_feedback": contradictions_data,
             }
             save_agent_result_llm_call(
-                user=request.user,
+                user=user,
                 operation="resolve_contradictions",
                 result=result,
                 input_data=input_data,
@@ -611,7 +638,7 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="accept-addition")
-    def accept_addition(self, request):
+    def accept_addition(self, request: Request) -> JsonResponse:
         """
         Accept a suggested pillar and create it in the database.
 
@@ -622,6 +649,7 @@ class LLMFeedbackView(ViewSet):
         }
         """
         try:
+            user = cast(User, self.request.user)
             name = request.data.get("name")
             description = request.data.get("description")
 
@@ -633,7 +661,7 @@ class LLMFeedbackView(ViewSet):
 
             # Create new pillar
             pillar = Pillar.objects.create(
-                user=request.user,
+                user=user,
                 name=name,
                 description=description,
             )

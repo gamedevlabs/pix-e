@@ -8,7 +8,7 @@ agents (agentic mode).
 
 import asyncio
 import time
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
 from llm.agent_registry import get_graph, has_graph
 from llm.config import get_config
@@ -33,7 +33,7 @@ class LLMOrchestrator:
     manages model selection, and tracks execution metadata.
     """
 
-    def __init__(self, model_manager: Optional[ModelManager] = None):
+    def __init__(self, model_manager: Optional[ModelManager] = None) -> None:
         """Initialize orchestrator with optional ModelManager."""
         self.model_manager = model_manager or ModelManager()
         self.config = get_config()
@@ -128,7 +128,7 @@ class LLMOrchestrator:
             model_manager=self.model_manager,
         )
 
-    def _select_model(self, request: LLMRequest, handler) -> str:
+    def _select_model(self, request: LLMRequest, handler: Any) -> str:
         """Select model: explicit > auto-select > first available."""
         if request.model_id:
             return request.model_id
