@@ -40,6 +40,7 @@ def configure_logfire(service_name: str = "pix-e-backend") -> None:
 
     _configured = True
 
+
 def get_logfire():
     """Get logfire instance for manual span creation."""
     return logfire
