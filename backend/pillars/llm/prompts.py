@@ -21,9 +21,14 @@ Prose paragraphs are NOT lists.
 Pillar Title: %s
 Pillar Description: %s
 
-For each issue found, provide feedback. If no issues are found for a point,
-do not mention it.
-For each feedback limit your answer to one sentence.
+CRITICAL RULES FOR REPORTING ISSUES:
+1. ONLY include issues that ACTUALLY EXIST in the structuralIssues array.
+2. If a check passes (no issue found), DO NOT include it in the response at all.
+3. DO NOT add issues with descriptions like "this doesn't apply" or "no issue found".
+4. Severity 1-5 is ONLY for real issues. Don't use low severity to mean "doesn't apply".
+5. Empty structuralIssues array is perfectly valid when no issues exist.
+
+For each ACTUAL issue found, provide feedback in one sentence.
 Answer as if you were talking directly to the designer.
 """
 
