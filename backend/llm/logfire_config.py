@@ -39,8 +39,6 @@ def configure_logfire(service_name: str = "pix-e-backend") -> None:
     logfire.instrument_django()
 
     _configured = True
-    print("✅ Logfire configured with OpenAI and Gemini instrumentation")
-
 
 def get_logfire():
     """Get logfire instance for manual span creation."""
