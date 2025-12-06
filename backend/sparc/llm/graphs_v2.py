@@ -184,7 +184,6 @@ class SPARCRouterGraph:
         document_context = None
         if document_result is not None:
             if isinstance(document_result, Exception):
-                import logging
 
                 logger = logging.getLogger(__name__)
                 logger.error(
@@ -203,7 +202,6 @@ class SPARCRouterGraph:
                             **document_result.data
                         )
                     except Exception as e:
-                        import logging
 
                         logger = logging.getLogger(__name__)
                         logger.error(
@@ -318,7 +316,6 @@ class SPARCRouterGraph:
         try:
             agent = PillarContextAgent()
         except Exception as e:
-            import logging
 
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to create agent: {e}", exc_info=True)
@@ -361,7 +358,6 @@ class SPARCRouterGraph:
                         result=agent_result,
                     )
                 except Exception as e:
-                    import logging
 
                     logger = logging.getLogger(__name__)
                     logger.error(
@@ -450,7 +446,6 @@ class SPARCRouterGraph:
 
             return result
         except Exception as e:
-            import logging
 
             logger = logging.getLogger(__name__)
             logger.error(f"Exception in _run_pillar_context: {e}", exc_info=True)
@@ -505,9 +500,6 @@ class SPARCRouterGraph:
                         result=result,
                     )
                 except Exception as e:
-                    import logging
-
-                    logger = logging.getLogger(__name__)
                     logger.error(
                         f"Failed to save document context result: {e}",
                         exc_info=True,
@@ -519,9 +511,6 @@ class SPARCRouterGraph:
             return result
 
         except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.error(
                 f"Exception in _run_document_context: {e}",
                 exc_info=True,
@@ -555,9 +544,6 @@ class SPARCRouterGraph:
                     )
                     pass
                 except Exception as save_error:
-                    import logging
-
-                    logger = logging.getLogger(__name__)
                     logger.error(
                         f"Failed to save error result: {save_error}",
                         exc_info=True,

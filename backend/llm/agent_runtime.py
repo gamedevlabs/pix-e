@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional, Type
 from pydantic import BaseModel, ValidationError
 
 from llm.exceptions import AgentFailureError
+from llm.logfire_config import get_logfire
 from llm.providers.base import StructuredResult
 from llm.providers.manager import ModelManager
 from llm.types import AgentResult, CapabilityRequirements, ErrorInfo
@@ -152,12 +153,19 @@ class BaseAgent(ABC):
             prompt = self.build_prompt(data)
             model_name = self._select_model(model_manager, context)
 
-            result = model_manager.generate_structured_with_model(
-                model_name=model_name,
-                prompt=prompt,
-                response_schema=self.response_schema,
-                temperature=self.temperature,
-            )
+            # Create a custom span with agent name to wrap the LLM call
+            logfire = get_logfire()
+            with logfire.span(
+                f"{self.name}",
+                agent_name=self.name,
+                model=model_name,
+            ):
+                result = model_manager.generate_structured_with_model(
+                    model_name=model_name,
+                    prompt=prompt,
+                    response_schema=self.response_schema,
+                    temperature=self.temperature,
+                )
 
             # Extract token usage if result is StructuredResult
             prompt_tokens = 0
@@ -210,13 +218,20 @@ class BaseAgent(ABC):
             prompt = self.build_prompt(data)
             model_name = self._select_model(model_manager, context)
 
-            # Use async method for true parallel execution
-            result = await model_manager.generate_structured_with_model_async(
-                model_name=model_name,
-                prompt=prompt,
-                response_schema=self.response_schema,
-                temperature=self.temperature,
-            )
+            # Create a custom span with agent name to wrap the LLM call
+            logfire = get_logfire()
+            with logfire.span(
+                f"{self.name}",
+                agent_name=self.name,
+                model=model_name,
+            ):
+                # Use async method for true parallel execution
+                result = await model_manager.generate_structured_with_model_async(
+                    model_name=model_name,
+                    prompt=prompt,
+                    response_schema=self.response_schema,
+                    temperature=self.temperature,
+                )
 
             # Extract token usage if result is StructuredResult
             prompt_tokens = 0
