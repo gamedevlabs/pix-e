@@ -15,3 +15,10 @@ export interface Asset {
   thumbnailUrl?: string
   previewUrl?: string
 }
+
+export interface MovieProject extends NamedEntity {
+  id?: number
+
+  createdAt?: string
+  updatedAt?: string
+}
