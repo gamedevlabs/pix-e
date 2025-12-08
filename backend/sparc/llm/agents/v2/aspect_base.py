@@ -25,6 +25,7 @@ class AspectAgentV2(V2BaseAgent):
 
     # Subclasses must define these
     prompt_template: str = ""
+    default_suggestions: List[str] = []
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """
@@ -287,11 +288,9 @@ Return a JSON response with these fields."""
         )
 
     def _get_default_suggestions(self) -> List[str]:
-        """
-        Get default suggestions for when aspect is not provided.
-
-        Subclasses should override this to provide aspect-specific suggestions.
-        """
+        """Get default suggestions for when aspect is not provided."""
+        if self.default_suggestions:
+            return self.default_suggestions
         return [
             f"Define the {self.aspect_name.replace('_', ' ')} for your game concept.",
         ]
