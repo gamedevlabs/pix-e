@@ -21,8 +21,8 @@ from backend.llm.types import LLMRequest, LLMResponse
 from backend.llm.view_utils import get_model_id
 from game_concept.models import GameConcept
 
-# Import handlers and graphs to trigger auto-registration
-from sparc.llm import graphs, handlers  # noqa: F401
+# Import handlers and workflows to trigger auto-registration
+from sparc.llm import handlers, workflows  # noqa: F401
 from sparc.models import SPARCEvaluation, SPARCEvaluationResult
 from sparc.serializers import SPARCEvaluationSerializer
 
@@ -232,10 +232,10 @@ class SPARCQuickScanView(APIView):
                     operation="quick_scan",
                     data={"game_text": game_text},
                     model_id=model_id,
-                    mode="agentic",  # Use agentic mode for graph execution
+                    mode="agentic",  # Use agentic mode for workflow execution
                 )
 
-                # Execute through orchestrator (will use agent graph)
+                # Execute through orchestrator (will use agent workflow)
                 response = self.orchestrator.execute(llm_request)
 
                 if not response.success:

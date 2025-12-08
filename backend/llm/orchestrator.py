@@ -10,7 +10,7 @@ import asyncio
 import time
 from typing import Any, Optional, cast
 
-from llm.agent_registry import get_graph, has_graph
+from llm.agent_registry import get_workflow, has_workflow
 from llm.config import get_config
 from llm.events import EventCollector
 from llm.exceptions import (
@@ -117,29 +117,30 @@ class LLMOrchestrator:
         ):
             operation_id = f"{request.feature}.{request.operation}"
 
-            if not has_graph(operation_id):
+            if not has_workflow(operation_id):
                 response = self._execute_handler_mode(request)
                 response.warnings = response.warnings or []
                 response.warnings.append(
                     WarningInfo(
-                        code="AGENT_GRAPH_NOT_FOUND",
+                        code="AGENT_WORKFLOW_NOT_FOUND",
                         message=(
-                            f"No agent graph for {operation_id}, " "using handler mode"
+                            f"No agent workflow for {operation_id}, "
+                            "using handler mode"
                         ),
                         context={"operation_id": operation_id},
                     )
                 )
                 return response
 
-            graph_class = get_graph(operation_id)
+            workflow_class = get_workflow(operation_id)
             event_collector = EventCollector()
-            graph = graph_class(self.model_manager, self.config, event_collector)
+            workflow = workflow_class(self.model_manager, self.config, event_collector)
 
             try:
-                execution_result = asyncio.run(graph.run(request))
+                execution_result = asyncio.run(workflow.run(request))
             except Exception as e:
                 raise OrchestratorError(
-                    message=f"Agent graph execution failed: {str(e)}",
+                    message=f"Agent workflow execution failed: {str(e)}",
                     code="AGENT_EXECUTION_FAILED",
                     context={"operation_id": operation_id, "error": str(e)},
                 )

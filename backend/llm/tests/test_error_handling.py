@@ -191,4 +191,4 @@ class TestWarningHandling:
         warning = response.warnings[0]
         assert hasattr(warning, "code")
         assert hasattr(warning, "message")
-        assert "agent graph" in warning.message.lower()
+        assert "agent workflow" in warning.message.lower()

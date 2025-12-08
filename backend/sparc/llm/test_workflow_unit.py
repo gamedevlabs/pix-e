@@ -1,5 +1,5 @@
 """
-Unit test for SPARC quick scan graph aggregation logic.
+Unit test for SPARC quick scan workflow aggregation logic.
 
 Tests the aggregation logic without making actual LLM calls.
 """
@@ -7,7 +7,6 @@ Tests the aggregation logic without making actual LLM calls.
 from unittest.mock import Mock
 
 from llm.types import AgentResult, LLMRequest
-from sparc.llm.graphs import SPARCQuickScanGraph
 from sparc.llm.schemas.gameplay import GameplayResponse, GoalsChallengesRewardsResponse
 from sparc.llm.schemas.player_experience import (
     PlayerExperienceResponse,
@@ -20,16 +19,17 @@ from sparc.llm.schemas.visual_meta import (
     UniqueFeaturesResponse,
 )
 from sparc.llm.schemas.world import PlaceResponse, StoryNarrativeResponse
+from sparc.llm.workflows import SPARCQuickScanWorkflow
 
 
-def test_graph_build_agents():
-    """Test that graph builds all 10 agents."""
-    print("Testing SPARCQuickScanGraph.build_agents()...")
+def test_workflow_build_agents():
+    """Test that workflow builds all 10 agents."""
+    print("Testing SPARCQuickScanWorkflow.build_agents()...")
 
     # Create mock dependencies
     config = Mock()
     model_manager = Mock()
-    graph = SPARCQuickScanGraph(model_manager, config)
+    workflow = SPARCQuickScanWorkflow(model_manager, config)
 
     # Create request
     request = LLMRequest(
@@ -40,7 +40,7 @@ def test_graph_build_agents():
     )
 
     # Test build_agents
-    agents = graph.build_agents(request)
+    agents = workflow.build_agents(request)
 
     assert len(agents) == 10, f"Expected 10 agents, got {len(agents)}"
     print(f"✅ Built {len(agents)} agents")
@@ -63,14 +63,14 @@ def test_graph_build_agents():
     print("✅ All expected agent names present\n")
 
 
-def test_graph_aggregation():
-    """Test that graph correctly aggregates agent results."""
-    print("Testing SPARCQuickScanGraph.aggregate()...")
+def test_workflow_aggregation():
+    """Test that workflow correctly aggregates agent results."""
+    print("Testing SPARCQuickScanWorkflow.aggregate()...")
 
     # Create mock dependencies
     config = Mock()
     model_manager = Mock()
-    graph = SPARCQuickScanGraph(model_manager, config)
+    workflow = SPARCQuickScanWorkflow(model_manager, config)
 
     # Create mock agent results
     agent_results = [
@@ -211,7 +211,7 @@ def test_graph_aggregation():
     )
 
     # Test aggregation
-    result = graph.aggregate(agent_results, request)
+    result = workflow.aggregate(agent_results, request)
 
     # Verify structure
     assert "readiness_score" in result, "Missing readiness_score"
@@ -267,11 +267,11 @@ def test_graph_aggregation():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("SPARC Quick Scan Graph Unit Tests")
+    print("SPARC Quick Scan Workflow Unit Tests")
     print("=" * 60 + "\n")
 
-    test_graph_build_agents()
-    test_graph_aggregation()
+    test_workflow_build_agents()
+    test_workflow_aggregation()
 
     print("=" * 60)
     print("✨ All unit tests passed!")

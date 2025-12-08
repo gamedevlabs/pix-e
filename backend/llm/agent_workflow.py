@@ -1,7 +1,7 @@
 """
-Agent Graph for Parallel Agent Execution
+Agent Workflow for Parallel Agent Execution
 
-Provides BaseAgentGraph class that coordinates multiple agents running in parallel.
+Provides BaseAgentWorkflow class that coordinates multiple agents running in parallel.
 """
 
 import asyncio
@@ -17,11 +17,11 @@ from llm.providers.manager import ModelManager
 from llm.types import AgentResult, ErrorInfo, ExecutionResult, LLMRequest, WarningInfo
 
 
-class BaseAgentGraph(ABC):
+class BaseAgentWorkflow(ABC):
     """
-    Base class for agent graphs.
+    Base class for agent workflows.
 
-    An agent graph coordinates multiple agents to complete a complex operation:
+    An agent workflow coordinates multiple agents to complete a complex operation:
     1. Builds list of agents to execute
     2. Runs agents in parallel (with concurrency limit)
     3. Emits events for observability
@@ -39,7 +39,7 @@ class BaseAgentGraph(ABC):
         event_collector: EventCollector | None = None,
     ):
         """
-        Initialize agent graph.
+        Initialize agent workflow.
 
         Args:
             model_manager: ModelManager for LLM calls
@@ -116,7 +116,7 @@ class BaseAgentGraph(ABC):
 
     async def run(self, request: LLMRequest) -> ExecutionResult:
         """
-        Execute the agent graph with parallel agents.
+        Execute the agent workflow with parallel agents.
 
         Args:
             request: The LLM request
@@ -127,8 +127,8 @@ class BaseAgentGraph(ABC):
         agents = self.build_agents(request)
 
         with logfire.span(
-            "agent_graph.execute",
-            graph_name=getattr(self, "name", self.__class__.__name__),
+            "agent_workflow.execute",
+            workflow_name=getattr(self, "name", self.__class__.__name__),
             num_agents=len(agents),
             max_parallel=getattr(self.config, "max_parallel_agents", 3),
         ):

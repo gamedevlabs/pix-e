@@ -1,7 +1,7 @@
 """
-Test script for SPARC quick scan graph.
+Test script for SPARC quick scan workflow.
 
-Validates that the graph can run all agents in parallel and aggregate results.
+Validates that the workflow can run all agents in parallel and aggregate results.
 """
 
 import asyncio
@@ -9,13 +9,13 @@ import asyncio
 from llm.config import Config
 from llm.providers.manager import ModelManager
 from llm.types import LLMRequest
-from sparc.llm.graphs import SPARCQuickScanGraph
+from sparc.llm.workflows import SPARCQuickScanWorkflow
 
 
-async def test_quick_scan_graph():
-    """Test the SPARC quick scan graph execution."""
+async def test_quick_scan_workflow():
+    """Test the SPARC quick scan workflow execution."""
     print("=" * 60)
-    print("SPARC Quick Scan Graph Test")
+    print("SPARC Quick Scan Workflow Test")
     print("=" * 60 + "\n")
 
     # Sample game text for testing
@@ -35,36 +35,36 @@ async def test_quick_scan_graph():
         model_id="gpt-4o-mini",  # Using OpenAI for testing
     )
 
-    # Initialize graph
+    # Initialize workflow
     config = Config()
     model_manager = ModelManager(config)
-    graph = SPARCQuickScanGraph(model_manager, config)
+    workflow = SPARCQuickScanWorkflow(model_manager, config)
 
-    print("Testing graph components...\n")
+    print("Testing workflow components...\n")
 
     # Test 1: Build agents
     print("1. Testing build_agents()...")
-    agents = graph.build_agents(request)
+    agents = workflow.build_agents(request)
     assert len(agents) == 10, f"Expected 10 agents, got {len(agents)}"
     print(f"   ✅ Built {len(agents)} agents")
 
     agent_names = [agent.name for agent in agents]
     print(f"   Agents: {', '.join(agent_names)}\n")
 
-    # Test 2: Run graph (full execution)
-    print("2. Testing full graph execution...")
+    # Test 2: Run workflow (full execution)
+    print("2. Testing full workflow execution...")
     print("   Running all 10 agents in parallel...")
 
-    result = await graph.run(request)
+    result = await workflow.run(request)
 
     if not result.success:
-        print("   ❌ Graph execution failed")
+        print("   ❌ Workflow execution failed")
         if result.errors:
             for error in result.errors:
                 print(f"      Error: {error.message}")
         return
 
-    print("   ✅ Graph executed successfully")
+    print("   ✅ Workflow executed successfully")
     print(f"   Execution time: {result.total_execution_time_ms}ms")
     print(f"   Agent results: {len(result.agent_results)}\n")
 
@@ -103,9 +103,9 @@ async def test_quick_scan_graph():
         print(f"      {i}. {step}")
 
     print("\n" + "=" * 60)
-    print("✨ All graph tests passed!")
+    print("✨ All workflow tests passed!")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    asyncio.run(test_quick_scan_graph())
+    asyncio.run(test_quick_scan_workflow())

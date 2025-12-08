@@ -22,14 +22,14 @@ class PillarContextAgent(V2BaseAgent):
     """
 
     name = "pillar_context"
-    aspect_name = "pillar_context"  # For DB storage
-    response_schema = PillarAssignmentsResponse  # LLM returns just assignments
+    aspect_name = "pillar_context"
+    response_schema = PillarAssignmentsResponse
 
     capability_requirements = CapabilityRequirements(
         min_context_window=8000, json_strict=True
     )
 
-    temperature = 0.2  # Low temperature for consistent assignments
+    temperature = 0.2
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate required input fields."""
@@ -46,9 +46,6 @@ class PillarContextAgent(V2BaseAgent):
         mode = data["mode"]
 
         if mode == "all":
-            # In "all" mode, we don't need LLM call
-            # Just return a dummy prompt (won't be used)
             return ""
 
-        # Smart mode: use LLM to assign pillars to aspects
         return PILLAR_ASSIGNMENT_PROMPT.format(pillars_text=pillars_text)

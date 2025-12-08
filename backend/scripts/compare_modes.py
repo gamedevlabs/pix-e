@@ -211,7 +211,7 @@ class ModeComparator:
     def _run_agentic_mode(
         self, request_data: Dict[str, Any], model_id: str
     ) -> Dict[str, Any]:
-        """Run evaluation in agentic mode (single graph with parallel agents)."""
+        """Run evaluation in agentic mode (single workflow with parallel agents)."""
         start_time = time.time()
 
         request = LLMRequest(

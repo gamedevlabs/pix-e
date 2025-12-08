@@ -23,7 +23,7 @@ class SynthesisAgent(V2BaseAgent):
     name = "synthesis"
     response_schema = SPARCSynthesis
     aspect_name = "synthesis"
-    temperature = 0.3  # Analytical
+    temperature = 0.3
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate that aspect_results are provided."""
@@ -42,7 +42,6 @@ class SynthesisAgent(V2BaseAgent):
         """
         aspect_results: Dict[str, SimplifiedAspectResponse] = data["aspect_results"]
 
-        # Format aspect evaluations for the prompt
         evaluations = self._format_evaluations(aspect_results)
 
         return SYNTHESIS_PROMPT.format(aspect_evaluations=evaluations)
@@ -54,7 +53,6 @@ class SynthesisAgent(V2BaseAgent):
         lines = []
 
         for aspect_name, result in aspect_results.items():
-            # Handle both dict and Pydantic model
             if isinstance(result, dict):
                 status = result.get("status", "unknown")
                 reasoning = result.get("reasoning", "")
@@ -69,7 +67,7 @@ class SynthesisAgent(V2BaseAgent):
             lines.append(f"Reasoning: {reasoning}")
             if suggestions:
                 lines.append("Suggestions:")
-                for s in suggestions[:3]:  # Limit to 3 suggestions
+                for s in suggestions[:3]:
                     lines.append(f"  - {s}")
             lines.append("")
 
@@ -100,7 +98,6 @@ class SynthesisAgent(V2BaseAgent):
             else:
                 not_provided.append(name)
 
-        # Determine overall status
         core_aspects = ["player_experience", "gameplay", "goals_challenges_rewards"]
         core_gaps = [a for a in core_aspects if a in not_provided or a in needs_work]
 

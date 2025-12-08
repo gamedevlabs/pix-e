@@ -1,16 +1,16 @@
 """
-Pillar evaluation agent graphs.
+Pillar evaluation agent workflows.
 
-Agent graphs coordinate multiple agents to complete complex operations
+Agent workflows coordinate multiple agents to complete complex operations
 through parallel execution and result aggregation.
 """
 
 import asyncio
 from typing import Any, Dict, List
 
-from llm.agent_graph import BaseAgentGraph
-from llm.agent_registry import register_graph
+from llm.agent_registry import register_workflow
 from llm.agent_runtime import BaseAgent
+from llm.agent_workflow import BaseAgentWorkflow
 from llm.types import LLMRequest
 from pillars.llm.agents import (
     ConceptFitAgent,
@@ -20,9 +20,9 @@ from pillars.llm.agents import (
 )
 
 
-class PillarsEvaluationGraph(BaseAgentGraph):
+class PillarsEvaluationWorkflow(BaseAgentWorkflow):
     """
-    Agent graph for comprehensive pillar evaluation with conditional execution.
+    Agent workflow for comprehensive pillar evaluation with conditional execution.
 
     Execution flow:
     1. Run ConceptFitAgent and ContradictionsAgent in parallel (detection phase)
@@ -233,5 +233,5 @@ class PillarsEvaluationGraph(BaseAgentGraph):
         return aggregated
 
 
-# Register graph for the evaluate_all operation
-register_graph("pillars.evaluate_all", PillarsEvaluationGraph)
+# Register workflow for the evaluate_all operation
+register_workflow("pillars.evaluate_all", PillarsEvaluationWorkflow)

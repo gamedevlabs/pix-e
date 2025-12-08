@@ -11,6 +11,6 @@ class SparcConfig(AppConfig):
     verbose_name = "SPARC Game Design Evaluation"
 
     def ready(self):
-        """Import LLM module to trigger graph and handler registration."""
-        # Import to trigger auto-registration of graphs and handlers
-        from sparc.llm import graphs, handlers  # noqa: F401
+        """Import LLM module to trigger workflow and handler registration."""
+        # Import to trigger auto-registration of workflows and handlers
+        from sparc.llm import handlers, workflows  # noqa: F401

@@ -38,7 +38,7 @@ class RouterAgent(V2BaseAgent):
     name = "router"
     response_schema = RouterResponse
     aspect_name = "router"
-    temperature = 0.2  # Low temperature for consistent extraction
+    temperature = 0.2
 
     def __init__(self, max_retries: int = 3):
         """
@@ -90,11 +90,9 @@ class RouterAgent(V2BaseAgent):
                 return result
 
             last_error = result.error
-            # Log retry attempt (in production, use proper logging)
             if attempt < self.max_retries - 1:
                 continue
 
-        # All retries failed
         return AgentResult(
             agent_name=self.name,
             success=False,
@@ -133,11 +131,9 @@ class RouterAgent(V2BaseAgent):
 
             last_error = result.error
             total_tokens += result.total_tokens
-            # Continue to next attempt
             if attempt < self.max_retries - 1:
                 continue
 
-        # All retries failed
         execution_time_ms = int((time.time() - start_time) * 1000)
         return AgentResult(
             agent_name=self.name,
