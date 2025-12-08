@@ -6,7 +6,7 @@ SPARC evaluations.
 """
 
 import logging
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from django.contrib.auth.models import User
 from django.http import JsonResponse
@@ -271,7 +271,8 @@ class SPARCQuickScanView(APIView):
 
                 # Auto-save game concept with linked evaluation
                 if request.user.is_authenticated:
-                    save_game_concept(cast(User, request.user), game_text, evaluation)
+                    user: User = request.user  # type: ignore[assignment]
+                    save_game_concept(user, game_text, evaluation)
 
                 return JsonResponse(response.results, status=status.HTTP_200_OK)
 
@@ -372,7 +373,8 @@ class SPARCMonolithicView(APIView):
 
                 # Auto-save game concept with linked evaluation
                 if request.user.is_authenticated:
-                    save_game_concept(cast(User, request.user), game_text, evaluation)
+                    user: User = request.user  # type: ignore[assignment]
+                    save_game_concept(user, game_text, evaluation)
 
                 return JsonResponse(response.results, status=status.HTTP_200_OK)
 
