@@ -1,14 +1,14 @@
 """
-SPARC evaluation graphs.
+SPARC evaluation workflows.
 
-Contains agent graphs for orchestrating multi-agent SPARC evaluations.
+Contains agent workflows for orchestrating multi-agent SPARC evaluations.
 """
 
 from typing import Any, Dict, List
 
-from llm.agent_graph import BaseAgentGraph
-from llm.agent_registry import register_graph
+from llm.agent_registry import register_workflow
 from llm.agent_runtime import BaseAgent
+from llm.agent_workflow import BaseAgentWorkflow
 from llm.types import AgentResult, LLMRequest
 from sparc.llm.agents import (
     ArtDirectionAgent,
@@ -25,11 +25,11 @@ from sparc.llm.agents import (
 from sparc.llm.schemas.aggregated import AspectScore, SPARCQuickScanResponse
 
 
-class SPARCQuickScanGraph(BaseAgentGraph):
+class SPARCQuickScanWorkflow(BaseAgentWorkflow):
     """
-    Quick scan graph that runs all 10 SPARC agents in parallel.
+    Quick scan workflow that runs all 10 SPARC agents in parallel.
 
-    This graph provides a comprehensive evaluation by running specialized
+    This workflow provides a comprehensive evaluation by running specialized
     agents for each SPARC aspect simultaneously, then aggregating results.
 
     Execution mode: Simple parallel - all agents run independently.
@@ -196,5 +196,5 @@ class SPARCQuickScanGraph(BaseAgentGraph):
         ).model_dump()
 
 
-# Register graph for agentic execution
-register_graph("sparc.quick_scan", SPARCQuickScanGraph)
+# Register workflow for agentic execution
+register_workflow("sparc.quick_scan", SPARCQuickScanWorkflow)

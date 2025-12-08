@@ -27,7 +27,7 @@ class DocumentContextAgent(V2BaseAgent):
     name = "document_context"
     response_schema = DocumentContextResponse
     aspect_name = "document_context"
-    temperature = 0.2  # Low temperature for consistent extraction
+    temperature = 0.2
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate that required inputs are provided."""
@@ -43,28 +43,21 @@ class DocumentContextAgent(V2BaseAgent):
         file_path = data["file_path"]
         target_aspects = data["target_aspects"]
 
-        # Verify file exists before trying to extract
         if not os.path.exists(file_path):
             raise ValueError(
                 f"Document file not found at {file_path}. "
                 f"File may have been deleted before processing."
             )
 
-        # Extract text from file
         try:
             document_text = extract_text_from_file(file_path)
         except ValueError as e:
             raise ValueError(f"Failed to extract document text: {str(e)}")
 
-        # Check if document is too long (rough estimate: 1 token ≈ 4 chars)
-        # Most models have 128k context, reserve 50k for document
-        max_chars = 50000 * 4  # ~200k chars
+        max_chars = 50000 * 4
         if len(document_text) > max_chars:
-            # Truncate with warning
             document_text = document_text[:max_chars]
-            # In production, we should log this warning
 
-        # Build final prompt with document text
         base_prompt = build_document_context_prompt(target_aspects)
 
         return f"""{DOCUMENT_CONTEXT_SYSTEM_PROMPT}

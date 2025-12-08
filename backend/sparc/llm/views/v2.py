@@ -22,10 +22,10 @@ from llm.config import get_config
 from llm.events import EventCollector
 from llm.providers.manager import ModelManager
 
-# Import to trigger graph registration
-from sparc.llm import graphs, graphs_v2  # noqa: F401
-from sparc.llm.graphs_v2 import SPARCRouterGraph
+# Import to trigger workflow registration
+from sparc.llm import workflows, workflows_v2  # noqa: F401
 from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
+from sparc.llm.workflows_v2 import SPARCRouterWorkflow
 from sparc.models import SPARCEvaluation
 
 logger = logging.getLogger(__name__)
@@ -174,8 +174,8 @@ class SPARCV2EvaluateView(APIView):
                 estimated_cost_eur=0,
             )
 
-            # Execute graph
-            result = self._execute_graph(
+            # Execute workflow
+            result = self._execute_workflow(
                 game_text=game_text,
                 context_text=context_text,
                 model_id=model_id,
@@ -220,7 +220,7 @@ class SPARCV2EvaluateView(APIView):
                 except Exception as e:
                     logger.warning(f"Failed to clean up temp file: {str(e)}")
 
-    def _execute_graph(
+    def _execute_workflow(
         self,
         game_text: str,
         context_text: str,
@@ -232,14 +232,14 @@ class SPARCV2EvaluateView(APIView):
         target_aspects: Optional[List[str]] = None,
         document_data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Execute the V2 graph."""
+        """Execute the V2 workflow."""
         from llm.types import LLMRequest
 
         config = get_config()
         model_manager = ModelManager(config)
         event_collector = EventCollector()
 
-        graph = SPARCRouterGraph(
+        workflow = SPARCRouterWorkflow(
             model_manager=model_manager,
             config=config,
             event_collector=event_collector,
@@ -266,12 +266,12 @@ class SPARCV2EvaluateView(APIView):
             mode="agentic",
         )
 
-        # Run async graph in sync context
+        # Run async workflow in sync context
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             result = loop.run_until_complete(
-                graph.run(request, mode=mode, target_aspects=target_aspects)
+                workflow.run(request, mode=mode, target_aspects=target_aspects)
             )
         finally:
             loop.close()
@@ -380,8 +380,8 @@ class SPARCV2AspectView(APIView):
                 estimated_cost_eur=0,
             )
 
-            # Execute graph
-            result = self._execute_graph(
+            # Execute workflow
+            result = self._execute_workflow(
                 game_text=game_text,
                 context_text=context_text,
                 model_id=model_id,
@@ -413,7 +413,7 @@ class SPARCV2AspectView(APIView):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def _execute_graph(
+    def _execute_workflow(
         self,
         game_text: str,
         context_text: str,
@@ -424,14 +424,14 @@ class SPARCV2AspectView(APIView):
         user: Optional[User],
         target_aspects: List[str],
     ) -> Dict[str, Any]:
-        """Execute the V2 graph for specific aspects."""
+        """Execute the V2 workflow for specific aspects."""
         from llm.types import LLMRequest
 
         config = get_config()
         model_manager = ModelManager(config)
         event_collector = EventCollector()
 
-        graph = SPARCRouterGraph(
+        workflow = SPARCRouterWorkflow(
             model_manager=model_manager,
             config=config,
             event_collector=event_collector,
@@ -451,12 +451,12 @@ class SPARCV2AspectView(APIView):
             mode="agentic",
         )
 
-        # Run async graph in sync context
+        # Run async workflow in sync context
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             result = loop.run_until_complete(
-                graph.run(request, mode=mode, target_aspects=target_aspects)
+                workflow.run(request, mode=mode, target_aspects=target_aspects)
             )
         finally:
             loop.close()

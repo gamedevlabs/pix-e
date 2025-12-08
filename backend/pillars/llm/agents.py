@@ -2,7 +2,7 @@
 Pillar evaluation agents for agentic execution mode.
 
 Each agent implements a specialized evaluation task that can run in parallel
-with other agents as part of an agent graph.
+with other agents as part of an agent workflow.
 """
 
 from typing import Any, Dict

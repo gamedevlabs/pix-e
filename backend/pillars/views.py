@@ -450,7 +450,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="evaluate-all")
     def evaluate_all(self, request: Request) -> JsonResponse:
         """
-        Run comprehensive pillar evaluation using agent graph.
+        Run comprehensive pillar evaluation using agent workflow.
 
         Execution flow:
         1. Run ConceptFit and Contradictions agents in parallel
@@ -461,7 +461,7 @@ class LLMFeedbackView(ViewSet):
         """
         import asyncio
 
-        from llm.agent_registry import get_graph
+        from llm.agent_registry import get_workflow
 
         try:
             user = cast(User, self.request.user)
@@ -480,7 +480,7 @@ class LLMFeedbackView(ViewSet):
             model_id = get_model_id(model)
             pillars_text = format_pillars_text(pillars)
 
-            # Create request for the graph
+            # Create request for the workflow
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_all",
@@ -492,18 +492,18 @@ class LLMFeedbackView(ViewSet):
                 mode="agentic",
             )
 
-            # Get the graph and run it
-            graph_class = get_graph("pillars.evaluate_all")
-            graph = graph_class(
+            # Get the workflow and run it
+            workflow_class = get_workflow("pillars.evaluate_all")
+            workflow = workflow_class(
                 model_manager=self.orchestrator.model_manager,
                 config=self.orchestrator.config,
             )
 
-            # Run the async graph
+            # Run the async workflow
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                result = loop.run_until_complete(graph.run(llm_request))
+                result = loop.run_until_complete(workflow.run(llm_request))
             finally:
                 loop.close()
 

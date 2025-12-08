@@ -1,5 +1,5 @@
 """
-SPARC V2 Router Graph.
+SPARC V2 Router Workflow.
 
 Coordinates: Router → Parallel Aspect Agents → Synthesis
 """
@@ -9,7 +9,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional, Type
 
-from llm.agent_registry import register_graph
+from llm.agent_registry import register_workflow
 from llm.config import Config
 from llm.events import EventCollector
 from llm.providers.manager import ModelManager
@@ -50,9 +50,9 @@ ASPECT_AGENTS: Dict[str, Type[AspectAgentV2]] = {
 }
 
 
-class SPARCRouterGraph:
+class SPARCRouterWorkflow:
     """
-    V2 Router-based SPARC evaluation graph.
+    V2 Router-based SPARC evaluation workflow.
 
     Execution flow:
     1. Router extracts aspect-relevant content
@@ -75,7 +75,7 @@ class SPARCRouterGraph:
         evaluation: Optional[SPARCEvaluation] = None,
         user=None,
     ):
-        """Initialize the graph."""
+        """Initialize the workflow."""
         self.model_manager = model_manager
         self.config = config
         self.event_collector = event_collector
@@ -371,7 +371,7 @@ class SPARCRouterGraph:
                 await persist_result({"pillar_mode": pillar_mode}, result)
                 return result
 
-            # Resolve user either from explicit graph user or evaluation
+            # Resolve user either from explicit workflow user or evaluation
             user = self.user
             if not user and self.evaluation and hasattr(self.evaluation, "user"):
                 user = self.evaluation.user
@@ -820,5 +820,5 @@ class SPARCRouterGraph:
         )
 
 
-# Register graph
-register_graph("sparc.router_v2", SPARCRouterGraph)
+# Register workflow
+register_workflow("sparc.router_v2", SPARCRouterWorkflow)

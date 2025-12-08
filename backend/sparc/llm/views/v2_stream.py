@@ -24,9 +24,9 @@ from llm.events import EventCollector
 from llm.logfire_config import get_logfire
 from llm.providers.manager import ModelManager
 from llm.types import AgentOutputEvent, AgentStartedEvent
-from sparc.llm.graphs_v2 import SPARCRouterGraph
 from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
 from sparc.llm.views.v2 import VALID_PILLAR_MODES, get_model_id, save_game_concept
+from sparc.llm.workflows_v2 import SPARCRouterWorkflow
 from sparc.models import SPARCEvaluation
 
 logger = logging.getLogger(__name__)
@@ -214,7 +214,7 @@ class SPARCV2StreamView(APIView):
             model_manager = ModelManager(config)
             event_collector = ProgressEventCollector()
 
-            graph = SPARCRouterGraph(
+            workflow = SPARCRouterWorkflow(
                 model_manager=model_manager,
                 config=config,
                 event_collector=event_collector,
@@ -258,7 +258,7 @@ class SPARCV2StreamView(APIView):
                 {"stage": "starting", "message": "Initializing evaluation..."},
             )
 
-            # Run the graph asynchronously and stream progress
+            # Run the workflow asynchronously and stream progress
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
@@ -268,7 +268,7 @@ class SPARCV2StreamView(APIView):
                 total_aspects = 10
 
                 # Start the evaluation
-                task = loop.create_task(graph.run(request, mode="full"))
+                task = loop.create_task(workflow.run(request, mode="full"))
 
                 # Poll for progress updates
                 while not task.done():
@@ -344,7 +344,7 @@ class SPARCV2StreamView(APIView):
                 yield self._format_sse("error", {"message": str(e)})
 
             finally:
-                # Clean up temporary file after graph execution completes
+                # Clean up temporary file after workflow execution completes
                 if temp_file_path and os.path.exists(temp_file_path):
                     try:
                         os.unlink(temp_file_path)

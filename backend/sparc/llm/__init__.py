@@ -1,13 +1,13 @@
 """
 SPARC LLM orchestration.
 
-This module contains agents, graphs, handlers, and prompts for
+This module contains agents, workflows, handlers, and prompts for
 SPARC game design evaluation using LLM orchestration.
 
-Handlers and graphs are auto-registered when this package is imported.
+Handlers and workflows are auto-registered when this package is imported.
 """
 
-# Import handlers and graphs to trigger auto-registration via class definition
-from sparc.llm import graphs, handlers  # noqa: F401
+# Import handlers and workflows to trigger auto-registration via class definition
+from sparc.llm import handlers, workflows  # noqa: F401
 
-__all__ = ["handlers", "graphs"]
+__all__ = ["handlers", "workflows"]

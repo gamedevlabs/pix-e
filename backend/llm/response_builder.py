@@ -94,7 +94,7 @@ def build_agent_response(
 
     Args:
         request: Original LLM request
-        execution_result: ExecutionResult from agent graph
+        execution_result: ExecutionResult from agent workflow
         event_collector: EventCollector with execution timeline
         model_manager: ModelManager for looking up model details
     """

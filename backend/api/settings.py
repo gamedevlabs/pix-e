@@ -192,7 +192,7 @@ LOGGING = {
         },
     },
     "loggers": {
-        "sparc.llm.graphs_v2": {
+        "sparc.llm.workflows_v2": {
             "handlers": ["console"],
             "level": "INFO",
         },

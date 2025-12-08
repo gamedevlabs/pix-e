@@ -136,7 +136,7 @@ def save_execution_result_llm_calls(
 
     Args:
         user: The user who made the request
-        result: The ExecutionResult from graph execution
+        result: The ExecutionResult from workflow execution
         input_data: Optional input data to save
         save_result_data: Whether to save result data
 
