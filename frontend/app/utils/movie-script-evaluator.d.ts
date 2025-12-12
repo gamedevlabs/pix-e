@@ -1,5 +1,5 @@
 export interface Asset {
-  id?: number
+  id: number
   name?: string
   class_name?: string
   project_name?: string
@@ -17,7 +17,7 @@ export interface Asset {
 }
 
 export interface MovieProject extends NamedEntity {
-  id?: number
+  id: number
 
   createdAt?: string
   updatedAt?: string
