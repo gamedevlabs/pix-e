@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 
+
 class MovieProject(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(
@@ -21,9 +22,11 @@ class MovieProject(models.Model):
         def __str__(self):
             return self.verbose_name
 
+
 class MovieScript(models.Model):
     title = models.CharField(max_length=255)
     file = models.FileField()
+
 
 class AssetMetaData(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -43,6 +46,7 @@ class AssetMetaData(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class RequiredAssets(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 from llm import BaseOperationHandler, InvalidRequestError
 from moviescriptevaluator.llm.prompts import AnalyzeScenePrompt
@@ -10,7 +10,7 @@ class AnalyzeScene(BaseOperationHandler):
     response_schema = AssetListAnalysis
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
-        return AnalyzeScenePrompt % (data['scene_description'], data['elements'])
+        return AnalyzeScenePrompt % (data["scene_description"], data["elements"])
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "scene_description" not in data or "elements" not in data:
