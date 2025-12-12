@@ -1,5 +1,6 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
@@ -8,10 +9,12 @@ from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
     UnrealEngineDataSerializer,
 )
+from pxcharts.permissions import IsOwner
 
 
 class MovieProjectView(viewsets.ModelViewSet):
     serializer_class = MovieProjectSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
         data = MovieProject.objects.filter(owner=self.request.user).order_by(
@@ -29,13 +32,18 @@ class MovieProjectView(viewsets.ModelViewSet):
 
 class MovieScriptAssets(viewsets.ModelViewSet):
     serializer_class = UnrealEngineDataSerializer
+    #permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
-        # change here later and provide page for each project
-        data = AssetMetaData.objects.filter(project=self.request.project).order_by(
+        if self.action == "list":
+            project_id = self.kwargs["project_pk"]
+            return AssetMetaData.objects.filter(
+                project_id=project_id
+            ).order_by("created_at")
+
+        return AssetMetaData.objects.filter(project=self.request.project).order_by(
             "created_at"
         )
-        return data
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, many=True)
