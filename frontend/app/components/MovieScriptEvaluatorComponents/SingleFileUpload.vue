@@ -24,20 +24,19 @@ const formatBytes = (bytes: number, decimals = 2) => {
 const schema = z.object({
   file: z
     .instanceof(File, {
-      message: 'Please select a file.'
+      message: 'Please select a file.',
     })
     .refine((file) => file.size <= props.maxFileSize, {
-      message: `The file is too large. Please choose a file smaller than ${formatBytes(props.maxFileSize)}.`
+      message: `The file is too large. Please choose a file smaller than ${formatBytes(props.maxFileSize)}.`,
     })
     .refine((file) => props.acceptedFileTypes.includes(file.type), {
-      message: `Please upload a valid file (${props.acceptedFileTypes.join(', ')}).`
+      message: `Please upload a valid file (${props.acceptedFileTypes.join(', ')}).`,
     })
     .refine(
       (file) =>
         new Promise((resolve) => {
           const reader = new FileReader()
           reader.onload = (e) => {
-
             if (!file.type.startsWith('image/')) {
               // If not an image, skip dimension check
               resolve(true)
@@ -57,15 +56,15 @@ const schema = z.object({
           reader.readAsDataURL(file)
         }),
       {
-        message: `The image dimensions are invalid. Please upload an image between ${props.minDimensions?.width ?? 0}x${props.minDimensions?.height ?? 0} and ${props.maxDimensions?.width ?? Infinity}x${props.maxDimensions?.height ?? Infinity} pixels.`
-      }
-    )
+        message: `The image dimensions are invalid. Please upload an image between ${props.minDimensions?.width ?? 0}x${props.minDimensions?.height ?? 0} and ${props.maxDimensions?.width ?? Infinity}x${props.maxDimensions?.height ?? Infinity} pixels.`,
+      },
+    ),
 })
 
 type schema = z.output<typeof schema>
 
 const state = reactive<Partial<schema>>({
-  file: undefined
+  file: undefined,
 })
 
 async function onSubmit(event: FormSubmitEvent<schema>) {
@@ -75,8 +74,16 @@ async function onSubmit(event: FormSubmitEvent<schema>) {
 
 <template>
   <UForm :schema="schema" :state="state" class="space-y-4 w-96" @submit="onSubmit">
-    <UFormField name="file" label="File" :description="`Max file size: ${formatBytes(props.maxFileSize)}`">
-      <UFileUpload v-model="state.file" :accept="props.acceptedFileTypes.join(',')" class="min-h-48" />
+    <UFormField
+      name="file"
+      label="File"
+      :description="`Max file size: ${formatBytes(props.maxFileSize)}`"
+    >
+      <UFileUpload
+        v-model="state.file"
+        :accept="props.acceptedFileTypes.join(',')"
+        class="min-h-48"
+      />
     </UFormField>
 
     <UButton type="submit" label="Submit" color="neutral" />
