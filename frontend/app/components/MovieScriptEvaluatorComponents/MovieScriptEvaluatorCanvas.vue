@@ -6,11 +6,11 @@ const props = defineProps<{
   projectId: string
 }>()
 
-const { items, fetchAll } = useMovieScriptEvaluator()
+const { items,fetchAll } = useMovieScriptEvaluatorAssets(props.projectId);
 const { user } = useAuthentication()
 
 onMounted(() => {
-  fetchAll()
+  fetchAll();
 })
 
 const state = reactive<Partial<any>>({
