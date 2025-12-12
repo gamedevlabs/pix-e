@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework_nested import routers
 
-from moviescriptevaluator.views import MovieScriptAssets, MovieProjectView
+from moviescriptevaluator.views import MovieProjectView, MovieScriptAssets
 
 app_name = "moviescriptevaluator"
 

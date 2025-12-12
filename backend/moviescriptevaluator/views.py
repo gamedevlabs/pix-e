@@ -1,18 +1,22 @@
-
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
 from moviescriptevaluator.models import AssetMetaData, MovieProject
-from moviescriptevaluator.serializers import UnrealEngineDataSerializer, MovieProjectSerializer
+from moviescriptevaluator.serializers import (
+    MovieProjectSerializer,
+    UnrealEngineDataSerializer,
+)
 
 
 class MovieProjectView(viewsets.ModelViewSet):
     serializer_class = MovieProjectSerializer
 
     def get_queryset(self):
-        data = MovieProject.objects.filter(owner=self.request.user).order_by("created_at")
+        data = MovieProject.objects.filter(owner=self.request.user).order_by(
+            "created_at"
+        )
         return data
 
     def create(self, request, *args, **kwargs):
@@ -22,11 +26,12 @@ class MovieProjectView(viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 class MovieScriptAssets(viewsets.ModelViewSet):
     serializer_class = UnrealEngineDataSerializer
 
     def get_queryset(self):
-        ## change here later and provide page for each project
+        # change here later and provide page for each project
         data = AssetMetaData.objects.filter(project=self.request.project).order_by(
             "created_at"
         )

@@ -8,6 +8,7 @@ class UnrealEngineDataSerializer(serializers.ModelSerializer):
         model = AssetMetaData
         fields = "__all__"
 
+
 class MovieProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieProject
