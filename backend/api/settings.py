@@ -178,6 +178,10 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_DOCUMENT_TYPES = ["pdf", "docx", "txt", "md"]
 DOCUMENT_MAX_SIZE_MB = 10
 
+# Vector database for structural memory context
+# Stored separately from main SQLite database
+VECTOR_DB_PATH = BASE_DIR / "vectors.db"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
