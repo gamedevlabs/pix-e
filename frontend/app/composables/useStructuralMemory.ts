@@ -124,23 +124,20 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<GenerationResponse>(
-        `${BASE_URL}structural-memory/generate/`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-          body: {
-            chart_ids: options.chartIds,
-            force_regenerate: options.forceRegenerate ?? false,
-            skip_embeddings: options.skipEmbeddings ?? false,
-            llm_model: options.llmModel ?? 'gpt-4o-mini',
-            embedding_model: options.embeddingModel ?? 'text-embedding-3-small',
-          },
+      const response = await $fetch<GenerationResponse>(`${BASE_URL}structural-memory/generate/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+        body: {
+          chart_ids: options.chartIds,
+          force_regenerate: options.forceRegenerate ?? false,
+          skip_embeddings: options.skipEmbeddings ?? false,
+          llm_model: options.llmModel ?? 'gpt-4o-mini',
+          embedding_model: options.embeddingModel ?? 'text-embedding-3-small',
         },
-      )
+      })
 
       lastResult.value = response
 
@@ -154,14 +151,12 @@ export function useStructuralMemory() {
       }
 
       return response
-    }
-    catch (err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Generation failed'
       error.value = errorMessage
       errorToast(err)
       return null
-    }
-    finally {
+    } finally {
       loading.value = false
     }
   }
@@ -184,8 +179,7 @@ export function useStructuralMemory() {
 
       stats.value = response.charts
       return response.charts
-    }
-    catch (err) {
+    } catch (err) {
       errorToast(err)
       return []
     }
@@ -195,9 +189,7 @@ export function useStructuralMemory() {
    * Check if any nodes need processing in selected charts.
    */
   function hasPendingNodes(chartIds: string[]): boolean {
-    return stats.value
-      .filter(s => chartIds.includes(s.chart_id))
-      .some(s => s.pending_nodes > 0)
+    return stats.value.filter((s) => chartIds.includes(s.chart_id)).some((s) => s.pending_nodes > 0)
   }
 
   /**
@@ -205,7 +197,7 @@ export function useStructuralMemory() {
    */
   function getTotalPendingNodes(chartIds: string[]): number {
     return stats.value
-      .filter(s => chartIds.includes(s.chart_id))
+      .filter((s) => chartIds.includes(s.chart_id))
       .reduce((sum, s) => sum + s.pending_nodes, 0)
   }
 
@@ -217,44 +209,40 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<EvaluationResponse>(
-        `${BASE_URL}structural-memory/evaluate/`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-          body: {
-            chart_id: options.chartId,
-            node_ids: options.nodeIds,
-            iterations: options.iterations ?? 3,
-            llm_model: options.llmModel ?? 'gpt-4o-mini',
-          },
+      const response = await $fetch<EvaluationResponse>(`${BASE_URL}structural-memory/evaluate/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+        body: {
+          chart_id: options.chartId,
+          node_ids: options.nodeIds,
+          iterations: options.iterations ?? 3,
+          llm_model: options.llmModel ?? 'gpt-4o-mini',
         },
-      )
+      })
 
       lastEvaluation.value = response.evaluation
 
       if (response.success) {
         const { summary } = response.evaluation
-        const issueText = summary.total_errors > 0 || summary.total_warnings > 0
-          ? ` Found ${summary.total_errors} errors, ${summary.total_warnings} warnings.`
-          : ' No issues found!'
+        const issueText =
+          summary.total_errors > 0 || summary.total_warnings > 0
+            ? ` Found ${summary.total_errors} errors, ${summary.total_warnings} warnings.`
+            : ' No issues found!'
         successToast(
           `Evaluated ${summary.total_nodes} nodes. ${summary.coherent_nodes} coherent.${issueText}`,
         )
       }
 
       return response.evaluation
-    }
-    catch (err) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Evaluation failed'
       error.value = errorMessage
       errorToast(err)
       return null
-    }
-    finally {
+    } finally {
       evaluating.value = false
     }
   }

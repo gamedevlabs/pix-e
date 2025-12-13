@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 class LLMProviderAdapter:
     """
-    Adapter that makes ModelManager compatible with structural memory's
-    LLMProvider protocol.
+    Adapter for ModelManager to work with LLMProvider protocol.
 
     This allows us to use the existing LLM orchestrator infrastructure
     for generating atomic facts and knowledge triples.

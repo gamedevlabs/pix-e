@@ -7,6 +7,7 @@ import {
   type Connection,
   type EdgeChange,
   type NodeChange,
+  type Node,
   type NodeSelectionChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -49,6 +50,35 @@ const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } 
 
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
+}
+
+// Selected node for context strategy panel
+const selectedNodeForAnalysis = ref<{
+  nodeId: string
+  containerId: string
+  nodeName: string
+} | null>(null)
+const showStrategyPanel = ref(false)
+
+function handleNodeClick(event: { node: Node }) {
+  const container = event.node.data as PxChartContainer
+  if (container?.content) {
+    selectedNodeForAnalysis.value = {
+      nodeId: container.content,
+      containerId: container.id,
+      nodeName: container.name || 'Unknown',
+    }
+  }
+}
+
+function openStrategyPanel() {
+  if (selectedNodeForAnalysis.value) {
+    showStrategyPanel.value = true
+  }
+}
+
+function closeStrategyPanel() {
+  showStrategyPanel.value = false
 }
 
 onMounted(() => {
@@ -228,6 +258,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
     @nodes-change="onNodesChange"
     @edges-change="onEdgesChange"
     @pane-context-menu="onContextMenu($event)"
+    @node-click="handleNodeClick"
   >
     <!--@nodes-initialized="fitView()"-->
 
@@ -256,7 +287,51 @@ async function onSelectionChange(change: NodeSelectionChange) {
         <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addContainer(0, 0)" />
       </UTooltip>
     </Panel>
+
+    <!-- Context Strategy Analysis Button -->
+    <Panel :position="'top-right'">
+      <UTooltip
+        :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
+        :content="{ align: 'center', side: 'left' }"
+      >
+        <UButton
+          size="lg"
+          icon="i-heroicons-cpu-chip"
+          color="warning"
+          :disabled="!selectedNodeForAnalysis"
+          @click="openStrategyPanel"
+        >
+          Context Analysis
+        </UButton>
+      </UTooltip>
+      <div v-if="selectedNodeForAnalysis" class="mt-2 text-xs text-gray-600 dark:text-gray-400">
+        Selected: {{ selectedNodeForAnalysis.nodeName }}
+      </div>
+    </Panel>
   </VueFlow>
+
+  <!-- Context Strategy Slideover -->
+  <USlideover v-model:open="showStrategyPanel" :ui="{ width: 'max-w-lg' }">
+    <template #title>
+      <div class="flex items-center gap-2">
+        <UIcon name="i-heroicons-cpu-chip" />
+        Context Strategy Analysis
+      </div>
+    </template>
+
+    <template #body>
+      <ContextStrategyPanel
+        v-if="selectedNodeForAnalysis"
+        :chart-id="chartId"
+        :node-id="selectedNodeForAnalysis.nodeId"
+        :node-name="selectedNodeForAnalysis.nodeName"
+      />
+    </template>
+
+    <template #footer>
+      <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close </UButton>
+    </template>
+  </USlideover>
 
   <div v-if="error" style="color: red; margin-top: 1rem">
     {{ error }}

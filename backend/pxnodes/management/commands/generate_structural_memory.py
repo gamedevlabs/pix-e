@@ -8,15 +8,12 @@ from typing import Optional
 
 import logfire
 from django.core.management.base import BaseCommand, CommandError
+
 from pxcharts.models import PxChart
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
 from pxnodes.llm.context.graph_retrieval import get_graph_slice
 from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
-from pxnodes.llm.context.structural_memory import (
-    StructuralMemoryContext,
-    get_context_stats,
-)
 from pxnodes.llm.context.triples import compute_derived_triples, extract_all_triples
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
@@ -83,31 +80,25 @@ class Command(BaseCommand):
                     model_name=options["model"],
                     temperature=0.3,  # Lower temp for more consistent extraction
                 )
-                
+
                 embedding_generator = None
                 if not options["skip_embeddings"]:
                     embedding_generator = OpenAIEmbeddingGenerator(
                         model=options["embedding_model"]
                     )
 
-                self.stdout.write(
-                    self.style.SUCCESS(f"\n{'='*70}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"\n{'='*70}"))
                 self.stdout.write(
                     self.style.SUCCESS("Generating Structural Memory (Production Mode)")
                 )
-                self.stdout.write(
-                    self.style.SUCCESS(f"LLM Model: {options['model']}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"LLM Model: {options['model']}"))
                 if embedding_generator:
                     self.stdout.write(
                         self.style.SUCCESS(
                             f"Embedding Model: {options['embedding_model']}"
                         )
                     )
-                self.stdout.write(
-                    self.style.SUCCESS(f"{'='*70}\n")
-                )
+                self.stdout.write(self.style.SUCCESS(f"{'='*70}\n"))
 
                 # Get nodes and chart
                 nodes, chart = self._get_nodes_and_chart(options)
@@ -125,21 +116,15 @@ class Command(BaseCommand):
                         embedding_generator=embedding_generator,
                         clear_existing=options["clear_existing"],
                     )
-                    
+
                     total_triples += result["triples"]
                     total_facts += result["facts"]
                     total_embeddings += result["embeddings"]
 
                 # Summary
-                self.stdout.write(
-                    self.style.SUCCESS(f"\n{'='*70}")
-                )
-                self.stdout.write(
-                    self.style.SUCCESS("✅ Generation Complete!")
-                )
-                self.stdout.write(
-                    self.style.SUCCESS(f"Nodes processed: {len(nodes)}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"\n{'='*70}"))
+                self.stdout.write(self.style.SUCCESS("✅ Generation Complete!"))
+                self.stdout.write(self.style.SUCCESS(f"Nodes processed: {len(nodes)}"))
                 self.stdout.write(
                     self.style.SUCCESS(f"Total triples generated: {total_triples}")
                 )
@@ -152,9 +137,7 @@ class Command(BaseCommand):
                             f"Total embeddings stored: {total_embeddings}"
                         )
                     )
-                self.stdout.write(
-                    self.style.SUCCESS(f"{'='*70}\n")
-                )
+                self.stdout.write(self.style.SUCCESS(f"{'='*70}\n"))
 
             except Exception as e:
                 logfire.error("generate_structural_memory_failed", error=str(e))
@@ -193,9 +176,9 @@ class Command(BaseCommand):
                     raise CommandError(f"Chart {options['chart_id']} not found")
 
                 # Get all nodes in the chart
-                node_ids = chart.containers.filter(
-                    content__isnull=False
-                ).values_list("content_id", flat=True)
+                node_ids = chart.containers.filter(content__isnull=False).values_list(
+                    "content_id", flat=True
+                )
                 nodes = list(PxNode.objects.filter(id__in=node_ids))
 
                 if not nodes:
@@ -203,7 +186,9 @@ class Command(BaseCommand):
 
             else:
                 if not options["node_id"]:
-                    raise CommandError("--node-id required (or use --auto or --all-nodes)")
+                    raise CommandError(
+                        "--node-id required (or use --auto or --all-nodes)"
+                    )
 
                 try:
                     node = PxNode.objects.get(id=options["node_id"])
@@ -234,9 +219,7 @@ class Command(BaseCommand):
             node_id=str(node.id),
             node_name=node.name,
         ):
-            self.stdout.write(
-                self.style.WARNING(f"\nProcessing: {node.name}")
-            )
+            self.stdout.write(self.style.WARNING(f"\nProcessing: {node.name}"))
 
             # Clear existing memories if requested
             if clear_existing and embedding_generator:
@@ -283,11 +266,11 @@ class Command(BaseCommand):
             if chart:
                 # Build context without LLM to avoid duplicate extraction
                 from pxnodes.llm.context.serializer import build_structural_context
-                
+
                 context = build_structural_context(
                     node, chart, llm_provider=None, skip_fact_extraction=True
                 )
-                
+
                 self.stdout.write(
                     f"   📊 Context: {len(context)} chars, "
                     f"{len(triples) + len(derived)} triples, "
@@ -365,4 +348,3 @@ class Command(BaseCommand):
 
             vector_store.close()
             return count
-

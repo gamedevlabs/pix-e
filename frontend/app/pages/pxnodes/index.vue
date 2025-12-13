@@ -38,7 +38,7 @@ const forceRegenerate = ref(false)
 
 // Computed chart options for multi-select
 const chartOptions = computed(() =>
-  pxCharts.value.map(chart => ({
+  pxCharts.value.map((chart) => ({
     label: chart.name,
     value: chart.id,
   })),
@@ -46,7 +46,7 @@ const chartOptions = computed(() =>
 
 // Get stats for selected charts
 const selectedChartStats = computed(() =>
-  chartStats.value.filter(s => selectedChartIds.value.includes(s.chart_id)),
+  chartStats.value.filter((s) => selectedChartIds.value.includes(s.chart_id)),
 )
 
 const totalPendingNodes = computed(() =>
@@ -192,7 +192,10 @@ function getIssueTypeColor(type: string): string {
         </div>
 
         <!-- Stats Display -->
-        <div v-if="selectedChartIds.length > 0 && selectedChartStats.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div
+          v-if="selectedChartIds.length > 0 && selectedChartStats.length > 0"
+          class="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
           <div class="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3">
             <div class="text-2xl font-bold text-primary">{{ totalPendingNodes }}</div>
             <div class="text-sm text-neutral-500">Pending Nodes</div>
@@ -274,14 +277,11 @@ function getIssueTypeColor(type: string): string {
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-scan-search" class="text-violet-600" />
-              <span class="font-semibold">Coherence Evaluation: {{ evaluationResult.chart_name }}</span>
+              <span class="font-semibold"
+                >Coherence Evaluation: {{ evaluationResult.chart_name }}</span
+              >
             </div>
-            <UButton
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-x"
-              @click="clearEvaluation"
-            />
+            <UButton variant="ghost" size="xs" icon="i-lucide-x" @click="clearEvaluation" />
           </div>
 
           <!-- Summary -->
@@ -318,23 +318,23 @@ function getIssueTypeColor(type: string): string {
               v-for="nodeResult in evaluationResult.nodes"
               :key="nodeResult.node_id"
               class="border rounded-lg p-3"
-              :class="nodeResult.is_coherent
-                ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10'
-                : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'"
+              :class="
+                nodeResult.is_coherent
+                  ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10'
+                  : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'
+              "
             >
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                   <UIcon
-                    :name="nodeResult.is_coherent ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'"
+                    :name="
+                      nodeResult.is_coherent ? 'i-lucide-check-circle' : 'i-lucide-alert-circle'
+                    "
                     :class="nodeResult.is_coherent ? 'text-green-600' : 'text-red-600'"
                   />
                   <span class="font-medium">{{ nodeResult.node_name }}</span>
                 </div>
-                <UBadge
-                  :color="nodeResult.is_coherent ? 'green' : 'red'"
-                  variant="soft"
-                  size="sm"
-                >
+                <UBadge :color="nodeResult.is_coherent ? 'green' : 'red'" variant="soft" size="sm">
                   {{ nodeResult.is_coherent ? 'Coherent' : 'Issues Found' }}
                 </UBadge>
               </div>
@@ -347,18 +347,10 @@ function getIssueTypeColor(type: string): string {
                   class="bg-white dark:bg-neutral-900 rounded p-2 text-sm"
                 >
                   <div class="flex items-center gap-2 mb-1">
-                    <UBadge
-                      :color="getSeverityColor(issue.severity)"
-                      variant="solid"
-                      size="xs"
-                    >
+                    <UBadge :color="getSeverityColor(issue.severity)" variant="solid" size="xs">
                       {{ issue.severity.toUpperCase() }}
                     </UBadge>
-                    <UBadge
-                      :color="getIssueTypeColor(issue.type)"
-                      variant="soft"
-                      size="xs"
-                    >
+                    <UBadge :color="getIssueTypeColor(issue.type)" variant="soft" size="xs">
                       {{ issue.type }}
                     </UBadge>
                   </div>
