@@ -12,14 +12,17 @@ from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol
 
 from pxcharts.models import PxChart
-from pxnodes.llm.context.facts import AtomicFact, extract_atomic_facts
-from pxnodes.llm.context.graph_retrieval import GraphSlice, get_graph_slice
 from pxnodes.llm.context.serializer import (
     build_minimal_context,
     build_structural_context,
     context_to_dict,
 )
-from pxnodes.llm.context.triples import (
+from pxnodes.llm.context.shared.graph_retrieval import GraphSlice, get_graph_slice
+from pxnodes.llm.context.structural_memory.facts import (
+    AtomicFact,
+    extract_atomic_facts,
+)
+from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
     compute_derived_triples,
     extract_all_triples,

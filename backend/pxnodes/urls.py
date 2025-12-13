@@ -3,9 +3,13 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CoherenceEvaluateView,
+    ContextBuildView,
+    ContextStrategiesView,
     PxComponentDefinitionViewSet,
     PxComponentViewSet,
     PxNodeViewSet,
+    StrategyCompareView,
+    StrategyEvaluateView,
     StructuralMemoryGenerateView,
     StructuralMemoryStatsView,
 )
@@ -36,5 +40,26 @@ urlpatterns = [
         "structural-memory/evaluate/",
         CoherenceEvaluateView.as_view(),
         name="structural-memory-evaluate",
+    ),
+    # Context Strategy API (thesis research)
+    path(
+        "context/strategies/",
+        ContextStrategiesView.as_view(),
+        name="context-strategies",
+    ),
+    path(
+        "context/evaluate/",
+        StrategyEvaluateView.as_view(),
+        name="context-evaluate",
+    ),
+    path(
+        "context/compare/",
+        StrategyCompareView.as_view(),
+        name="context-compare",
+    ),
+    path(
+        "context/build/",
+        ContextBuildView.as_view(),
+        name="context-build",
     ),
 ]

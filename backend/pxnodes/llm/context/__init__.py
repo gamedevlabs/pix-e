@@ -1,10 +1,24 @@
 """
-Structural Memory Context Strategy.
+Context Engineering Strategies Module.
 
-Implements the Mixed Structural Memory approach from Zeng et al. (2024)
-for converting PX Nodes/Charts into Knowledge Triples and Atomic Facts.
+Provides multiple context engineering strategies for LLM evaluation:
+- Structural Memory (Zeng et al. 2024): Knowledge Triples + Atomic Facts
+- Hierarchical Graph: Deterministic 4-layer graph traversal
+- H-MEM (Sun & Zeng 2025): Vector embeddings with positional index routing
+- Combined: Structural data representation + H-MEM hierarchical organization
 """
 
+# Base framework
+from pxnodes.llm.context.base import (
+    BaseContextStrategy,
+    ContextResult,
+    EvaluationScope,
+    LayerContext,
+    StrategyRegistry,
+    StrategyType,
+)
+
+# Legacy imports for backward compatibility
 from pxnodes.llm.context.change_detection import (
     compute_node_content_hash,
     get_changed_nodes,
@@ -12,37 +26,136 @@ from pxnodes.llm.context.change_detection import (
     has_node_changed,
     update_processing_state,
 )
-from pxnodes.llm.context.embeddings import (
-    OpenAIEmbeddingGenerator,
-    generate_embedding,
-)
+
+# Combined strategy
+from pxnodes.llm.context.combined import CombinedStrategy
 from pxnodes.llm.context.generator import (
     GenerationResult,
     StructuralMemoryGenerator,
     generate_structural_memory,
 )
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter, create_llm_provider
-from pxnodes.llm.context.structural_memory import StructuralMemoryContext
-from pxnodes.llm.context.vector_store import VectorStore
+
+# Hierarchical Graph strategy
+from pxnodes.llm.context.hierarchical_graph import (
+    HierarchicalGraphStrategy,
+    PlayerState,
+    aggregate_player_state,
+    build_category_layer,
+    build_domain_layer,
+    build_episode_layer,
+    build_trace_layer,
+    forward_bfs,
+    reverse_bfs,
+)
+
+# H-MEM strategy
+from pxnodes.llm.context.hmem import (
+    HMEMContextResult,
+    HMEMRetrievalResult,
+    HMEMRetriever,
+    HMEMStrategy,
+    compute_path_hash,
+)
+
+# Shared utilities
+from pxnodes.llm.context.shared import (
+    GraphSlice,
+    LLMProviderAdapter,
+    OpenAIEmbeddingGenerator,
+    VectorStore,
+    create_llm_provider,
+    get_graph_slice,
+    init_database,
+)
+
+# Strategy-aware evaluator
+from pxnodes.llm.context.strategy_evaluator import (
+    ComparisonResult,
+    StrategyEvaluationResult,
+    StrategyEvaluator,
+    compare_all_strategies,
+    evaluate_node_with_strategy,
+)
+
+# Structural Memory strategy
+from pxnodes.llm.context.structural_memory import (
+    AtomicFact,
+    IterativeRetriever,
+    KnowledgeTriple,
+    RetrievalResult,
+    RetrievedMemory,
+    StructuralMemoryContext,
+    StructuralMemoryResult,
+    StructuralMemoryStrategy,
+    build_context,
+    compute_derived_triples,
+    extract_all_triples,
+    extract_atomic_facts,
+    get_context_stats,
+)
 
 __all__ = [
-    # Core
-    "StructuralMemoryContext",
+    # Base Framework
+    "StrategyType",
+    "BaseContextStrategy",
+    "StrategyRegistry",
+    "ContextResult",
+    "LayerContext",
+    "EvaluationScope",
+    # Shared Utilities
+    "OpenAIEmbeddingGenerator",
     "VectorStore",
-    # Generation
+    "init_database",
+    "GraphSlice",
+    "get_graph_slice",
+    "LLMProviderAdapter",
+    "create_llm_provider",
+    # Structural Memory Strategy
+    "StructuralMemoryStrategy",
+    "StructuralMemoryContext",
+    "StructuralMemoryResult",
+    "build_context",
+    "get_context_stats",
+    "KnowledgeTriple",
+    "extract_all_triples",
+    "compute_derived_triples",
+    "AtomicFact",
+    "extract_atomic_facts",
+    "IterativeRetriever",
+    "RetrievalResult",
+    "RetrievedMemory",
+    # Hierarchical Graph Strategy
+    "HierarchicalGraphStrategy",
+    "PlayerState",
+    "build_domain_layer",
+    "build_category_layer",
+    "build_trace_layer",
+    "build_episode_layer",
+    "reverse_bfs",
+    "forward_bfs",
+    "aggregate_player_state",
+    # H-MEM Strategy
+    "HMEMStrategy",
+    "HMEMRetriever",
+    "HMEMRetrievalResult",
+    "HMEMContextResult",
+    "compute_path_hash",
+    # Combined Strategy
+    "CombinedStrategy",
+    # Strategy Evaluator
+    "StrategyEvaluator",
+    "StrategyEvaluationResult",
+    "ComparisonResult",
+    "evaluate_node_with_strategy",
+    "compare_all_strategies",
+    # Legacy - Generation
     "StructuralMemoryGenerator",
     "GenerationResult",
     "generate_structural_memory",
-    # Change Detection
+    # Legacy - Change Detection
     "compute_node_content_hash",
     "has_node_changed",
     "get_changed_nodes",
     "get_processing_stats",
     "update_processing_state",
-    # Embeddings
-    "OpenAIEmbeddingGenerator",
-    "generate_embedding",
-    # LLM
-    "LLMProviderAdapter",
-    "create_llm_provider",
 ]

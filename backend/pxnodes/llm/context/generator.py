@@ -2,9 +2,11 @@
 Structural Memory Generator with Change Detection.
 
 Orchestrates the generation of knowledge triples, atomic facts, and embeddings
-for PX nodes in a chart, with intelligent change detection to skip unchanged nodes.
+for PX nodes in a chart, with intelligent change detection to skip unchanged
+nodes.
 
-Supports batch processing of up to 10 nodes at a time for efficient embedding generation.
+Supports batch processing of up to 10 nodes at a time for efficient embedding
+generation.
 """
 
 import hashlib
@@ -14,17 +16,17 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 import logfire
+
 from pxcharts.models import PxChart
 from pxnodes.llm.context.change_detection import (
     get_changed_nodes,
     update_processing_state,
 )
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
-from pxnodes.llm.context.facts import AtomicFact, extract_atomic_facts
+from pxnodes.llm.context.facts import extract_atomic_facts
 from pxnodes.llm.context.graph_retrieval import get_graph_slice
 from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.triples import (
-    KnowledgeTriple,
     compute_derived_triples,
     extract_all_triples,
 )
@@ -167,7 +169,9 @@ class StructuralMemoryGenerator:
                 containers = chart.containers.filter(
                     content__isnull=False
                 ).select_related("content")
-                changed_nodes = [c.content for c in containers]
+                changed_nodes: list[PxNode] = [
+                    c.content for c in containers if c.content is not None
+                ]
                 unchanged_nodes: list[PxNode] = []
             else:
                 changed_nodes, unchanged_nodes = get_changed_nodes(chart)
@@ -273,14 +277,18 @@ class StructuralMemoryGenerator:
                     graph_slice.previous_nodes,
                     graph_slice.next_nodes,
                 )
-                node_data.append({
-                    "node": node,
-                    "triples": triples + derived,
-                    "facts": [],
-                })
+                node_data.append(
+                    {
+                        "node": node,
+                        "triples": triples + derived,
+                        "facts": [],
+                    }
+                )
 
             # Step 2: Extract facts in parallel using ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=min(len(nodes), BATCH_SIZE)) as executor:
+            with ThreadPoolExecutor(
+                max_workers=min(len(nodes), BATCH_SIZE)
+            ) as executor:
                 future_to_idx = {
                     executor.submit(
                         extract_atomic_facts, data["node"], self.llm_provider
@@ -317,7 +325,9 @@ class StructuralMemoryGenerator:
                     node_name=node.name,
                     triples_count=triples_count,
                     facts_count=facts_count,
-                    embeddings_count=embeddings_count if self.embedding_generator else 0,
+                    embeddings_count=(
+                        embeddings_count if self.embedding_generator else 0
+                    ),
                     error=data.get("error"),
                 )
                 results.append(result)
@@ -341,9 +351,7 @@ class StructuralMemoryGenerator:
 
             return results
 
-    def _batch_store_embeddings(
-        self, node_data: list[dict], chart: PxChart
-    ) -> None:
+    def _batch_store_embeddings(self, node_data: list[dict], chart: PxChart) -> None:
         """
         Generate embeddings in batch and store them.
 
@@ -368,28 +376,32 @@ class StructuralMemoryGenerator:
                 for triple in data["triples"]:
                     triple_text = str(triple)
                     texts_to_embed.append(triple_text)
-                    text_metadata.append({
-                        "node": node,
-                        "type": "knowledge_triple",
-                        "content": triple_text,
-                        "metadata": {
-                            "head": triple.head,
-                            "relation": triple.relation,
-                            "tail": str(triple.tail),
-                        },
-                    })
+                    text_metadata.append(
+                        {
+                            "node": node,
+                            "type": "knowledge_triple",
+                            "content": triple_text,
+                            "metadata": {
+                                "head": triple.head,
+                                "relation": triple.relation,
+                                "tail": str(triple.tail),
+                            },
+                        }
+                    )
 
                 # Add facts
                 for fact in data["facts"]:
                     texts_to_embed.append(fact.fact)
-                    text_metadata.append({
-                        "node": node,
-                        "type": "atomic_fact",
-                        "content": fact.fact,
-                        "metadata": {
-                            "source_field": fact.source_field,
-                        },
-                    })
+                    text_metadata.append(
+                        {
+                            "node": node,
+                            "type": "atomic_fact",
+                            "content": fact.fact,
+                            "metadata": {
+                                "source_field": fact.source_field,
+                            },
+                        }
+                    )
 
             if not texts_to_embed:
                 return
@@ -409,9 +421,11 @@ class StructuralMemoryGenerator:
                 zip(text_metadata, embeddings)
             ):
                 node = text_meta["node"]
-                memory_id = hashlib.md5(
-                    f"{node.id}:{chart.id}:{text_meta['type']}:{text_meta['content']}".encode()
-                ).hexdigest()
+                hash_input = (
+                    f"{node.id}:{chart.id}:{text_meta['type']}:"
+                    f"{text_meta['content']}"
+                )
+                memory_id = hashlib.md5(hash_input.encode()).hexdigest()
 
                 self.vector_store.store_memory(
                     memory_id=memory_id,

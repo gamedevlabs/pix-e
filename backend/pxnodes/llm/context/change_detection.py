@@ -8,7 +8,7 @@ Considers: node name, description, components, and edges.
 import hashlib
 import json
 import logging
-from typing import Optional
+from typing import Any
 
 from pxcharts.models import PxChart
 from pxnodes.models import PxNode, StructuralMemoryState
@@ -33,7 +33,7 @@ def compute_node_content_hash(node: PxNode, chart: PxChart) -> str:
         SHA-256 hash string (64 chars)
     """
     # Build content dictionary
-    content = {
+    content: dict[str, Any] = {
         "node_id": str(node.id),
         "name": node.name,
         "description": node.description or "",
@@ -42,7 +42,9 @@ def compute_node_content_hash(node: PxNode, chart: PxChart) -> str:
     }
 
     # Add components (sorted by definition name for consistency)
-    components = node.components.select_related("definition").order_by("definition__name")
+    components = node.components.select_related("definition").order_by(
+        "definition__name"
+    )
     for comp in components:
         content["components"].append(
             {
@@ -56,7 +58,7 @@ def compute_node_content_hash(node: PxNode, chart: PxChart) -> str:
     containers = chart.containers.filter(content=node)
 
     # Add edges (sorted for consistency)
-    edge_data = []
+    edge_data: list[dict[str, str | None]] = []
     for container in containers:
         # Outgoing edges
         for edge in container.outgoing_edges.all():
@@ -66,9 +68,9 @@ def compute_node_content_hash(node: PxNode, chart: PxChart) -> str:
                         "direction": "outgoing",
                         "source": str(container.id),
                         "target": str(edge.target.id),
-                        "target_node": str(edge.target.content.id)
-                        if edge.target.content
-                        else None,
+                        "target_node": (
+                            str(edge.target.content.id) if edge.target.content else None
+                        ),
                     }
                 )
 
@@ -80,9 +82,9 @@ def compute_node_content_hash(node: PxNode, chart: PxChart) -> str:
                         "direction": "incoming",
                         "source": str(edge.source.id),
                         "target": str(container.id),
-                        "source_node": str(edge.source.content.id)
-                        if edge.source.content
-                        else None,
+                        "source_node": (
+                            str(edge.source.content.id) if edge.source.content else None
+                        ),
                     }
                 )
 
@@ -126,17 +128,19 @@ def get_changed_nodes(chart: PxChart) -> tuple[list[PxNode], list[PxNode]]:
     Returns:
         Tuple of (changed_nodes, unchanged_nodes)
     """
-    changed = []
-    unchanged = []
+    changed: list[PxNode] = []
+    unchanged: list[PxNode] = []
 
     # Get all nodes in the chart
-    containers = chart.containers.filter(content__isnull=False).select_related("content")
+    containers = chart.containers.filter(content__isnull=False).select_related(
+        "content"
+    )
     nodes = [c.content for c in containers]
 
     for node in nodes:
-        if has_node_changed(node, chart):
+        if node is not None and has_node_changed(node, chart):
             changed.append(node)
-        else:
+        elif node is not None:
             unchanged.append(node)
 
     return changed, unchanged
@@ -194,7 +198,6 @@ def get_processing_stats(chart: PxChart) -> dict:
     total_nodes = containers.count()
 
     states = StructuralMemoryState.objects.filter(chart=chart)
-    processed_count = states.count()
 
     # Check how many are actually up-to-date
     changed, unchanged = get_changed_nodes(chart)
