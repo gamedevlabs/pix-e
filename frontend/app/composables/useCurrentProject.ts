@@ -15,7 +15,7 @@ export const useCurrentProject = () => {
   const currentProjectId = useState<string | null>('currentProjectId', () => null)
   const currentProjectTitle = useState<string>('currentProjectTitle', () => '')
   const currentProject = useState<Project | null>('currentProject', () => null)
-  
+
   // Mock projects list - will be replaced with backend data
   const projects = useState<Project[]>('projects', () => [
     {
@@ -38,7 +38,7 @@ export const useCurrentProject = () => {
   const setCurrentProject = (projectIdOrProject: string | Project, title?: string) => {
     if (typeof projectIdOrProject === 'string') {
       // Find project by ID
-      const project = projects.value.find(p => p.id === projectIdOrProject)
+      const project = projects.value.find((p) => p.id === projectIdOrProject)
       if (project) {
         currentProjectId.value = project.id
         currentProjectTitle.value = project.title
@@ -84,7 +84,7 @@ export const useCurrentProject = () => {
    */
   const fetchProjectById = async (id: string): Promise<Project | null> => {
     // Mock implementation - will be replaced with actual API call
-    return projects.value.find(p => p.id === id) || null
+    return projects.value.find((p) => p.id === id) || null
   }
 
   /**
@@ -99,7 +99,7 @@ export const useCurrentProject = () => {
       description: 'Project creation is not implemented yet.',
       color: 'warning',
     })
-    
+
     // TODO: Implement actual backend call
     // const newProject = await $fetch('/api/projects', {
     //   method: 'POST',
@@ -120,7 +120,7 @@ export const useCurrentProject = () => {
       description: 'Project update is not implemented yet.',
       color: 'warning',
     })
-    
+
     // TODO: Implement actual backend call
     // await $fetch(`/api/projects/${id}`, {
     //   method: 'PATCH',
@@ -140,7 +140,7 @@ export const useCurrentProject = () => {
       description: 'Project deletion is not implemented yet.',
       color: 'warning',
     })
-    
+
     // TODO: Implement actual backend call
     // await $fetch(`/api/projects/${id}`, {
     //   method: 'DELETE'
@@ -176,14 +176,17 @@ export const useCurrentProject = () => {
     })
 
     // Watch for URL changes (browser back/forward)
-    watch(() => route.query.id, (newProjectId) => {
-      if (newProjectId && newProjectId !== currentProjectId.value) {
-        setCurrentProject(newProjectId as string)
-      }
-    })
+    watch(
+      () => route.query.id,
+      (newProjectId) => {
+        if (newProjectId && newProjectId !== currentProjectId.value) {
+          setCurrentProject(newProjectId as string)
+        }
+      },
+    )
 
     return {
-      projectIdFromUrl: computed(() => route.query.id as string | undefined)
+      projectIdFromUrl: computed(() => route.query.id as string | undefined),
     }
   }
 
@@ -194,7 +197,7 @@ export const useCurrentProject = () => {
     currentProject,
     projects,
     isProjectSelected: readonly(isProjectSelected),
-    
+
     // Methods
     setCurrentProject,
     clearCurrentProject,

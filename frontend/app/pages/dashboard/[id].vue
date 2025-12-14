@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import {useCurrentProject} from "~~/composables/useCurrentProject";
-
 const route = useRoute()
 const projectId = route.params.id as string
 
