@@ -52,6 +52,12 @@ class ContextResult:
 
     Contains the formatted context string for LLM prompts,
     plus structured data about what was included.
+
+    Following Zeng et al. (2024), mixed memory includes:
+    - Chunks: Raw text segments
+    - Knowledge Triples: Structured relationships
+    - Atomic Facts: Indivisible information units
+    - Summaries: Condensed overviews
     """
 
     strategy: StrategyType
@@ -60,9 +66,11 @@ class ContextResult:
     # Hierarchical context (for strategies 2-4)
     layers: list[LayerContext] = field(default_factory=list)
 
-    # Structural memory data (for strategies 1 and 4)
+    # Mixed structural memory data (Zeng et al. 2024)
+    chunks: list[Any] = field(default_factory=list)  # Chunk
     triples: list[Any] = field(default_factory=list)  # KnowledgeTriple
     facts: list[Any] = field(default_factory=list)  # AtomicFact
+    summaries: list[Any] = field(default_factory=list)  # Summary
 
     # Additional metadata
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -104,8 +112,10 @@ class ContextResult:
                 }
                 for layer_ctx in self.layers
             ],
+            "chunks_count": len(self.chunks),
             "triples_count": len(self.triples),
             "facts_count": len(self.facts),
+            "summaries_count": len(self.summaries),
             "metadata": self.metadata,
         }
 

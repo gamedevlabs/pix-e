@@ -1,14 +1,18 @@
 """
-H-MEM Retriever with Positional Index Routing.
+H-MEM Retriever with Hierarchical Top-Down Routing.
 
-Implements vector similarity retrieval with hierarchical layer routing
-from Sun & Zeng (2025) "H-MEM: Hierarchical Memory for High-Efficiency
-Long-Term Reasoning in LLM Agents".
+Implements the faithful H-MEM retrieval mechanism from Sun & Zeng (2025)
+"H-MEM: Hierarchical Memory for High-Efficiency Long-Term Reasoning".
 
-Key features:
+Key features (from paper):
 - Vector embeddings for semantic similarity
-- Positional index encoding for layer routing
-- Top-down retrieval (L1 -> L4) for context building
+- Positional index encoding with parent-child pointers
+- **Hierarchical top-down routing**: L1 results constrain L2 search, etc.
+- Formula: M_k^(l) = ⋃_{x∈M_k^(l-1)} TopK_{y∈Child(x)} (sim(q,y))
+
+This is the key innovation of H-MEM: parent results at layer L constrain
+the search space at layer L+1, enabling O((a+k·300)·D) complexity instead
+of O(a·10^6·D) exhaustive search.
 """
 
 import hashlib
@@ -33,6 +37,7 @@ class HMEMRetrievalResult:
     content: str
     positional_index: str
     similarity_score: float
+    child_indices: list[str] = field(default_factory=list)  # For routing to next layer
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -43,6 +48,7 @@ class HMEMContextResult:
     query: str
     results_by_layer: dict[int, list[HMEMRetrievalResult]] = field(default_factory=dict)
     total_retrieved: int = 0
+    routing_path: list[str] = field(default_factory=list)  # Track routing decisions
 
     def get_layer(self, layer: int) -> list[HMEMRetrievalResult]:
         """Get results for a specific layer."""
@@ -66,10 +72,14 @@ LAYER_NAMES = {
 
 class HMEMRetriever:
     """
-    Retriever for H-MEM hierarchical memory with vector similarity.
+    H-MEM Retriever with hierarchical top-down routing.
 
-    Uses positional index routing to filter by layer and scope,
-    then vector similarity to rank results within that scope.
+    Implements the faithful H-MEM retrieval mechanism where parent
+    results constrain child search (Sun & Zeng 2025).
+
+    The key insight: instead of searching all entries at each layer,
+    we follow parent-child pointers from retrieved parents to only
+    search their registered children.
     """
 
     def __init__(
@@ -98,16 +108,19 @@ class HMEMRetriever:
         layers: Optional[list[int]] = None,
     ) -> HMEMContextResult:
         """
-        Retrieve context from H-MEM using vector similarity.
+        Retrieve context using H-MEM hierarchical top-down routing.
 
-        Performs top-down retrieval starting from L1 (Domain) down to
-        L4 (Episode), using positional index routing to filter scope.
+        Implements the paper's key formula:
+        M_k^(l) = ⋃_{x∈M_k^(l-1)} TopK_{y∈Child(x)} (sim(q,y))
+
+        This means: for each layer, we only search among children of
+        the entries retrieved at the previous layer.
 
         Args:
             query: Query text to embed and search
-            project_id: Project ID for routing (L1+)
-            chart_id: Chart ID for routing (L2+)
-            node_id: Node ID for routing (L4)
+            project_id: Project ID for L1 scoping
+            chart_id: Chart ID (used for fallback if routing fails)
+            node_id: Node ID (used for fallback if routing fails)
             top_k_per_layer: Number of results per layer
             layers: Specific layers to retrieve (default all)
 
@@ -123,22 +136,82 @@ class HMEMRetriever:
 
         result = HMEMContextResult(query=query)
 
-        for layer in layers:
-            # Build positional index filter pattern
-            index_pattern = self._build_index_pattern(
-                layer, project_id, chart_id, node_id
-            )
+        # H-MEM Hierarchical Top-Down Routing
+        # L1 results constrain L2 search, L2 constrains L3, etc.
+        parent_child_indices: Optional[list[str]] = None
 
-            # Retrieve from this layer
-            layer_results = self._retrieve_layer(
-                query_embedding=query_embedding,
-                layer=layer,
-                index_pattern=index_pattern,
-                top_k=top_k_per_layer,
-            )
+        for layer in sorted(layers):
+            if layer == 1:
+                # L1 Domain: No parent constraint, search all L1 entries for project
+                l1_results = self._retrieve_l1_domain(
+                    query_embedding=query_embedding,
+                    project_id=project_id,
+                    top_k=top_k_per_layer,
+                )
+                result.results_by_layer[1] = l1_results
+                result.total_retrieved += len(l1_results)
 
-            result.results_by_layer[layer] = layer_results
-            result.total_retrieved += len(layer_results)
+                # Extract child indices for L2 routing
+                parent_child_indices = self._collect_child_indices(l1_results)
+                result.routing_path.append(
+                    f"L1: {len(l1_results)} hits -> "
+                    f"{len(parent_child_indices)} children"
+                )
+
+            elif layer == 2:
+                # L2 Category: Constrained by L1 children (if available)
+                l2_results = self._retrieve_with_routing(
+                    query_embedding=query_embedding,
+                    layer=2,
+                    parent_child_indices=parent_child_indices,
+                    fallback_project_id=project_id,
+                    fallback_chart_id=chart_id,
+                    top_k=top_k_per_layer,
+                )
+                result.results_by_layer[2] = l2_results
+                result.total_retrieved += len(l2_results)
+
+                # Extract child indices for L3 routing
+                parent_child_indices = self._collect_child_indices(l2_results)
+                result.routing_path.append(
+                    f"L2: {len(l2_results)} hits -> "
+                    f"{len(parent_child_indices)} children"
+                )
+
+            elif layer == 3:
+                # L3 Trace: Constrained by L2 children
+                l3_results = self._retrieve_with_routing(
+                    query_embedding=query_embedding,
+                    layer=3,
+                    parent_child_indices=parent_child_indices,
+                    fallback_project_id=project_id,
+                    fallback_chart_id=chart_id,
+                    top_k=top_k_per_layer,
+                )
+                result.results_by_layer[3] = l3_results
+                result.total_retrieved += len(l3_results)
+
+                # Extract child indices for L4 routing
+                parent_child_indices = self._collect_child_indices(l3_results)
+                result.routing_path.append(
+                    f"L3: {len(l3_results)} hits -> "
+                    f"{len(parent_child_indices)} children"
+                )
+
+            elif layer == 4:
+                # L4 Episode: Constrained by L3 children
+                l4_results = self._retrieve_with_routing(
+                    query_embedding=query_embedding,
+                    layer=4,
+                    parent_child_indices=parent_child_indices,
+                    fallback_project_id=project_id,
+                    fallback_chart_id=chart_id,
+                    fallback_node_id=node_id,
+                    top_k=top_k_per_layer,
+                )
+                result.results_by_layer[4] = l4_results
+                result.total_retrieved += len(l4_results)
+                result.routing_path.append(f"L4: {len(l4_results)} hits (terminal)")
 
         return result
 
@@ -152,6 +225,7 @@ class HMEMRetriever:
         node_id: str = "",
         node: Optional[Any] = None,
         chart: Optional[Any] = None,
+        parent_index: Optional[str] = None,
     ) -> HMEMLayerEmbedding:
         """
         Store a new layer embedding in the H-MEM database.
@@ -165,6 +239,7 @@ class HMEMRetriever:
             node_id: Node identifier (for L4)
             node: Optional PxNode instance
             chart: Optional PxChart instance
+            parent_index: Positional index of parent entry (for routing)
 
         Returns:
             Created HMEMLayerEmbedding instance
@@ -188,6 +263,10 @@ class HMEMRetriever:
         ).first()
 
         if existing:
+            # Update parent_index if it changed
+            if parent_index and existing.parent_index != parent_index:
+                existing.parent_index = parent_index
+                existing.save(update_fields=["parent_index"])
             logger.debug(f"Reusing existing embedding: {positional_index}")
             return existing
 
@@ -206,6 +285,8 @@ class HMEMRetriever:
                 "content_hash": content_hash,
                 "node": node,
                 "chart": chart,
+                "parent_index": parent_index,
+                "child_indices": [],  # Children will be added via add_child()
             },
         )
 
@@ -214,22 +295,93 @@ class HMEMRetriever:
 
         return instance
 
-    def _retrieve_layer(
+    def _retrieve_l1_domain(
+        self,
+        query_embedding: list[float],
+        project_id: str,
+        top_k: int,
+    ) -> list[HMEMRetrievalResult]:
+        """
+        Retrieve L1 Domain entries for a project.
+
+        L1 has no parent constraint - we search all domain-level
+        entries for the given project.
+        """
+        candidates = HMEMLayerEmbedding.objects.filter(
+            layer=1,
+            positional_index__startswith=f"L1.{project_id}",
+        )
+
+        return self._rank_by_similarity(candidates, query_embedding, top_k)
+
+    def _retrieve_with_routing(
         self,
         query_embedding: list[float],
         layer: int,
-        index_pattern: str,
-        top_k: int,
+        parent_child_indices: Optional[list[str]],
+        fallback_project_id: str,
+        fallback_chart_id: Optional[str] = None,
+        fallback_node_id: Optional[str] = None,
+        top_k: int = 3,
     ) -> list[HMEMRetrievalResult]:
-        """Retrieve embeddings for a specific layer with filtering."""
-        # Query database with positional index prefix filter
+        """
+        Retrieve entries using H-MEM hierarchical routing.
+
+        If parent_child_indices is provided, we ONLY search among those
+        specific entries (the children of parent hits). This is the key
+        H-MEM optimization.
+
+        If routing fails (no children), fall back to prefix-based search.
+        """
+        if parent_child_indices:
+            # H-MEM Routing: Only search children of parent hits
+            candidates = HMEMLayerEmbedding.objects.filter(
+                layer=layer,
+                positional_index__in=parent_child_indices,
+            )
+
+            if candidates.exists():
+                logger.debug(
+                    f"H-MEM routing: L{layer} searching {candidates.count()} "
+                    f"children of parent hits"
+                )
+                return self._rank_by_similarity(candidates, query_embedding, top_k)
+
+            # Routing found no candidates, fall through to fallback
+            logger.debug(f"H-MEM routing: L{layer} no children found, using fallback")
+
+        # Fallback: prefix-based search (less efficient but ensures results)
+        index_pattern = self._build_index_pattern(
+            layer, fallback_project_id, fallback_chart_id, fallback_node_id
+        )
         candidates = HMEMLayerEmbedding.objects.filter(
             layer=layer,
             positional_index__startswith=index_pattern,
         )
 
-        # Calculate similarities
-        results = []
+        return self._rank_by_similarity(candidates, query_embedding, top_k)
+
+    def _collect_child_indices(self, results: list[HMEMRetrievalResult]) -> list[str]:
+        """
+        Collect child indices from parent results for routing.
+
+        This implements the union in H-MEM's formula:
+        M_k^(l) = ⋃_{x∈M_k^(l-1)} TopK_{y∈Child(x)} (sim(q,y))
+        """
+        child_indices: list[str] = []
+        for r in results:
+            if r.child_indices:
+                child_indices.extend(r.child_indices)
+        return child_indices
+
+    def _rank_by_similarity(
+        self,
+        candidates,
+        query_embedding: list[float],
+        top_k: int,
+    ) -> list[HMEMRetrievalResult]:
+        """Rank candidates by cosine similarity and return top-k."""
+        results: list[HMEMRetrievalResult] = []
         query_np = np.array(query_embedding)
 
         for candidate in candidates:
@@ -238,17 +390,19 @@ class HMEMRetriever:
 
             results.append(
                 HMEMRetrievalResult(
-                    layer=layer,
-                    layer_name=LAYER_NAMES.get(layer, f"L{layer}"),
+                    layer=candidate.layer,
+                    layer_name=LAYER_NAMES.get(candidate.layer, f"L{candidate.layer}"),
                     content=candidate.content,
                     positional_index=candidate.positional_index,
                     similarity_score=float(similarity),
+                    child_indices=candidate.child_indices or [],
                     metadata={
                         "id": candidate.id,
                         "node_id": str(candidate.node_id) if candidate.node else None,
                         "chart_id": (
                             str(candidate.chart_id) if candidate.chart else None
                         ),
+                        "parent_index": candidate.parent_index,
                         "created_at": candidate.created_at.isoformat(),
                     },
                 )
@@ -265,7 +419,7 @@ class HMEMRetriever:
         chart_id: Optional[str],
         node_id: Optional[str],
     ) -> str:
-        """Build positional index prefix pattern for filtering."""
+        """Build positional index prefix pattern for fallback filtering."""
         # Always include layer and project
         pattern = f"L{layer}.{project_id}"
 

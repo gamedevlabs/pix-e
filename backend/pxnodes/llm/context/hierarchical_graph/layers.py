@@ -45,24 +45,24 @@ def build_domain_layer(
     - Game Concept (SPARC evaluation summary)
 
     Evaluation question: "Does the Node match the pillars and game concept?"
+
+    NOTE: No arbitrary truncation - project context should be preserved in full.
     """
     content_parts = []
 
-    # Game Concept
+    # Game Concept - FULL content, no truncation
     if game_concept:
         concept_text = getattr(game_concept, "content", str(game_concept))
-        if len(concept_text) > 1000:
-            concept_text = concept_text[:1000] + "..."
         content_parts.append(f"Game Concept:\n{concept_text}")
 
-    # Design Pillars
+    # Design Pillars - ALL pillars with FULL descriptions
     if project_pillars:
         pillars_text = []
-        for pillar in project_pillars[:5]:  # Limit to 5 pillars
+        for pillar in project_pillars:  # All pillars, not limited
             name = getattr(pillar, "name", str(pillar))
             desc = getattr(pillar, "description", "")
             if desc:
-                pillars_text.append(f"- {name}: {desc[:200]}")
+                pillars_text.append(f"- {name}: {desc}")  # Full description
             else:
                 pillars_text.append(f"- {name}")
         content_parts.append("Design Pillars:\n" + "\n".join(pillars_text))
@@ -78,6 +78,7 @@ def build_domain_layer(
             "source": "project_config",
             "has_pillars": project_pillars is not None,
             "has_concept": game_concept is not None,
+            "pillar_count": len(project_pillars) if project_pillars else 0,
         },
     )
 
@@ -120,57 +121,91 @@ def build_category_layer(
     )
 
 
+def _format_node_for_trace(node: Any, index: int) -> str:
+    """Format a single node for trace display with full content."""
+    name = getattr(node, "name", f"Node {index}")
+    description = getattr(node, "description", "")
+
+    parts = [f"  {index}. {name}:"]
+
+    if description:
+        parts.append(f"     {description}")
+
+    # Include component values
+    components = getattr(node, "components", None)
+    if components:
+        comp_list = components.all() if hasattr(components, "all") else list(components)
+        comp_strs = []
+        for comp in comp_list:
+            def_name = getattr(getattr(comp, "definition", None), "name", "")
+            value = getattr(comp, "value", "")
+            if def_name and value is not None:
+                comp_strs.append(f"{def_name}={value}")
+        if comp_strs:
+            parts.append(f"     [{', '.join(comp_strs)}]")
+
+    return "\n".join(parts)
+
+
 def build_trace_layer(
     path_nodes: list[Any],
     player_state: PlayerState,
     target_node: Any,
+    forward_nodes: Optional[list[Any]] = None,
 ) -> LayerContext:
     """
     Build L3 Trace layer from path traversal.
 
     Content includes:
-    - Path context (sequence of nodes leading to target)
+    - PREVIOUS nodes: Full content of nodes leading to target
+    - FUTURE nodes: Full content of nodes after target
     - Player state (accumulated items, mechanics, narrative)
+
+    For coherence checking, we need both backward AND forward context
+    to verify prerequisites and ensure proper setup for future nodes.
 
     Evaluation question: "Does the node work in the context of its Path?"
     """
     content_parts = []
 
-    # Path sequence
+    # PREVIOUS NODES - with full content
     if path_nodes:
-        path_names = [getattr(n, "name", f"Node {i}") for i, n in enumerate(path_nodes)]
-        path_str = " -> ".join(path_names)
-        content_parts.append(f"Path Context: {path_str}")
+        content_parts.append("PREVIOUS NODES (Path leading to target):")
+        for i, node in enumerate(path_nodes, 1):
+            content_parts.append(_format_node_for_trace(node, i))
     else:
-        content_parts.append("Path Context: No previous nodes (start of path)")
+        content_parts.append("PREVIOUS NODES: None (this is the start of the path)")
 
-    # Player state
+    # FUTURE NODES - with full content
+    if forward_nodes:
+        content_parts.append("\nFUTURE NODES (What comes after target):")
+        for i, node in enumerate(forward_nodes, 1):
+            content_parts.append(_format_node_for_trace(node, i))
+    else:
+        content_parts.append("\nFUTURE NODES: None (this is the end of the path)")
+
+    # Player state (accumulated from backward path)
+    state_parts = []
     if player_state.items_collected:
-        content_parts.append(
-            f"Items Collected: {', '.join(player_state.items_collected)}"
-        )
-
+        state_parts.append(f"Items: {', '.join(player_state.items_collected)}")
     if player_state.mechanics_unlocked:
-        content_parts.append(
-            f"Mechanics Unlocked: {', '.join(player_state.mechanics_unlocked)}"
-        )
-
+        state_parts.append(f"Mechanics: {', '.join(player_state.mechanics_unlocked)}")
     if player_state.narrative_beats:
-        content_parts.append(
-            f"Narrative History: {'; '.join(player_state.narrative_beats[:5])}"
-        )
-
+        state_parts.append(f"Narrative: {'; '.join(player_state.narrative_beats)}")
     if player_state.checkpoints_passed:
-        content_parts.append(
-            f"Checkpoints: {', '.join(player_state.checkpoints_passed)}"
-        )
+        state_parts.append(f"Checkpoints: {', '.join(player_state.checkpoints_passed)}")
+
+    if state_parts:
+        content_parts.append("\nACCUMULATED PLAYER STATE:")
+        content_parts.extend([f"  - {s}" for s in state_parts])
 
     return LayerContext(
         layer=3,
         layer_name=get_layer_name(3),
         content="\n".join(content_parts) if content_parts else "No path context",
         metadata={
-            "path_length": len(path_nodes),
+            "backward_count": len(path_nodes),
+            "forward_count": len(forward_nodes) if forward_nodes else 0,
             "target_node_id": str(getattr(target_node, "id", "")),
             "player_state": player_state.to_dict(),
         },

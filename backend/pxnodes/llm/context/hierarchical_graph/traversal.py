@@ -92,7 +92,7 @@ def reverse_bfs(
 def forward_bfs(
     target_node: Any,
     chart: Any,
-    max_depth: int = 1,
+    max_depth: Optional[int] = 1,
 ) -> list[Any]:
     """
     Perform forward BFS from target node for lookahead context.
@@ -100,7 +100,8 @@ def forward_bfs(
     Args:
         target_node: The node to start from
         chart: The chart containing the nodes
-        max_depth: Maximum depth to traverse (default 1 = immediate successors)
+        max_depth: Maximum depth to traverse (default 1 = immediate successors,
+                   None = unlimited)
 
     Returns:
         List of successor nodes
@@ -127,7 +128,7 @@ def forward_bfs(
     while queue:
         container, depth = queue.popleft()
 
-        if depth > max_depth:
+        if max_depth is not None and depth > max_depth:
             continue
 
         container_id = str(getattr(container, "id", ""))
@@ -141,7 +142,7 @@ def forward_bfs(
             successors.append(node)
 
         # Add successors to queue if not at max depth
-        if depth < max_depth:
+        if max_depth is None or depth < max_depth:
             outgoing = getattr(container, "outgoing_edges", None)
             if outgoing:
                 edges = outgoing.all() if hasattr(outgoing, "all") else []
@@ -213,9 +214,8 @@ def aggregate_player_state(path_nodes: list[Any]) -> PlayerState:
             desc_lower = description.lower()
             for keyword in narrative_keywords:
                 if keyword in desc_lower:
-                    # Add truncated description as narrative beat
-                    beat = description[:100] if len(description) > 100 else description
-                    state.narrative_beats.append(beat)
+                    # Add full description as narrative beat (no truncation)
+                    state.narrative_beats.append(description)
                     break
 
     return state

@@ -109,6 +109,11 @@ class HMEMLayerEmbedding(models.Model):
     Based on Sun & Zeng (2025) "H-MEM: Hierarchical Memory for
     High-Efficiency Long-Term Reasoning in LLM Agents".
 
+    Implements H-MEM's positional index with parent-child pointers:
+    - v_i^(L) = [e_i^(L), p_(i-1)x, pi1, ..., piK]
+    - Each entry has a parent_index (pointer to parent in layer above)
+    - Each entry has child_indices (pointers to children in layer below)
+
     Uses positional index encoding for routing:
     - Format: L{layer}.{project}.{chart}.{path_hash}.{node}
     - Example: L4.proj1.chart1.abc123.node1
@@ -116,7 +121,7 @@ class HMEMLayerEmbedding(models.Model):
     Layers:
     - L1 (Domain): Project-level context (Pillars, Game Concept)
     - L2 (Category): Chart-level context
-    - L3 (Trace): Path/sequence context
+    - L3 (Trace): Path/sequence context (summaries, not just names)
     - L4 (Episode): Node-level context
     """
 
@@ -153,6 +158,24 @@ class HMEMLayerEmbedding(models.Model):
     # Dimension of the embedding
     embedding_dim = models.IntegerField(default=1536)
 
+    # H-MEM Hierarchical Routing Pointers (Sun & Zeng 2025)
+    # parent_index: pointer to parent entry in layer above (p_(i-1)x in paper)
+    parent_index = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Positional index of parent entry (for hierarchical routing)",
+    )
+    # child_indices: pointers to child entries in layer below
+    # (pi1, ..., piK in paper)
+    child_indices = models.JSONField(
+        default=list,
+        help_text=(
+            "List of positional indices of child entries " "(for hierarchical routing)"
+        ),
+    )
+
     # Foreign keys to related objects (optional, for easier lookups)
     node = models.ForeignKey(
         "PxNode",
@@ -182,10 +205,28 @@ class HMEMLayerEmbedding(models.Model):
             models.Index(fields=["layer", "node"]),
             models.Index(fields=["positional_index"]),
             models.Index(fields=["content_hash"]),
+            models.Index(fields=["parent_index"]),  # For hierarchical routing
         ]
 
     def __str__(self):
         return f"HMEMEmbedding(L{self.layer}, {self.positional_index})"
+
+    def add_child(self, child_index: str) -> None:
+        """
+        Register a child entry for hierarchical routing.
+
+        H-MEM uses parent-child pointers to enable efficient
+        top-down retrieval where parent results constrain child search.
+        """
+        if child_index not in self.child_indices:
+            self.child_indices.append(child_index)
+            self.save(update_fields=["child_indices"])
+
+    def remove_child(self, child_index: str) -> None:
+        """Remove a child entry from routing pointers."""
+        if child_index in self.child_indices:
+            self.child_indices.remove(child_index)
+            self.save(update_fields=["child_indices"])
 
     @classmethod
     def build_positional_index(

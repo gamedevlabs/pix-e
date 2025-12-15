@@ -2,6 +2,10 @@
 Knowledge Triple extraction for PX Nodes and Charts.
 
 Based on Zeng et al. (2024) "On the Structural Memory of LLM Agents".
+
+Triples are stored in the vector store (memory_embeddings table) by the
+StructuralMemoryGenerator. This module can retrieve cached triples or
+generate new ones deterministically from structured data.
 """
 
 import logging
@@ -46,27 +50,58 @@ class KnowledgeTriple:
         return f"({self.head}, {self.relation}, {tail_str})"
 
 
+def get_cached_triples_from_vector_store(node_id: str) -> list[KnowledgeTriple]:
+    """
+    Retrieve cached knowledge triples from the vector store.
+
+    Returns empty list if no cached triples found.
+    """
+    try:
+        from pxnodes.llm.context.vector_store import VectorStore
+
+        vector_store = VectorStore()
+        memories = vector_store.get_memories_by_node(
+            node_id=node_id,
+            memory_type="knowledge_triple",
+        )
+        vector_store.close()
+
+        if memories:
+            logger.debug(f"Found {len(memories)} cached triples for node {node_id}")
+            triples = []
+            for m in memories:
+                metadata = m.get("metadata", {})
+                head = metadata.get("head", "")
+                relation = metadata.get("relation", "")
+                tail = metadata.get("tail", "")
+                if head and relation:
+                    triples.append(KnowledgeTriple(head, relation, tail))
+            return triples
+    except Exception as e:
+        logger.warning(f"Failed to retrieve cached triples from vector store: {e}")
+
+    return []
+
+
 def extract_node_triples(node: PxNode) -> list[KnowledgeTriple]:
     """
     Extract knowledge triples from a PxNode.
 
     Triples extracted:
-    - Node identity: (node_id, is_type, PX_Node)
-    - Node title: (node_id, has_title, name)
-    - Component values: (node_id, has_component_{name}, value)
+    - Node identity: (node_name, is_type, PX_Node)
+    - Component values: (node_name, has_{component_name}, value)
+
+    Uses node.name as head for human readability and LLM comprehension.
     """
-    node_id = str(node.id)
+    node_name = node.name
     triples: list[KnowledgeTriple] = []
 
     # Node identity
-    triples.append(KnowledgeTriple(node_id, "is_type", "PX_Node"))
-
-    # Node title
-    triples.append(KnowledgeTriple(node_id, "has_title", node.name))
+    triples.append(KnowledgeTriple(node_name, "is_type", "PX_Node"))
 
     # Node has description (boolean indicator)
     if node.description and node.description.strip():
-        triples.append(KnowledgeTriple(node_id, "has_description", True))
+        triples.append(KnowledgeTriple(node_name, "has_description", True))
 
     return triples
 
@@ -76,28 +111,20 @@ def extract_component_triples(component: PxComponent) -> list[KnowledgeTriple]:
     Extract knowledge triples from a PxComponent.
 
     Triples extracted:
-    - (node_id, has_component_{definition_name}, value)
-    - (node_id, has_component_type_{definition_name}, type)
+    - (node_name, has_{definition_name}, value)
+
+    Uses node.name as head for human readability and LLM comprehension.
     """
-    node_id = str(component.node.id)
+    node_name = component.node.name
     definition_name = component.definition.name.lower().replace(" ", "_")
     triples: list[KnowledgeTriple] = []
 
-    # Component value
+    # Component value - use cleaner relation name
     triples.append(
         KnowledgeTriple(
-            node_id,
-            f"has_component_{definition_name}",
+            node_name,
+            f"has_{definition_name}",
             component.value,
-        )
-    )
-
-    # Component type
-    triples.append(
-        KnowledgeTriple(
-            node_id,
-            f"has_component_type_{definition_name}",
-            component.definition.type,
         )
     )
 
@@ -109,25 +136,18 @@ def extract_edge_triples(edge: PxChartEdge) -> list[KnowledgeTriple]:
     Extract knowledge triples from a PxChartEdge.
 
     Triples extracted:
-    - (source_container_id, leads_to, target_container_id)
-    - (source_node_id, leads_to_node, target_node_id) if both have content
+    - (source_node_name, leads_to, target_node_name) if both have content
+
+    Uses node names for human readability and LLM comprehension.
     """
     triples: list[KnowledgeTriple] = []
 
     if edge.source and edge.target:
-        source_id = str(edge.source.id)
-        target_id = str(edge.target.id)
-
-        # Container-level edge
-        triples.append(KnowledgeTriple(source_id, "leads_to", target_id))
-
         # Node-level edge (if containers have node content)
         if edge.source.content and edge.target.content:
-            source_node_id = str(edge.source.content.id)
-            target_node_id = str(edge.target.content.id)
-            triples.append(
-                KnowledgeTriple(source_node_id, "leads_to_node", target_node_id)
-            )
+            source_name = edge.source.content.name
+            target_name = edge.target.content.name
+            triples.append(KnowledgeTriple(source_name, "leads_to", target_name))
 
     return triples
 
@@ -137,30 +157,19 @@ def extract_container_triples(container: PxChartContainer) -> list[KnowledgeTrip
     Extract knowledge triples from a PxChartContainer.
 
     Triples extracted:
-    - (container_id, is_type, PX_Container)
-    - (container_id, has_name, name)
-    - (container_id, contains_node, node_id) if has content
-    - (container_id, belongs_to_chart, chart_id)
+    - (node_name, in_chart, chart_name) if container has node content
+
+    Uses node/chart names for human readability and LLM comprehension.
     """
-    container_id = str(container.id)
     triples: list[KnowledgeTriple] = []
 
-    # Container identity
-    triples.append(KnowledgeTriple(container_id, "is_type", "PX_Container"))
-
-    # Container name
-    triples.append(KnowledgeTriple(container_id, "has_name", container.name))
-
-    # Container content (linked node)
+    # Only create triples if container has node content
     if container.content:
-        triples.append(
-            KnowledgeTriple(container_id, "contains_node", str(container.content.id))
-        )
+        node_name = container.content.name
+        chart_name = container.px_chart.name
 
-    # Chart membership
-    triples.append(
-        KnowledgeTriple(container_id, "belongs_to_chart", str(container.px_chart.id))
-    )
+        # Node's chart membership
+        triples.append(KnowledgeTriple(node_name, "in_chart", chart_name))
 
     return triples
 
@@ -219,15 +228,18 @@ def compute_derived_triples(
     - Intensity deltas between nodes
     - Category transitions
     - Pacing analysis
+
+    Uses node names for human readability and LLM comprehension.
     """
     derived: list[KnowledgeTriple] = []
-    target_id = str(target_node.id)
+    target_name = target_node.name
 
     # Get target node intensity
     target_intensity_raw = _get_component_value(target_node, "intensity")
 
     # Compute deltas from previous nodes
     for prev_node in previous_nodes:
+        prev_name = prev_node.name
         prev_intensity_raw = _get_component_value(prev_node, "intensity")
 
         # Only compute deltas for numeric intensity values
@@ -238,8 +250,8 @@ def compute_derived_triples(
             delta_str = f"+{delta}" if delta >= 0 else str(delta)
             derived.append(
                 KnowledgeTriple(
-                    target_id,
-                    f"intensity_delta_from_{prev_node.id}",
+                    target_name,
+                    f"intensity_delta_from_{prev_name}",
                     delta_str,
                 )
             )
@@ -254,8 +266,8 @@ def compute_derived_triples(
 
             derived.append(
                 KnowledgeTriple(
-                    target_id,
-                    f"intensity_transition_from_{prev_node.id}",
+                    target_name,
+                    f"intensity_transition_from_{prev_name}",
                     transition_type,
                 )
             )
@@ -263,13 +275,14 @@ def compute_derived_triples(
     # Category comparison
     target_category = _get_component_value(target_node, "gameplay_category")
     for prev_node in previous_nodes:
+        prev_name = prev_node.name
         prev_category = _get_component_value(prev_node, "gameplay_category")
         if target_category and prev_category:
             is_same = target_category == prev_category
             derived.append(
                 KnowledgeTriple(
-                    target_id,
-                    f"same_category_as_{prev_node.id}",
+                    target_name,
+                    f"same_category_as_{prev_name}",
                     is_same,
                 )
             )
