@@ -3,6 +3,10 @@ Atomic Fact extraction for PX Node descriptions.
 
 LLM-based extraction following Zeng et al. (2024) methodology.
 Extracts the smallest, indivisible units of information from narrative text.
+
+Facts are cached in the vector store (memory_embeddings table) by the
+StructuralMemoryGenerator. This module checks the vector store first
+before generating new facts via LLM.
 """
 
 import logging
@@ -86,26 +90,79 @@ def get_node_components_for_prompt(node: PxNode) -> list[dict[str, Any]]:
     return components
 
 
+def get_cached_facts_from_vector_store(node_id: str) -> list[AtomicFact]:
+    """
+    Retrieve cached atomic facts from the vector store.
+
+    Returns empty list if no cached facts found.
+    """
+    try:
+        from pxnodes.llm.context.vector_store import VectorStore
+
+        vector_store = VectorStore()
+        memories = vector_store.get_memories_by_node(
+            node_id=node_id,
+            memory_type="atomic_fact",
+        )
+        vector_store.close()
+
+        if memories:
+            logger.debug(f"Found {len(memories)} cached facts for node {node_id}")
+            return [
+                AtomicFact(
+                    node_id=node_id,
+                    fact=m["content"],
+                    source_field=m.get("metadata", {}).get(
+                        "source_field", "description"
+                    ),
+                )
+                for m in memories
+            ]
+    except Exception as e:
+        logger.warning(f"Failed to retrieve cached facts from vector store: {e}")
+
+    return []
+
+
 def extract_atomic_facts(
     node: PxNode,
-    llm_provider: LLMProvider,
+    llm_provider: Optional[LLMProvider] = None,
     model_id: Optional[str] = None,
+    force_regenerate: bool = False,
 ) -> list[AtomicFact]:
     """
-    Extract atomic facts from a PxNode's description and components using LLM.
+    Extract atomic facts from a PxNode's description and components.
 
-    This is the lazy extraction approach - called on-demand during evaluation.
-    Now includes component data in the extraction prompt.
+    First checks the vector store for cached facts (stored by
+    StructuralMemoryGenerator). Only calls LLM if:
+    - No cached facts exist for this node in vector store
+    - force_regenerate is True
+    - llm_provider is provided
 
     Args:
         node: The PxNode to extract facts from
-        llm_provider: LLM provider for generation
+        llm_provider: LLM provider for generation (optional if using cache)
         model_id: Optional specific model to use
+        force_regenerate: If True, skip cache and regenerate
 
     Returns:
         List of AtomicFact objects
     """
     node_id = str(node.id)
+
+    # Check for cached facts in vector store first
+    if not force_regenerate:
+        cached_facts = get_cached_facts_from_vector_store(node_id)
+        if cached_facts:
+            logger.debug(f"Using {len(cached_facts)} cached facts for {node.name}")
+            return cached_facts
+
+    # No cached facts found - generate via LLM if provider available
+    if not llm_provider:
+        logger.debug(f"No cached facts and no LLM provider for {node.name}")
+        return []
+
+    logger.info(f"Generating atomic facts for {node.name} via LLM")
     facts: list[AtomicFact] = []
 
     # Get components
@@ -135,6 +192,9 @@ def extract_atomic_facts(
                     source_field="description",
                 )
             )
+
+        logger.info(f"Generated {len(facts)} facts for {node.name}")
+
     except Exception as e:
         logger.warning(f"Failed to extract atomic facts for node {node_id}: {e}")
 

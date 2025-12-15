@@ -116,9 +116,9 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         Build hierarchical context using graph traversal.
 
         Steps:
-        1. Retrieve L1 (Domain) from project config
+        1. Retrieve L1 (Domain) from project config - FULL content
         2. Retrieve L2 (Category) from parent chart
-        3. Reconstruct L3 (Trace) via reverse BFS
+        3. Reconstruct L3 (Trace) via BFS - BOTH backward and forward paths
         4. Retrieve L4 (Episode) from target node
 
         Args:
@@ -131,15 +131,10 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         # Build all 4 layers
         l1_domain = self._build_l1_domain(scope)
         l2_category = self._build_l2_category(scope)
-        l3_trace, player_state, path_nodes = self._build_l3_trace(scope)
-        l4_episode = self._build_l4_episode(scope)
-
-        # Get successor nodes for transition context
-        successors = forward_bfs(
-            scope.target_node,
-            scope.chart,
-            max_depth=self.lookahead_depth,
+        l3_trace, player_state, backward_nodes, forward_nodes = self._build_l3_trace(
+            scope
         )
+        l4_episode = self._build_l4_episode(scope)
 
         # Build structured context string
         context_string = self._format_context(
@@ -157,8 +152,8 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
                 "target_node_name": scope.target_node.name,
                 "chart_id": str(scope.chart.id),
                 "chart_name": scope.chart.name,
-                "path_length": len(path_nodes),
-                "successor_count": len(successors),
+                "backward_path_length": len(backward_nodes),
+                "forward_path_length": len(forward_nodes),
                 "player_state": player_state.to_dict(),
                 "max_trace_depth": self.max_trace_depth,
                 "stop_at_checkpoint": self.stop_at_checkpoint,
@@ -176,8 +171,8 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         elif layer == 2:
             return self._build_l2_category(scope)
         elif layer == 3:
-            result = self._build_l3_trace(scope)
-            return result[0]  # Return just the LayerContext
+            layer_ctx, _, _, _ = self._build_l3_trace(scope)
+            return layer_ctx
         else:  # layer == 4
             return self._build_l4_episode(scope)
 
@@ -194,28 +189,45 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
 
     def _build_l3_trace(
         self, scope: EvaluationScope
-    ) -> tuple[LayerContext, PlayerState, list]:
+    ) -> tuple[LayerContext, PlayerState, list, list]:
         """
-        Build L3 Trace layer via reverse BFS traversal.
+        Build L3 Trace layer via BFS traversal (backward AND forward).
+
+        For coherence checking, we need both:
+        - PREVIOUS nodes: To verify prerequisites, story continuity
+        - FUTURE nodes: To verify target properly sets up what comes next
 
         Returns:
-            Tuple of (LayerContext, PlayerState, path_nodes)
+            Tuple of (LayerContext, PlayerState, backward_nodes, forward_nodes)
         """
-        # Perform reverse BFS to reconstruct path
-        path_nodes = reverse_bfs(
+        # Perform reverse BFS to get backward path (full path to start)
+        backward_nodes = reverse_bfs(
             scope.target_node,
             scope.chart,
             max_depth=self.max_trace_depth,
             stop_at_checkpoint=self.stop_at_checkpoint,
         )
 
-        # Aggregate player state along path
-        player_state = aggregate_player_state(path_nodes)
+        # Perform forward BFS to get forward path (full path to end)
+        # Use None for max_depth to get complete forward path
+        forward_nodes = forward_bfs(
+            scope.target_node,
+            scope.chart,
+            max_depth=None,  # Get complete forward path
+        )
 
-        # Build layer context
-        layer = build_trace_layer(path_nodes, player_state, scope.target_node)
+        # Aggregate player state along backward path
+        player_state = aggregate_player_state(backward_nodes)
 
-        return layer, player_state, path_nodes
+        # Build layer context with BOTH backward and forward paths
+        layer = build_trace_layer(
+            backward_nodes,
+            player_state,
+            scope.target_node,
+            forward_nodes=forward_nodes,
+        )
+
+        return layer, player_state, backward_nodes, forward_nodes
 
     def _build_l4_episode(self, scope: EvaluationScope) -> LayerContext:
         """Build L4 Episode layer from target node."""

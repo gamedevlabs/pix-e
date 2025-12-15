@@ -152,7 +152,7 @@ def init_database() -> bool:
         )
 
     # APSW auto-commits, sqlite3 needs explicit commit
-    if not USING_APSW and hasattr(conn, 'commit'):
+    if not USING_APSW and hasattr(conn, "commit"):
         conn.commit()  # type: ignore[union-attr]
     conn.close()
     return VEC_AVAILABLE
@@ -262,7 +262,7 @@ class VectorStore:
                 logger.warning(f"Failed to store in vec0 table: {e}")
 
         # APSW auto-commits, sqlite3 needs explicit commit
-        if not USING_APSW and hasattr(self.conn, 'commit'):
+        if not USING_APSW and hasattr(self.conn, "commit"):
             self.conn.commit()  # type: ignore[union-attr]
 
     def search_similar(
@@ -409,6 +409,6 @@ class VectorStore:
             )
 
         # APSW auto-commits, sqlite3 needs explicit commit
-        if not USING_APSW and hasattr(self.conn, 'commit'):
+        if not USING_APSW and hasattr(self.conn, "commit"):
             self.conn.commit()  # type: ignore[union-attr]
         return len(rowids)
