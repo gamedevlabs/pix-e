@@ -403,10 +403,6 @@ class HMEMStrategy(BaseContextStrategy):
     def _build_domain_content(self, scope: EvaluationScope) -> str:
         """
         Build L1 domain content from project context.
-
-        NOTE: We do NOT arbitrarily truncate content here. The game concept
-        and pillars are project-level context that should be preserved in full
-        (or at least with reasonable limits that don't cut mid-sentence).
         """
         parts = []
 

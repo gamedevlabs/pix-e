@@ -2,7 +2,7 @@
 Combined Strategy Implementation.
 
 Combines Mixed Structural Memory (Zeng et al. 2024) data representation with
-H-MEM (Sun & Zeng 2025) hierarchical organization.
+Hierarchical Graph traversal for context organization.
 
 This strategy uses all four memory structures from Zeng et al. (2024):
 - Chunks: Raw text segments
@@ -10,11 +10,13 @@ This strategy uses all four memory structures from Zeng et al. (2024):
 - Atomic Facts: Indivisible information units
 - Summaries: Condensed overviews
 
-Organized using H-MEM's 4-layer hierarchy:
-- L1 Domain: Project-level context
+Combined with Hierarchical Graph's deterministic traversal:
+- L1 Domain: Project-level context (full game concept + all pillars)
 - L2 Category: Chart-level context
-- L3 Trace: Path/neighbor context
-- L4 Episode: Target node context
+- L3 Trace: FULL path context via BFS (backward + forward)
+- L4 Episode: Target node with all four memory structures
+
+Key principle: NO ARBITRARY TRUNCATION - preserve full content.
 
 Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
 """
@@ -30,7 +32,10 @@ from pxnodes.llm.context.base.types import (
     StrategyType,
     get_layer_name,
 )
-from pxnodes.llm.context.shared.graph_retrieval import get_graph_slice
+from pxnodes.llm.context.hierarchical_graph.traversal import (
+    forward_bfs,
+    reverse_bfs,
+)
 from pxnodes.llm.context.structural_memory.chunks import (
     Chunk,
     extract_chunks,
@@ -50,8 +55,8 @@ from pxnodes.llm.context.structural_memory.triples import (
     extract_all_triples,
 )
 
-# Combined context template with all four memory structures
-COMBINED_CONTEXT_TEMPLATE = """### COMBINED HIERARCHICAL + MIXED MEMORY CONTEXT
+# Combined context template with hierarchical graph + structural memory
+COMBINED_CONTEXT_TEMPLATE = """### COMBINED CONTEXT (Graph + Structural Memory)
 
 **[L1 DOMAIN - Project Level]**
 {l1_content}
@@ -59,7 +64,7 @@ COMBINED_CONTEXT_TEMPLATE = """### COMBINED HIERARCHICAL + MIXED MEMORY CONTEXT
 **[L2 CATEGORY - Chart Level]**
 {l2_content}
 
-**[L3 TRACE - Path Level]**
+**[L3 TRACE - Full Path Context]**
 {l3_content}
 
 **[L4 EPISODE - Target Node]**
@@ -67,14 +72,14 @@ COMBINED_CONTEXT_TEMPLATE = """### COMBINED HIERARCHICAL + MIXED MEMORY CONTEXT
 Summary:
 {l4_summary}
 
+Description:
+{l4_description}
+
 Knowledge Triples:
 {l4_triples}
 
 Atomic Facts:
 {l4_facts}
-
-Raw Text:
-{l4_chunks}
 
 **[COMPUTED METRICS]**
 {derived_triples}
@@ -84,7 +89,7 @@ Raw Text:
 @StrategyRegistry.register(StrategyType.COMBINED)
 class CombinedStrategy(BaseContextStrategy):
     """
-    Combined strategy using Mixed Structural Memory + H-MEM organization.
+    Combined strategy using Mixed Structural Memory + Hierarchical Graph traversal.
 
     This hybrid approach combines:
 
@@ -94,11 +99,13 @@ class CombinedStrategy(BaseContextStrategy):
        - Atomic Facts: Indivisible information units (LLM-based)
        - Summaries: Condensed overviews (LLM-based)
 
-    2. H-MEM (Sun & Zeng 2025) hierarchical organization:
-       - L1 Domain: Project-level context (pillars, game concept)
+    2. Hierarchical Graph traversal (deterministic BFS):
+       - L1 Domain: FULL project context (game concept + all pillars, no truncation)
        - L2 Category: Chart-level context
-       - L3 Trace: Path/neighbor context with structural data
+       - L3 Trace: FULL backward + forward path via BFS with structural data
        - L4 Episode: Target node with all four memory structures
+
+    Key principle: NO ARBITRARY TRUNCATION - preserve full content.
 
     Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
 
@@ -139,7 +146,7 @@ class CombinedStrategy(BaseContextStrategy):
         query: Optional[str] = None,
     ) -> ContextResult:
         """
-        Build combined context using all four memory structures + hierarchy.
+        Build combined context using all four memory structures + BFS traversal.
 
         Extracts all four memory structures from Zeng et al. (2024):
         - Chunks: Raw text segments
@@ -147,10 +154,10 @@ class CombinedStrategy(BaseContextStrategy):
         - Atomic Facts: Indivisible information units
         - Summaries: Condensed overviews
 
-        Organized in H-MEM 4-layer hierarchy:
-        - L1 Domain: Project context
+        Organized using Hierarchical Graph's BFS traversal:
+        - L1 Domain: FULL project context (no truncation)
         - L2 Category: Chart context
-        - L3 Trace: Path nodes with mixed memory
+        - L3 Trace: FULL backward + forward path via BFS with mixed memory
         - L4 Episode: Target node with all four structures
 
         Args:
@@ -160,11 +167,19 @@ class CombinedStrategy(BaseContextStrategy):
         Returns:
             ContextResult with all four memory structures in hierarchical format
         """
-        # Get graph slice for path context
-        graph_slice = get_graph_slice(scope.target_node, scope.chart, depth=scope.depth)
-        all_nodes = (
-            [scope.target_node] + graph_slice.previous_nodes + graph_slice.next_nodes
+        # Use hierarchical graph's BFS for FULL path traversal
+        backward_nodes = reverse_bfs(
+            scope.target_node,
+            scope.chart,
+            max_depth=None,  # Get complete backward path
+            stop_at_checkpoint=False,  # Don't stop at checkpoints
         )
+        forward_nodes = forward_bfs(
+            scope.target_node,
+            scope.chart,
+            max_depth=None,  # Get complete forward path
+        )
+        all_nodes = [scope.target_node] + backward_nodes + forward_nodes
 
         # Build hierarchical layers (L1-L2 from H-MEM style)
         l1_domain = self._build_domain_layer(scope)
@@ -187,8 +202,8 @@ class CombinedStrategy(BaseContextStrategy):
         if self.include_derived_triples:
             derived_triples = compute_derived_triples(
                 scope.target_node,
-                graph_slice.previous_nodes,
-                graph_slice.next_nodes,
+                backward_nodes,
+                forward_nodes,
             )
         all_triples.extend(derived_triples)
 
@@ -207,9 +222,15 @@ class CombinedStrategy(BaseContextStrategy):
             for node in all_nodes:
                 all_summaries.append(create_fallback_summary(node))
 
-        # Build L3 with path context
+        # Build L3 with FULL path context (backward + forward)
         l3_trace = self._build_trace_layer_with_mixed_memory(
-            scope, graph_slice, all_chunks, all_triples, all_facts, all_summaries
+            scope,
+            backward_nodes,
+            forward_nodes,
+            all_chunks,
+            all_triples,
+            all_facts,
+            all_summaries,
         )
 
         # Build L4 with all four structures for target node
@@ -247,8 +268,8 @@ class CombinedStrategy(BaseContextStrategy):
                 "fact_count": len(all_facts),
                 "summary_count": len(all_summaries),
                 "derived_triple_count": len(derived_triples),
-                "previous_nodes": len(graph_slice.previous_nodes),
-                "next_nodes": len(graph_slice.next_nodes),
+                "backward_path_length": len(backward_nodes),
+                "forward_path_length": len(forward_nodes),
             },
         )
 
@@ -283,20 +304,29 @@ class CombinedStrategy(BaseContextStrategy):
             )
 
     def _build_domain_layer(self, scope: EvaluationScope) -> LayerContext:
-        """Build L1 Domain layer from project context."""
+        """
+        Build L1 Domain layer from project context.
+
+        NO TRUNCATION - preserve full game concept and all pillars.
+        """
         content_parts = []
 
+        # Full game concept - no truncation
         if scope.game_concept:
             concept = getattr(scope.game_concept, "content", "")
             if concept:
-                content_parts.append(f"Game Concept: {concept[:800]}")
+                content_parts.append(f"Game Concept:\n{concept}")
 
+        # All pillars with full descriptions - no truncation
         if scope.project_pillars:
             pillar_texts = []
-            for p in scope.project_pillars[:5]:
+            for p in scope.project_pillars:  # All pillars, not limited
                 name = getattr(p, "name", "")
-                desc = getattr(p, "description", "")[:150]
-                pillar_texts.append(f"- {name}: {desc}")
+                desc = getattr(p, "description", "")  # Full description
+                if desc:
+                    pillar_texts.append(f"- {name}: {desc}")
+                else:
+                    pillar_texts.append(f"- {name}")
             content_parts.append("Design Pillars:\n" + "\n".join(pillar_texts))
 
         return LayerContext(
@@ -323,47 +353,74 @@ class CombinedStrategy(BaseContextStrategy):
     def _build_trace_layer_with_mixed_memory(
         self,
         scope: EvaluationScope,
-        graph_slice: Any,
+        backward_nodes: list[Any],
+        forward_nodes: list[Any],
         chunks: list[Chunk],
         triples: list[KnowledgeTriple],
         facts: list[AtomicFact],
         summaries: list[Summary],
     ) -> LayerContext:
-        """Build L3 Trace layer with mixed memory from path nodes."""
+        """
+        Build L3 Trace layer with mixed memory from FULL path.
+
+        Uses hierarchical graph's BFS traversal for complete path context.
+        """
         content_parts = []
 
-        # Build path sequence
-        if graph_slice.previous_nodes:
-            path_names = [n.name for n in graph_slice.previous_nodes]
-            content_parts.append(f"Path: {' -> '.join(path_names)} -> [TARGET]")
+        # PREVIOUS NODES (backward path) - full content
+        if backward_nodes:
+            path_names = [n.name for n in backward_nodes]
+            content_parts.append(
+                f"PREVIOUS NODES (Path leading to target):\n"
+                f"  {' -> '.join(path_names)} -> [TARGET]"
+            )
 
             # Format each previous node with mixed memory
-            for node in graph_slice.previous_nodes:
+            for i, node in enumerate(backward_nodes, 1):
                 node_content = self._format_node_mixed_memory(
-                    node.name, str(node.id), chunks, triples, facts, summaries
+                    node.name,
+                    str(node.id),
+                    chunks,
+                    triples,
+                    facts,
+                    summaries,
+                    index=i,
                 )
                 if node_content:
                     content_parts.append(node_content)
+        else:
+            content_parts.append("PREVIOUS NODES: None (this is the start)")
 
-        # Add next nodes if any
-        if graph_slice.next_nodes:
-            next_names = [n.name for n in graph_slice.next_nodes]
-            content_parts.append(f"\nNext: [TARGET] -> {' -> '.join(next_names)}")
+        # FUTURE NODES (forward path) - full content
+        if forward_nodes:
+            next_names = [n.name for n in forward_nodes]
+            content_parts.append(
+                f"\nFUTURE NODES (What comes after target):\n"
+                f"  [TARGET] -> {' -> '.join(next_names)}"
+            )
 
-            for node in graph_slice.next_nodes:
+            for i, node in enumerate(forward_nodes, 1):
                 node_content = self._format_node_mixed_memory(
-                    node.name, str(node.id), chunks, triples, facts, summaries
+                    node.name,
+                    str(node.id),
+                    chunks,
+                    triples,
+                    facts,
+                    summaries,
+                    index=i,
                 )
                 if node_content:
                     content_parts.append(node_content)
+        else:
+            content_parts.append("\nFUTURE NODES: None (this is the end)")
 
         return LayerContext(
             layer=3,
             layer_name=get_layer_name(3),
-            content="\n".join(content_parts) if content_parts else "Start of path",
+            content="\n".join(content_parts) if content_parts else "No path context",
             metadata={
-                "previous_count": len(graph_slice.previous_nodes),
-                "next_count": len(graph_slice.next_nodes),
+                "backward_count": len(backward_nodes),
+                "forward_count": len(forward_nodes),
                 "source": "combined_l3",
             },
         )
@@ -436,33 +493,46 @@ class CombinedStrategy(BaseContextStrategy):
         triples: list[KnowledgeTriple],
         facts: list[AtomicFact],
         summaries: list[Summary],
+        index: int = 0,
     ) -> str:
-        """Format all four memory structures for a single node."""
+        """
+        Format all four memory structures for a single node.
+
+        NO TRUNCATION - preserve full content for each node.
+        """
         # Filter for this node
         node_summaries = [s for s in summaries if s.node_id == node_id]
         node_triples = [t for t in triples if t.head == node_name]
         node_facts = [f for f in facts if f.node_id == node_id]
+        node_chunks = [c for c in chunks if c.node_id == node_id]
 
-        if not any([node_summaries, node_triples, node_facts]):
+        # Get description chunk for raw text
+        desc_chunks = [c for c in node_chunks if c.source == "description"]
+
+        if not any([node_summaries, node_triples, node_facts, desc_chunks]):
             return ""
 
-        lines = [f"\n{node_name}:"]
+        lines = [f"\n  {index}. {node_name}:"]
 
-        # Summary (brief)
+        # Summary - full content (no truncation)
         if node_summaries:
-            lines.append(f"  Summary: {node_summaries[0].content[:200]}...")
+            lines.append(f"     Summary: {node_summaries[0].content}")
 
-        # Triples (limited)
+        # Raw description - full content
+        if desc_chunks:
+            lines.append(f"     Description: {desc_chunks[0].content}")
+
+        # Triples - all relevant triples
         if node_triples:
-            lines.append("  Triples:")
-            for t in node_triples[:5]:
-                lines.append(f"    - {t}")
+            lines.append("     Triples:")
+            for t in node_triples:
+                lines.append(f"       - {t}")
 
-        # Facts (limited)
+        # Facts - all facts
         if node_facts:
-            lines.append("  Facts:")
-            for f in node_facts[:5]:
-                lines.append(f"    - {f.fact}")
+            lines.append("     Facts:")
+            for f in node_facts:
+                lines.append(f"       - {f.fact}")
 
         return "\n".join(lines)
 
@@ -478,7 +548,11 @@ class CombinedStrategy(BaseContextStrategy):
         summaries: list[Summary],
         derived_triples: list[KnowledgeTriple],
     ) -> str:
-        """Format all components into combined context string."""
+        """
+        Format all components into combined context string.
+
+        NO TRUNCATION - preserve full content for target node.
+        """
         target_id = str(scope.target_node.id)
         target_name = scope.target_node.name
 
@@ -486,34 +560,32 @@ class CombinedStrategy(BaseContextStrategy):
         target_summaries = [s for s in summaries if s.node_id == target_id]
         target_triples = [t for t in triples if t.head == target_name]
         target_facts = [f for f in facts if f.node_id == target_id]
-        target_chunks = [c for c in chunks if c.node_id == target_id]
 
-        # Format L4 sections
+        # Format L4 sections - NO TRUNCATION
         l4_summary_str = (
             target_summaries[0].content if target_summaries else "(no summary)"
         )
 
+        # Full description from node
+        l4_description_str = scope.target_node.description or "(no description)"
+
+        # All triples - no limit
         l4_triples_str = (
-            "\n".join(f"  - {t}" for t in target_triples[:20])
+            "\n".join(f"  - {t}" for t in target_triples)
             if target_triples
             else "  (none)"
         )
 
+        # All facts - no limit
         l4_facts_str = (
-            "\n".join(f"  - {f.fact}" for f in target_facts[:15])
+            "\n".join(f"  - {f.fact}" for f in target_facts)
             if target_facts
             else "  (none)"
         )
 
-        desc_chunks = [c for c in target_chunks if c.source == "description"]
-        l4_chunks_str = (
-            "\n".join(f"  {c.content}" for c in desc_chunks)
-            if desc_chunks
-            else "  (none)"
-        )
-
+        # Derived triples (computed metrics)
         derived_str = (
-            "\n".join(f"  - {t}" for t in derived_triples[:10])
+            "\n".join(f"  - {t}" for t in derived_triples)
             if derived_triples
             else "  (none)"
         )
@@ -523,9 +595,9 @@ class CombinedStrategy(BaseContextStrategy):
             l2_content=l2.content,
             l3_content=l3.content,
             l4_summary=l4_summary_str,
+            l4_description=l4_description_str,
             l4_triples=l4_triples_str,
             l4_facts=l4_facts_str,
-            l4_chunks=l4_chunks_str,
             derived_triples=derived_str,
         )
 
