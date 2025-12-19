@@ -2,7 +2,8 @@
 Structural Memory Strategy.
 
 Implements the Mixed Structural Memory approach from Zeng et al. (2024)
-as a BaseContextStrategy.
+as a BaseContextStrategy, with domain-specific adaptations for graph-structured
+game design content.
 
 This strategy extracts four types of memory structures:
 - Chunks: Raw text segments (deterministic)
@@ -11,9 +12,20 @@ This strategy extracts four types of memory structures:
 - Summaries: Condensed overviews (LLM-based)
 
 Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
+
+Domain Adaptation (Thesis Contribution):
+Unlike the paper's approach which searches across all stored memories,
+this implementation uses a two-stage retrieval process:
+1. Deterministic graph traversal (BFS) to identify path-relevant nodes
+2. Iterative retrieval within this constrained search space
+
+This adaptation ensures retrieval focuses on contextually relevant memories
+for game design coherence evaluation while preserving the benefits of
+iterative query refinement from Zeng et al. (2024).
 """
 
-from typing import Any, Optional
+import logging
+from typing import Any, Optional, cast
 
 from pxnodes.llm.context.base.registry import StrategyRegistry
 from pxnodes.llm.context.base.strategy import BaseContextStrategy, LLMProvider
@@ -43,6 +55,8 @@ from pxnodes.llm.context.structural_memory.triples import (
     extract_all_triples,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @StrategyRegistry.register(StrategyType.STRUCTURAL_MEMORY)
 class StructuralMemoryStrategy(BaseContextStrategy):
@@ -57,12 +71,20 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
     Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
 
-    This provides remarkable resilience in noisy environments and
-    balanced performance across diverse tasks.
+    Domain Adaptation (Two-Stage Retrieval):
+    This implementation adapts the paper's approach for graph-structured
+    game design content using a two-stage process:
+    1. Stage 1 (Scoping): Deterministic BFS traversal identifies path-relevant nodes
+    2. Stage 2 (Retrieval): Iterative retrieval searches within scoped nodes only
+
+    This ensures retrieval focuses on contextually relevant memories while
+    preserving the benefits of iterative query refinement.
 
     Attributes:
         embedding_model: OpenAI embedding model name
-        retrieval_iterations: Number of query refinement iterations
+        retrieval_iterations: Number of query refinement iterations (paper default: 3)
+        retrieval_top_k: Number of memories to retrieve per iteration (paper: T=50)
+        use_iterative_retrieval: Enable iterative retrieval (vs direct extraction)
         skip_fact_extraction: Skip LLM-based fact extraction
         skip_summary_extraction: Skip LLM-based summary extraction
     """
@@ -74,6 +96,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         llm_provider: Optional[LLMProvider] = None,
         embedding_model: str = "text-embedding-3-small",
         retrieval_iterations: int = 3,
+        retrieval_top_k: int = 50,
+        use_iterative_retrieval: bool = True,
         skip_fact_extraction: bool = False,
         skip_summary_extraction: bool = False,
         **kwargs: Any,
@@ -84,13 +108,18 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         Args:
             llm_provider: LLM for fact/summary extraction and query refinement
             embedding_model: OpenAI embedding model name
-            retrieval_iterations: Number of query refinement iterations
+            retrieval_iterations: Number of query refinement iterations (N in paper)
+            retrieval_top_k: Memories to retrieve per iteration (T in paper, default 50)
+            use_iterative_retrieval: If True, use iterative retrieval from paper.
+                                     If False, use direct extraction only.
             skip_fact_extraction: If True, skip LLM-based fact extraction
             skip_summary_extraction: If True, skip LLM-based summary extraction
         """
         super().__init__(llm_provider=llm_provider, **kwargs)
         self.embedding_model = embedding_model
         self.retrieval_iterations = retrieval_iterations
+        self.retrieval_top_k = retrieval_top_k
+        self.use_iterative_retrieval = use_iterative_retrieval
         self.skip_fact_extraction = skip_fact_extraction
         self.skip_summary_extraction = skip_summary_extraction
 
@@ -102,6 +131,13 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         """
         Build mixed structural memory context for evaluation.
 
+        Two-Stage Retrieval Process (Domain Adaptation):
+        1. Stage 1 (Scoping): Use deterministic BFS to identify path-relevant nodes
+        2. Stage 2 (Retrieval): Apply iterative retrieval within scoped nodes
+
+        This adapts Zeng et al. (2024) for graph-structured game design content,
+        ensuring retrieval focuses on contextually relevant memories.
+
         Extracts all four memory structures from Zeng et al. (2024):
         - Chunks: Raw text segments
         - Knowledge Triples: Structured relationships
@@ -110,19 +146,259 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
         Args:
             scope: Evaluation scope (target node, chart, project context)
-            query: Optional query for retrieval (used for iterative refinement)
+            query: Optional query for iterative retrieval refinement.
+                   If not provided, generates query from target node.
 
         Returns:
             ContextResult with all four memory structures and formatted context
         """
         from pxnodes.llm.context.shared.graph_retrieval import get_graph_slice
 
-        # Get graph slice (neighbors)
+        # ============================================================
+        # STAGE 1: Deterministic Graph Scoping (Domain Adaptation)
+        # ============================================================
+        # Use BFS to identify path-relevant nodes. This constrains the
+        # search space for retrieval to only contextually relevant nodes.
         graph_slice = get_graph_slice(scope.target_node, scope.chart, depth=scope.depth)
         all_nodes = (
             [scope.target_node] + graph_slice.previous_nodes + graph_slice.next_nodes
         )
+        scoped_node_ids = [str(n.id) for n in all_nodes]
 
+        logger.info(
+            f"Stage 1 (Scoping): Found {len(all_nodes)} path-relevant nodes "
+            f"via BFS traversal (depth={scope.depth})"
+        )
+
+        # ============================================================
+        # STAGE 2: Memory Extraction or Iterative Retrieval
+        # ============================================================
+        if self.use_iterative_retrieval and self.llm_provider:
+            # Use iterative retrieval from Zeng et al. (2024)
+            # but SCOPED to path-relevant nodes only
+            return self._build_context_with_iterative_retrieval(
+                scope, graph_slice, all_nodes, scoped_node_ids, query
+            )
+        else:
+            # Fallback: Direct extraction without retrieval
+            return self._build_context_with_direct_extraction(
+                scope, graph_slice, all_nodes
+            )
+
+    def _build_context_with_iterative_retrieval(
+        self,
+        scope: EvaluationScope,
+        graph_slice,
+        all_nodes: list,
+        scoped_node_ids: list[str],
+        query: Optional[str] = None,
+    ) -> ContextResult:
+        """
+        Build context using iterative retrieval from Zeng et al. (2024).
+
+        This method:
+        1. Ensures memories exist in vector store for scoped nodes
+        2. Generates evaluation query from target node
+        3. Applies iterative retrieval WITHIN scoped nodes only
+        4. Combines retrieved memories with deterministic extractions
+        """
+        from pxnodes.llm.context.structural_memory.retriever import (
+            IterativeRetriever,
+        )
+        from pxnodes.llm.context.structural_memory.retriever import (
+            LLMProvider as RetrieverLLMProvider,
+        )
+
+        # Generate query if not provided
+        if not query:
+            query = self._generate_evaluation_query(scope)
+
+        logger.info(
+            f"Stage 2 (Iterative Retrieval): query='{query[:50]}...', "
+            f"iterations={self.retrieval_iterations}, top_k={self.retrieval_top_k}"
+        )
+
+        # Initialize retriever
+        # Cast LLMProvider since both protocols are compatible
+        assert self.llm_provider is not None  # Already checked in caller
+        retriever = IterativeRetriever(
+            llm_provider=cast(RetrieverLLMProvider, self.llm_provider),
+            embedding_model=self.embedding_model,
+        )
+
+        try:
+            # Perform iterative retrieval SCOPED to path-relevant nodes
+            # This is the key domain adaptation: we don't search all memories,
+            # only those belonging to nodes in the evaluation path
+            retrieval_result = retriever.retrieve(
+                query=query,
+                node_ids=scoped_node_ids,  # ← Scope to path-relevant nodes only
+                iterations=self.retrieval_iterations,
+                top_k=self.retrieval_top_k,
+            )
+
+            logger.info(
+                "Iterative retrieval complete: %d memories, %d iterations, %d "
+                "query refinements",
+                len(retrieval_result.memories),
+                retrieval_result.iterations_performed,
+                len(retrieval_result.refined_queries),
+            )
+
+            # Build context combining retrieved + deterministic data
+            return self._build_context_from_retrieval(
+                scope, graph_slice, all_nodes, retrieval_result
+            )
+
+        except Exception as e:
+            logger.warning(
+                f"Iterative retrieval failed: {e}. "
+                f"Falling back to direct extraction."
+            )
+            return self._build_context_with_direct_extraction(
+                scope, graph_slice, all_nodes
+            )
+        finally:
+            retriever.close()
+
+    def _generate_evaluation_query(self, scope: EvaluationScope) -> str:
+        """
+        Generate an evaluation query from the target node.
+
+        The query is used for iterative retrieval to find relevant memories.
+        """
+        node = scope.target_node
+        chart = scope.chart
+
+        # Build query focusing on what we need to evaluate
+        query_parts = [
+            f"Evaluate coherence of '{node.name}' in {chart.name}.",
+        ]
+
+        if node.description:
+            # Include first sentence of description for context
+            first_sentence = node.description.split(".")[0]
+            query_parts.append(f"Node description: {first_sentence}.")
+
+        # Add component context
+        components = list(node.components.select_related("definition").all()[:3])
+        if components:
+            comp_str = ", ".join(f"{c.definition.name}={c.value}" for c in components)
+            query_parts.append(f"Components: {comp_str}.")
+
+        return " ".join(query_parts)
+
+    def _build_context_from_retrieval(
+        self,
+        scope: EvaluationScope,
+        graph_slice,
+        all_nodes: list,
+        retrieval_result,
+    ) -> ContextResult:
+        """
+        Build ContextResult from iterative retrieval results.
+
+        Combines retrieved memories with deterministic extractions
+        (chunks, derived triples, summaries).
+        """
+        # Retrieved memories are already filtered to scoped nodes
+        retrieved_triples: list[KnowledgeTriple] = []
+        retrieved_facts: list[AtomicFact] = []
+
+        for memory in retrieval_result.memories:
+            if memory.memory_type == "knowledge_triple":
+                # Parse triple from stored content
+                # Content format: "(head, relation, tail)"
+                retrieved_triples.append(
+                    KnowledgeTriple(
+                        head=memory.metadata.get("head", ""),
+                        relation=memory.metadata.get("relation", ""),
+                        tail=memory.metadata.get("tail", ""),
+                    )
+                )
+            elif memory.memory_type == "atomic_fact":
+                retrieved_facts.append(
+                    AtomicFact(
+                        node_id=memory.node_id,
+                        fact=memory.content,
+                        source_field="retrieved",
+                    )
+                )
+
+        # Still extract chunks deterministically (they're not in vector store)
+        all_chunks: list[Chunk] = []
+        for node in all_nodes:
+            all_chunks.extend(extract_chunks(node))
+
+        # Compute derived triples (these are computed, not stored)
+        derived_triples = compute_derived_triples(
+            scope.target_node,
+            graph_slice.previous_nodes,
+            graph_slice.next_nodes,
+        )
+
+        # Combine retrieved triples with derived triples
+        all_triples = retrieved_triples + derived_triples
+
+        # Extract summaries (or use fallback)
+        all_summaries: list[Summary] = []
+        if self.llm_provider and not self.skip_summary_extraction:
+            for node in all_nodes:
+                all_summaries.append(extract_summary(node, self.llm_provider))
+        else:
+            for node in all_nodes:
+                all_summaries.append(create_fallback_summary(node))
+
+        # Build context string
+        context_string = self._build_context_string(
+            scope, graph_slice, all_chunks, all_triples, retrieved_facts, all_summaries
+        )
+
+        # Create synthetic layers
+        layers = self._create_synthetic_layers(
+            scope, all_chunks, all_triples, retrieved_facts, all_summaries
+        )
+
+        return ContextResult(
+            strategy=self.strategy_type,
+            context_string=context_string,
+            layers=layers,
+            chunks=all_chunks,
+            triples=all_triples,
+            facts=retrieved_facts,
+            summaries=all_summaries,
+            metadata={
+                "target_node_id": str(scope.target_node.id),
+                "target_node_name": scope.target_node.name,
+                "previous_count": len(graph_slice.previous_nodes),
+                "next_count": len(graph_slice.next_nodes),
+                "chunk_count": len(all_chunks),
+                "triple_count": len(all_triples),
+                "fact_count": len(retrieved_facts),
+                "summary_count": len(all_summaries),
+                "derived_triple_count": len(derived_triples),
+                # Retrieval metadata (thesis-relevant metrics)
+                "retrieval_method": "iterative",
+                "retrieval_iterations": retrieval_result.iterations_performed,
+                "retrieval_query_refinements": len(retrieval_result.refined_queries),
+                "retrieval_memories_found": len(retrieval_result.memories),
+                "retrieval_scoped_nodes": len(graph_slice.previous_nodes)
+                + len(graph_slice.next_nodes)
+                + 1,
+            },
+        )
+
+    def _build_context_with_direct_extraction(
+        self,
+        scope: EvaluationScope,
+        graph_slice,
+        all_nodes: list,
+    ) -> ContextResult:
+        """
+        Build context using direct extraction (no retrieval).
+
+        This is the fallback when iterative retrieval is disabled or unavailable.
+        """
         # 1. Extract CHUNKS (deterministic - raw text segments)
         all_chunks: list[Chunk] = []
         for node in all_nodes:
@@ -187,6 +463,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 "fact_count": len(all_facts),
                 "summary_count": len(all_summaries),
                 "derived_triple_count": len(derived_triples),
+                "retrieval_method": "direct_extraction",
             },
         )
 
