@@ -85,7 +85,11 @@ const showContextPreview = ref(false)
 const activeTab = ref<'evaluate' | 'compare'>('evaluate')
 
 // Agent selection and expansion state for agentic mode
-type AgentKey = 'prerequisite_alignment' | 'forward_setup' | 'internal_consistency' | 'contextual_fit'
+type AgentKey =
+  | 'prerequisite_alignment'
+  | 'forward_setup'
+  | 'internal_consistency'
+  | 'contextual_fit'
 const selectedAgent = ref<AgentKey>('prerequisite_alignment')
 const showIssues = ref(true)
 const showSuggestions = ref(false)
@@ -270,7 +274,11 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
             <span class="font-medium">
               {{ lastEvaluation.is_coherent ? 'Coherent' : 'Issues Found' }}
             </span>
-            <UBadge v-if="evaluationStrategy" :color="getStrategyColor(evaluationStrategy)" variant="subtle">
+            <UBadge
+              v-if="evaluationStrategy"
+              :color="getStrategyColor(evaluationStrategy)"
+              variant="subtle"
+            >
               {{ evaluationStrategy }}
             </UBadge>
             <UBadge v-if="evaluationScore" color="info" variant="outline">
@@ -283,7 +291,12 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
             <!-- Agent Selector Grid -->
             <div class="grid grid-cols-4 gap-1">
               <button
-                v-for="agentKey in (['prerequisite_alignment', 'forward_setup', 'internal_consistency', 'contextual_fit'] as AgentKey[])"
+                v-for="agentKey in [
+                  'prerequisite_alignment',
+                  'forward_setup',
+                  'internal_consistency',
+                  'contextual_fit',
+                ] as AgentKey[]"
                 :key="agentKey"
                 class="p-2 rounded border text-center transition-all cursor-pointer"
                 :class="
@@ -297,7 +310,9 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                 <div
                   v-if="agenticResult[agentKey]"
                   class="text-lg font-bold"
-                  :class="agenticResult[agentKey]!.score >= 4 ? 'text-green-600' : 'text-orange-500'"
+                  :class="
+                    agenticResult[agentKey]!.score >= 4 ? 'text-green-600' : 'text-orange-500'
+                  "
                 >
                   {{ agenticResult[agentKey]!.score }}/6
                 </div>
@@ -332,9 +347,14 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                       <UIcon name="i-heroicons-exclamation-triangle" class="text-orange-500" />
                       Issues ({{ selectedAgentResult.issues.length }})
                     </span>
-                    <UIcon :name="showIssues ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" />
+                    <UIcon
+                      :name="showIssues ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                    />
                   </button>
-                  <div v-if="showIssues && selectedAgentResult.issues.length > 0" class="p-2 space-y-1">
+                  <div
+                    v-if="showIssues && selectedAgentResult.issues.length > 0"
+                    class="p-2 space-y-1"
+                  >
                     <div
                       v-for="(issue, idx) in selectedAgentResult.issues"
                       :key="idx"
@@ -358,9 +378,16 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                       <UIcon name="i-heroicons-light-bulb" class="text-blue-500" />
                       Suggestions ({{ selectedAgentResult.suggestions.length }})
                     </span>
-                    <UIcon :name="showSuggestions ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" />
+                    <UIcon
+                      :name="
+                        showSuggestions ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'
+                      "
+                    />
                   </button>
-                  <div v-if="showSuggestions && selectedAgentResult.suggestions.length > 0" class="p-2 space-y-1">
+                  <div
+                    v-if="showSuggestions && selectedAgentResult.suggestions.length > 0"
+                    class="p-2 space-y-1"
+                  >
                     <div
                       v-for="(suggestion, idx) in selectedAgentResult.suggestions"
                       :key="idx"
@@ -384,9 +411,14 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                       <UIcon name="i-heroicons-document-text" class="text-purple-500" />
                       Reasoning
                     </span>
-                    <UIcon :name="showReasoning ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" />
+                    <UIcon
+                      :name="showReasoning ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                    />
                   </button>
-                  <div v-if="showReasoning" class="p-3 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  <div
+                    v-if="showReasoning"
+                    class="p-3 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap"
+                  >
                     {{ selectedAgentResult.reasoning }}
                   </div>
                 </div>
