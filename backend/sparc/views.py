@@ -226,11 +226,15 @@ class SPARCQuickScanView(APIView):
                 model_name = request.data.get("model", "openai")
                 model_id = get_model_id(model_name)
 
+                data = {"game_text": game_text}
+                if request.data.get("context_strategy"):
+                    data["context_strategy"] = request.data.get("context_strategy")
+
                 # Create orchestrator request for agentic execution
                 llm_request = LLMRequest(
                     feature="sparc",
                     operation="quick_scan",
-                    data={"game_text": game_text},
+                    data=data,
                     model_id=model_id,
                     mode="agentic",  # Use agentic mode for workflow execution
                 )

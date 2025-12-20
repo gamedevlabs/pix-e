@@ -9,6 +9,7 @@ const progressMessage = ref<string | null>(null)
 const progressCurrent = ref<number>(0)
 const progressTotal = ref<number>(10)
 const pillarMode = ref<PillarMode>('smart')
+const contextStrategy = ref<SparcContextStrategy>('router')
 const uploadedDocument = ref<File | null>(null)
 
 export function useSparcV2() {
@@ -38,6 +39,7 @@ export function useSparcV2() {
         gameConcept.value,
         context.value,
         pillarMode.value,
+        contextStrategy.value,
         (event: ProgressEvent) => {
           // Handle progress updates
           progressMessage.value = event.message
@@ -82,7 +84,12 @@ export function useSparcV2() {
     reEvaluatingAspect.value = aspect
 
     try {
-      const result = await api.runV2AspectAPICall(gameConcept.value, aspect, context.value)
+      const result = await api.runV2AspectAPICall(
+        gameConcept.value,
+        aspect,
+        context.value,
+        contextStrategy.value,
+      )
 
       // Merge the new aspect result into existing results
       if (v2Result.value) {
@@ -155,6 +162,7 @@ export function useSparcV2() {
     progressCurrent,
     progressTotal,
     pillarMode,
+    contextStrategy,
     uploadedDocument,
 
     // Actions
