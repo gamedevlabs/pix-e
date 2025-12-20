@@ -147,6 +147,99 @@ Provide actionable suggestions that maintain the core intent of both pillars
 while eliminating the contradiction.
 """
 
+# Synthesis Agent Prompt (final agent in agentic workflow)
+SynthesisPrompt = """You are a game design expert synthesizing evaluation results.
+
+You have received the results from multiple specialized evaluation agents analyzing
+a set of game design pillars. Your task is to synthesize these results into an
+overall assessment.
+
+GAME CONCEPT:
+%s
+
+EVALUATION RESULTS:
+
+## Concept Fit Analysis:
+%s
+
+## Contradiction Analysis:
+%s
+
+## Suggested Additions:
+%s
+
+Based on ALL the evaluation results above, provide:
+
+1. OVERALL SCORE (1-5):
+   - 5: Excellent - Pillars are well-aligned, no contradictions, comprehensive coverage
+   - 4: Good - Minor gaps or issues, but solid foundation
+   - 3: Adequate - Some significant gaps or contradictions that need attention
+   - 2: Needs Work - Multiple issues affecting design coherence
+   - 1: Major Revision Needed - Fundamental problems with pillar set
+
+2. OVERALL FEEDBACK: A concise summary (2-3 sentences) of the pillar set's quality
+
+3. STRENGTHS: 2-4 key strengths identified from the evaluations
+
+4. AREAS FOR IMPROVEMENT: 2-4 key areas that need attention
+
+Be balanced and constructive in your assessment.
+"""
+
+
+# Comprehensive Monolithic Evaluation Prompt (single LLM call baseline for RQ1)
+ComprehensivePillarsEvaluationPrompt = """Assume the role of a game design expert.
+Perform a COMPREHENSIVE evaluation of the following Game Design Pillars
+in a single analysis.
+
+Game Design Idea: %s
+
+Design Pillars:
+%s
+
+CRITICAL INSTRUCTIONS:
+- Each pillar has a unique ID in the format [ID: X] followed by its name.
+- When referencing pillars, you MUST use the EXACT pillarId and name from the list.
+- Do NOT invent or guess IDs. Use ONLY the IDs provided.
+
+PERFORM ALL OF THE FOLLOWING EVALUATIONS:
+
+## 1. CONCEPT FIT ANALYSIS
+For each pillar, analyze how well it fits the game concept:
+- Does it align with the core concept?
+- Does it support the intended player experience?
+- Are there aspects of the game concept NOT covered by pillars?
+
+## 2. CONTRADICTION ANALYSIS
+Identify any contradictions between pillars:
+- Do any pillars conflict with each other?
+- Could implementing one pillar undermine another?
+- Are there logical inconsistencies?
+
+## 3. SUGGESTED ADDITIONS (if gaps exist)
+If there are gaps in coverage, suggest new pillars:
+- Address specific missing aspects
+- Complement existing pillars without overlap
+- Be clear, focused, and actionable
+
+## 4. RESOLUTION SUGGESTIONS (if contradictions exist)
+For each contradiction found, suggest resolutions:
+- Strategy to reconcile the conflicting pillars
+- Specific changes that could be made
+- Alternative approaches if primary strategy fails
+
+## 5. OVERALL ASSESSMENT
+Provide an overall quality score (1-5) and summary feedback.
+
+RESPOND WITH A COMPLETE JSON STRUCTURE including:
+- hasGaps, pillarFeedback, missingAspects (concept fit)
+- hasContradictions, contradictions (contradiction analysis)
+- suggestedAdditions (new pillars if gaps exist, empty list otherwise)
+- resolutionSuggestions (if contradictions exist, empty list otherwise)
+- overallScore (1-5), overallFeedback (summary)
+"""
+
+
 # noqa: E501
 ImprovePillarWithExplanationPrompt = """
 Improve the following Game Design Pillar and explain your improvements.

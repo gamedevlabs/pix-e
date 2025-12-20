@@ -450,18 +450,20 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="evaluate-all")
     def evaluate_all(self, request: Request) -> JsonResponse:
         """
-        Run comprehensive pillar evaluation using agent workflow.
+        Run comprehensive pillar evaluation with configurable execution mode.
 
-        Execution flow:
-        1. Run ConceptFit and Contradictions agents in parallel
-        2. If gaps found: auto-run SuggestAdditions with concept fit context
-        3. If contradictions found: auto-run ContradictionResolution
+        Supports:
+        - execution_mode: "monolithic" (single LLM call) or "agentic" (multi-agent)
+
+        Monolithic mode: Single comprehensive LLM call (baseline for RQ1).
+        Agentic mode (default):
+            1. Run ConceptFit and Contradictions agents in parallel
+            2. If gaps found: auto-run SuggestAdditions with concept fit context
+            3. If contradictions found: auto-run ContradictionResolution
 
         Returns all results in a unified response.
         """
         import asyncio
-
-        from llm.agent_registry import get_workflow
 
         try:
             user = cast(User, self.request.user)
@@ -479,59 +481,153 @@ class LLMFeedbackView(ViewSet):
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
             pillars_text = format_pillars_text(pillars)
+            execution_mode = request.data.get("execution_mode", "agentic")
 
-            # Create request for the workflow
-            llm_request = LLMRequest(
-                feature="pillars",
-                operation="evaluate_all",
-                data={
-                    "pillars_text": pillars_text,
-                    "context": game_concept.content,
-                },
-                model_id=model_id,
-                mode="agentic",
-            )
+            # Validate execution mode
+            if execution_mode not in ["monolithic", "agentic"]:
+                return JsonResponse(
+                    {"error": "execution_mode must be 'monolithic' or 'agentic'"},
+                    status=400,
+                )
 
-            # Get the workflow and run it
-            workflow_class = get_workflow("pillars.evaluate_all")
-            workflow = workflow_class(
-                model_manager=self.orchestrator.model_manager,
-                config=self.orchestrator.config,
-            )
-
-            # Run the async workflow
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(workflow.run(llm_request))
-            finally:
-                loop.close()
-
-            # Save LLM calls (aggregated + per-agent)
             input_data = {
                 "pillars_text": pillars_text,
                 "context": game_concept.content,
             }
-            save_execution_result_llm_calls(
-                user=user,
-                result=result,
-                input_data=input_data,
-            )
 
-            # Build response
-            response_data = {
-                "concept_fit": result.aggregated_data.get("concept_fit"),
-                "contradictions": result.aggregated_data.get("contradictions"),
-                "additions": result.aggregated_data.get("additions"),
-                "resolution": result.aggregated_data.get("resolution"),
-                "metadata": {
-                    "execution_time_ms": result.total_execution_time_ms,
-                    "agents_run": [r.agent_name for r in result.agent_results],
-                    "all_succeeded": result.success,
-                },
-            }
+            if execution_mode == "monolithic":
+                # Monolithic mode: Single LLM call (baseline for RQ1)
+                llm_request = LLMRequest(
+                    feature="pillars",
+                    operation="evaluate_comprehensive",
+                    data=input_data,
+                    model_id=model_id,
+                )
 
-            return JsonResponse(response_data, status=200)
+                response = self.orchestrator.execute(llm_request)
+
+                # Save metrics
+                save_pillar_llm_call(
+                    user=user,
+                    operation="evaluate_comprehensive",
+                    response=response,
+                )
+
+                # Transform monolithic response to match agentic format
+                result_data = response.results
+                response_data = {
+                    "execution_mode": "monolithic",
+                    "concept_fit": {
+                        "hasGaps": result_data.get("hasGaps", False),
+                        "pillarFeedback": result_data.get("pillarFeedback", []),
+                        "missingAspects": result_data.get("missingAspects", []),
+                    },
+                    "contradictions": {
+                        "hasContradictions": result_data.get(
+                            "hasContradictions", False
+                        ),
+                        "contradictions": result_data.get("contradictions", []),
+                    },
+                    "additions": (
+                        {
+                            "additions": result_data.get("suggestedAdditions", []),
+                        }
+                        if result_data.get("suggestedAdditions")
+                        else None
+                    ),
+                    "resolution": (
+                        {
+                            "resolutions": result_data.get("resolutionSuggestions", []),
+                            "overallRecommendation": result_data.get(
+                                "overallFeedback", ""
+                            ),
+                        }
+                        if result_data.get("resolutionSuggestions")
+                        else None
+                    ),
+                    "overall": {
+                        "score": result_data.get("overallScore", 3),
+                        "feedback": result_data.get("overallFeedback", ""),
+                    },
+                    "metadata": {
+                        "execution_time_ms": response.metadata.execution_time_ms,
+                        "model_used": (
+                            response.metadata.models_used[0].name
+                            if response.metadata.models_used
+                            else None
+                        ),
+                        "total_tokens": (
+                            response.metadata.token_usage.total_tokens
+                            if response.metadata.token_usage
+                            else None
+                        ),
+                    },
+                }
+
+                return JsonResponse(response_data, status=200)
+
+            else:
+                # Agentic mode: Multi-agent workflow
+                from llm.agent_registry import get_workflow
+
+                llm_request = LLMRequest(
+                    feature="pillars",
+                    operation="evaluate_all",
+                    data=input_data,
+                    model_id=model_id,
+                    mode="agentic",
+                )
+
+                # Get the workflow and run it
+                workflow_class = get_workflow("pillars.evaluate_all")
+                workflow = workflow_class(
+                    model_manager=self.orchestrator.model_manager,
+                    config=self.orchestrator.config,
+                )
+
+                # Run the async workflow
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    result = loop.run_until_complete(workflow.run(llm_request))
+                finally:
+                    loop.close()
+
+                # Save LLM calls (aggregated + per-agent)
+                save_execution_result_llm_calls(
+                    user=user,
+                    result=result,
+                    input_data=input_data,
+                )
+
+                # Build response
+                synthesis = result.aggregated_data.get("synthesis")
+                response_data = {
+                    "execution_mode": "agentic",
+                    "concept_fit": result.aggregated_data.get("concept_fit"),
+                    "contradictions": result.aggregated_data.get("contradictions"),
+                    "additions": result.aggregated_data.get("additions"),
+                    "resolution": result.aggregated_data.get("resolution"),
+                    "overall": (
+                        {
+                            "score": synthesis.get("overallScore", 3),
+                            "feedback": synthesis.get("overallFeedback", ""),
+                            "strengths": synthesis.get("strengths", []),
+                            "areasForImprovement": synthesis.get(
+                                "areasForImprovement", []
+                            ),
+                        }
+                        if synthesis
+                        else None
+                    ),
+                    "metadata": {
+                        "execution_time_ms": result.total_execution_time_ms,
+                        "agents_run": [r.agent_name for r in result.agent_results],
+                        "all_succeeded": result.success,
+                    },
+                }
+
+                return JsonResponse(response_data, status=200)
 
         except Exception as e:
             logger.exception(f"Error in evaluate_all: {e}")

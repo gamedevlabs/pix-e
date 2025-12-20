@@ -136,16 +136,29 @@ type ContradictionResolutionResponse = {
   overallRecommendation: string
 }
 
+type ExecutionMode = 'monolithic' | 'agentic'
+
 type EvaluateAllMetadata = {
   execution_time_ms: number
-  agents_run: string[]
-  all_succeeded: boolean
+  agents_run?: string[] // Only in agentic mode
+  all_succeeded?: boolean // Only in agentic mode
+  model_used?: string // Only in monolithic mode
+  total_tokens?: number // Only in monolithic mode
+}
+
+type OverallScore = {
+  score: number
+  feedback: string
+  strengths?: string[] // Only in agentic mode
+  areasForImprovement?: string[] // Only in agentic mode
 }
 
 type EvaluateAllResponse = {
+  execution_mode: ExecutionMode
   concept_fit: ConceptFitResponse | null
   contradictions: ContradictionsResponse | null
   additions: PillarAdditionsFeedback | null
   resolution: ContradictionResolutionResponse | null
+  overall?: OverallScore // Available in both modes (with synthesis in agentic)
   metadata: EvaluateAllMetadata
 }

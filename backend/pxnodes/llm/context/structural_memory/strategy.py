@@ -43,16 +43,19 @@ from pxnodes.llm.context.structural_memory.chunks import (
 from pxnodes.llm.context.structural_memory.facts import (
     AtomicFact,
     extract_atomic_facts,
+    extract_atomic_facts_async,
 )
 from pxnodes.llm.context.structural_memory.summaries import (
     Summary,
     create_fallback_summary,
     extract_summary,
+    extract_summary_async,
 )
 from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
     compute_derived_triples,
     extract_all_triples,
+    extract_all_triples_async,
 )
 
 logger = logging.getLogger(__name__)
@@ -420,10 +423,13 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         all_triples.extend(derived_triples)
 
         # 3. Extract ATOMIC FACTS (LLM-based - indivisible information units)
+        # force_regenerate=True bypasses vector store cache to ensure fresh extraction
         all_facts: list[AtomicFact] = []
         if self.llm_provider and not self.skip_fact_extraction:
             for node in all_nodes:
-                all_facts.extend(extract_atomic_facts(node, self.llm_provider))
+                all_facts.extend(
+                    extract_atomic_facts(node, self.llm_provider, force_regenerate=True)
+                )
 
         # 4. Extract SUMMARIES (LLM-based - condensed overviews)
         all_summaries: list[Summary] = []
@@ -466,6 +472,218 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 "retrieval_method": "direct_extraction",
             },
         )
+
+    async def build_context_async(
+        self,
+        scope: EvaluationScope,
+        query: Optional[str] = None,
+    ) -> ContextResult:
+        """
+        Async version of build_context with parallel extraction.
+
+        Runs atomic facts, knowledge triples, and summaries extraction
+        in parallel across all path nodes for improved performance.
+
+        Args:
+            scope: Evaluation scope (target node, chart, project context)
+            query: Optional query for retrieval (not used in async mode)
+
+        Returns:
+            ContextResult with all four memory structures
+        """
+        import asyncio
+
+        import logfire
+        from asgiref.sync import sync_to_async
+
+        from pxnodes.llm.context.shared.graph_retrieval import get_full_path
+
+        with logfire.span(
+            "structural_memory.build_context_async",
+            target_node=scope.target_node.name,
+            chart=scope.chart.name,
+        ):
+            # ============================================================
+            # STAGE 1: Full Path Traversal (NOT just neighbors)
+            # ============================================================
+            with logfire.span("full_path_traversal"):
+                # Use get_full_path to get ALL nodes in the path, not just neighbors
+                graph_slice = await sync_to_async(get_full_path, thread_sensitive=True)(
+                    scope.target_node, scope.chart
+                )
+
+                # All nodes in path order: predecessors -> target -> successors
+                all_nodes = (
+                    graph_slice.previous_nodes
+                    + [scope.target_node]
+                    + graph_slice.next_nodes
+                )
+
+                logfire.info(
+                    "full_path_retrieved",
+                    total_nodes=len(all_nodes),
+                    previous_count=len(graph_slice.previous_nodes),
+                    next_count=len(graph_slice.next_nodes),
+                    path_order=[n.name for n in all_nodes],
+                )
+
+            # ============================================================
+            # STAGE 2: Parallel Memory Extraction
+            # ============================================================
+
+            # 1. Extract CHUNKS (deterministic - no LLM needed)
+            with logfire.span("extract_chunks", node_count=len(all_nodes)):
+                all_chunks: list[Chunk] = []
+                for node in all_nodes:
+                    chunks = await sync_to_async(extract_chunks, thread_sensitive=True)(
+                        node
+                    )
+                    all_chunks.extend(chunks)
+                logfire.info("chunks_extracted", count=len(all_chunks))
+
+            # 2. PARALLEL: Extract knowledge triples + atomic facts for all nodes
+            all_triples: list[KnowledgeTriple] = []
+            all_facts: list[AtomicFact] = []
+
+            if self.llm_provider and not self.skip_fact_extraction:
+                with logfire.span(
+                    "extract_knowledge_structures",
+                    node_count=len(all_nodes),
+                    extraction_types=["knowledge_triples", "atomic_facts"],
+                ):
+                    # Create parallel tasks for each node
+                    triple_tasks = [
+                        extract_all_triples_async(node, scope.chart, self.llm_provider)
+                        for node in all_nodes
+                    ]
+                    fact_tasks = [
+                        extract_atomic_facts_async(
+                            node, self.llm_provider, force_regenerate=True
+                        )
+                        for node in all_nodes
+                    ]
+
+                    # Run all in parallel
+                    results = await asyncio.gather(
+                        *triple_tasks, *fact_tasks, return_exceptions=True
+                    )
+
+                    # Split results
+                    triple_results = results[: len(all_nodes)]
+                    fact_results = results[len(all_nodes) :]
+
+                    # Aggregate triples
+                    for result in triple_results:
+                        if isinstance(result, list):
+                            all_triples.extend(result)
+                        elif isinstance(result, Exception):
+                            logger.warning(f"Triple extraction failed: {result}")
+
+                    # Aggregate facts
+                    for result in fact_results:
+                        if isinstance(result, list):
+                            all_facts.extend(result)
+                        elif isinstance(result, Exception):
+                            logger.warning(f"Fact extraction failed: {result}")
+
+                    logfire.info(
+                        "knowledge_structures_extracted",
+                        triple_count=len(all_triples),
+                        fact_count=len(all_facts),
+                    )
+            else:
+                # Fallback: extract triples only (no LLM)
+                for node in all_nodes:
+                    triples = await sync_to_async(
+                        extract_all_triples, thread_sensitive=True
+                    )(node, scope.chart, include_neighbors=False)
+                    all_triples.extend(triples)
+
+            # Compute derived triples (intensity deltas, category transitions)
+            with logfire.span("compute_derived_triples"):
+                derived_triples = await sync_to_async(
+                    compute_derived_triples, thread_sensitive=True
+                )(
+                    scope.target_node,
+                    graph_slice.previous_nodes,
+                    graph_slice.next_nodes,
+                )
+                all_triples.extend(derived_triples)
+                logfire.info("derived_triples_computed", count=len(derived_triples))
+
+            # 3. PARALLEL: Extract summaries for all nodes
+            all_summaries: list[Summary] = []
+
+            if self.llm_provider and not self.skip_summary_extraction:
+                with logfire.span(
+                    "extract_summaries",
+                    node_count=len(all_nodes),
+                ):
+                    summary_tasks = [
+                        extract_summary_async(node, self.llm_provider)
+                        for node in all_nodes
+                    ]
+
+                    summary_results = await asyncio.gather(
+                        *summary_tasks, return_exceptions=True
+                    )
+
+                    for result in summary_results:
+                        if isinstance(result, Summary):
+                            all_summaries.append(result)
+                        elif isinstance(result, Exception):
+                            logger.warning(f"Summary extraction failed: {result}")
+
+                    logfire.info("summaries_extracted", count=len(all_summaries))
+            else:
+                # Use fallback summaries when LLM unavailable
+                for node in all_nodes:
+                    all_summaries.append(create_fallback_summary(node))
+
+            # ============================================================
+            # STAGE 3: Build Context Result
+            # ============================================================
+            with logfire.span("build_context_result"):
+                context_string = self._build_context_string(
+                    scope,
+                    graph_slice,
+                    all_chunks,
+                    all_triples,
+                    all_facts,
+                    all_summaries,
+                )
+
+                # Pass graph_slice to avoid sync Django ORM calls in async context
+                layers = self._create_synthetic_layers(
+                    scope,
+                    all_chunks,
+                    all_triples,
+                    all_facts,
+                    all_summaries,
+                    graph_slice=graph_slice,
+                )
+
+            return ContextResult(
+                strategy=self.strategy_type,
+                context_string=context_string,
+                layers=layers,
+                chunks=all_chunks,
+                triples=all_triples,
+                facts=all_facts,
+                summaries=all_summaries,
+                metadata={
+                    "target_node_id": str(scope.target_node.id),
+                    "target_node_name": scope.target_node.name,
+                    "previous_count": len(graph_slice.previous_nodes),
+                    "next_count": len(graph_slice.next_nodes),
+                    "chunk_count": len(all_chunks),
+                    "triple_count": len(all_triples),
+                    "fact_count": len(all_facts),
+                    "summary_count": len(all_summaries),
+                    "derived_triple_count": len(derived_triples),
+                    "retrieval_method": "async_parallel_extraction",
+                },
+            )
 
     def get_layer_context(
         self,
@@ -625,6 +843,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         triples: list[KnowledgeTriple],
         facts: list[AtomicFact],
         summaries: list[Summary],
+        graph_slice: Optional[Any] = None,
     ) -> list[LayerContext]:
         """
         Create synthetic hierarchy layers for compatibility.
@@ -634,6 +853,14 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         - L2 Category: Chart-level context
         - L3 Trace: Neighbor nodes summary
         - L4 Episode: Target node with all four memory types
+
+        Args:
+            scope: Evaluation scope
+            chunks: Extracted chunks
+            triples: Extracted triples
+            facts: Extracted facts
+            summaries: Extracted summaries
+            graph_slice: Optional pre-fetched graph slice (to avoid sync calls in async)
         """
         # Store for use in layer building
         self._current_chunks = chunks
@@ -651,10 +878,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         layers.append(self._build_chart_layer(scope))
 
         # L3 Trace (neighbor overview)
-        layers.append(self._build_neighbor_layer(scope))
+        layers.append(self._build_neighbor_layer(scope, graph_slice=graph_slice))
 
         # L4 Episode (node level with all memory structures)
-        layers.append(self._build_node_layer(scope))
+        # Pass pre-computed triples to avoid sync DB call in async context
+        layers.append(self._build_node_layer(scope, triples=triples))
 
         return layers
 
@@ -689,11 +917,21 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             metadata={"chart_id": str(chart.id)},
         )
 
-    def _build_neighbor_layer(self, scope: EvaluationScope) -> LayerContext:
-        """Build L3 Trace layer from neighbors."""
-        from pxnodes.llm.context.shared.graph_retrieval import get_graph_slice
+    def _build_neighbor_layer(
+        self,
+        scope: EvaluationScope,
+        graph_slice: Optional[Any] = None,
+    ) -> LayerContext:
+        """Build L3 Trace layer from neighbors.
 
-        graph_slice = get_graph_slice(scope.target_node, scope.chart, depth=1)
+        Args:
+            scope: Evaluation scope
+            graph_slice: Optional pre-fetched graph slice (avoids sync call in async)
+        """
+        if graph_slice is None:
+            from pxnodes.llm.context.shared.graph_retrieval import get_graph_slice
+
+            graph_slice = get_graph_slice(scope.target_node, scope.chart, depth=1)
 
         prev_names = [n.name for n in graph_slice.previous_nodes]
         next_names = [n.name for n in graph_slice.next_nodes]
@@ -711,10 +949,27 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             },
         )
 
-    def _build_node_layer(self, scope: EvaluationScope) -> LayerContext:
-        """Build L4 Episode layer from target node."""
+    def _build_node_layer(
+        self,
+        scope: EvaluationScope,
+        triples: Optional[list[KnowledgeTriple]] = None,
+    ) -> LayerContext:
+        """Build L4 Episode layer from target node.
+
+        Args:
+            scope: Evaluation scope
+            triples: Optional pre-computed triples (avoids sync call in async)
+        """
         node = scope.target_node
-        triples = extract_all_triples(node, scope.chart, include_neighbors=False)
+
+        # Use pre-computed triples if provided, otherwise extract
+        if triples is None:
+            node_triples = extract_all_triples(
+                node, scope.chart, include_neighbors=False
+            )
+        else:
+            # Filter triples for this node
+            node_triples = [t for t in triples if t.head == node.name]
 
         content_parts = [
             f"Node: {node.name}",
@@ -722,14 +977,14 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             "",
             "Knowledge Triples:",
         ]
-        for t in triples[:10]:  # Limit to avoid huge context
+        for t in node_triples[:10]:  # Limit to avoid huge context
             content_parts.append(f"  - {t}")
 
         return LayerContext(
             layer=4,
             layer_name=get_layer_name(4),
             content="\n".join(content_parts),
-            metadata={"node_id": str(node.id), "triple_count": len(triples)},
+            metadata={"node_id": str(node.id), "triple_count": len(node_triples)},
         )
 
     @property

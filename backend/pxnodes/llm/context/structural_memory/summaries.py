@@ -204,3 +204,67 @@ def extract_summaries_batch(
         results[node_id] = summary
 
     return results
+
+
+async def extract_summary_async(
+    node: PxNode,
+    llm_provider: LLMProvider,
+) -> Summary:
+    """
+    Async version of extract_summary for parallel execution.
+
+    Uses thread_sensitive=False for LLM calls to enable true parallelism.
+    """
+    import logfire
+    from asgiref.sync import sync_to_async
+
+    node_id = str(node.id)
+    node_name = node.name
+
+    with logfire.span(
+        "extract_summary",
+        node_id=node_id,
+        node_name=node_name,
+    ):
+        logfire.info("generating_summary", node_name=node_name)
+
+        # Get components (sync Django ORM call - must use thread_sensitive=True)
+        components = await sync_to_async(
+            _get_node_components_for_prompt, thread_sensitive=True
+        )(node)
+        components_text = _format_components(components)
+
+        # Use description or fallback
+        description = node.description or "No description provided."
+
+        # Build the prompt
+        prompt = SUMMARY_EXTRACTION_PROMPT.format(
+            title=node_name,
+            description=description,
+            components=components_text,
+        )
+
+        # Generate using LLM - use thread_sensitive=False for true parallelism
+        # LLM calls are HTTP requests, not Django ORM, so safe to parallelize
+        try:
+            response = await sync_to_async(
+                llm_provider.generate, thread_sensitive=False
+            )(prompt)
+            summary_text = _clean_summary(response)
+
+            logfire.info(
+                "summary_generated",
+                node_name=node_name,
+                summary_length=len(summary_text),
+            )
+            return Summary(node_id=node_id, content=summary_text, source="llm")
+
+        except Exception as e:
+            logger.warning(f"Failed to extract summary for {node_name}: {e}")
+            logfire.error(
+                "summary_failed",
+                node_name=node_name,
+                error=str(e),
+            )
+            # Return fallback summary
+            return create_fallback_summary(node)

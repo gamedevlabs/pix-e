@@ -70,14 +70,9 @@ async function dismissIssue(pillar: Pillar, index: number) {
         </div>
       </SimpleCardSection>
 
-      <!-- Agentic Evaluation Panel -->
+      <!-- Pillar Evaluation Panel (supports both Monolithic and Agentic modes) -->
       <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
         <PillarEvaluationPanel />
-      </div>
-
-      <!-- Monolithic Feedback Panel -->
-      <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
-        <PillarMonolithicFeedbackPanel />
       </div>
     </div>
 

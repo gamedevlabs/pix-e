@@ -5,18 +5,6 @@ const items = ref<Pillar[]>([])
 const loading = ref(false)
 const error = ref<unknown>(null)
 
-const llmFeedback = ref<PillarsInContextFeedback>({
-  coverage: {
-    pillarFeedback: [],
-  },
-  contradictions: {
-    contradictions: [],
-  },
-  proposedAdditions: {
-    additions: [],
-  },
-})
-
 const featureFeedback = ref<ContextInPillarsFeedback>({
   rating: 0,
   feedback: '',
@@ -24,10 +12,11 @@ const featureFeedback = ref<ContextInPillarsFeedback>({
 
 const additionalFeature = ref<string>('')
 
-// Agentic evaluation state
+// Evaluation state (supports both monolithic and agentic modes)
 const evaluationResult = ref<EvaluateAllResponse | null>(null)
 const isEvaluating = ref(false)
 const evaluationError = ref<string | null>(null)
+const executionMode = ref<ExecutionMode>('agentic')
 
 export function usePillars() {
   const config = useRuntimeConfig()
@@ -124,10 +113,6 @@ export function usePillars() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
 
-  async function getPillarsInContextFeedback() {
-    llmFeedback.value = await pillarsApi.getPillarsInContextAPICall()
-  }
-
   async function validatePillar(pillar: Pillar) {
     return await pillarsApi.validatePillarAPICall(pillar)
   }
@@ -140,35 +125,28 @@ export function usePillars() {
     return await pillarsApi.acceptPillarFixAPICall(pillarId, name, description)
   }
 
-  async function getPillarContradictions() {
-    llmFeedback.value.contradictions = await pillarsApi.getPillarsContradictionsAPICall()
-  }
-
-  async function getPillarsCompleteness() {
-    llmFeedback.value.coverage = await pillarsApi.getPillarsCompletenessAPICall()
-  }
-
-  async function getPillarsAdditions() {
-    llmFeedback.value.proposedAdditions = await pillarsApi.getPillarsAdditionsAPICall()
-  }
-
   async function getContextInPillarsFeedback() {
     featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
   }
 
-  // --- New agentic evaluation methods ---
+  // --- Evaluation methods (supports monolithic and agentic modes) ---
 
-  async function evaluateAll() {
+  async function evaluateAll(mode?: ExecutionMode) {
     isEvaluating.value = true
     evaluationError.value = null
+    const modeToUse = mode ?? executionMode.value
     try {
-      evaluationResult.value = await pillarsApi.evaluateAllAPICall()
+      evaluationResult.value = await pillarsApi.evaluateAllAPICall(modeToUse)
     } catch (err) {
       console.error('Error evaluating pillars:', err)
       evaluationError.value = 'Failed to evaluate pillars. Please try again.'
     } finally {
       isEvaluating.value = false
     }
+  }
+
+  function setExecutionMode(mode: ExecutionMode) {
+    executionMode.value = mode
   }
 
   async function resolveContradictions(contradictions: ContradictionsResponse) {
@@ -205,24 +183,21 @@ export function usePillars() {
     fetchConceptHistory,
     restoreConcept,
     // Pillar-specific state
-    llmFeedback,
     featureFeedback,
     additionalFeature,
     // Pillar operations
     validatePillar,
     updateDesignIdea,
-    getPillarsInContextFeedback,
     fixPillarWithAI,
     acceptPillarFix,
-    getPillarContradictions,
-    getPillarsCompleteness,
-    getPillarsAdditions,
     getContextInPillarsFeedback,
-    // Agentic evaluation
+    // Evaluation (monolithic + agentic)
     evaluationResult,
     isEvaluating,
     evaluationError,
+    executionMode,
     evaluateAll,
+    setExecutionMode,
     resolveContradictions,
     acceptAddition,
     clearEvaluation,

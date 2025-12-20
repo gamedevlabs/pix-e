@@ -10,6 +10,7 @@ from typing import Any, Dict
 from llm import BaseOperationHandler
 from llm.exceptions import InvalidRequestError
 from pillars.llm.prompts import (
+    ComprehensivePillarsEvaluationPrompt,
     ContextInPillarsPrompt,
     ImprovePillarWithExplanationPrompt,
     PillarAdditionPromptSimple,
@@ -18,6 +19,7 @@ from pillars.llm.prompts import (
     ValidationPrompt,
 )
 from pillars.llm.schemas import (
+    ComprehensivePillarsEvaluation,
     ContextInPillarsResponse,
     ImprovedPillarResponse,
     PillarAdditionsFeedback,
@@ -158,6 +160,39 @@ class EvaluateContextHandler(BaseOperationHandler):
         pillars_text = data["pillars_text"]
         context = data["context"]
         return ContextInPillarsPrompt % (context, pillars_text)
+
+    def validate_input(self, data: Dict[str, Any]) -> None:
+        if "pillars_text" not in data or "context" not in data:
+            raise InvalidRequestError(
+                message="Missing required fields: 'pillars_text' and 'context'"
+            )
+
+
+class ComprehensiveEvaluationHandler(BaseOperationHandler):
+    """
+    Monolithic handler for comprehensive pillar evaluation.
+
+    Combines all evaluation aspects in a single LLM call:
+    - Concept fit analysis
+    - Contradiction detection
+    - Suggested additions (if gaps)
+    - Resolution suggestions (if contradictions)
+    - Overall assessment
+
+    This is the baseline for RQ1 comparison against the agentic workflow.
+    """
+
+    operation_id = "pillars.evaluate_comprehensive"
+    description = (
+        "Comprehensive pillar evaluation in a single LLM call (monolithic baseline)"
+    )
+    version = "1.0.0"
+    response_schema = ComprehensivePillarsEvaluation
+
+    def build_prompt(self, data: Dict[str, Any]) -> str:
+        pillars_text = data["pillars_text"]
+        context = data["context"]
+        return ComprehensivePillarsEvaluationPrompt % (context, pillars_text)
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "pillars_text" not in data or "context" not in data:

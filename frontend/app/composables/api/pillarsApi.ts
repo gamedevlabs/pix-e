@@ -20,70 +20,6 @@
     }
   }
 
-  async function getPillarsInContextAPICall() {
-    return await $fetch<PillarsInContextFeedback>(
-      `${config.public.apiBase}/llm/feedback/overall/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
-  }
-
-  async function getPillarsContradictionsAPICall() {
-    return await $fetch<PillarContradictionsFeedback>(
-      `${config.public.apiBase}/llm/feedback/contradictions/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
-  }
-
-  async function getPillarsCompletenessAPICall() {
-    return await $fetch<PillarCompletenessFeedback>(
-      `${config.public.apiBase}/llm/feedback/completeness/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
-  }
-
-  async function getPillarsAdditionsAPICall() {
-    return await $fetch<PillarAdditionsFeedback>(
-      `${config.public.apiBase}/llm/feedback/additions/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
-  }
-
   async function validatePillarAPICall(pillar: Pillar) {
     pillar.llm_feedback = await $fetch<PillarFeedback>(
       `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
@@ -153,13 +89,14 @@
 
   // --- New agentic evaluation endpoints ---
 
-  async function evaluateAllAPICall() {
+  async function evaluateAllAPICall(executionMode: ExecutionMode = 'agentic') {
     return await $fetch<EvaluateAllResponse>(
       `${config.public.apiBase}/llm/feedback/evaluate-all/`,
       {
         method: 'POST',
         body: {
           model: llm.active_llm,
+          execution_mode: executionMode,
         },
         credentials: 'include',
         headers: {
@@ -203,13 +140,10 @@
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
-    getPillarsInContextAPICall,
-    getPillarsContradictionsAPICall,
-    getPillarsCompletenessAPICall,
-    getPillarsAdditionsAPICall,
     fixPillarWithAIAPICall,
     acceptPillarFixAPICall,
     getContextInPillarsAPICall,
+    // Unified evaluation (monolithic + agentic)
     evaluateAllAPICall,
     resolveContradictionsAPICall,
     acceptAdditionAPICall,

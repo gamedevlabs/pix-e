@@ -149,6 +149,90 @@ def get_node_position_in_chart(node: PxNode, chart: PxChart) -> Optional[int]:
     return count_depth(container, 0)
 
 
+def get_full_path(
+    target_node: PxNode,
+    chart: PxChart,
+    max_backward: int = 20,
+    max_forward: int = 20,
+) -> GraphSlice:
+    """
+    Get the FULL path through a node - all predecessors and successors.
+
+    Unlike get_graph_slice which only gets immediate neighbors (or limited depth),
+    this function traverses the entire graph to find ALL nodes that lead to or
+    follow from the target node.
+
+    Args:
+        target_node: The node to center the path on
+        chart: The chart containing the node
+        max_backward: Maximum nodes to traverse backward (default: 20)
+        max_forward: Maximum nodes to traverse forward (default: 20)
+
+    Returns:
+        GraphSlice with all predecessor and successor nodes in path order
+    """
+    slice_result = GraphSlice(target=target_node, chart=chart)
+
+    # Find container(s) containing this node
+    target_containers = list(chart.containers.filter(content=target_node))
+
+    if not target_containers:
+        return slice_result
+
+    slice_result.target_container = target_containers[0]
+
+    # Traverse backward to find ALL predecessors (in reverse order)
+    previous_nodes: list[PxNode] = []
+    previous_containers: list[PxChartContainer] = []
+    visited_backward: set[str] = {str(target_node.id)}
+
+    def traverse_backward(container: PxChartContainer, depth: int = 0) -> None:
+        if depth >= max_backward:
+            return
+
+        for edge in container.incoming_edges.select_related("source__content").all():
+            if edge.source and edge.source.content:
+                node_id = str(edge.source.content.id)
+                if node_id not in visited_backward:
+                    visited_backward.add(node_id)
+                    # Insert at beginning to maintain path order
+                    previous_nodes.insert(0, edge.source.content)
+                    previous_containers.insert(0, edge.source)
+                    # Recursively get predecessors
+                    traverse_backward(edge.source, depth + 1)
+
+    # Traverse forward to find ALL successors (in order)
+    next_nodes: list[PxNode] = []
+    next_containers: list[PxChartContainer] = []
+    visited_forward: set[str] = {str(target_node.id)}
+
+    def traverse_forward(container: PxChartContainer, depth: int = 0) -> None:
+        if depth >= max_forward:
+            return
+
+        for edge in container.outgoing_edges.select_related("target__content").all():
+            if edge.target and edge.target.content:
+                node_id = str(edge.target.content.id)
+                if node_id not in visited_forward:
+                    visited_forward.add(node_id)
+                    next_nodes.append(edge.target.content)
+                    next_containers.append(edge.target)
+                    # Recursively get successors
+                    traverse_forward(edge.target, depth + 1)
+
+    # Start traversal from target container
+    for container in target_containers:
+        traverse_backward(container)
+        traverse_forward(container)
+
+    slice_result.previous_nodes = previous_nodes
+    slice_result.next_nodes = next_nodes
+    slice_result.previous_containers = previous_containers
+    slice_result.next_containers = next_containers
+
+    return slice_result
+
+
 def get_all_paths_through_node(
     node: PxNode,
     chart: PxChart,

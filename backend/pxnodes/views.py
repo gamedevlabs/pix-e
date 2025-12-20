@@ -366,15 +366,22 @@ class StrategyEvaluateView(APIView):
     """
     Evaluate node coherence using a specific context strategy.
 
+    Supports both monolithic (single LLM call) and agentic (parallel agents) modes.
+
     POST /context/evaluate/
     {
         "chart_id": "uuid",
         "node_id": "uuid",
         "strategy": "structural_memory",  // or hierarchical_graph, hmem, combined
+        "execution_mode": "monolithic",  // or "agentic" (default: "monolithic")
         "llm_model": "gpt-4o-mini"  // optional
     }
 
     Returns evaluation result with context metadata.
+
+    Monolithic mode: Single LLM call evaluates all coherence dimensions together.
+    Agentic mode: 4 parallel dimension agents (prerequisite, forward,
+    internal, contextual).
     """
 
     permission_classes = [IsAuthenticated]
@@ -386,6 +393,7 @@ class StrategyEvaluateView(APIView):
             chart_id = request.data.get("chart_id")
             node_id = request.data.get("node_id")
             strategy = request.data.get("strategy", "structural_memory")
+            execution_mode = request.data.get("execution_mode", "monolithic")
             llm_model = request.data.get("llm_model", "gpt-4o-mini")
 
             if not chart_id or not node_id:
@@ -404,6 +412,14 @@ class StrategyEvaluateView(APIView):
             if strategy not in valid_strategies:
                 return Response(
                     {"error": f"Invalid strategy. Must be one of: {valid_strategies}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate execution mode
+            valid_modes = ["monolithic", "agentic"]
+            if execution_mode not in valid_modes:
+                return Response(
+                    {"error": f"Invalid execution_mode. Must be one of: {valid_modes}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -436,6 +452,7 @@ class StrategyEvaluateView(APIView):
                 chart_id=str(chart_id),
                 node_id=str(node_id),
                 strategy=strategy,
+                execution_mode=execution_mode,
                 pillars_count=len(pillars),
                 has_game_concept=game_concept is not None,
             )
@@ -443,7 +460,6 @@ class StrategyEvaluateView(APIView):
             try:
                 from pxnodes.llm.context.base import StrategyType
                 from pxnodes.llm.context.shared import create_llm_provider
-                from pxnodes.llm.context.strategy_evaluator import StrategyEvaluator
 
                 # Create LLM provider
                 llm_provider = create_llm_provider(
@@ -451,31 +467,72 @@ class StrategyEvaluateView(APIView):
                     temperature=0.3,
                 )
 
-                # Create evaluator
                 strategy_type = StrategyType(strategy)
-                evaluator = StrategyEvaluator(llm_provider=llm_provider)
 
-                # Evaluate with project context
-                result = evaluator.evaluate_node(
-                    node=node,
-                    chart=chart,
-                    strategy_type=strategy_type,
-                    project_pillars=pillars,
-                    game_concept=game_concept,
+                # Import shared dependencies
+                import asyncio
+
+                from llm.providers.manager import ModelManager
+                from pxnodes.llm.workflows import (
+                    PxNodesCoherenceMonolithicWorkflow,
+                    PxNodesCoherenceWorkflow,
                 )
+
+                model_manager = ModelManager()
+
+                if execution_mode == "agentic":
+                    # Use agentic workflow with 4 parallel dimension agents
+                    workflow = PxNodesCoherenceWorkflow(
+                        model_manager=model_manager,
+                        strategy_type=strategy_type,
+                        llm_provider=llm_provider,
+                    )
+
+                    # Run async workflow
+                    result = asyncio.run(
+                        workflow.evaluate_node(
+                            node=node,
+                            chart=chart,
+                            model_id=llm_model,
+                            project_pillars=pillars,
+                            game_concept=game_concept,
+                        )
+                    )
+                else:
+                    # Use monolithic workflow with unified prompt
+                    # Same response schema as agentic for fair thesis comparison
+                    workflow = PxNodesCoherenceMonolithicWorkflow(
+                        model_manager=model_manager,
+                        strategy_type=strategy_type,
+                        llm_provider=llm_provider,
+                    )
+
+                    # Run async workflow
+                    result = asyncio.run(
+                        workflow.evaluate_node(
+                            node=node,
+                            chart=chart,
+                            model_id=llm_model,
+                            project_pillars=pillars,
+                            game_concept=game_concept,
+                        )
+                    )
 
                 logfire.info(
                     "context.api.strategy_evaluate.complete",
                     node_id=str(node_id),
                     strategy=strategy,
+                    execution_mode=execution_mode,
                     is_coherent=result.is_coherent,
-                    issues_count=len(result.issues),
+                    overall_score=result.overall_score,
+                    total_issues=result.total_issues,
                 )
 
                 return Response(
                     {
                         "success": True,
-                        "result": result.to_dict(),
+                        "execution_mode": execution_mode,
+                        "result": result.model_dump(),
                     }
                 )
 

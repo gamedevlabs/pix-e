@@ -197,6 +197,9 @@ class StrategyEvaluator:
             self._strategy_cache[strategy_type] = StrategyRegistry.create(
                 strategy_type,
                 llm_provider=self.llm_provider,
+                # Use direct extraction to ensure fresh LLM-based fact/summary
+                # extraction. Iterative retrieval requires pre-indexed memories.
+                use_iterative_retrieval=False,
             )
         return self._strategy_cache[strategy_type]
 
