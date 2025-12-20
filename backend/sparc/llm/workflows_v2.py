@@ -368,7 +368,7 @@ class SPARCRouterWorkflow:
         from asgiref.sync import sync_to_async
 
         from pillars.models import Pillar
-        from pillars.views import format_pillars_text
+        from pillars.utils import format_pillars_text
         from sparc.llm.agents.v2.pillar_context import PillarContextAgent
         from sparc.llm.schemas.v2.pillar_context import PillarContextResponse
 

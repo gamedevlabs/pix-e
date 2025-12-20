@@ -70,7 +70,10 @@
     })
   }
 
-  async function getContextInPillarsAPICall(context: string) {
+  async function getContextInPillarsAPICall(
+    context: string,
+    contextStrategy: PillarsContextStrategy = 'raw',
+  ) {
     return await $fetch<ContextInPillarsFeedback>(
       `${config.public.apiBase}/llm/feedback/context/`,
       {
@@ -78,6 +81,7 @@
         body: {
           model: llm.active_llm,
           context: context,
+          context_strategy: contextStrategy,
         },
         credentials: 'include',
         headers: {
@@ -89,7 +93,10 @@
 
   // --- New agentic evaluation endpoints ---
 
-  async function evaluateAllAPICall(executionMode: ExecutionMode = 'agentic') {
+  async function evaluateAllAPICall(
+    executionMode: ExecutionMode = 'agentic',
+    contextStrategy: PillarsContextStrategy = 'raw',
+  ) {
     return await $fetch<EvaluateAllResponse>(
       `${config.public.apiBase}/llm/feedback/evaluate-all/`,
       {
@@ -97,6 +104,7 @@
         body: {
           model: llm.active_llm,
           execution_mode: executionMode,
+          context_strategy: contextStrategy,
         },
         credentials: 'include',
         headers: {
@@ -106,7 +114,10 @@
     )
   }
 
-  async function resolveContradictionsAPICall(contradictions: ContradictionsResponse) {
+  async function resolveContradictionsAPICall(
+    contradictions: ContradictionsResponse,
+    contextStrategy: PillarsContextStrategy = 'raw',
+  ) {
     return await $fetch<ContradictionResolutionResponse>(
       `${config.public.apiBase}/llm/feedback/resolve-contradictions/`,
       {
@@ -114,6 +125,7 @@
         body: {
           model: llm.active_llm,
           contradictions: contradictions,
+          context_strategy: contextStrategy,
         },
         credentials: 'include',
         headers: {
