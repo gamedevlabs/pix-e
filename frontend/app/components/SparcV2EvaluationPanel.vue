@@ -8,6 +8,7 @@ const {
   progressCurrent,
   progressTotal,
   pillarMode,
+  contextStrategy,
   uploadedDocument,
   runV2Evaluation,
   runAspectEvaluation,
@@ -27,6 +28,33 @@ const pillarModeOptions = [
   { value: 'none', label: 'None', description: 'No pillar context' },
 ]
 
+const contextStrategyOptions = [
+  {
+    value: 'router',
+    label: 'Router',
+    description: 'Router extracts aspect-specific context (default)',
+  },
+  {
+    value: 'structural_memory',
+    label: 'Structural Memory',
+    description: 'Chunks + facts + triples + summaries with iterative retrieval',
+  },
+  {
+    value: 'hmem',
+    label: 'H-MEM',
+    description: 'Hierarchical routing with layered summaries',
+  },
+  {
+    value: 'combined',
+    label: 'Combined',
+    description: 'H-MEM routing plus structural memory retrieval',
+  },
+  {
+    value: 'full_text',
+    label: 'Full Text',
+    description: 'All aspects receive the full game text',
+  },
+]
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const fileError = ref<string>('')
 
@@ -146,6 +174,21 @@ function clearFile() {
           />
           <span class="text-xs text-neutral-500">
             {{ pillarModeOptions.find((o) => o.value === pillarMode)?.description }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <label class="text-sm text-neutral-400 font-medium">Context Strategy:</label>
+          <USelect
+            v-model="contextStrategy"
+            :items="contextStrategyOptions"
+            value-key="value"
+            label-key="label"
+            :disabled="isEvaluating"
+            size="sm"
+          />
+          <span class="text-xs text-neutral-500">
+            {{ contextStrategyOptions.find((o) => o.value === contextStrategy)?.description }}
           </span>
         </div>
 

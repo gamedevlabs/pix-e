@@ -96,6 +96,7 @@ class SPARCV2StreamView(APIView):
             model_id = get_model_id(model_name)
             context_text = request.data.get("context", "")
             pillar_mode = request.data.get("pillar_mode", "smart")
+            context_strategy = request.data.get("context_strategy")
             if pillar_mode not in VALID_PILLAR_MODES:
                 return StreamingHttpResponse(
                     self._error_stream("Invalid pillar_mode"),
@@ -166,6 +167,7 @@ class SPARCV2StreamView(APIView):
                     game_text,
                     context_text,
                     pillar_mode,
+                    context_strategy,
                     model_id,
                     evaluation,
                     cast(User, request.user),
@@ -194,6 +196,7 @@ class SPARCV2StreamView(APIView):
         game_text: str,
         context_text: str,
         pillar_mode: str,
+        context_strategy: Optional[str],
         model_id: str,
         evaluation: SPARCEvaluation,
         user: User,
@@ -229,6 +232,8 @@ class SPARCV2StreamView(APIView):
                 "context": context_text,
                 "pillar_mode": pillar_mode,
             }
+            if context_strategy:
+                request_data["context_strategy"] = context_strategy
 
             # Add document data if provided
             if document_data:

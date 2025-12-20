@@ -30,6 +30,8 @@ from sparc.llm.agents.v2 import (
 )
 from sparc.llm.agents.v2.aspect_base import AspectAgentV2
 from sparc.llm.agents.v2.document_context import DocumentContextAgent
+from sparc.llm.context import get_context_strategy
+from sparc.llm.context.types import AspectContextResult, ContextStrategyType
 from sparc.llm.schemas.v2.document_context import DocumentContextResponse
 from sparc.llm.schemas.v2.router import RouterResponse
 from sparc.llm.schemas.v2.synthesis import SPARCV2Response
@@ -116,8 +118,31 @@ class SPARCRouterWorkflow:
         errors: List[ErrorInfo] = []
         agent_results: List[AgentResult] = []
 
+        # Resolve context strategy (default to router)
+        strategy_name = request.data.get("context_strategy")
+        if not strategy_name:
+            strategy_name = ContextStrategyType.ROUTER.value
+        try:
+            context_strategy = get_context_strategy(
+                strategy_name,
+                model_manager=self.model_manager,
+                model_id=context.get("model_id"),
+            )
+        except ValueError as e:
+            errors.append(
+                ErrorInfo(
+                    code="CONTEXT_STRATEGY_UNSUPPORTED",
+                    message=str(e),
+                    severity="error",
+                    context={"context_strategy": strategy_name},
+                )
+            )
+            return self._build_error_result(errors, agent_results, start_time)
+
         # Step 1: Run router, pillar context, and document context in parallel
-        router_task = self._run_router(context, target_aspects)
+        router_task = None
+        if context_strategy.requires_router:
+            router_task = self._run_router(context, target_aspects)
         pillar_task = self._run_pillar_context(context, request.data)
 
         # Document task is optional
@@ -127,39 +152,53 @@ class SPARCRouterWorkflow:
             document_task = self._run_document_context(
                 context, document_file, target_aspects
             )
-            router_result, pillar_result, document_result = await asyncio.gather(
-                router_task, pillar_task, document_task, return_exceptions=True
-            )
+            tasks = [pillar_task, document_task]
+            if router_task:
+                tasks.insert(0, router_task)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            if router_task:
+                router_result, pillar_result, document_result = results
+            else:
+                pillar_result, document_result = results
+                router_result = None
         else:
-            router_result, pillar_result = await asyncio.gather(
-                router_task, pillar_task, return_exceptions=True
-            )
+            tasks = [pillar_task]
+            if router_task:
+                tasks.insert(0, router_task)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            if router_task:
+                router_result, pillar_result = results
+            else:
+                pillar_result = results[0]
+                router_result = None
             document_result = None
 
         # Handle router result
-        if isinstance(router_result, Exception):
-            errors.append(
-                ErrorInfo(
-                    code="ROUTER_EXCEPTION",
-                    message=str(router_result),
-                    severity="error",
+        router_response = None
+        if context_strategy.requires_router:
+            if isinstance(router_result, Exception):
+                errors.append(
+                    ErrorInfo(
+                        code="ROUTER_EXCEPTION",
+                        message=str(router_result),
+                        severity="error",
+                    )
                 )
-            )
-            return self._build_error_result(errors, agent_results, start_time)
+                return self._build_error_result(errors, agent_results, start_time)
 
-        # At this point, router_result is guaranteed to be AgentResult
-        assert isinstance(router_result, AgentResult)
-        agent_results.append(router_result)
+            assert isinstance(router_result, AgentResult)
+            agent_results.append(router_result)
 
-        if not router_result.success:
-            if router_result.error:
-                errors.append(router_result.error)
-            return self._build_error_result(errors, agent_results, start_time)
+            if not router_result.success:
+                if router_result.error:
+                    errors.append(router_result.error)
+                return self._build_error_result(errors, agent_results, start_time)
 
-        if not router_result.data:
-            return self._build_error_result(errors, agent_results, start_time)
+            if not router_result.data:
+                return self._build_error_result(errors, agent_results, start_time)
 
-        router_response = RouterResponse(**router_result.data)
+            router_response = RouterResponse(**router_result.data)
 
         # Handle pillar context result
         pillar_context = None
@@ -209,9 +248,31 @@ class SPARCRouterWorkflow:
                             exc_info=True,
                         )
 
+        # Build aspect contexts from the selected strategy
+        try:
+            aspect_contexts = await context_strategy.build_aspect_contexts(
+                request.data,
+                target_aspects,
+                router_response=router_response,
+            )
+        except Exception as e:
+            errors.append(
+                ErrorInfo(
+                    code="CONTEXT_STRATEGY_ERROR",
+                    message=str(e),
+                    severity="error",
+                    context={"context_strategy": strategy_name},
+                )
+            )
+            return self._build_error_result(errors, agent_results, start_time)
+
         # Step 2: Run aspect agents in parallel
         aspect_results = await self._run_aspect_agents(
-            context, router_response, target_aspects, pillar_context, document_context
+            context,
+            aspect_contexts,
+            target_aspects,
+            pillar_context,
+            document_context,
         )
         agent_results.extend(aspect_results)
 
@@ -554,7 +615,7 @@ class SPARCRouterWorkflow:
     async def _run_aspect_agents(
         self,
         context: Dict[str, Any],
-        router_response: RouterResponse,
+        aspect_contexts: AspectContextResult,
         target_aspects: List[str],
         pillar_context: Optional[Dict[str, Any]] = None,
         document_context: Optional[DocumentContextResponse] = None,
@@ -569,8 +630,7 @@ class SPARCRouterWorkflow:
             if not agent_class:
                 continue
 
-            extraction = router_response.get_extraction(aspect_name)
-            sections = extraction.extracted_sections if extraction else []
+            sections = aspect_contexts.get_sections(aspect_name)
 
             # Get document extraction for this aspect
             document_sections = []

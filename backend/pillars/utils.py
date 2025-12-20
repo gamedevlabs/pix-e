@@ -14,6 +14,11 @@ from llm.types import AgentResult, ExecutionResult, LLMResponse
 from .models import Pillar, PillarLLMCall
 
 
+def format_pillars_text(pillars: list[Pillar]) -> str:
+    """Format pillars as text for LLM prompts."""
+    return "\n".join([f"[ID: {p.id}] {p.name}: {p.description}" for p in pillars])
+
+
 def save_pillar_llm_call(
     user: User,
     operation: str,

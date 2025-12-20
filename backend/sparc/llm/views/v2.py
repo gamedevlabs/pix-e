@@ -110,6 +110,7 @@ class SPARCV2EvaluateView(APIView):
             # Resolve optional inputs
             context_text = request.data.get("context", "")
             pillar_mode = request.data.get("pillar_mode", "smart")
+            context_strategy = request.data.get("context_strategy")
             if pillar_mode not in VALID_PILLAR_MODES:
                 return JsonResponse(
                     {"error": "Invalid pillar_mode"},
@@ -182,6 +183,7 @@ class SPARCV2EvaluateView(APIView):
                 mode="full",
                 evaluation=evaluation,
                 pillar_mode=pillar_mode,
+                context_strategy=context_strategy,
                 user=request.user if request.user.is_authenticated else None,
                 document_data=document_data,
             )
@@ -228,6 +230,7 @@ class SPARCV2EvaluateView(APIView):
         mode: str,
         evaluation: SPARCEvaluation,
         pillar_mode: str,
+        context_strategy: Optional[str],
         user: Optional[User],
         target_aspects: Optional[List[str]] = None,
         document_data: Optional[Dict[str, Any]] = None,
@@ -253,6 +256,8 @@ class SPARCV2EvaluateView(APIView):
             "context": context_text,
             "pillar_mode": pillar_mode,
         }
+        if context_strategy:
+            request_data["context_strategy"] = context_strategy
 
         # Add document data if provided
         if document_data:
@@ -322,6 +327,7 @@ class SPARCV2AspectView(APIView):
             # Resolve optional inputs
             context_text = request.data.get("context", "")
             pillar_mode = request.data.get("pillar_mode", "smart")
+            context_strategy = request.data.get("context_strategy")
             if pillar_mode not in VALID_PILLAR_MODES:
                 return JsonResponse(
                     {"error": "Invalid pillar_mode"},
@@ -388,6 +394,7 @@ class SPARCV2AspectView(APIView):
                 mode=mode,
                 evaluation=evaluation,
                 pillar_mode=pillar_mode,
+                context_strategy=context_strategy,
                 user=request.user if request.user.is_authenticated else None,
                 target_aspects=target_aspects,
             )
@@ -421,6 +428,7 @@ class SPARCV2AspectView(APIView):
         mode: str,
         evaluation: SPARCEvaluation,
         pillar_mode: str,
+        context_strategy: Optional[str],
         user: Optional[User],
         target_aspects: List[str],
     ) -> Dict[str, Any]:
@@ -439,14 +447,18 @@ class SPARCV2AspectView(APIView):
             user=user,
         )
 
+        request_data = {
+            "game_text": game_text,
+            "context": context_text,
+            "pillar_mode": pillar_mode,
+        }
+        if context_strategy:
+            request_data["context_strategy"] = context_strategy
+
         request = LLMRequest(
             feature="sparc",
             operation="router_v2",
-            data={
-                "game_text": game_text,
-                "context": context_text,
-                "pillar_mode": pillar_mode,
-            },
+            data=request_data,
             model_id=model_id,
             mode="agentic",
         )

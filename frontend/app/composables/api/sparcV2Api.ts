@@ -13,6 +13,7 @@ export function useSparcV2Api() {
     gameText: string,
     context: string = '',
     pillarMode: PillarMode = 'smart',
+    contextStrategy: SparcContextStrategy = 'router',
     document?: File,
   ) {
     // Use FormData if document is provided, otherwise use JSON
@@ -22,6 +23,7 @@ export function useSparcV2Api() {
       formData.append('context', context)
       formData.append('model', llm.active_llm || 'openai')
       formData.append('pillar_mode', pillarMode)
+      formData.append('context_strategy', contextStrategy)
       formData.append('document', document)
 
       return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
@@ -41,6 +43,7 @@ export function useSparcV2Api() {
           context: context,
           model: llm.active_llm,
           pillar_mode: pillarMode,
+          context_strategy: contextStrategy,
         },
         credentials: 'include',
         headers: {
@@ -54,6 +57,7 @@ export function useSparcV2Api() {
     gameText: string,
     context: string = '',
     pillarMode: PillarMode = 'smart',
+    contextStrategy: SparcContextStrategy = 'router',
     onProgress: (event: ProgressEvent) => void,
     onComplete: (result: SPARCV2Response) => void,
     onError: (error: string) => void,
@@ -72,6 +76,7 @@ export function useSparcV2Api() {
         formData.append('context', context)
         formData.append('model', llm.active_llm || 'openai')
         formData.append('pillar_mode', pillarMode)
+        formData.append('context_strategy', contextStrategy)
         formData.append('document', document)
         body = formData
         headers = {
@@ -83,6 +88,7 @@ export function useSparcV2Api() {
           context: context,
           model: llm.active_llm,
           pillar_mode: pillarMode,
+          context_strategy: contextStrategy,
         })
         headers = {
           'Content-Type': 'application/json',
@@ -150,6 +156,7 @@ export function useSparcV2Api() {
     gameText: string,
     aspect: SPARCV2AspectName,
     context: string = '',
+    contextStrategy: SparcContextStrategy = 'router',
   ) {
     return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/aspect/`, {
       method: 'POST',
@@ -157,6 +164,7 @@ export function useSparcV2Api() {
         game_text: gameText,
         aspect: aspect,
         context: context,
+        context_strategy: contextStrategy,
         model: llm.active_llm,
       },
       credentials: 'include',
@@ -170,6 +178,7 @@ export function useSparcV2Api() {
     gameText: string,
     aspects: SPARCV2AspectName[],
     context: string = '',
+    contextStrategy: SparcContextStrategy = 'router',
   ) {
     return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/aspects/`, {
       method: 'POST',
@@ -177,6 +186,7 @@ export function useSparcV2Api() {
         game_text: gameText,
         aspects: aspects,
         context: context,
+        context_strategy: contextStrategy,
         model: llm.active_llm,
       },
       credentials: 'include',
