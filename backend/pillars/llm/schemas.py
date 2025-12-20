@@ -118,6 +118,81 @@ class ContextInPillarsResponse(BaseModel):
     )
 
 
+class ComprehensivePillarsEvaluation(BaseModel):
+    """
+    Comprehensive evaluation result combining all aspects in a single response.
+
+    Used by the monolithic handler for RQ1 comparison (single LLM call baseline).
+    """
+
+    # Concept Fit
+    hasGaps: bool = Field(
+        description="Whether there are gaps in pillar coverage for the game concept"
+    )
+    pillarFeedback: list[CompletenessAnswer] = Field(
+        description="Reasoning for each pillar's fit with the concept"
+    )
+    missingAspects: list[str] = Field(
+        description="Aspects from the game concept not covered by pillars"
+    )
+
+    # Contradictions
+    hasContradictions: bool = Field(
+        description="Whether there are contradictions between pillars"
+    )
+    contradictions: list[ContradictionIssue] = Field(
+        description="List of contradictions found between pillars"
+    )
+
+    # Suggested Additions (only if gaps exist)
+    suggestedAdditions: list[LLMPillar] = Field(
+        default_factory=list,
+        description="Suggested new pillars to cover missing aspects",
+    )
+
+    # Resolution Suggestions (only if contradictions exist)
+    resolutionSuggestions: list[ResolutionSuggestion] = Field(
+        default_factory=list,
+        description="Suggestions for resolving contradictions",
+    )
+
+    # Overall Assessment
+    overallScore: int = Field(
+        ge=1,
+        le=5,
+        description="Overall quality score from 1 (needs work) to 5 (excellent)",
+    )
+    overallFeedback: str = Field(
+        description="Summary feedback on the pillar set as a whole"
+    )
+
+
+class SynthesisResult(BaseModel):
+    """
+    Synthesis result from the final synthesis agent.
+
+    Aggregates all evaluation results into an overall score and feedback.
+    Used in agentic mode to provide a final summary like monolithic mode.
+    """
+
+    overallScore: int = Field(
+        ge=1,
+        le=5,
+        description="Overall quality score from 1 (needs work) to 5 (excellent)",
+    )
+    overallFeedback: str = Field(
+        description="Summary feedback synthesizing all evaluation results"
+    )
+    strengths: list[str] = Field(
+        default_factory=list,
+        description="Key strengths identified across all evaluations",
+    )
+    areasForImprovement: list[str] = Field(
+        default_factory=list,
+        description="Key areas that need improvement",
+    )
+
+
 # --- Schemas for improved pillar with explanations ---
 
 

@@ -232,3 +232,91 @@ def create_title_fact(node: PxNode) -> AtomicFact:
         fact=f'This node is titled "{node.name}".',
         source_field="title",
     )
+
+
+async def extract_atomic_facts_async(
+    node: PxNode,
+    llm_provider: LLMProvider,
+    force_regenerate: bool = True,
+) -> list[AtomicFact]:
+    """
+    Async version of extract_atomic_facts for parallel execution.
+
+    Always uses force_regenerate=True to ensure fresh LLM-based extraction.
+    Uses thread_sensitive=False for LLM calls to enable true parallelism.
+    """
+    import logfire
+    from asgiref.sync import sync_to_async
+
+    node_id = str(node.id)
+    node_name = node.name
+
+    with logfire.span(
+        "extract_atomic_facts",
+        node_id=node_id,
+        node_name=node_name,
+    ):
+        # Check for cached facts in vector store first (if not force_regenerate)
+        if not force_regenerate:
+            cached_facts = await sync_to_async(
+                get_cached_facts_from_vector_store, thread_sensitive=True
+            )(node_id)
+            if cached_facts:
+                logfire.info(
+                    "atomic_facts_from_cache",
+                    node_name=node_name,
+                    fact_count=len(cached_facts),
+                )
+                return cached_facts
+
+        # Generate via LLM
+        logfire.info("generating_atomic_facts", node_name=node_name)
+
+        # Get components (sync Django ORM call - must use thread_sensitive=True)
+        components = await sync_to_async(
+            get_node_components_for_prompt, thread_sensitive=True
+        )(node)
+        components_text = format_components_for_prompt(components)
+
+        # Use description or fallback
+        description = node.description or "No description provided."
+
+        # Build the extraction prompt
+        prompt = ATOMIC_FACT_EXTRACTION_PROMPT.format(
+            title=node_name,
+            description=description,
+            components=components_text,
+        )
+
+        # Generate using LLM - use thread_sensitive=False for true parallelism
+        # LLM calls are HTTP requests, not Django ORM, so safe to parallelize
+        try:
+            response = await sync_to_async(
+                llm_provider.generate, thread_sensitive=False
+            )(prompt)
+            parsed_facts = parse_atomic_facts(response)
+
+            facts = [
+                AtomicFact(
+                    node_id=node_id,
+                    fact=fact_text,
+                    source_field="description",
+                )
+                for fact_text in parsed_facts
+            ]
+
+            logfire.info(
+                "atomic_facts_generated",
+                node_name=node_name,
+                fact_count=len(facts),
+            )
+            return facts
+
+        except Exception as e:
+            logger.warning(f"Failed to extract atomic facts for {node_name}: {e}")
+            logfire.error(
+                "atomic_facts_failed",
+                node_name=node_name,
+                error=str(e),
+            )
+            return []

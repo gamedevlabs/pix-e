@@ -15,12 +15,14 @@ from pillars.llm.prompts import (
     PillarAdditionPrompt,
     PillarAdditionPromptSimple,
     PillarContradictionPrompt,
+    SynthesisPrompt,
 )
 from pillars.llm.schemas import (
     ContradictionResolutionResponse,
     PillarAdditionsFeedback,
     PillarCompletenessResponse,
     PillarContradictionResponse,
+    SynthesisResult,
 )
 
 
@@ -205,3 +207,106 @@ class ContradictionResolutionAgent(BaseAgent):
             raise InvalidRequestError(
                 message="Missing required field: 'contradictions_feedback'"
             )
+
+
+class SynthesisAgent(BaseAgent):
+    """
+    Agent for synthesizing all evaluation results into an overall assessment.
+
+    Takes the results from concept fit, contradictions, and additions agents
+    and produces a final overall score and summary feedback.
+    """
+
+    name = "synthesis"
+    response_schema = SynthesisResult
+    temperature = 0.3
+
+    def build_prompt(self, data: Dict[str, Any]) -> str:
+        """Build prompt for synthesis with all agent results."""
+        context = data["context"]
+
+        # Format concept fit results
+        concept_fit = data.get("concept_fit_result", {})
+        concept_fit_text = self._format_concept_fit(concept_fit)
+
+        # Format contradictions results
+        contradictions = data.get("contradictions_result", {})
+        contradictions_text = self._format_contradictions(contradictions)
+
+        # Format additions results
+        additions = data.get("additions_result", {})
+        additions_text = self._format_additions(additions)
+
+        return SynthesisPrompt % (
+            context,
+            concept_fit_text,
+            contradictions_text,
+            additions_text,
+        )
+
+    def _format_concept_fit(self, result: Dict[str, Any]) -> str:
+        """Format concept fit results for the prompt."""
+        if not result:
+            return "No concept fit analysis available."
+
+        lines = []
+        has_gaps = result.get("hasGaps", False)
+        lines.append(f"Has coverage gaps: {'Yes' if has_gaps else 'No'}")
+
+        missing = result.get("missingAspects", [])
+        if missing:
+            lines.append(f"Missing aspects: {', '.join(missing)}")
+
+        feedback = result.get("pillarFeedback", [])
+        if feedback:
+            lines.append("\nPillar-by-pillar feedback:")
+            for pf in feedback:
+                name = pf.get("name", "Unknown")
+                reasoning = pf.get("reasoning", "")
+                lines.append(f"  - {name}: {reasoning}")
+
+        return "\n".join(lines)
+
+    def _format_contradictions(self, result: Dict[str, Any]) -> str:
+        """Format contradictions results for the prompt."""
+        if not result:
+            return "No contradiction analysis available."
+
+        lines = []
+        has_contradictions = result.get("hasContradictions", False)
+        lines.append(f"Has contradictions: {'Yes' if has_contradictions else 'No'}")
+
+        contradictions = result.get("contradictions", [])
+        if contradictions:
+            lines.append(f"\n{len(contradictions)} contradiction(s) found:")
+            for c in contradictions:
+                p1 = c.get("pillarOneTitle", "Pillar 1")
+                p2 = c.get("pillarTwoTitle", "Pillar 2")
+                reason = c.get("reason", "")
+                lines.append(f"  - {p1} vs {p2}: {reason}")
+        else:
+            lines.append("No contradictions detected.")
+
+        return "\n".join(lines)
+
+    def _format_additions(self, result: Dict[str, Any]) -> str:
+        """Format additions results for the prompt."""
+        if not result:
+            return "No addition suggestions available."
+
+        additions = result.get("additions", [])
+        if not additions:
+            return "No additional pillars suggested (coverage is adequate)."
+
+        lines = [f"{len(additions)} pillar(s) suggested:"]
+        for add in additions:
+            name = add.get("name", "Unknown")
+            desc = add.get("description", "")[:100]
+            lines.append(f"  - {name}: {desc}...")
+
+        return "\n".join(lines)
+
+    def validate_input(self, data: Dict[str, Any]) -> None:
+        """Validate input data has required fields."""
+        if "context" not in data:
+            raise InvalidRequestError(message="Missing required field: 'context'")

@@ -67,19 +67,42 @@ function openResolutionModal() {
 
 <template>
   <div class="space-y-6">
-    <!-- Header with Evaluate Button -->
+    <!-- Header with Execution Mode Toggle and Evaluate Button -->
     <div class="flex items-center justify-between">
       <h2 class="text-2xl font-bold flex items-center gap-2">
         <UIcon name="i-heroicons-sparkles" class="text-primary-500" />
-        Agentic Evaluation
+        Pillar Evaluation
       </h2>
-      <UButton
-        icon="i-heroicons-play"
-        :label="pillars.isEvaluating.value ? 'Evaluating...' : 'Evaluate All'"
-        color="primary"
-        :loading="pillars.isEvaluating.value"
-        @click="pillars.evaluateAll"
-      />
+      <div class="flex items-center gap-3">
+        <!-- Execution Mode Toggle -->
+        <div class="inline-flex rounded-md shadow-sm">
+          <UButton
+            :color="pillars.executionMode.value === 'monolithic' ? 'primary' : 'neutral'"
+            :variant="pillars.executionMode.value === 'monolithic' ? 'solid' : 'outline'"
+            icon="i-heroicons-cube"
+            label="Monolithic"
+            size="sm"
+            class="rounded-r-none"
+            @click="pillars.setExecutionMode('monolithic')"
+          />
+          <UButton
+            :color="pillars.executionMode.value === 'agentic' ? 'primary' : 'neutral'"
+            :variant="pillars.executionMode.value === 'agentic' ? 'solid' : 'outline'"
+            icon="i-heroicons-cpu-chip"
+            label="Agentic"
+            size="sm"
+            class="rounded-l-none -ml-px"
+            @click="pillars.setExecutionMode('agentic')"
+          />
+        </div>
+        <UButton
+          icon="i-heroicons-play"
+          :label="pillars.isEvaluating.value ? 'Evaluating...' : 'Evaluate All'"
+          color="primary"
+          :loading="pillars.isEvaluating.value"
+          @click="pillars.evaluateAll()"
+        />
+      </div>
     </div>
 
     <!-- Error State -->
@@ -115,24 +138,91 @@ function openResolutionModal() {
     <div v-else-if="pillars.evaluationResult.value" class="space-y-6">
       <!-- Metadata -->
       <div class="flex items-center gap-4 text-sm text-gray-500">
-        <span>
-          <UIcon name="i-heroicons-clock" class="mr-1" />
-          {{ pillars.evaluationResult.value.metadata.execution_time_ms }}ms
-        </span>
-        <span>
-          <UIcon name="i-heroicons-cpu-chip" class="mr-1" />
-          {{ pillars.evaluationResult.value.metadata.agents_run.length }} agents
-        </span>
         <UBadge
-          :color="pillars.evaluationResult.value.metadata.all_succeeded ? 'success' : 'warning'"
+          :color="pillars.evaluationResult.value.execution_mode === 'agentic' ? 'primary' : 'info'"
           variant="subtle"
           size="xs"
         >
           {{
-            pillars.evaluationResult.value.metadata.all_succeeded ? 'All Succeeded' : 'Some Failed'
+            pillars.evaluationResult.value.execution_mode === 'agentic' ? 'Agentic' : 'Monolithic'
           }}
         </UBadge>
+        <span>
+          <UIcon name="i-heroicons-clock" class="mr-1" />
+          {{ pillars.evaluationResult.value.metadata.execution_time_ms }}ms
+        </span>
+        <!-- Agentic mode metadata -->
+        <template v-if="pillars.evaluationResult.value.execution_mode === 'agentic'">
+          <span v-if="pillars.evaluationResult.value.metadata.agents_run">
+            <UIcon name="i-heroicons-cpu-chip" class="mr-1" />
+            {{ pillars.evaluationResult.value.metadata.agents_run.length }} agents
+          </span>
+          <UBadge
+            v-if="pillars.evaluationResult.value.metadata.all_succeeded !== undefined"
+            :color="pillars.evaluationResult.value.metadata.all_succeeded ? 'success' : 'warning'"
+            variant="subtle"
+            size="xs"
+          >
+            {{
+              pillars.evaluationResult.value.metadata.all_succeeded
+                ? 'All Succeeded'
+                : 'Some Failed'
+            }}
+          </UBadge>
+        </template>
+        <!-- Monolithic mode metadata -->
+        <template v-else>
+          <span v-if="pillars.evaluationResult.value.metadata.model_used">
+            <UIcon name="i-heroicons-cube" class="mr-1" />
+            {{ pillars.evaluationResult.value.metadata.model_used }}
+          </span>
+          <span v-if="pillars.evaluationResult.value.metadata.total_tokens">
+            <UIcon name="i-heroicons-calculator" class="mr-1" />
+            {{ pillars.evaluationResult.value.metadata.total_tokens }} tokens
+          </span>
+        </template>
       </div>
+
+      <!-- Overall Score (Monolithic only) -->
+      <UCard
+        v-if="pillars.evaluationResult.value.overall"
+        variant="subtle"
+        class="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-star" class="text-primary-500" />
+            <span class="font-semibold">Overall Score</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1">
+              <template v-for="i in 5" :key="i">
+                <UIcon
+                  :name="
+                    i <= pillars.evaluationResult.value.overall.score
+                      ? 'i-heroicons-star-solid'
+                      : 'i-heroicons-star'
+                  "
+                  :class="
+                    i <= pillars.evaluationResult.value.overall.score
+                      ? 'text-yellow-400'
+                      : 'text-gray-300'
+                  "
+                />
+              </template>
+            </div>
+            <span class="font-bold text-lg"
+              >{{ pillars.evaluationResult.value.overall.score }}/5</span
+            >
+          </div>
+        </div>
+        <p
+          v-if="pillars.evaluationResult.value.overall.feedback"
+          class="mt-2 text-sm text-gray-600 dark:text-gray-400"
+        >
+          {{ pillars.evaluationResult.value.overall.feedback }}
+        </p>
+      </UCard>
 
       <!-- Concept Fit Section -->
       <UCard v-if="pillars.evaluationResult.value.concept_fit" variant="subtle">

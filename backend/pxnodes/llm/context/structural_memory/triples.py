@@ -427,3 +427,87 @@ def extract_all_triples_with_llm(
         all_triples.extend(narrative_triples)
 
     return all_triples
+
+
+async def extract_all_triples_async(
+    node: PxNode,
+    chart: Optional[PxChart],
+    llm_provider: Optional[LLMProvider] = None,
+) -> list[KnowledgeTriple]:
+    """
+    Async version of extract_all_triples_with_llm for parallel execution.
+
+    Extracts deterministic triples and optionally LLM-based narrative triples.
+    Uses thread_sensitive=False for LLM calls to enable true parallelism.
+    """
+    import logfire
+    from asgiref.sync import sync_to_async
+
+    from pxnodes.llm.context.shared.prompts import (
+        KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
+        format_components_for_prompt,
+    )
+
+    node_id = str(node.id)
+    node_name = node.name
+
+    with logfire.span(
+        "extract_knowledge_triples",
+        node_id=node_id,
+        node_name=node_name,
+    ):
+        all_triples: list[KnowledgeTriple] = []
+
+        # Deterministic triples (sync Django ORM calls - must use thread_sensitive=True)
+        logfire.info("extracting_deterministic_triples", node_name=node_name)
+        deterministic_triples = await sync_to_async(
+            extract_all_triples, thread_sensitive=True
+        )(node, chart, include_neighbors=False)
+        all_triples.extend(deterministic_triples)
+
+        # LLM-based narrative triples (if provider available and node has description)
+        if llm_provider and node.description:
+            logfire.info("extracting_narrative_triples", node_name=node_name)
+            try:
+                # First: fetch components (Django ORM - thread_sensitive=True)
+                components = await sync_to_async(
+                    get_node_components_for_prompt, thread_sensitive=True
+                )(node)
+                components_text = format_components_for_prompt(components)
+
+                # Build prompt
+                description = node.description or "No description provided."
+                prompt = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT.format(
+                    title=node_name,
+                    description=description,
+                    components=components_text,
+                )
+
+                # Then: LLM call (HTTP - thread_sensitive=False for parallelism)
+                response = await sync_to_async(
+                    llm_provider.generate, thread_sensitive=False
+                )(prompt)
+                narrative_triples = parse_llm_triples(response)
+                all_triples.extend(narrative_triples)
+
+                logfire.info(
+                    "narrative_triples_extracted",
+                    node_name=node_name,
+                    count=len(narrative_triples),
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to extract narrative triples for {node_name}: {e}"
+                )
+                logfire.error(
+                    "narrative_triples_failed",
+                    node_name=node_name,
+                    error=str(e),
+                )
+
+        logfire.info(
+            "knowledge_triples_extracted",
+            node_name=node_name,
+            total_count=len(all_triples),
+        )
+        return all_triples

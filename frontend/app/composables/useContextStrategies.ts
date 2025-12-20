@@ -37,6 +37,38 @@ export interface StrategyEvaluationResult {
   error: string | null
 }
 
+// Agentic mode returns a different structure with 4 dimension results
+export interface CoherenceDimensionResult {
+  score: number
+  reasoning: string
+  issues: string[]
+  suggestions: string[]
+}
+
+export interface AgenticEvaluationResult {
+  node_id: string
+  node_name: string
+  strategy_used: string
+  prerequisite_alignment: CoherenceDimensionResult | null
+  forward_setup: CoherenceDimensionResult | null
+  internal_consistency: CoherenceDimensionResult | null
+  contextual_fit: CoherenceDimensionResult | null
+  overall_score: number
+  is_coherent: boolean
+  total_issues: number
+  critical_issues: string[]
+  execution_time_ms: number
+  total_tokens: number
+}
+
+// Union type for evaluate response
+export type EvaluationResult = StrategyEvaluationResult | AgenticEvaluationResult
+
+// Type guard to check if result is agentic
+export function isAgenticResult(result: EvaluationResult): result is AgenticEvaluationResult {
+  return 'strategy_used' in result && 'overall_score' in result
+}
+
 export interface ComparisonSummary {
   strategies_compared: string[]
   coherent_by_strategy: Record<string, boolean>
@@ -65,11 +97,14 @@ export interface ContextBuildResult {
   metadata: Record<string, unknown>
 }
 
+export type ExecutionMode = 'monolithic' | 'agentic'
+
 export interface EvaluateOptions {
   nodeId: string
   chartId: string
   strategy?: StrategyType
   llmModel?: string
+  executionMode?: ExecutionMode
 }
 
 export interface CompareOptions {
@@ -89,9 +124,10 @@ export function useContextStrategies() {
   const availableStrategies = ref<StrategyInfo[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const lastEvaluation = ref<StrategyEvaluationResult | null>(null)
+  const lastEvaluation = ref<EvaluationResult | null>(null)
   const lastComparison = ref<ComparisonResult | null>(null)
   const lastContext = ref<ContextBuildResult | null>(null)
+  const executionMode = ref<ExecutionMode>('agentic') // Default to agentic mode
 
   const { success: successToast, error: errorToast } = usePixeToast()
 
@@ -118,36 +154,56 @@ export function useContextStrategies() {
   /**
    * Evaluate a node using a specific strategy.
    */
-  async function evaluate(options: EvaluateOptions): Promise<StrategyEvaluationResult | null> {
+  async function evaluate(options: EvaluateOptions): Promise<EvaluationResult | null> {
     loading.value = true
     error.value = null
+    const modeToUse = options.executionMode ?? executionMode.value
 
     try {
-      const response = await $fetch<{ success: boolean; result: StrategyEvaluationResult }>(
-        `${BASE_URL}context/evaluate/`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-          body: {
-            node_id: options.nodeId,
-            chart_id: options.chartId,
-            strategy: options.strategy ?? 'structural_memory',
-            llm_model: options.llmModel ?? 'gpt-4o-mini',
-          },
+      const response = await $fetch<{
+        success: boolean
+        execution_mode: string
+        result: EvaluationResult
+      }>(`${BASE_URL}context/evaluate/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+        body: {
+          node_id: options.nodeId,
+          chart_id: options.chartId,
+          strategy: options.strategy ?? 'structural_memory',
+          execution_mode: modeToUse,
+          llm_model: options.llmModel ?? 'gpt-4o-mini',
         },
-      )
+      })
 
       const result = response.result
       lastEvaluation.value = result
 
-      if (result.is_coherent) {
-        successToast(`Node is coherent using ${result.strategy}`)
+      // Handle different response types
+      if (isAgenticResult(result)) {
+        // Agentic mode: 4 dimension agents
+        const strategyName = result.strategy_used
+        if (result.is_coherent) {
+          successToast(
+            `Node is coherent (score: ${result.overall_score}/6) using ${strategyName} (agentic)`,
+          )
+        } else {
+          successToast(
+            `Found ${result.total_issues} issue(s) (score: ${result.overall_score}/6) using ${strategyName} (agentic)`,
+          )
+        }
       } else {
-        const issueCount = result.issues.length
-        successToast(`Found ${issueCount} issue(s) using ${result.strategy}`)
+        // Monolithic mode: single evaluation
+        const strategyName = result.strategy
+        if (result.is_coherent) {
+          successToast(`Node is coherent using ${strategyName} (monolithic)`)
+        } else {
+          const issueCount = result.issues.length
+          successToast(`Found ${issueCount} issue(s) using ${strategyName} (monolithic)`)
+        }
       }
 
       return result
@@ -159,6 +215,13 @@ export function useContextStrategies() {
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * Set the default execution mode.
+   */
+  function setExecutionMode(mode: ExecutionMode) {
+    executionMode.value = mode
   }
 
   /**
@@ -296,6 +359,7 @@ export function useContextStrategies() {
     lastEvaluation,
     lastComparison,
     lastContext,
+    executionMode,
 
     // Actions
     fetchStrategies,
@@ -303,6 +367,7 @@ export function useContextStrategies() {
     compare,
     buildContext,
     clearResults,
+    setExecutionMode,
 
     // Computed
     strategiesAgreement,
