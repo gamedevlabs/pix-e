@@ -25,6 +25,7 @@ def save_pillar_llm_call(
     response: LLMResponse,
     pillar: Optional[Pillar] = None,
     save_result_data: bool = True,
+    context_strategy: str = "raw",
 ) -> PillarLLMCall:
     """
     Save LLM call metrics to the database.
@@ -59,6 +60,7 @@ def save_pillar_llm_call(
         pillar=pillar,
         operation=operation,
         model_id=model_name,
+        context_strategy=context_strategy,
         execution_time_ms=metadata.execution_time_ms,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
@@ -87,6 +89,7 @@ def save_agent_result_llm_call(
     pillar: Optional[Pillar] = None,
     parent_call: Optional[PillarLLMCall] = None,
     save_result_data: bool = True,
+    context_strategy: str = "raw",
 ) -> PillarLLMCall:
     """
     Save LLM call metrics from an AgentResult.
@@ -114,6 +117,7 @@ def save_agent_result_llm_call(
         parent_call=parent_call,
         operation=operation,
         model_id=model_name,
+        context_strategy=context_strategy,
         execution_time_ms=result.execution_time_ms,
         prompt_tokens=result.prompt_tokens,
         completion_tokens=result.completion_tokens,
@@ -131,6 +135,7 @@ def save_execution_result_llm_calls(
     result: ExecutionResult,
     input_data: Optional[Dict[str, Any]] = None,
     save_result_data: bool = True,
+    context_strategy: str = "raw",
 ) -> Tuple[PillarLLMCall, List[PillarLLMCall]]:
     """
     Save LLM call metrics from an ExecutionResult (evaluate_all).
@@ -172,6 +177,7 @@ def save_execution_result_llm_calls(
         parent_call=None,
         operation="evaluate_all",
         model_id=model_name,
+        context_strategy=context_strategy,
         execution_time_ms=result.total_execution_time_ms,
         prompt_tokens=total_prompt_tokens,
         completion_tokens=total_completion_tokens,
@@ -194,6 +200,7 @@ def save_execution_result_llm_calls(
             input_data=input_data,
             parent_call=parent_call,
             save_result_data=save_result_data,
+            context_strategy=context_strategy,
         )
         agent_calls.append(agent_call)
 

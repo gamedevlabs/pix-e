@@ -17,6 +17,7 @@ const evaluationResult = ref<EvaluateAllResponse | null>(null)
 const isEvaluating = ref(false)
 const evaluationError = ref<string | null>(null)
 const executionMode = ref<ExecutionMode>('agentic')
+const contextStrategy = ref<PillarsContextStrategy>('raw')
 
 export function usePillars() {
   const config = useRuntimeConfig()
@@ -126,7 +127,10 @@ export function usePillars() {
   }
 
   async function getContextInPillarsFeedback() {
-    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
+    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(
+      additionalFeature.value,
+      contextStrategy.value,
+    )
   }
 
   // --- Evaluation methods (supports monolithic and agentic modes) ---
@@ -136,7 +140,10 @@ export function usePillars() {
     evaluationError.value = null
     const modeToUse = mode ?? executionMode.value
     try {
-      evaluationResult.value = await pillarsApi.evaluateAllAPICall(modeToUse)
+      evaluationResult.value = await pillarsApi.evaluateAllAPICall(
+        modeToUse,
+        contextStrategy.value,
+      )
     } catch (err) {
       console.error('Error evaluating pillars:', err)
       evaluationError.value = 'Failed to evaluate pillars. Please try again.'
@@ -149,8 +156,14 @@ export function usePillars() {
     executionMode.value = mode
   }
 
+  function setContextStrategy(strategy: PillarsContextStrategy) {
+    contextStrategy.value = strategy
+  }
   async function resolveContradictions(contradictions: ContradictionsResponse) {
-    return await pillarsApi.resolveContradictionsAPICall(contradictions)
+    return await pillarsApi.resolveContradictionsAPICall(
+      contradictions,
+      contextStrategy.value,
+    )
   }
 
   async function acceptAddition(name: string, description: string) {
@@ -196,8 +209,10 @@ export function usePillars() {
     isEvaluating,
     evaluationError,
     executionMode,
+    contextStrategy,
     evaluateAll,
     setExecutionMode,
+    setContextStrategy,
     resolveContradictions,
     acceptAddition,
     clearEvaluation,

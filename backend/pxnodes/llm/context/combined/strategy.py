@@ -21,7 +21,8 @@ Key principle: NO ARBITRARY TRUNCATION - preserve full content.
 Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
 """
 
-from typing import Any, Optional
+import asyncio
+from typing import Any, Optional, cast
 
 from pxnodes.llm.context.base.registry import StrategyRegistry
 from pxnodes.llm.context.base.strategy import BaseContextStrategy, LLMProvider
@@ -42,12 +43,20 @@ from pxnodes.llm.context.structural_memory.chunks import (
 )
 from pxnodes.llm.context.structural_memory.facts import (
     AtomicFact,
+)
+from pxnodes.llm.context.structural_memory.facts import LLMProvider as FactsLLMProvider
+from pxnodes.llm.context.structural_memory.facts import (
     extract_atomic_facts,
+    extract_atomic_facts_async,
+)
+from pxnodes.llm.context.structural_memory.summaries import (
+    LLMProvider as SummariesLLMProvider,
 )
 from pxnodes.llm.context.structural_memory.summaries import (
     Summary,
     create_fallback_summary,
     extract_summary,
+    extract_summary_async,
 )
 from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
@@ -210,14 +219,12 @@ class CombinedStrategy(BaseContextStrategy):
         # 3. Extract ATOMIC FACTS (LLM-based)
         all_facts: list[AtomicFact] = []
         if self.llm_provider and not self.skip_fact_extraction:
-            for node in all_nodes:
-                all_facts.extend(extract_atomic_facts(node, self.llm_provider))
+            all_facts = self._extract_facts_parallel(all_nodes)
 
         # 4. Extract SUMMARIES (LLM-based)
         all_summaries: list[Summary] = []
         if self.llm_provider and not self.skip_summary_extraction:
-            for node in all_nodes:
-                all_summaries.append(extract_summary(node, self.llm_provider))
+            all_summaries = self._extract_summaries_parallel(all_nodes)
         else:
             for node in all_nodes:
                 all_summaries.append(create_fallback_summary(node))
@@ -272,6 +279,53 @@ class CombinedStrategy(BaseContextStrategy):
                 "forward_path_length": len(forward_nodes),
             },
         )
+
+    def _extract_facts_parallel(self, nodes: list[Any]) -> list[AtomicFact]:
+        async def run() -> list[AtomicFact]:
+            # Cast LLMProvider since both protocols are compatible
+            assert self.llm_provider is not None
+            tasks = [
+                extract_atomic_facts_async(
+                    node, cast(FactsLLMProvider, self.llm_provider)
+                )
+                for node in nodes
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            facts: list[AtomicFact] = []
+            for result in results:
+                if isinstance(result, list):
+                    facts.extend(result)
+            return facts
+
+        try:
+            return asyncio.run(run())
+        except RuntimeError:
+            facts: list[AtomicFact] = []
+            for node in nodes:
+                facts.extend(extract_atomic_facts(node, self.llm_provider))
+            return facts
+
+    def _extract_summaries_parallel(self, nodes: list[Any]) -> list[Summary]:
+        async def run() -> list[Summary]:
+            # Cast LLMProvider since both protocols are compatible
+            assert self.llm_provider is not None
+            tasks = [
+                extract_summary_async(
+                    node, cast(SummariesLLMProvider, self.llm_provider)
+                )
+                for node in nodes
+            ]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            summaries: list[Summary] = []
+            for result in results:
+                if isinstance(result, Summary):
+                    summaries.append(result)
+            return summaries
+
+        try:
+            return asyncio.run(run())
+        except RuntimeError:
+            return [extract_summary(node, self.llm_provider) for node in nodes]
 
     def get_layer_context(
         self,
