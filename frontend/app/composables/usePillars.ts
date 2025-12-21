@@ -140,10 +140,7 @@ export function usePillars() {
     evaluationError.value = null
     const modeToUse = mode ?? executionMode.value
     try {
-      evaluationResult.value = await pillarsApi.evaluateAllAPICall(
-        modeToUse,
-        contextStrategy.value,
-      )
+      evaluationResult.value = await pillarsApi.evaluateAllAPICall(modeToUse, contextStrategy.value)
     } catch (err) {
       console.error('Error evaluating pillars:', err)
       evaluationError.value = 'Failed to evaluate pillars. Please try again.'
@@ -160,10 +157,7 @@ export function usePillars() {
     contextStrategy.value = strategy
   }
   async function resolveContradictions(contradictions: ContradictionsResponse) {
-    return await pillarsApi.resolveContradictionsAPICall(
-      contradictions,
-      contextStrategy.value,
-    )
+    return await pillarsApi.resolveContradictionsAPICall(contradictions, contextStrategy.value)
   }
 
   async function acceptAddition(name: string, description: string) {

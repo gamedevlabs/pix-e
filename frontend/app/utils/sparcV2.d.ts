@@ -37,12 +37,7 @@ type AgentExecutionDetail = {
 type PillarMode = 'all' | 'smart' | 'none'
 
 // Context strategy for SPARC V2
-type SparcContextStrategy =
-  | 'router'
-  | 'full_text'
-  | 'structural_memory'
-  | 'hmem'
-  | 'combined'
+type SparcContextStrategy = 'router' | 'full_text' | 'structural_memory' | 'hmem' | 'combined'
 
 // Full V2 response
 type SPARCV2Response = {
