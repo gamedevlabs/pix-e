@@ -139,7 +139,9 @@ function openResolutionModal() {
         size="sm"
       />
       <span class="text-xs text-neutral-500">
-        {{ contextStrategyOptions.find((o) => o.value === pillars.contextStrategy.value)?.description }}
+        {{
+          contextStrategyOptions.find((o) => o.value === pillars.contextStrategy.value)?.description
+        }}
       </span>
     </div>
 
