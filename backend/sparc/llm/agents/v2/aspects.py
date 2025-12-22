@@ -136,7 +136,7 @@ class UniqueFeaturesAgentV2(AspectAgentV2):
     name = "unique_features_v2"
     aspect_name = "unique_features"
     prompt_template = UNIQUE_FEATURES_PROMPT
-    temperature = 0.4  # Slightly more creative
+    temperature = 0
     default_suggestions = [
         "Identify what makes your game unique.",
         "Explain how it differs from similar games.",
@@ -150,7 +150,7 @@ class ArtDirectionAgentV2(AspectAgentV2):
     name = "art_direction_v2"
     aspect_name = "art_direction"
     prompt_template = ART_DIRECTION_PROMPT
-    temperature = 0.4  # Slightly more creative
+    temperature = 0
     default_suggestions = [
         "Specify the art style (realistic, stylized, cartoonish, etc.).",
         "Define the color palette (primary, secondary, light/shadow).",

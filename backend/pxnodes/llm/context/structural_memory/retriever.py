@@ -152,7 +152,7 @@ class IterativeRetriever:
             RetrievalResult with all retrieved memories
         """
         with logfire.span(
-            "iterative_retrieval",
+            "retrieval.iterative.structural_memory",
             query=query,
             iterations=iterations,
             top_k=top_k,
@@ -163,7 +163,7 @@ class IterativeRetriever:
 
             for i in range(iterations):
                 with logfire.span(
-                    "retrieval_iteration",
+                    "retrieval.iteration.structural_memory",
                     iteration=i + 1,
                     query=current_query,
                 ):
@@ -184,7 +184,7 @@ class IterativeRetriever:
                     result.iterations_performed = i + 1
 
                     logfire.info(
-                        "iteration_complete",
+                        "retrieval.iteration.complete.structural_memory",
                         iteration=i + 1,
                         new_memories=len(new_memories),
                         total_memories=len(result.memories),
@@ -197,13 +197,13 @@ class IterativeRetriever:
                             result.refined_queries.append(refined)
                             current_query = refined
                             logfire.info(
-                                "query_refined",
+                                "retrieval.query_refined.structural_memory",
                                 iteration=i + 1,
                                 refined_query=refined[:100],
                             )
 
             logfire.info(
-                "retrieval_complete",
+                "retrieval.complete.structural_memory",
                 total_memories=len(result.memories),
                 iterations=result.iterations_performed,
                 refined_queries=len(result.refined_queries),

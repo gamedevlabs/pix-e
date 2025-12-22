@@ -20,12 +20,12 @@ class MonolithicSPARCHandler(BaseOperationHandler):
     in one LLM call. This serves as the baseline to compare against
     the agentic multi-agent approach.
 
-    Temperature: 0.3 for analytical evaluation
+    Temperature: 0
     """
 
     operation_id = "sparc.monolithic"
     response_schema = MonolithicSPARCResponse
-    temperature = 0.3
+    temperature = 0
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         """

@@ -53,7 +53,7 @@ class OpenAIEmbeddingGenerator:
             List of floats representing the embedding vector
         """
         with logfire.span(
-            "openai.generate_embedding",
+            "openai.embeddings.single",
             model=self.model,
             text_length=len(text),
         ):
@@ -66,7 +66,7 @@ class OpenAIEmbeddingGenerator:
                 embedding = response.data[0].embedding
 
                 logfire.info(
-                    "embedding_generated",
+                    "openai.embeddings.single.complete",
                     model=self.model,
                     dimensions=len(embedding),
                     text_preview=text[:100],
@@ -77,7 +77,7 @@ class OpenAIEmbeddingGenerator:
             except Exception as e:
                 logger.error(f"Failed to generate embedding: {e}")
                 logfire.error(
-                    "embedding_generation_failed",
+                    "openai.embeddings.single.failed",
                     error=str(e),
                     model=self.model,
                     text_preview=text[:100],
@@ -100,7 +100,7 @@ class OpenAIEmbeddingGenerator:
             List of embeddings
         """
         with logfire.span(
-            "openai.generate_embeddings_batch",
+            "openai.embeddings.batch",
             model=self.model,
             total_texts=len(texts),
             batch_size=batch_size,
@@ -120,7 +120,7 @@ class OpenAIEmbeddingGenerator:
                     all_embeddings.extend(batch_embeddings)
 
                     logfire.info(
-                        "batch_embeddings_generated",
+                        "openai.embeddings.batch.complete",
                         batch_num=i // batch_size + 1,
                         batch_size=len(batch),
                         model=self.model,
@@ -129,7 +129,7 @@ class OpenAIEmbeddingGenerator:
                 except Exception as e:
                     logger.error(f"Failed to generate batch embeddings: {e}")
                     logfire.error(
-                        "batch_embedding_failed",
+                        "openai.embeddings.batch.failed",
                         error=str(e),
                         batch_num=i // batch_size + 1,
                         model=self.model,

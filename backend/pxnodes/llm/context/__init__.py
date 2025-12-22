@@ -2,6 +2,7 @@
 Context Engineering Strategies Module.
 
 Provides multiple context engineering strategies for LLM evaluation:
+- Full Context: Unfiltered project + path context for RQ1 baselines
 - Structural Memory (Zeng et al. 2024): Knowledge Triples + Atomic Facts
 - Hierarchical Graph: Deterministic 4-layer graph traversal
 - H-MEM (Sun & Zeng 2025): Vector embeddings with positional index routing
@@ -29,6 +30,9 @@ from pxnodes.llm.context.change_detection import (
 
 # Combined strategy
 from pxnodes.llm.context.combined import CombinedStrategy
+
+# Full Context strategy
+from pxnodes.llm.context.full_context import FullContextStrategy
 from pxnodes.llm.context.generator import (
     GenerationResult,
     StructuralMemoryGenerator,
@@ -88,9 +92,8 @@ from pxnodes.llm.context.structural_memory import (
     StructuralMemoryResult,
     StructuralMemoryStrategy,
     build_context,
-    compute_derived_triples,
-    extract_all_triples,
     extract_atomic_facts,
+    extract_llm_triples_only,
     get_context_stats,
 )
 
@@ -117,8 +120,7 @@ __all__ = [
     "build_context",
     "get_context_stats",
     "KnowledgeTriple",
-    "extract_all_triples",
-    "compute_derived_triples",
+    "extract_llm_triples_only",
     "AtomicFact",
     "extract_atomic_facts",
     "IterativeRetriever",
@@ -126,6 +128,8 @@ __all__ = [
     "RetrievedMemory",
     # Hierarchical Graph Strategy
     "HierarchicalGraphStrategy",
+    # Full Context Strategy
+    "FullContextStrategy",
     "PlayerState",
     "build_domain_layer",
     "build_category_layer",

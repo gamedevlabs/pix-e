@@ -13,8 +13,8 @@ from pxnodes.llm.context.graph_retrieval import GraphSlice, get_graph_slice
 from pxnodes.llm.context.prompts import MIXED_CONTEXT_TEMPLATE
 from pxnodes.llm.context.triples import (
     KnowledgeTriple,
-    compute_derived_triples,
     extract_all_triples,
+    extract_llm_triples_only,
 )
 from pxnodes.models import PxNode
 
@@ -41,32 +41,12 @@ def format_facts_section(facts: list[AtomicFact]) -> str:
     return "\n".join(lines)
 
 
-def format_logic_checks(
-    graph_slice: GraphSlice,
-    target_triples: list[KnowledgeTriple],
-    derived_triples: list[KnowledgeTriple],
-) -> str:
-    """Format logic check section with computed deltas and validations."""
-    lines = []
-
-    # Add derived triples as logic checks
-    for triple in derived_triples:
-        if "delta" in triple.relation.lower():
-            lines.append(f"- Computed Delta: {triple.relation} = {triple.tail}")
-        elif "transition" in triple.relation.lower():
-            lines.append(f"- Transition Type: {triple.tail}")
-        elif "same_category" in triple.relation.lower():
-            lines.append(f"- Category Match: {triple.tail}")
-        else:
-            lines.append(f"- {triple.relation}: {triple.tail}")
-
-    # Add node count context
-    lines.append(f"- Previous Nodes: {len(graph_slice.previous_nodes)}")
-    lines.append(f"- Next Nodes: {len(graph_slice.next_nodes)}")
-
-    if not lines:
-        return "- No logic checks computed"
-
+def format_logic_checks(graph_slice: GraphSlice) -> str:
+    """Format logic check section with basic context counts."""
+    lines = [
+        f"- Previous Nodes: {len(graph_slice.previous_nodes)}",
+        f"- Next Nodes: {len(graph_slice.next_nodes)}",
+    ]
     return "\n".join(lines)
 
 
@@ -74,13 +54,16 @@ def build_node_context_section(
     node: PxNode,
     chart: Optional[PxChart],
     facts: list[AtomicFact],
+    llm_provider: Optional[LLMProvider],
     include_components: bool = True,
 ) -> str:
     """Build context section for a single node."""
     lines = []
 
-    # Extract triples
-    triples = extract_all_triples(node, chart, include_neighbors=False)
+    # Extract triples (LLM-only)
+    triples: list[KnowledgeTriple] = []
+    if llm_provider:
+        triples = extract_llm_triples_only(node, llm_provider)
 
     # Add triples
     for triple in triples:
@@ -120,18 +103,20 @@ def build_structural_context(
     # 1. Get graph slice (target + neighbors)
     graph_slice = get_graph_slice(target_node, chart, depth=1)
 
-    # 2. Extract triples for all nodes
-    target_triples = extract_all_triples(target_node, chart, include_neighbors=False)
+    # 2. Extract triples for all nodes (LLM-only)
+    target_triples: list[KnowledgeTriple] = []
+    if llm_provider:
+        target_triples = extract_llm_triples_only(target_node, llm_provider)
 
     previous_triples: list[KnowledgeTriple] = []
     for node in graph_slice.previous_nodes:
-        previous_triples.extend(
-            extract_all_triples(node, chart, include_neighbors=False)
-        )
+        if llm_provider:
+            previous_triples.extend(extract_llm_triples_only(node, llm_provider))
 
     next_triples: list[KnowledgeTriple] = []
     for node in graph_slice.next_nodes:
-        next_triples.extend(extract_all_triples(node, chart, include_neighbors=False))
+        if llm_provider:
+            next_triples.extend(extract_llm_triples_only(node, llm_provider))
 
     # 3. Extract atomic facts (lazy, LLM-based)
     all_facts: list[AtomicFact] = []
@@ -141,14 +126,7 @@ def build_structural_context(
         for node in graph_slice.previous_nodes:
             all_facts.extend(extract_atomic_facts(node, llm_provider))
 
-    # 4. Compute derived triples (intensity deltas, category transitions)
-    derived_triples = compute_derived_triples(
-        target_node,
-        graph_slice.previous_nodes,
-        graph_slice.next_nodes,
-    )
-
-    # 5. Format sections
+    # 4. Format sections
     previous_context = format_triples_section(previous_triples)
     if graph_slice.previous_nodes:
         prev_facts = [
@@ -166,7 +144,7 @@ def build_structural_context(
 
     next_context = format_triples_section(next_triples)
 
-    logic_checks = format_logic_checks(graph_slice, target_triples, derived_triples)
+    logic_checks = format_logic_checks(graph_slice)
 
     # 6. Assemble final context
     context = MIXED_CONTEXT_TEMPLATE.format(
@@ -227,17 +205,13 @@ def context_to_dict(
     """
     graph_slice = get_graph_slice(target_node, chart, depth=1)
 
-    target_triples = extract_all_triples(target_node, chart, include_neighbors=False)
+    target_triples: list[KnowledgeTriple] = []
+    if llm_provider:
+        target_triples = extract_llm_triples_only(target_node, llm_provider)
 
     all_facts: list[AtomicFact] = []
     if llm_provider:
         all_facts = extract_atomic_facts(target_node, llm_provider)
-
-    derived_triples = compute_derived_triples(
-        target_node,
-        graph_slice.previous_nodes,
-        graph_slice.next_nodes,
-    )
 
     return {
         "target": {
@@ -252,7 +226,11 @@ def context_to_dict(
                 "name": n.name,
                 "triples": [
                     t.to_tuple()
-                    for t in extract_all_triples(n, chart, include_neighbors=False)
+                    for t in (
+                        extract_llm_triples_only(n, llm_provider)
+                        if llm_provider
+                        else []
+                    )
                 ],
             }
             for n in graph_slice.previous_nodes
@@ -263,10 +241,14 @@ def context_to_dict(
                 "name": n.name,
                 "triples": [
                     t.to_tuple()
-                    for t in extract_all_triples(n, chart, include_neighbors=False)
+                    for t in (
+                        extract_llm_triples_only(n, llm_provider)
+                        if llm_provider
+                        else []
+                    )
                 ],
             }
             for n in graph_slice.next_nodes
         ],
-        "derived_triples": [t.to_tuple() for t in derived_triples],
+        "derived_triples": [],
     }

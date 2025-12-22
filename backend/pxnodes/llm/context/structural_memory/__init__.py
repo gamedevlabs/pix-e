@@ -5,7 +5,7 @@ Implements the Mixed Structural Memory approach from Zeng et al. (2024).
 
 This module provides four memory structures:
 - Chunks: Raw text segments (deterministic)
-- Knowledge Triples: Structured relationships (deterministic)
+- Knowledge Triples: Structured relationships (LLM-based)
 - Atomic Facts: Indivisible information units (LLM-based)
 - Summaries: Condensed overviews (LLM-based)
 
@@ -46,8 +46,7 @@ from pxnodes.llm.context.structural_memory.summaries import (
 )
 from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
-    compute_derived_triples,
-    extract_all_triples,
+    extract_llm_triples_only,
 )
 
 __all__ = [
@@ -64,8 +63,7 @@ __all__ = [
     "extract_chunks_batch",
     # Triples (Zeng et al. 2024)
     "KnowledgeTriple",
-    "extract_all_triples",
-    "compute_derived_triples",
+    "extract_llm_triples_only",
     # Facts (Zeng et al. 2024)
     "AtomicFact",
     "extract_atomic_facts",

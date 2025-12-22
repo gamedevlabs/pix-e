@@ -37,7 +37,7 @@ class BaseAgent(ABC):
     response_schema: Type[BaseModel]  # Pydantic model for response
 
     capability_requirements: Optional[CapabilityRequirements] = None
-    temperature: float = 0.3  # Lower for evaluators (more deterministic)
+    temperature: float = 0
 
     def __init__(self) -> None:
         """Initialize agent."""

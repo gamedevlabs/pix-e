@@ -19,7 +19,7 @@ from pxnodes.llm.context.retriever import (
     IterativeRetriever,
     RetrievalResult,
 )
-from pxnodes.llm.context.triples import _get_component_value
+from pxnodes.llm.context.triples import _get_component_map
 from pxnodes.models import PxNode
 
 logger = logging.getLogger(__name__)
@@ -334,13 +334,13 @@ class NodeCoherenceEvaluator:
             parts.append(f"Description context: {node.description[:200]}")
 
         # Add component info
-        intensity = _get_component_value(node, "intensity")
-        if intensity:
-            parts.append(f"Intensity: {intensity}")
-
-        category = _get_component_value(node, "gameplay_category")
-        if category:
-            parts.append(f"Category: {category}")
+        components = _get_component_map(node)
+        if components:
+            component_items = []
+            for name, value in list(components.items())[:5]:
+                component_items.append(f"{name}={value}")
+            if component_items:
+                parts.append(f"Components: {', '.join(component_items)}")
 
         return ". ".join(parts)
 
@@ -394,35 +394,33 @@ class NodeCoherenceEvaluator:
         """Compute metrics for the evaluation prompt."""
         metrics = []
 
-        target_intensity = _get_component_value(node, "intensity")
-        target_category = _get_component_value(node, "gameplay_category")
+        target_components = _get_component_map(node)
 
-        # Intensity deltas from previous nodes
+        # Component value deltas from previous nodes
         for prev_node in graph_slice.previous_nodes:
-            prev_intensity = _get_component_value(prev_node, "intensity")
-            if target_intensity is not None and prev_intensity is not None:
-                try:
-                    delta = float(target_intensity) - float(prev_intensity)
+            prev_components = _get_component_map(prev_node)
+            changes = []
+            for name, target_value in target_components.items():
+                if name not in prev_components:
+                    continue
+                prev_value = prev_components[name]
+                if isinstance(target_value, (int, float)) and isinstance(
+                    prev_value, (int, float)
+                ):
+                    try:
+                        delta = float(target_value) - float(prev_value)
+                    except (ValueError, TypeError):
+                        continue
                     delta_str = f"+{delta:.0f}" if delta >= 0 else f"{delta:.0f}"
-                    transition_type = ""
-                    if abs(delta) > 50:
-                        transition_type = " (SPIKE)" if delta > 0 else " (DROP)"
-                    elif abs(delta) > 20:
-                        transition_type = " (rise)" if delta > 0 else " (fall)"
-
-                    metrics.append(
-                        f"- Intensity: {prev_node.name} ({prev_intensity}) → "
-                        f"Target ({target_intensity}) = {delta_str}{transition_type}"
+                    changes.append(
+                        f"{name}: {prev_value} -> {target_value} ({delta_str})"
                     )
-                except (ValueError, TypeError):
-                    pass
+                elif target_value != prev_value:
+                    changes.append(f"{name}: {prev_value} -> {target_value}")
 
-            # Category transitions
-            prev_category = _get_component_value(prev_node, "gameplay_category")
-            if target_category and prev_category:
+            if changes:
                 metrics.append(
-                    f"- Category: {prev_node.name} ({prev_category}) → "
-                    f"Target ({target_category})"
+                    f"- Components vs {prev_node.name}: " + "; ".join(changes[:3])
                 )
 
         if not metrics:

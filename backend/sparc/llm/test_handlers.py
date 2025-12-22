@@ -30,7 +30,7 @@ def test_handler_configuration():
     print(f"✅ Operation name: {handler.operation_name}")
 
     # Check temperature
-    assert handler.temperature == 0.3, f"Wrong temperature: {handler.temperature}"
+    assert handler.temperature == 0, f"Wrong temperature: {handler.temperature}"
     print(f"✅ Temperature: {handler.temperature}")
 
     # Check response schema

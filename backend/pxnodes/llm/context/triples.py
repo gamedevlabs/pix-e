@@ -216,63 +216,58 @@ def compute_derived_triples(
     Compute derived triples from node relationships.
 
     Derived triples include:
-    - Intensity deltas between nodes
-    - Category transitions
-    - Pacing analysis
+    - Component value deltas between nodes
+    - Component transitions between nodes
     """
     derived: list[KnowledgeTriple] = []
     target_id = str(target_node.id)
 
-    # Get target node intensity
-    target_intensity_raw = _get_component_value(target_node, "intensity")
+    target_components = _get_component_map(target_node)
 
     # Compute deltas from previous nodes
     for prev_node in previous_nodes:
-        prev_intensity_raw = _get_component_value(prev_node, "intensity")
+        prev_components = _get_component_map(prev_node)
 
-        # Only compute deltas for numeric intensity values
-        if isinstance(target_intensity_raw, (int, float)) and isinstance(
-            prev_intensity_raw, (int, float)
-        ):
-            delta = target_intensity_raw - prev_intensity_raw
-            delta_str = f"+{delta}" if delta >= 0 else str(delta)
-            derived.append(
-                KnowledgeTriple(
-                    target_id,
-                    f"intensity_delta_from_{prev_node.id}",
-                    delta_str,
+        for name, target_value in target_components.items():
+            if name not in prev_components:
+                continue
+            prev_value = prev_components[name]
+            if isinstance(target_value, (int, float)) and isinstance(
+                prev_value, (int, float)
+            ):
+                delta = target_value - prev_value
+                delta_str = f"+{delta}" if delta >= 0 else str(delta)
+                derived.append(
+                    KnowledgeTriple(
+                        target_id,
+                        f"component_delta_{name}_from_{prev_node.id}",
+                        delta_str,
+                    )
                 )
-            )
 
-            # Classify the transition
-            if abs(delta) > 50:
-                transition_type = "spike" if delta > 0 else "drop"
-            elif abs(delta) > 20:
-                transition_type = "rise" if delta > 0 else "fall"
-            else:
-                transition_type = "stable"
+                # Classify the transition
+                if abs(delta) > 50:
+                    transition_type = "spike" if delta > 0 else "drop"
+                elif abs(delta) > 20:
+                    transition_type = "rise" if delta > 0 else "fall"
+                else:
+                    transition_type = "stable"
 
-            derived.append(
-                KnowledgeTriple(
-                    target_id,
-                    f"intensity_transition_from_{prev_node.id}",
-                    transition_type,
+                derived.append(
+                    KnowledgeTriple(
+                        target_id,
+                        f"component_transition_{name}_from_{prev_node.id}",
+                        transition_type,
+                    )
                 )
-            )
-
-    # Category comparison
-    target_category = _get_component_value(target_node, "gameplay_category")
-    for prev_node in previous_nodes:
-        prev_category = _get_component_value(prev_node, "gameplay_category")
-        if target_category and prev_category:
-            is_same = target_category == prev_category
-            derived.append(
-                KnowledgeTriple(
-                    target_id,
-                    f"same_category_as_{prev_node.id}",
-                    is_same,
+            elif target_value != prev_value:
+                derived.append(
+                    KnowledgeTriple(
+                        target_id,
+                        f"component_change_{name}_from_{prev_node.id}",
+                        f"{prev_value} -> {target_value}",
+                    )
                 )
-            )
 
     return derived
 
@@ -290,6 +285,15 @@ def _get_component_value(
     except Exception:
         pass
     return None
+
+
+def _get_component_map(node: PxNode) -> dict[str, Any]:
+    """Get a map of component definition names to values."""
+    components: dict[str, Any] = {}
+    for comp in node.components.select_related("definition").all():
+        definition_name = comp.definition.name.lower().replace(" ", "_")
+        components[definition_name] = comp.value
+    return components
 
 
 # =============================================================================
@@ -414,3 +418,19 @@ def extract_all_triples_with_llm(
         all_triples.extend(narrative_triples)
 
     return all_triples
+
+
+def extract_llm_triples_only(
+    node: PxNode,
+    llm_provider: LLMProvider,
+) -> list[KnowledgeTriple]:
+    """
+    Extract knowledge triples using LLM only.
+
+    This mirrors the paper's approach by relying on LLM extraction from
+    narrative text (with components included in the prompt) instead of
+    deterministic triples.
+    """
+    if not llm_provider:
+        return []
+    return extract_narrative_triples(node, llm_provider)

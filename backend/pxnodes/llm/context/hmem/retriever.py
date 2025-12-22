@@ -105,6 +105,7 @@ class HMEMRetriever:
         chart_id: Optional[str] = None,
         node_id: Optional[str] = None,
         top_k_per_layer: int = 3,
+        similarity_thresholds: Optional[dict[int, float]] = None,
         layers: Optional[list[int]] = None,
     ) -> HMEMContextResult:
         """
@@ -147,6 +148,9 @@ class HMEMRetriever:
                     query_embedding=query_embedding,
                     project_id=project_id,
                     top_k=top_k_per_layer,
+                    similarity_threshold=(
+                        similarity_thresholds.get(1) if similarity_thresholds else None
+                    ),
                 )
                 result.results_by_layer[1] = l1_results
                 result.total_retrieved += len(l1_results)
@@ -167,6 +171,9 @@ class HMEMRetriever:
                     fallback_project_id=project_id,
                     fallback_chart_id=chart_id,
                     top_k=top_k_per_layer,
+                    similarity_threshold=(
+                        similarity_thresholds.get(2) if similarity_thresholds else None
+                    ),
                 )
                 result.results_by_layer[2] = l2_results
                 result.total_retrieved += len(l2_results)
@@ -187,6 +194,9 @@ class HMEMRetriever:
                     fallback_project_id=project_id,
                     fallback_chart_id=chart_id,
                     top_k=top_k_per_layer,
+                    similarity_threshold=(
+                        similarity_thresholds.get(3) if similarity_thresholds else None
+                    ),
                 )
                 result.results_by_layer[3] = l3_results
                 result.total_retrieved += len(l3_results)
@@ -208,6 +218,9 @@ class HMEMRetriever:
                     fallback_chart_id=chart_id,
                     fallback_node_id=node_id,
                     top_k=top_k_per_layer,
+                    similarity_threshold=(
+                        similarity_thresholds.get(4) if similarity_thresholds else None
+                    ),
                 )
                 result.results_by_layer[4] = l4_results
                 result.total_retrieved += len(l4_results)
@@ -300,6 +313,7 @@ class HMEMRetriever:
         query_embedding: list[float],
         project_id: str,
         top_k: int,
+        similarity_threshold: Optional[float] = None,
     ) -> list[HMEMRetrievalResult]:
         """
         Retrieve L1 Domain entries for a project.
@@ -312,7 +326,12 @@ class HMEMRetriever:
             positional_index__startswith=f"L1.{project_id}",
         )
 
-        return self._rank_by_similarity(candidates, query_embedding, top_k)
+        return self._rank_by_similarity(
+            candidates,
+            query_embedding,
+            top_k,
+            similarity_threshold=similarity_threshold,
+        )
 
     def _retrieve_with_routing(
         self,
@@ -323,6 +342,7 @@ class HMEMRetriever:
         fallback_chart_id: Optional[str] = None,
         fallback_node_id: Optional[str] = None,
         top_k: int = 3,
+        similarity_threshold: Optional[float] = None,
     ) -> list[HMEMRetrievalResult]:
         """
         Retrieve entries using H-MEM hierarchical routing.
@@ -345,7 +365,12 @@ class HMEMRetriever:
                     f"H-MEM routing: L{layer} searching {candidates.count()} "
                     f"children of parent hits"
                 )
-                return self._rank_by_similarity(candidates, query_embedding, top_k)
+                return self._rank_by_similarity(
+                    candidates,
+                    query_embedding,
+                    top_k,
+                    similarity_threshold=similarity_threshold,
+                )
 
             # Routing found no candidates, fall through to fallback
             logger.debug(f"H-MEM routing: L{layer} no children found, using fallback")
@@ -359,7 +384,12 @@ class HMEMRetriever:
             positional_index__startswith=index_pattern,
         )
 
-        return self._rank_by_similarity(candidates, query_embedding, top_k)
+        return self._rank_by_similarity(
+            candidates,
+            query_embedding,
+            top_k,
+            similarity_threshold=similarity_threshold,
+        )
 
     def _collect_child_indices(self, results: list[HMEMRetrievalResult]) -> list[str]:
         """
@@ -379,6 +409,7 @@ class HMEMRetriever:
         candidates,
         query_embedding: list[float],
         top_k: int,
+        similarity_threshold: Optional[float] = None,
     ) -> list[HMEMRetrievalResult]:
         """Rank candidates by cosine similarity and return top-k."""
         results: list[HMEMRetrievalResult] = []
@@ -403,6 +434,7 @@ class HMEMRetriever:
                             str(candidate.chart_id) if candidate.chart else None
                         ),
                         "parent_index": candidate.parent_index,
+                        "path_hash": getattr(candidate, "path_hash", ""),
                         "created_at": candidate.created_at.isoformat(),
                     },
                 )
@@ -410,6 +442,8 @@ class HMEMRetriever:
 
         # Sort by similarity (descending) and take top_k
         results.sort(key=lambda x: x.similarity_score, reverse=True)
+        if similarity_threshold is not None:
+            return [r for r in results if r.similarity_score >= similarity_threshold]
         return results[:top_k]
 
     def _build_index_pattern(

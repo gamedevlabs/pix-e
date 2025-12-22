@@ -29,7 +29,7 @@ class PillarContextAgent(V2BaseAgent):
         min_context_window=8000, json_strict=True
     )
 
-    temperature = 0.2
+    temperature = 0
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate required input fields."""

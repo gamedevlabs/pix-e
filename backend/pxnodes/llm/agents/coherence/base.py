@@ -39,7 +39,7 @@ class CoherenceDimensionAgent(BaseAgent):
     response_schema: Type[BaseModel] = CoherenceDimensionResult
 
     # Agent settings
-    temperature: float = 0.3  # Low for consistent evaluations
+    temperature: float = 0
 
     def __init__(self) -> None:
         """Initialize the agent."""
@@ -68,13 +68,18 @@ class CoherenceDimensionAgent(BaseAgent):
         """
         context_string = data.get("context_string", "No context provided")
         target_node_name = data.get("target_node_name", "Unknown")
+        target_node_description = data.get("target_node_description")
 
         # Get dimension-specific context
         dimension_context = self._build_dimension_context(data)
 
+        target_block = target_node_name
+        if target_node_description:
+            target_block = f"{target_node_name}\nDescription: {target_node_description}"
+
         return self.prompt_template.format(
             context=context_string,
-            target_node_name=target_node_name,
+            target_node_name=target_block,
             dimension_context=dimension_context,
         )
 

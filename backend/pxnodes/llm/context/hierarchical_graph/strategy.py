@@ -34,11 +34,8 @@ from pxnodes.llm.context.hierarchical_graph.traversal import (
     reverse_bfs,
 )
 
-# Evaluation prompt template based on user's hierarchical_context_strategy.md
-EVALUATION_PROMPT_TEMPLATE = """You are a Lead Game Designer validating logical \
-consistency and pacing flow in a game design document.
-
-### HIERARCHICAL CONTEXT
+# Context template (no evaluation task - prompts add task-specific instructions).
+CONTEXT_TEMPLATE = """### HIERARCHICAL CONTEXT
 
 **1. [L1 DOMAIN: GAME PILLARS & CONCEPT]**
 {l1_content}
@@ -50,23 +47,7 @@ consistency and pacing flow in a game design document.
 {l3_content}
 
 **4. [L4 EPISODE: TARGET NODE]**
-{l4_content}
-
-### EVALUATION TASK
-Evaluate the Target Node (L4) by answering the following logical checks:
-
-1. **Vacuum Check (L4):** Is the Node coherent in a vacuum? \
-(Do title, description, and components align internally?)
-2. **Path Check (L3):** Does the node work in the context of its Path? \
-(Are all needed requirements supported by the L3 Player State?)
-3. **Chart Check (L2):** Does the Node make sense in the context of the Chart? \
-(e.g., Does intensity match the arc's pacing expectations?)
-4. **Project Check (L1):** Does the Node match the Pillars and Game Concept?
-
-For each check, provide:
-- PASS/FAIL status
-- Brief explanation
-- Severity if FAIL (Critical/Warning/Info)"""
+{l4_content}"""
 
 
 @StrategyRegistry.register(StrategyType.HIERARCHICAL_GRAPH)
@@ -157,6 +138,7 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
                 "player_state": player_state.to_dict(),
                 "max_trace_depth": self.max_trace_depth,
                 "stop_at_checkpoint": self.stop_at_checkpoint,
+                "includes_target_description": True,
             },
         )
 
@@ -217,7 +199,7 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         )
 
         # Aggregate player state along backward path
-        player_state = aggregate_player_state(backward_nodes)
+        player_state = aggregate_player_state(backward_nodes, self.llm_provider)
 
         # Build layer context with BOTH backward and forward paths
         layer = build_trace_layer(
@@ -241,7 +223,7 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         l4: LayerContext,
     ) -> str:
         """Format all layers into evaluation prompt."""
-        return EVALUATION_PROMPT_TEMPLATE.format(
+        return CONTEXT_TEMPLATE.format(
             l1_content=l1.content,
             l2_content=l2.content,
             l3_content=l3.content,

@@ -275,7 +275,7 @@ class CoherenceEvaluateView(APIView):
                 # Create LLM provider
                 llm_provider = LLMProviderAdapter(
                     model_name=llm_model,
-                    temperature=0.3,  # Lower temperature for evaluation
+                    temperature=0,
                 )
 
                 # Create evaluator
@@ -331,9 +331,16 @@ class ContextStrategiesView(APIView):
         """List available context strategies."""
         strategies = [
             {
+                "id": "full_context",
+                "name": "Full Context",
+                "description": "Full concept, pillars, and path node descriptions",
+                "requires_embeddings": False,
+                "requires_llm": False,
+            },
+            {
                 "id": "structural_memory",
                 "name": "Structural Memory",
-                "description": "Knowledge Triples + Atomic Facts (Zeng et al. 2024)",
+                "description": "Mixed memory + iterative retrieval (Zeng et al. 2024)",
                 "requires_embeddings": True,
                 "requires_llm": True,
             },
@@ -354,8 +361,8 @@ class ContextStrategiesView(APIView):
             {
                 "id": "combined",
                 "name": "Combined",
-                "description": "Structural data + hierarchical organization",
-                "requires_embeddings": False,
+                "description": "SM mixed encoding + H-MEM routing",
+                "requires_embeddings": True,
                 "requires_llm": True,
             },
         ]
@@ -388,13 +395,20 @@ class StrategyEvaluateView(APIView):
 
     def post(self, request):
         """Evaluate a node using a specific strategy."""
-        with logfire.span("context.api.strategy_evaluate"):
-            # Validate input
-            chart_id = request.data.get("chart_id")
-            node_id = request.data.get("node_id")
-            strategy = request.data.get("strategy", "structural_memory")
-            execution_mode = request.data.get("execution_mode", "monolithic")
-            llm_model = request.data.get("llm_model", "gpt-4o-mini")
+        # Validate input
+        chart_id = request.data.get("chart_id")
+        node_id = request.data.get("node_id")
+        strategy = request.data.get("strategy", "structural_memory")
+        execution_mode = request.data.get("execution_mode", "monolithic")
+        llm_model = request.data.get("llm_model", "gpt-4o-mini")
+
+        span_name = f"context.evaluate.pxnodes.{strategy}.{execution_mode}"
+        with logfire.span(
+            span_name,
+            feature="pxnodes",
+            strategy=strategy,
+            execution_mode=execution_mode,
+        ):
 
             if not chart_id or not node_id:
                 return Response(
@@ -404,6 +418,7 @@ class StrategyEvaluateView(APIView):
 
             # Validate strategy
             valid_strategies = [
+                "full_context",
                 "structural_memory",
                 "hierarchical_graph",
                 "hmem",
@@ -448,7 +463,7 @@ class StrategyEvaluateView(APIView):
             ).first()
 
             logfire.info(
-                "context.api.strategy_evaluate.start",
+                "context.evaluate.start",
                 chart_id=str(chart_id),
                 node_id=str(node_id),
                 strategy=strategy,
@@ -464,7 +479,7 @@ class StrategyEvaluateView(APIView):
                 # Create LLM provider
                 llm_provider = create_llm_provider(
                     model_name=llm_model,
-                    temperature=0.3,
+                    temperature=0,
                 )
 
                 strategy_type = StrategyType(strategy)
@@ -519,7 +534,7 @@ class StrategyEvaluateView(APIView):
                     )
 
                 logfire.info(
-                    "context.api.strategy_evaluate.complete",
+                    "context.evaluate.complete",
                     node_id=str(node_id),
                     strategy=strategy,
                     execution_mode=execution_mode,
@@ -539,7 +554,7 @@ class StrategyEvaluateView(APIView):
             except Exception as e:
                 logger.exception("Strategy evaluation failed")
                 logfire.error(
-                    "context.api.strategy_evaluate.failed",
+                    "context.evaluate.failed",
                     error=str(e),
                 )
                 return Response(
@@ -569,12 +584,17 @@ class StrategyCompareView(APIView):
 
     def post(self, request):
         """Compare strategies for a node."""
-        with logfire.span("context.api.strategy_compare"):
-            # Validate input
-            chart_id = request.data.get("chart_id")
-            node_id = request.data.get("node_id")
-            strategies_list = request.data.get("strategies")
-            llm_model = request.data.get("llm_model", "gpt-4o-mini")
+        # Validate input
+        chart_id = request.data.get("chart_id")
+        node_id = request.data.get("node_id")
+        strategies_list = request.data.get("strategies")
+        llm_model = request.data.get("llm_model", "gpt-4o-mini")
+
+        with logfire.span(
+            "context.compare.pxnodes",
+            feature="pxnodes",
+            strategies=strategies_list,
+        ):
 
             if not chart_id or not node_id:
                 return Response(
@@ -607,7 +627,7 @@ class StrategyCompareView(APIView):
             ).first()
 
             logfire.info(
-                "context.api.strategy_compare.start",
+                "context.compare.start",
                 chart_id=str(chart_id),
                 node_id=str(node_id),
                 strategies=strategies_list,
@@ -623,7 +643,7 @@ class StrategyCompareView(APIView):
                 # Create LLM provider
                 llm_provider = create_llm_provider(
                     model_name=llm_model,
-                    temperature=0.3,
+                    temperature=0,
                 )
 
                 # Parse strategies
@@ -643,7 +663,7 @@ class StrategyCompareView(APIView):
                 )
 
                 logfire.info(
-                    "context.api.strategy_compare.complete",
+                    "context.compare.complete",
                     node_id=str(node_id),
                     strategies_compared=len(strategy_types),
                 )
@@ -658,7 +678,7 @@ class StrategyCompareView(APIView):
             except Exception as e:
                 logger.exception("Strategy comparison failed")
                 logfire.error(
-                    "context.api.strategy_compare.failed",
+                    "context.compare.failed",
                     error=str(e),
                 )
                 return Response(
@@ -687,11 +707,16 @@ class ContextBuildView(APIView):
 
     def post(self, request):
         """Build context for a node."""
-        with logfire.span("context.api.build"):
-            # Validate input
-            chart_id = request.data.get("chart_id")
-            node_id = request.data.get("node_id")
-            strategy = request.data.get("strategy", "structural_memory")
+        # Validate input
+        chart_id = request.data.get("chart_id")
+        node_id = request.data.get("node_id")
+        strategy = request.data.get("strategy", "structural_memory")
+
+        with logfire.span(
+            f"context.build.pxnodes.{strategy}",
+            feature="pxnodes",
+            strategy=strategy,
+        ):
 
             if not chart_id or not node_id:
                 return Response(

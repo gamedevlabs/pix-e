@@ -16,7 +16,9 @@ Key differences from Hierarchical Graph:
 - Parent-child pointer routing for efficient retrieval
 """
 
+import hashlib
 import logging
+import re
 from typing import Any, Optional
 
 from pxnodes.llm.context.base.registry import StrategyRegistry
@@ -164,6 +166,7 @@ class HMEMStrategy(BaseContextStrategy):
                 "query": query,
                 "total_retrieved": retrieval_result.total_retrieved,
                 "embedding_model": self.embedding_model,
+                "includes_target_description": True,
                 # Track routing decisions
                 "routing_path": retrieval_result.routing_path,
                 "retrieval_per_layer": {
@@ -227,70 +230,97 @@ class HMEMStrategy(BaseContextStrategy):
         chart_id = str(scope.chart.id)
         node_id = str(scope.target_node.id)
 
-        # L1: Domain (Project level) - no parent
-        l1_content = self._build_domain_content(scope)
-        l1_index = HMEMLayerEmbedding.build_positional_index(
-            layer=1, project_id=project_id
-        )
-        l1_entry = self.retriever.store_embedding(
-            content=l1_content,
-            layer=1,
-            project_id=project_id,
-            parent_index=None,  # L1 has no parent
-        )
+        # L1: Domain (Project level) - multiple entries per aspect/pillar
+        l1_items = []
+        l1_indices = []
+        for key, content in self._build_domain_entries(scope):
+            l1_index = HMEMLayerEmbedding.build_positional_index(
+                layer=1, project_id=project_id, path_hash=key
+            )
+            l1_items.append(
+                {
+                    "content": content,
+                    "layer": 1,
+                    "project_id": project_id,
+                    "chart_id": "",
+                    "path_hash": key,
+                    "node_id": "",
+                    "node": None,
+                    "chart": None,
+                    "parent_index": None,
+                    "positional_index": l1_index,
+                }
+            )
+            l1_indices.append(l1_index)
+        l1_entries = self._store_embeddings_batch(l1_items)
 
-        # L2: Category (Chart level) - parent = L1
-        l2_content = self._build_category_content(scope)
-        l2_index = HMEMLayerEmbedding.build_positional_index(
-            layer=2, project_id=project_id, chart_id=chart_id
-        )
-        l2_entry = self.retriever.store_embedding(
-            content=l2_content,
-            layer=2,
-            project_id=project_id,
-            chart_id=chart_id,
-            chart=scope.chart,
-            parent_index=l1_index,  # Link to L1
-        )
-        # Register L2 as child of L1
-        l1_entry.add_child(l2_index)
+        # L2: Category (Chart level) - split entries
+        l2_items = []
+        l2_indices = []
+        for key, content in self._build_category_entries(scope):
+            l2_index = HMEMLayerEmbedding.build_positional_index(
+                layer=2, project_id=project_id, chart_id=chart_id, path_hash=key
+            )
+            l2_items.append(
+                {
+                    "content": content,
+                    "layer": 2,
+                    "project_id": project_id,
+                    "chart_id": chart_id,
+                    "path_hash": key,
+                    "node_id": "",
+                    "node": None,
+                    "chart": scope.chart,
+                    "parent_index": l1_indices[0] if l1_indices else None,
+                    "positional_index": l2_index,
+                }
+            )
+            l2_indices.append(l2_index)
+        l2_entries = self._store_embeddings_batch(l2_items)
 
-        # L3: Trace (Path level) - parent = L2
-        # Get FULL path (backward AND forward), not just immediate neighbors
+        # Register all L2 as children of all L1 entries
+        for l1_entry in l1_entries:
+            for l2_index in l2_indices:
+                l1_entry.add_child(l2_index)
+
+        # L3: Trace (Path level) - snippets + node summaries + milestones
         backward_path, forward_path = self._get_full_path(scope)
-
-        if backward_path or forward_path:
-            # Hash includes both directions for unique identification
-            all_path_nodes = backward_path + forward_path
-            path_hash = (
-                compute_path_hash(all_path_nodes) if all_path_nodes else "no_path"
-            )
-            # Build L3 with FULL path summaries (previous AND future)
-            l3_content = self._build_trace_content_with_summaries(
-                scope, backward_path, forward_path
-            )
+        l3_items = []
+        l3_indices = []
+        for key, content in self._build_trace_entries(
+            scope, backward_path, forward_path
+        ):
             l3_index = HMEMLayerEmbedding.build_positional_index(
                 layer=3,
                 project_id=project_id,
                 chart_id=chart_id,
-                path_hash=path_hash,
+                path_hash=key,
             )
-            l3_entry = self.retriever.store_embedding(
-                content=l3_content,
-                layer=3,
-                project_id=project_id,
-                chart_id=chart_id,
-                path_hash=path_hash,
-                chart=scope.chart,
-                parent_index=l2_index,  # Link to L2
+            l3_items.append(
+                {
+                    "content": content,
+                    "layer": 3,
+                    "project_id": project_id,
+                    "chart_id": chart_id,
+                    "path_hash": key,
+                    "node_id": "",
+                    "node": None,
+                    "chart": scope.chart,
+                    "parent_index": l2_indices[0] if l2_indices else None,
+                    "positional_index": l3_index,
+                }
             )
-            # Register L3 as child of L2
-            l2_entry.add_child(l3_index)
-            l3_parent_for_l4 = l3_index
-        else:
-            # No path - L4 links directly to L2
-            l3_parent_for_l4 = l2_index
-            l3_entry = None
+            l3_indices.append(l3_index)
+        l3_entries = self._store_embeddings_batch(l3_items)
+
+        # Register all L3 as children of all L2 entries
+        for l2_entry in l2_entries:
+            for l3_index in l3_indices:
+                l2_entry.add_child(l3_index)
+
+        l3_parent_for_l4 = (
+            l3_indices[0] if l3_indices else (l2_indices[0] if l2_indices else None)
+        )
 
         # L4: Episode (Node level) - parent = L3 (or L2 if no L3)
         l4_content = self._build_episode_content(scope)
@@ -300,21 +330,340 @@ class HMEMStrategy(BaseContextStrategy):
             chart_id=chart_id,
             node_id=node_id,
         )
-        self.retriever.store_embedding(
-            content=l4_content,
-            layer=4,
-            project_id=project_id,
-            chart_id=chart_id,
-            node_id=node_id,
-            node=scope.target_node,
-            chart=scope.chart,
-            parent_index=l3_parent_for_l4,  # Link to L3 (or L2)
+        # Store L4 embeddings (result not used, but method has side effects)
+        self._store_embeddings_batch(
+            [
+                {
+                    "content": l4_content,
+                    "layer": 4,
+                    "project_id": project_id,
+                    "chart_id": chart_id,
+                    "path_hash": "",
+                    "node_id": node_id,
+                    "node": scope.target_node,
+                    "chart": scope.chart,
+                    "parent_index": l3_parent_for_l4,  # Link to L3 (or L2)
+                    "positional_index": l4_index,
+                }
+            ]
         )
-        # Register L4 as child of its parent
-        if l3_entry:
-            l3_entry.add_child(l4_index)
+        # Register L4 as child of all L3 entries (or L2 entries if no L3)
+        if l3_entries:
+            for l3_entry in l3_entries:
+                l3_entry.add_child(l4_index)
         else:
-            l2_entry.add_child(l4_index)
+            for l2_entry in l2_entries:
+                l2_entry.add_child(l4_index)
+
+    def _build_domain_entries(self, scope: EvaluationScope) -> list[tuple[str, str]]:
+        """Build L1 entries for each game concept aspect and pillar."""
+        entries: list[tuple[str, str]] = []
+
+        content = ""
+        if scope.game_concept:
+            content = getattr(scope.game_concept, "content", "") or ""
+
+        if content:
+            overview, sections = self._split_game_concept_sections(content)
+            if overview:
+                entries.append(
+                    ("concept_overview", f"Game Concept Overview:\n{overview}")
+                )
+            for name, text in sections:
+                key = f"concept_{self._slugify(name)}"
+                entries.append((key, f"{name}:\n{text}"))
+        else:
+            entries.append(("concept_overview", "Game Concept Overview: N/A"))
+
+        if scope.project_pillars:
+            for pillar in scope.project_pillars:
+                name = getattr(pillar, "name", "") or "pillar"
+                desc = getattr(pillar, "description", "") or ""
+                key = f"pillar_{self._slugify(name)}"
+                entries.append((key, f"Pillar: {name}\nDescription: {desc}"))
+
+        if not entries:
+            entries.append(("project_context", "No project context available."))
+
+        return entries
+
+    def _build_category_entries(self, scope: EvaluationScope) -> list[tuple[str, str]]:
+        """Build L2 entries for chart-level splits."""
+        chart = scope.chart
+        nodes = self._get_chart_nodes(chart)
+        node_names = [getattr(node, "name", "") for node in nodes if node]
+
+        entries: list[tuple[str, str]] = []
+
+        overview = [
+            f"Chart: {chart.name}",
+            f"Description: {chart.description or 'N/A'}",
+            f"Total Nodes: {len(nodes)}",
+        ]
+        entries.append(("chart_overview", "\n".join(overview)))
+
+        if node_names:
+            nodes_text = ", ".join(node_names[:30])
+            entries.append(("chart_nodes", f"Nodes: {nodes_text}"))
+
+        pacing_lines = []
+        pacing_values: list[float] = []
+        for node in nodes:
+            node_name = getattr(node, "name", "") or "Unnamed"
+            planned = self._get_node_component_value(node, "Planned Time to Complete")
+            if planned is not None:
+                pacing_lines.append(f"{node_name}: {planned}")
+                try:
+                    pacing_values.append(float(planned))
+                except (TypeError, ValueError):
+                    pass
+        if pacing_lines:
+            summary = ""
+            if pacing_values:
+                avg = sum(pacing_values) / len(pacing_values)
+                summary = f"\nAverage Planned Time: {avg:.1f}"
+            entries.append(
+                (
+                    "chart_pacing",
+                    "Planned Time by Node:\n" + "\n".join(pacing_lines) + summary,
+                )
+            )
+
+        mechanics = self._get_chart_component_names(nodes)
+        if mechanics:
+            entries.append(
+                (
+                    "chart_mechanics",
+                    "Chart Mechanics Focus:\n" + ", ".join(sorted(mechanics)),
+                )
+            )
+
+        narrative_summary = self._summarize_chart_narrative(nodes)
+        if narrative_summary:
+            entries.append(("chart_narrative", narrative_summary))
+
+        return entries
+
+    def _build_trace_entries(
+        self,
+        scope: EvaluationScope,
+        backward_path: list[Any],
+        forward_path: list[Any],
+    ) -> list[tuple[str, str]]:
+        """Build L3 entries from path snippets, node summaries, and milestones."""
+        entries: list[tuple[str, str]] = []
+        full_path = list(backward_path) + [scope.target_node] + list(forward_path)
+        if not full_path:
+            return entries
+
+        path_id = compute_path_hash(full_path)
+        summaries = self._summarize_nodes_for_trace(full_path)
+
+        for idx, (node, summary) in enumerate(zip(full_path, summaries)):
+            node_name = getattr(node, "name", "") or f"node_{idx + 1}"
+            key = f"{path_id}_node_{idx + 1}_{self._slugify(node_name)}"
+            entries.append((key, f"Node: {node_name}\nSummary: {summary}"))
+
+        for window_size in (2, 3):
+            if len(full_path) < window_size:
+                continue
+            for i in range(len(full_path) - window_size + 1):
+                snippet_nodes = full_path[i : i + window_size]
+                snippet_names = " -> ".join(
+                    getattr(node, "name", "") or f"Node {i + 1}"
+                    for node in snippet_nodes
+                )
+                snippet_summaries = "; ".join(summaries[i : i + window_size])
+                key = f"{path_id}_path_{window_size}_{i + 1}"
+                snippet_text = (
+                    f"Path snippet: {snippet_names}\nHighlights: {snippet_summaries}"
+                )
+                entries.append(
+                    (
+                        key,
+                        snippet_text,
+                    )
+                )
+
+        milestones = self._extract_path_milestones(full_path, summaries)
+        for idx, milestone in enumerate(milestones, 1):
+            key = f"{path_id}_milestone_{idx}"
+            entries.append((key, f"Milestone: {milestone}"))
+
+        return entries
+
+    def _split_game_concept_sections(
+        self, content: str
+    ) -> tuple[str, list[tuple[str, str]]]:
+        """Split game concept into overview and named sections."""
+        lines = [line.rstrip() for line in content.splitlines()]
+        overview_lines: list[str] = []
+        sections: list[tuple[str, list[str]]] = []
+        current_name: Optional[str] = None
+        current_lines: list[str] = []
+        heading_re = re.compile(r"^\*\*(.+?)\*\*$")
+
+        for line in lines:
+            heading = heading_re.match(line.strip())
+            if heading:
+                if current_name:
+                    sections.append((current_name, current_lines))
+                current_name = heading.group(1).strip()
+                current_lines = []
+                continue
+            if current_name:
+                current_lines.append(line)
+            else:
+                overview_lines.append(line)
+
+        if current_name:
+            sections.append((current_name, current_lines))
+
+        overview = "\n".join(line for line in overview_lines if line.strip()).strip()
+        section_entries = [
+            (name, "\n".join(line for line in lines if line.strip()).strip())
+            for name, lines in sections
+            if any(line.strip() for line in lines)
+        ]
+        return overview, section_entries
+
+    def _extract_path_milestones(
+        self, path_nodes: list[Any], summaries: list[str]
+    ) -> list[str]:
+        """Extract milestone summaries from a path."""
+        if not path_nodes:
+            return []
+
+        if self.llm_provider:
+            node_lines = []
+            for node, summary in zip(path_nodes, summaries):
+                node_lines.append(f"- {getattr(node, 'name', '')}: {summary}")
+            prompt = (
+                "Extract 3-6 key milestones from the path. "
+                "Return each milestone as a short phrase on its own line.\n\n"
+                + "\n".join(node_lines)
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                milestones_list = [
+                    line.strip("- ").strip()
+                    for line in response.splitlines()
+                    if line.strip()
+                ]
+                return [m for m in milestones_list if m]
+            except Exception:
+                logger.warning("Milestone extraction LLM failed, falling back.")
+
+        milestones: list[str] = []
+        for node in path_nodes:
+            description = getattr(node, "description", "") or ""
+            lower = description.lower()
+            if any(
+                term in lower
+                for term in [
+                    "introduces",
+                    "introduce",
+                    "unlocks",
+                    "culminates",
+                    "finale",
+                ]
+            ):
+                sentence = description.split(".")[0].strip()
+                if sentence:
+                    milestones.append(sentence)
+
+        if path_nodes:
+            first_name = getattr(path_nodes[0], "name", "") or "Start"
+            last_name = getattr(path_nodes[-1], "name", "") or "End"
+            milestones.insert(0, f"Start of path: {first_name}")
+            if last_name != first_name:
+                milestones.append(f"End of path: {last_name}")
+
+        deduped: list[str] = []
+        seen = set()
+        for item in milestones:
+            if item and item not in seen:
+                deduped.append(item)
+                seen.add(item)
+        return deduped[:6]
+
+    def _slugify(self, value: str) -> str:
+        """Normalize a string for positional index keys."""
+        normalized = re.sub(r"[^a-zA-Z0-9]+", "_", value.strip().lower())
+        normalized = normalized.strip("_")
+        return normalized or "entry"
+
+    def _get_chart_nodes(self, chart: Any) -> list[Any]:
+        """Return chart nodes from containers if available."""
+        containers = getattr(chart, "containers", None)
+        if not containers:
+            return []
+        if hasattr(containers, "filter"):
+            containers = containers.filter(content__isnull=False)
+        container_list = (
+            containers.all() if hasattr(containers, "all") else list(containers)
+        )
+        nodes = [c.content for c in container_list if getattr(c, "content", None)]
+        return nodes
+
+    def _get_node_component_value(
+        self, node: Any, component_name: str
+    ) -> Optional[Any]:
+        """Return a component value by definition name."""
+        components = getattr(node, "components", None)
+        if not components:
+            return None
+        comp_list = components.all() if hasattr(components, "all") else []
+        for comp in comp_list:
+            def_name = getattr(getattr(comp, "definition", None), "name", "")
+            if def_name == component_name:
+                return getattr(comp, "value", None)
+        return None
+
+    def _get_chart_component_names(self, nodes: list[Any]) -> set[str]:
+        """Collect component definition names from chart nodes."""
+        names: set[str] = set()
+        for node in nodes:
+            components = getattr(node, "components", None)
+            comp_list = (
+                components.all() if components and hasattr(components, "all") else []
+            )
+            for comp in comp_list:
+                def_name = getattr(getattr(comp, "definition", None), "name", "")
+                if def_name and def_name != "Planned Time to Complete":
+                    names.add(def_name)
+        return names
+
+    def _summarize_chart_narrative(self, nodes: list[Any]) -> str:
+        """Summarize chart narrative arc."""
+        if not nodes:
+            return ""
+        if self.llm_provider:
+            node_lines = []
+            for node in nodes:
+                name = getattr(node, "name", "")
+                desc = getattr(node, "description", "") or ""
+                node_lines.append(f"- {name}: {desc}")
+            prompt = (
+                "Summarize the chart narrative arc in 2-3 sentences.\n\n"
+                + "\n".join(node_lines)
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                summary = response.strip()
+                if summary:
+                    return "Chart Narrative Arc:\n" + summary
+            except Exception:
+                logger.warning("Chart narrative LLM failed, falling back.")
+
+        sentences = []
+        for node in nodes[:5]:
+            desc = getattr(node, "description", "") or ""
+            if desc:
+                sentences.append(desc.split(".")[0].strip())
+        if sentences:
+            return "Chart Narrative Arc:\n" + " ".join(sentences)
+        return ""
 
     def _build_layer_contexts(
         self,
@@ -337,8 +686,7 @@ class HMEMStrategy(BaseContextStrategy):
 
             if results:
                 # Content WITHOUT scores - scores are retrieval metadata
-                # Use only top result for cleaner output (avoids duplicate content)
-                content = results[0].content
+                content = "\n\n".join(r.content for r in results)
                 positional_index = results[0].positional_index
                 avg_similarity = sum(r.similarity_score for r in results) / len(results)
             else:
@@ -364,6 +712,62 @@ class HMEMStrategy(BaseContextStrategy):
             )
 
         return layers
+
+    def _store_embeddings_batch(
+        self, items: list[dict[str, Any]]
+    ) -> list[HMEMLayerEmbedding]:
+        """Store embeddings in batches to reduce sequential API calls."""
+        if not items:
+            return []
+
+        generator = self.retriever.embedding_generator
+        embedding_model = self.retriever.embedding_model
+        embedding_dim = self.retriever.embedding_dim
+
+        instances: list[HMEMLayerEmbedding] = []
+        to_embed: list[dict[str, Any]] = []
+
+        for item in items:
+            content = item["content"]
+            content_hash = hashlib.sha256(content.encode()).hexdigest()[:64]
+            positional_index = item["positional_index"]
+            existing = HMEMLayerEmbedding.objects.filter(
+                positional_index=positional_index,
+                content_hash=content_hash,
+            ).first()
+            if existing:
+                parent_index = item.get("parent_index")
+                if parent_index and existing.parent_index != parent_index:
+                    existing.parent_index = parent_index
+                    existing.save(update_fields=["parent_index"])
+                instances.append(existing)
+            else:
+                item["content_hash"] = content_hash
+                to_embed.append(item)
+
+        if to_embed:
+            embeddings = generator.generate_embeddings_batch(
+                [item["content"] for item in to_embed]
+            )
+            for item, embedding in zip(to_embed, embeddings):
+                instance, _ = HMEMLayerEmbedding.objects.update_or_create(
+                    positional_index=item["positional_index"],
+                    defaults={
+                        "layer": item["layer"],
+                        "content": item["content"],
+                        "embedding": embedding,
+                        "embedding_model": embedding_model,
+                        "embedding_dim": embedding_dim,
+                        "content_hash": item["content_hash"],
+                        "node": item.get("node"),
+                        "chart": item.get("chart"),
+                        "parent_index": item.get("parent_index"),
+                        "child_indices": [],
+                    },
+                )
+                instances.append(instance)
+
+        return instances
 
     def _format_context(self, layers: list[LayerContext]) -> str:
         """Format layers into H-MEM context string."""
@@ -502,16 +906,88 @@ class HMEMStrategy(BaseContextStrategy):
             forward_path: Nodes after target (just after target to end)
         """
         parts = []
+        accumulated = ""
+        backward_summaries: list[str] = []
+        forward_summaries: list[str] = []
+
+        path_nodes = backward_path + forward_path
+        if path_nodes:
+            if self.llm_provider:
+                try:
+                    import asyncio
+
+                    import logfire
+
+                    async def run_parallel() -> tuple[list[str], str]:
+                        with logfire.span(
+                            "hmem.trace_parallel_extraction",
+                            total_nodes=len(path_nodes),
+                            backward_count=len(backward_path),
+                            forward_count=len(forward_path),
+                            include_accumulated=bool(backward_path),
+                        ):
+                            summary_tasks = [
+                                asyncio.to_thread(self._summarize_node_for_trace, node)
+                                for node in path_nodes
+                            ]
+                            tasks = list(summary_tasks)
+                            if backward_path:
+                                tasks.append(
+                                    asyncio.to_thread(
+                                        self._compute_accumulated_context, backward_path
+                                    )
+                                )
+                            results = await asyncio.gather(
+                                *tasks, return_exceptions=True
+                            )
+
+                        summaries: list[str] = []
+                        for result in results[: len(path_nodes)]:
+                            if isinstance(result, Exception):
+                                summaries.append("(no details)")
+                            else:
+                                summaries.append(str(result))
+
+                        acc = ""
+                        if backward_path:
+                            acc_result = results[len(path_nodes)]
+                            acc = (
+                                ""
+                                if isinstance(acc_result, Exception)
+                                else str(acc_result)
+                            )
+
+                        return summaries, acc
+
+                    summaries, accumulated = asyncio.run(run_parallel())
+                    backward_summaries = summaries[: len(backward_path)]
+                    forward_summaries = summaries[len(backward_path) :]
+                except RuntimeError:
+                    for node in backward_path:
+                        backward_summaries.append(self._summarize_node_for_trace(node))
+                    for node in forward_path:
+                        forward_summaries.append(self._summarize_node_for_trace(node))
+                    if backward_path:
+                        accumulated = self._compute_accumulated_context(backward_path)
+            else:
+                for node in backward_path:
+                    backward_summaries.append(self._summarize_node_for_trace(node))
+                for node in forward_path:
+                    forward_summaries.append(self._summarize_node_for_trace(node))
+                if backward_path:
+                    accumulated = self._compute_accumulated_context(backward_path)
 
         # Previous nodes (what came before)
         if backward_path:
             parts.append("PREVIOUS NODES (Path leading to target):")
             for i, node in enumerate(backward_path, 1):
-                node_summary = self._summarize_node_for_trace(node)
+                node_summary = (
+                    backward_summaries[i - 1]
+                    if i - 1 < len(backward_summaries)
+                    else self._summarize_node_for_trace(node)
+                )
                 parts.append(f"  {i}. {node.name}: {node_summary}")
 
-            # Add accumulated context summary
-            accumulated = self._compute_accumulated_context(backward_path)
             if accumulated:
                 parts.append(f"\nAccumulated Context: {accumulated}")
         else:
@@ -521,7 +997,11 @@ class HMEMStrategy(BaseContextStrategy):
         if forward_path:
             parts.append("\nFUTURE NODES (What comes after target):")
             for i, node in enumerate(forward_path, 1):
-                node_summary = self._summarize_node_for_trace(node)
+                node_summary = (
+                    forward_summaries[i - 1]
+                    if i - 1 < len(forward_summaries)
+                    else self._summarize_node_for_trace(node)
+                )
                 parts.append(f"  {i}. {node.name}: {node_summary}")
         else:
             parts.append("\nFUTURE NODES: None (this is the end of the path)")
@@ -533,29 +1013,80 @@ class HMEMStrategy(BaseContextStrategy):
         Create a summary of a node for L3 trace.
 
         This creates the "keyword summary" that H-MEM expects at L3.
-        We include the full description to preserve context, plus component values.
         """
-        parts = []
-
-        # Include full description - don't truncate arbitrarily
-        description = getattr(node, "description", "")
-        if description:
-            parts.append(description)
-
-        # Include ALL component values (they're important context)
+        description = getattr(node, "description", "") or ""
         components = getattr(node, "components", None)
-        if components:
-            comp_list = components.all() if hasattr(components, "all") else []
-            key_comps = []
-            for comp in comp_list:
-                def_name = getattr(getattr(comp, "definition", None), "name", "")
-                value = getattr(comp, "value", "")
-                if def_name and value is not None:
-                    key_comps.append(f"{def_name}={value}")
-            if key_comps:
-                parts.append(f"[{', '.join(key_comps)}]")
+        comp_list = (
+            components.all() if components and hasattr(components, "all") else []
+        )
 
-        return " ".join(parts) if parts else "(no details)"
+        comp_lines = []
+        for comp in comp_list:
+            def_name = getattr(getattr(comp, "definition", None), "name", "")
+            value = getattr(comp, "value", "")
+            if def_name and value is not None:
+                comp_lines.append(f"- {def_name}: {value}")
+        comp_block = "\n".join(comp_lines) if comp_lines else "None"
+
+        if self.llm_provider and description:
+            prompt = (
+                "Summarize the node in 1-2 short phrases (keywords/phrases only). "
+                "Focus on mechanics and narrative events. Avoid full sentences.\n\n"
+                f"Title: {getattr(node, 'name', '')}\n"
+                f"Description: {description}\n"
+                f"Components:\n{comp_block}\n\n"
+                "Return a single line."
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                summary = response.strip()
+                if summary:
+                    return summary
+            except Exception:
+                logger.warning("Trace summary LLM failed, falling back to heuristic.")
+
+        parts = []
+        if description:
+            parts.append(description.split(".")[0][:180])
+        if comp_lines:
+            parts.append(f"[{', '.join(comp_lines)[:180]}]")
+        return " ".join(p for p in parts if p).strip() or "(no details)"
+
+    def _summarize_nodes_for_trace(self, nodes: list[Any]) -> list[str]:
+        """Summarize multiple nodes, parallelizing LLM calls when possible."""
+        if not nodes:
+            return []
+
+        if not self.llm_provider or len(nodes) == 1:
+            return [self._summarize_node_for_trace(node) for node in nodes]
+
+        try:
+            import asyncio
+
+            import logfire
+
+            async def run_parallel() -> list[str]:
+                with logfire.span(
+                    "hmem.trace_summaries.generate",
+                    node_count=len(nodes),
+                ):
+                    tasks = [
+                        asyncio.to_thread(self._summarize_node_for_trace, node)
+                        for node in nodes
+                    ]
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                summaries: list[str] = []
+                for result in results:
+                    if isinstance(result, Exception):
+                        summaries.append("(no details)")
+                    else:
+                        summaries.append(str(result))
+                return summaries
+
+            return asyncio.run(run_parallel())
+        except RuntimeError:
+            return [self._summarize_node_for_trace(node) for node in nodes]
 
     def _compute_accumulated_context(self, path_nodes: list[Any]) -> str:
         """
@@ -564,31 +1095,43 @@ class HMEMStrategy(BaseContextStrategy):
         This captures what the player "has" or "knows" at this point
         based on traversing the path.
         """
-        mechanics_introduced = []
-        narrative_events = []
+        if not path_nodes:
+            return ""
 
+        if self.llm_provider:
+            node_summaries = []
+            for node in path_nodes:
+                node_summaries.append(
+                    f"- {getattr(node, 'name', '')}: {getattr(node, 'description', '')}"
+                )
+
+            prompt = (
+                "From the previous nodes, extract accumulated player context.\n"
+                "Return exactly two lines:\n"
+                "Mechanics Introduced: <short list>\n"
+                "Story Events: <short list>\n\n"
+                "Nodes:\n" + "\n".join(node_summaries)
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                return response.strip()
+            except Exception:
+                logger.warning("Accumulated context LLM failed, falling back.")
+
+        component_names = set()
         for node in path_nodes:
-            desc = getattr(node, "description", "") or ""
-            desc_lower = desc.lower()
+            components = getattr(node, "components", None)
+            comp_list = (
+                components.all() if components and hasattr(components, "all") else []
+            )
+            for comp in comp_list:
+                def_name = getattr(getattr(comp, "definition", None), "name", "")
+                if def_name:
+                    component_names.add(def_name)
 
-            # Look for mechanics introduction keywords
-            if any(kw in desc_lower for kw in ["introduces", "teaches", "learn"]):
-                mechanics_introduced.append(node.name)
-
-            # Look for narrative event keywords
-            if any(
-                kw in desc_lower
-                for kw in ["discovers", "reveals", "meets", "defeats", "escapes"]
-            ):
-                narrative_events.append(node.name)
-
-        parts = []
-        if mechanics_introduced:
-            parts.append(f"Mechanics from: {', '.join(mechanics_introduced)}")
-        if narrative_events:
-            parts.append(f"Story events in: {', '.join(narrative_events)}")
-
-        return "; ".join(parts) if parts else ""
+        if component_names:
+            return f"Mechanics from components: {', '.join(sorted(component_names))}"
+        return ""
 
     def _build_episode_content(self, scope: EvaluationScope) -> str:
         """Build L4 episode content from target node."""

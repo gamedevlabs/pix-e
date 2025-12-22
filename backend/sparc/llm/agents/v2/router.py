@@ -38,7 +38,7 @@ class RouterAgent(V2BaseAgent):
     name = "router"
     response_schema = RouterResponse
     aspect_name = "router"
-    temperature = 0.2
+    temperature = 0
 
     def __init__(self, max_retries: int = 3):
         """

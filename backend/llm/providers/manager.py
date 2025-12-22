@@ -216,7 +216,7 @@ class ModelManager:
         self,
         model_name: str,
         prompt: str,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> GenerationResult:
@@ -255,7 +255,7 @@ class ModelManager:
         model_name: str,
         prompt: str,
         response_schema: type,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
@@ -293,7 +293,7 @@ class ModelManager:
         model_name: str,
         prompt: str,
         response_schema: type,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
@@ -402,7 +402,7 @@ class ModelManager:
         prompt: str,
         requirements: Optional[CapabilityRequirements] = None,
         model_preference: ModelPreference = "auto",
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> GenerationResult:

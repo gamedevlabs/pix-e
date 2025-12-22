@@ -27,7 +27,7 @@ CHECK FOR:
 1. CONTRADICTIONS
    - Do different parts of the node contradict each other?
    - Does the description match the node type/category?
-   - Example: "Calm exploration" with intensity 95
+   - Example: "Calm exploration" with Tension=95
 
 2. CLARITY
    - Is the node's purpose clear?
@@ -36,7 +36,7 @@ CHECK FOR:
 
 3. COMPONENT HARMONY
    - Do all node components work together?
-   - Is the intensity appropriate for the content?
+   - Is the component category and value appropriate for the content?
    - Are visual/audio hints consistent with the experience?
 
 4. COMPLETENESS
@@ -61,7 +61,7 @@ class InternalConsistencyAgent(CoherenceDimensionAgent):
     dimension_name = "Internal Consistency"
     response_schema = InternalConsistencyResult
     prompt_template = INTERNAL_PROMPT
-    temperature = 0.3
+    temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
         """Build internal-specific context."""
@@ -73,8 +73,6 @@ class InternalConsistencyAgent(CoherenceDimensionAgent):
         if node_details:
             if node_details.get("category"):
                 context_parts.append(f"Category: {node_details['category']}")
-            if node_details.get("intensity") is not None:
-                context_parts.append(f"Intensity: {node_details['intensity']}")
             if node_details.get("components"):
                 components = node_details["components"]
                 context_parts.append(f"Components: {len(components)} defined")

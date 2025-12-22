@@ -27,7 +27,7 @@ class DocumentContextAgent(V2BaseAgent):
     name = "document_context"
     response_schema = DocumentContextResponse
     aspect_name = "document_context"
-    temperature = 0.2
+    temperature = 0
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate that required inputs are provided."""

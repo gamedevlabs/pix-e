@@ -220,7 +220,7 @@ class StructuralMemoryContextStrategy(BaseContextStrategy):
             result = self.model_manager.generate_with_model(
                 self.model_id,
                 prompt,
-                temperature=0.2,
+                temperature=0,
                 max_tokens=800,
             )
             return result.text.strip()

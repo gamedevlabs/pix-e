@@ -25,7 +25,7 @@ from pxcharts.models import PxChart
 from pxnodes.llm.context.facts import AtomicFact, extract_atomic_facts
 from pxnodes.llm.context.graph_retrieval import get_graph_slice
 from pxnodes.llm.context.structural_memory import StructuralMemoryContext
-from pxnodes.llm.context.triples import compute_derived_triples, extract_all_triples
+from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
 
@@ -36,8 +36,14 @@ class MockLLMProvider:
     """Mock LLM provider for testing without actual LLM calls."""
 
     def generate(self, prompt: str, **kwargs: Any) -> str:
-        """Generate mock atomic facts."""
-        # Return a simple formatted response
+        """Generate mock responses for triples or atomic facts."""
+        prompt_lower = prompt.lower()
+        if "knowledge triples" in prompt_lower or "knowledge_triple" in prompt_lower:
+            return (
+                "<Mission IV — The Lost Children; introduces; orient settlements>\n"
+                "<Mission IV — The Lost Children; features; naval battles>\n"
+                "<Mission IV — The Lost Children; requires; repair crane>"
+            )
         return (
             "1. This node involves a specific gameplay mechanic.\n"
             "2. The player encounters this node during their journey.\n"
@@ -240,7 +246,8 @@ class Command(BaseCommand):
         )
 
         with logfire.span("knowledge_triple_extraction"):
-            triples = extract_all_triples(node, chart, include_neighbors=False)
+            llm_provider = MockLLMProvider()
+            triples = extract_llm_triples_only(node, llm_provider)
 
             self.stdout.write(f"   Extracted {len(triples)} triples:")
             for triple in triples[:10]:  # Show first 10
@@ -287,30 +294,13 @@ class Command(BaseCommand):
             self.style.WARNING("\n[4] Testing Derived Triple Computation")
         )
 
-        if not chart:
-            self.stdout.write("   ⚠️  No chart provided, skipping derived triples")
-            return []
-
-        with logfire.span("derived_triple_computation"):
-            graph_slice = get_graph_slice(node, chart, depth=1)
-            derived = compute_derived_triples(
-                node,
-                graph_slice.previous_nodes,
-                graph_slice.next_nodes,
-            )
-
-            self.stdout.write(f"   Computed {len(derived)} derived triples:")
-            for triple in derived:
-                self.stdout.write(f"      {triple}")
-
-            logfire.info(
-                "derived_triples_computed",
-                node_id=str(node.id),
-                derived_count=len(derived),
-                sample_derived=[str(t) for t in derived[:5]],
-            )
-
-            return derived
+        self.stdout.write("   Derived triples are disabled for LLM-only extraction")
+        logfire.info(
+            "derived_triples_skipped",
+            node_id=str(node.id),
+            reason="LLM-only triple extraction",
+        )
+        return []
 
     def _test_context_building(
         self, node: PxNode, chart: Optional[PxChart], skip_llm: bool
@@ -470,14 +460,15 @@ class Command(BaseCommand):
         # Build context without re-extracting facts
         from pxnodes.llm.context.graph_retrieval import get_graph_slice
         from pxnodes.llm.context.serializer import build_structural_context
-        from pxnodes.llm.context.triples import extract_all_triples
+        from pxnodes.llm.context.triples import extract_llm_triples_only
 
         graph_slice = get_graph_slice(node, chart, depth=1)
-        triples = extract_all_triples(node, chart, include_neighbors=False)
+        llm_provider = None if skip_llm else MockLLMProvider()
+        triples = extract_llm_triples_only(node, llm_provider) if llm_provider else []
 
         # Build context structure without LLM
         context = build_structural_context(
-            node, chart, llm_provider=None, skip_fact_extraction=True
+            node, chart, llm_provider=llm_provider, skip_fact_extraction=True
         )
 
         stats = {

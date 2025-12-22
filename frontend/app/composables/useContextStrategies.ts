@@ -10,7 +10,12 @@
 
 const BASE_URL = 'http://localhost:8000/'
 
-export type StrategyType = 'structural_memory' | 'hierarchical_graph' | 'hmem' | 'combined'
+export type StrategyType =
+  | 'full_context'
+  | 'structural_memory'
+  | 'hierarchical_graph'
+  | 'hmem'
+  | 'combined'
 
 export interface StrategyInfo {
   id: StrategyType

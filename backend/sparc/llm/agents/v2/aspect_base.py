@@ -21,7 +21,7 @@ class AspectAgentV2(V2BaseAgent):
     """
 
     response_schema = SimplifiedAspectResponse
-    temperature = 0.3  # Analytical evaluation
+    temperature = 0
 
     # Subclasses must define these
     prompt_template: str = ""

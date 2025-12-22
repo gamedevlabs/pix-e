@@ -24,12 +24,8 @@ from pxnodes.llm.context.change_detection import (
 )
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
-from pxnodes.llm.context.graph_retrieval import get_graph_slice
 from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
-from pxnodes.llm.context.triples import (
-    compute_derived_triples,
-    extract_all_triples,
-)
+from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
 
@@ -107,7 +103,7 @@ class StructuralMemoryGenerator:
 
     Features:
     - Change detection to skip unchanged nodes
-    - Real LLM for atomic fact extraction
+    - LLM-based triple and atomic fact extraction
     - OpenAI embeddings for vector storage
     - Logfire integration for tracking
     """
@@ -130,7 +126,7 @@ class StructuralMemoryGenerator:
         """
         self.llm_provider = LLMProviderAdapter(
             model_name=llm_model,
-            temperature=0.3,
+            temperature=0,
         )
         self.embedding_generator: Optional[OpenAIEmbeddingGenerator] = None
         if not skip_embeddings:
@@ -255,7 +251,7 @@ class StructuralMemoryGenerator:
         Process a batch of nodes in parallel.
 
         Steps:
-        1. Extract triples for all nodes (deterministic, fast)
+        1. Extract triples for all nodes (LLM calls)
         2. Extract facts for all nodes in parallel (LLM calls)
         3. Batch generate embeddings for all texts
         4. Store all embeddings
@@ -268,19 +264,13 @@ class StructuralMemoryGenerator:
             results: list[NodeProcessingResult] = []
             node_data: list[dict] = []
 
-            # Step 1: Extract triples (deterministic, fast)
+            # Step 1: Extract triples (LLM-based)
             for node in nodes:
-                triples = extract_all_triples(node, chart, include_neighbors=False)
-                graph_slice = get_graph_slice(node, chart, depth=1)
-                derived = compute_derived_triples(
-                    node,
-                    graph_slice.previous_nodes,
-                    graph_slice.next_nodes,
-                )
+                triples = extract_llm_triples_only(node, self.llm_provider)
                 node_data.append(
                     {
                         "node": node,
-                        "triples": triples + derived,
+                        "triples": triples,
                         "facts": [],
                     }
                 )

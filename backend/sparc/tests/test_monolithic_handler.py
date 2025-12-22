@@ -19,7 +19,7 @@ class TestMonolithicSPARCHandler:
 
         assert handler.operation_id == "sparc.monolithic"
         assert handler.operation_name == "monolithic"
-        assert handler.temperature == 0.3
+        assert handler.temperature == 0
         assert handler.response_schema.__name__ == "MonolithicSPARCResponse"
 
     def test_validate_input_with_valid_data(

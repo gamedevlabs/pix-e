@@ -1,71 +1,40 @@
 """
 Combined Strategy Implementation.
 
-Combines Mixed Structural Memory (Zeng et al. 2024) data representation with
-Hierarchical Graph traversal for context organization.
+Combines Mixed Structural Memory (Zeng et al. 2024) encoding with
+H-MEM hierarchical routing (Sun & Zeng 2025).
 
-This strategy uses all four memory structures from Zeng et al. (2024):
+Mixed memory structures (from Structural Memory):
 - Chunks: Raw text segments
 - Knowledge Triples: Structured relationships
 - Atomic Facts: Indivisible information units
 - Summaries: Condensed overviews
 
-Combined with Hierarchical Graph's deterministic traversal:
-- L1 Domain: Project-level context (full game concept + all pillars)
-- L2 Category: Chart-level context
-- L3 Trace: FULL path context via BFS (backward + forward)
-- L4 Episode: Target node with all four memory structures
-
-Key principle: NO ARBITRARY TRUNCATION - preserve full content.
-
-Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
+Hierarchical routing (from H-MEM):
+- L1 Domain: Project-level context (concept aspects + pillars)
+- L2 Category: Chart-level context splits
+- L3 Trace: Path snippets + node summaries + milestones
+- L4 Episode: Target node with mixed memory encoding
 """
 
-import asyncio
-from typing import Any, Optional, cast
+from typing import Any, Optional, Union
+
+import logfire
 
 from pxnodes.llm.context.base.registry import StrategyRegistry
-from pxnodes.llm.context.base.strategy import BaseContextStrategy, LLMProvider
-from pxnodes.llm.context.base.types import (
-    ContextResult,
-    EvaluationScope,
-    LayerContext,
-    StrategyType,
-    get_layer_name,
-)
-from pxnodes.llm.context.hierarchical_graph.traversal import (
-    forward_bfs,
-    reverse_bfs,
-)
-from pxnodes.llm.context.structural_memory.chunks import (
-    Chunk,
-    extract_chunks,
-)
-from pxnodes.llm.context.structural_memory.facts import (
-    AtomicFact,
-)
-from pxnodes.llm.context.structural_memory.facts import LLMProvider as FactsLLMProvider
-from pxnodes.llm.context.structural_memory.facts import (
-    extract_atomic_facts,
-    extract_atomic_facts_async,
-)
+from pxnodes.llm.context.base.strategy import LLMProvider
+from pxnodes.llm.context.base.types import ContextResult, EvaluationScope, StrategyType
+from pxnodes.llm.context.hmem.retriever import HMEMContextResult, compute_path_hash
+from pxnodes.llm.context.hmem.strategy import HMEMStrategy
+from pxnodes.llm.context.structural_memory.chunks import extract_chunks
+from pxnodes.llm.context.structural_memory.facts import extract_atomic_facts
 from pxnodes.llm.context.structural_memory.summaries import (
-    LLMProvider as SummariesLLMProvider,
-)
-from pxnodes.llm.context.structural_memory.summaries import (
-    Summary,
     create_fallback_summary,
     extract_summary,
-    extract_summary_async,
 )
-from pxnodes.llm.context.structural_memory.triples import (
-    KnowledgeTriple,
-    compute_derived_triples,
-    extract_all_triples,
-)
+from pxnodes.llm.context.structural_memory.triples import extract_llm_triples_only
 
-# Combined context template with hierarchical graph + structural memory
-COMBINED_CONTEXT_TEMPLATE = """### COMBINED CONTEXT (Graph + Structural Memory)
+COMBINED_CONTEXT_TEMPLATE = """### COMBINED CONTEXT (SM Mixed + HMEM Routing)
 
 **[L1 DOMAIN - Project Level]**
 {l1_content}
@@ -73,56 +42,24 @@ COMBINED_CONTEXT_TEMPLATE = """### COMBINED CONTEXT (Graph + Structural Memory)
 **[L2 CATEGORY - Chart Level]**
 {l2_content}
 
-**[L3 TRACE - Full Path Context]**
+**[L3 TRACE - Path Level]**
 {l3_content}
 
-**[L4 EPISODE - Target Node]**
+**[L4 EPISODE - Node Level]**
+{l4_content}
 
-Summary:
-{l4_summary}
-
-Description:
-{l4_description}
-
-Knowledge Triples:
-{l4_triples}
-
-Atomic Facts:
-{l4_facts}
-
-**[COMPUTED METRICS]**
-{derived_triples}
-"""
+### EVALUATION
+Based on the hierarchical context above, evaluate whether the target node
+(L4) is coherent with its surrounding context at all levels."""
 
 
 @StrategyRegistry.register(StrategyType.COMBINED)
-class CombinedStrategy(BaseContextStrategy):
+class CombinedStrategy(HMEMStrategy):
     """
-    Combined strategy using Mixed Structural Memory + Hierarchical Graph traversal.
+    Combined strategy: Mixed Structural Memory encoding + HMEM routing.
 
-    This hybrid approach combines:
-
-    1. Mixed Structural Memory (Zeng et al. 2024) - all four structures:
-       - Chunks: Raw text segments (deterministic)
-       - Knowledge Triples: Structured relationships (deterministic)
-       - Atomic Facts: Indivisible information units (LLM-based)
-       - Summaries: Condensed overviews (LLM-based)
-
-    2. Hierarchical Graph traversal (deterministic BFS):
-       - L1 Domain: FULL project context (game concept + all pillars, no truncation)
-       - L2 Category: Chart-level context
-       - L3 Trace: FULL backward + forward path via BFS with structural data
-       - L4 Episode: Target node with all four memory structures
-
-    Key principle: NO ARBITRARY TRUNCATION - preserve full content.
-
-    Mixed memory = Chunks ∪ Triples ∪ Atomic Facts ∪ Summaries
-
-    This allows thesis comparison of:
-    - Pure structural approach (StructuralMemoryStrategy)
-    - Pure hierarchical approach (HierarchicalGraphStrategy)
-    - Pure embedding approach (HMEMStrategy)
-    - Combined approach (this strategy)
+    Uses H-MEM hierarchical retrieval for L1-L3, while L4 embeds the
+    target node using mixed memory (chunks + triples + atomic facts + summary).
     """
 
     strategy_type = StrategyType.COMBINED
@@ -130,537 +67,429 @@ class CombinedStrategy(BaseContextStrategy):
     def __init__(
         self,
         llm_provider: Optional[LLMProvider] = None,
-        skip_fact_extraction: bool = False,
-        skip_summary_extraction: bool = False,
-        include_derived_triples: bool = True,
+        embedding_model: str = "text-embedding-3-small",
+        top_k_per_layer: int = 3,
+        auto_embed: bool = True,
+        l2_similarity_threshold: float = 0.25,
+        l3_similarity_threshold: float = 0.25,
         **kwargs: Any,
     ):
-        """
-        Initialize the Combined strategy.
+        super().__init__(
+            llm_provider=llm_provider,
+            embedding_model=embedding_model,
+            top_k_per_layer=top_k_per_layer,
+            auto_embed=auto_embed,
+            **kwargs,
+        )
+        self._mixed_cache: dict[str, dict[str, Any]] = {}
+        self.l2_similarity_threshold = l2_similarity_threshold
+        self.l3_similarity_threshold = l3_similarity_threshold
 
-        Args:
-            llm_provider: LLM for fact/summary extraction
-            skip_fact_extraction: Skip LLM-based fact extraction
-            skip_summary_extraction: Skip LLM-based summary extraction
-            include_derived_triples: Include computed metrics (intensity deltas)
-        """
-        super().__init__(llm_provider=llm_provider, **kwargs)
-        self.skip_fact_extraction = skip_fact_extraction
-        self.skip_summary_extraction = skip_summary_extraction
-        self.include_derived_triples = include_derived_triples
+    def _build_node_mixed_memory(self, node: Any) -> dict[str, Any]:
+        """Build mixed memory structures for a node (sync)."""
+        summary = None
+        if self.llm_provider:
+            summary = extract_summary(node, llm_provider=self.llm_provider)
+        if not summary:
+            summary = create_fallback_summary(node)
+
+        triples = []
+        facts = []
+        if self.llm_provider:
+            triples = extract_llm_triples_only(node, llm_provider=self.llm_provider)
+            facts = extract_atomic_facts(node, llm_provider=self.llm_provider)
+        chunks = extract_chunks(node)
+
+        return {
+            "summary": summary.content if summary else "",
+            "triples": triples,
+            "facts": facts,
+            "chunks": chunks,
+        }
+
+    async def _build_node_mixed_memory_async(self, node: Any) -> dict[str, Any]:
+        """Build mixed memory structures for a node (async)."""
+        import asyncio
+        from typing import Any as AnyType
+
+        from pxnodes.llm.context.structural_memory.summaries import Summary
+
+        node_name = getattr(node, "name", "")
+        with logfire.span(
+            "combined.mixed_memory.node.extract.async",
+            node_name=node_name,
+        ):
+            summary_task = (
+                asyncio.to_thread(extract_summary, node, self.llm_provider)
+                if self.llm_provider
+                else None
+            )
+            triple_task = (
+                asyncio.to_thread(extract_llm_triples_only, node, self.llm_provider)
+                if self.llm_provider
+                else None
+            )
+            fact_task = (
+                asyncio.to_thread(extract_atomic_facts, node, self.llm_provider)
+                if self.llm_provider
+                else None
+            )
+            chunks_task = asyncio.to_thread(extract_chunks, node)
+
+            tasks: list[AnyType] = [chunks_task]
+            if summary_task:
+                tasks.append(summary_task)
+            if triple_task:
+                tasks.append(triple_task)
+            if fact_task:
+                tasks.append(fact_task)
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            chunks = results[0] if results else []
+            summary: Optional[Summary] = None
+            triples: list[Any] = []
+            facts: list[Any] = []
+
+            for result in results[1:]:
+                if isinstance(result, (Exception, BaseException)):
+                    continue
+                if result is None:
+                    continue
+                if isinstance(result, list):
+                    if result and hasattr(result[0], "fact"):
+                        facts = result
+                    else:
+                        triples = result
+                elif hasattr(result, "content"):
+                    # Type narrowing: we know result has 'content' attribute
+                    summary = result  # type: ignore[assignment]
+
+            if not summary:
+                summary = create_fallback_summary(node)
+
+            return {
+                "summary": summary.content if summary else "",
+                "triples": triples,
+                "facts": facts,
+                "chunks": chunks,
+            }
+
+    def _get_node_mixed_memory(self, node: Any) -> dict[str, Any]:
+        """Return mixed memory structures for a node with simple caching."""
+        node_id = str(getattr(node, "id", "") or getattr(node, "name", ""))
+        cached = self._mixed_cache.get(node_id)
+        if cached:
+            return cached
+
+        mixed = self._build_node_mixed_memory(node)
+        self._mixed_cache[node_id] = mixed
+        return mixed
+
+    def _prime_mixed_cache(self, nodes: list[Any]) -> None:
+        """Precompute mixed memory for nodes in parallel when possible."""
+        if not nodes:
+            return
+
+        if not self.llm_provider:
+            for node in nodes:
+                node_id = str(getattr(node, "id", "") or getattr(node, "name", ""))
+                if node_id not in self._mixed_cache:
+                    self._mixed_cache[node_id] = self._build_node_mixed_memory(node)
+            return
+
+        import asyncio
+
+        async def run_parallel() -> list[Union[dict[str, Any], BaseException]]:
+            with logfire.span(
+                "combined.mixed_memory.cache_warmup",
+                node_count=len(nodes),
+            ):
+                tasks = [self._build_node_mixed_memory_async(node) for node in nodes]
+                return await asyncio.gather(
+                    *tasks, return_exceptions=True
+                )  # type: ignore[return-value]
+
+        try:
+            results = asyncio.run(run_parallel())
+            for node, result in zip(nodes, results):
+                mixed: dict[str, Any]
+                if isinstance(result, (Exception, BaseException)):
+                    mixed = self._build_node_mixed_memory(node)
+                else:
+                    mixed = result
+                node_id = str(getattr(node, "id", "") or getattr(node, "name", ""))
+                self._mixed_cache[node_id] = mixed
+        except RuntimeError:
+            for node in nodes:
+                node_id = str(getattr(node, "id", "") or getattr(node, "name", ""))
+                if node_id not in self._mixed_cache:
+                    self._mixed_cache[node_id] = self._build_node_mixed_memory(node)
+
+    def _format_mixed_memory_block(
+        self,
+        title: str,
+        summary: str,
+        triples: list[Any],
+        facts: list[Any],
+        chunks: Optional[list[Any]] = None,
+        max_triples: int = 8,
+        max_facts: int = 10,
+        max_chunks: int = 5,
+    ) -> str:
+        """Format mixed memory content in a consistent block."""
+        lines = [title, f"Summary: {summary or 'N/A'}"]
+        if chunks:
+            chunk_lines = "\n".join(
+                f"- {chunk.content}" for chunk in chunks[:max_chunks]
+            )
+            lines.append("Chunks:\n" + (chunk_lines or "None"))
+        if triples:
+            triple_lines = "\n".join(f"- {t}" for t in triples[:max_triples])
+            lines.append("Knowledge Triples:\n" + (triple_lines or "None"))
+        if facts:
+            fact_lines = "\n".join(
+                f"- {getattr(fact, 'fact', fact)}" for fact in facts[:max_facts]
+            )
+            lines.append("Atomic Facts:\n" + (fact_lines or "None"))
+        return "\n".join(lines)
+
+    def _ensure_embeddings(self, scope: EvaluationScope) -> None:
+        """Warm mixed-memory cache before embedding generation."""
+        chart_nodes = self._get_chart_nodes(scope.chart)[:30]
+        backward_path, forward_path = self._get_full_path(scope)
+        path_nodes = list(backward_path) + [scope.target_node] + list(forward_path)
+
+        seen = set()
+        ordered: list[Any] = []
+        for node in chart_nodes + path_nodes:
+            node_id = str(getattr(node, "id", "") or getattr(node, "name", ""))
+            if node_id and node_id not in seen:
+                seen.add(node_id)
+                ordered.append(node)
+
+        self._prime_mixed_cache(ordered)
+        super()._ensure_embeddings(scope)
+
+    def _format_context(self, layers):
+        layer_map = {lc.layer: lc.content for lc in layers}
+        return COMBINED_CONTEXT_TEMPLATE.format(
+            l1_content=layer_map.get(1, "No domain context"),
+            l2_content=layer_map.get(2, "No category context"),
+            l3_content=layer_map.get(3, "No trace context"),
+            l4_content=layer_map.get(4, "No episode context"),
+        )
+
+    def _filter_l2_results(self, retrieval_result: HMEMContextResult) -> None:
+        """Filter L2 results to exclude node-level mixed entries."""
+        l2_results = retrieval_result.results_by_layer.get(2, [])
+        if not l2_results:
+            return
+
+        filtered = []
+        for result in l2_results:
+            path_hash = result.metadata.get("path_hash", "")
+            if path_hash and path_hash.startswith("chart_node_"):
+                continue
+            if result.content.lstrip().startswith("Node:"):
+                continue
+            filtered.append(result)
+
+        retrieval_result.results_by_layer[2] = filtered
+        retrieval_result.total_retrieved = sum(
+            len(results) for results in retrieval_result.results_by_layer.values()
+        )
+
+    def _filter_l4_results(
+        self, retrieval_result: HMEMContextResult, node_id: str
+    ) -> None:
+        """Restrict L4 results to the target node only."""
+        l4_results = retrieval_result.results_by_layer.get(4, [])
+        if not l4_results:
+            return
+
+        filtered = [
+            result for result in l4_results if result.metadata.get("node_id") == node_id
+        ]
+        if filtered:
+            retrieval_result.results_by_layer[4] = filtered
+        else:
+            retrieval_result.results_by_layer[4] = []
+
+        retrieval_result.total_retrieved = sum(
+            len(results) for results in retrieval_result.results_by_layer.values()
+        )
 
     def build_context(
         self,
         scope: EvaluationScope,
         query: Optional[str] = None,
     ) -> ContextResult:
-        """
-        Build combined context using all four memory structures + BFS traversal.
+        """Build context with similarity thresholds for L2/L3 and L2 filtering."""
+        if not query:
+            query = self._build_query_from_node(scope.target_node)
 
-        Extracts all four memory structures from Zeng et al. (2024):
-        - Chunks: Raw text segments
-        - Knowledge Triples: Structured relationships
-        - Atomic Facts: Indivisible information units
-        - Summaries: Condensed overviews
+        if self.auto_embed:
+            self._ensure_embeddings(scope)
 
-        Organized using Hierarchical Graph's BFS traversal:
-        - L1 Domain: FULL project context (no truncation)
-        - L2 Category: Chart context
-        - L3 Trace: FULL backward + forward path via BFS with mixed memory
-        - L4 Episode: Target node with all four structures
+        project_id = self._get_project_id(scope)
 
-        Args:
-            scope: Evaluation scope with target node and chart
-            query: Optional query (not used in combined approach)
-
-        Returns:
-            ContextResult with all four memory structures in hierarchical format
-        """
-        # Use hierarchical graph's BFS for FULL path traversal
-        backward_nodes = reverse_bfs(
-            scope.target_node,
-            scope.chart,
-            max_depth=None,  # Get complete backward path
-            stop_at_checkpoint=False,  # Don't stop at checkpoints
+        retrieval_result = self.retriever.retrieve(
+            query=query,
+            project_id=project_id,
+            chart_id=str(scope.chart.id),
+            node_id=str(scope.target_node.id),
+            top_k_per_layer=self.top_k_per_layer,
+            similarity_thresholds={
+                2: self.l2_similarity_threshold,
+                3: self.l3_similarity_threshold,
+            },
         )
-        forward_nodes = forward_bfs(
-            scope.target_node,
-            scope.chart,
-            max_depth=None,  # Get complete forward path
-        )
-        all_nodes = [scope.target_node] + backward_nodes + forward_nodes
+        self._filter_l2_results(retrieval_result)
+        self._filter_l4_results(retrieval_result, str(scope.target_node.id))
 
-        # Build hierarchical layers (L1-L2 from H-MEM style)
-        l1_domain = self._build_domain_layer(scope)
-        l2_category = self._build_category_layer(scope)
-
-        # 1. Extract CHUNKS (deterministic - raw text segments)
-        all_chunks: list[Chunk] = []
-        for node in all_nodes:
-            all_chunks.extend(extract_chunks(node))
-
-        # 2. Extract KNOWLEDGE TRIPLES (deterministic)
-        all_triples: list[KnowledgeTriple] = []
-        for node in all_nodes:
-            all_triples.extend(
-                extract_all_triples(node, scope.chart, include_neighbors=False)
-            )
-
-        # Compute derived triples (intensity deltas, transitions)
-        derived_triples: list[KnowledgeTriple] = []
-        if self.include_derived_triples:
-            derived_triples = compute_derived_triples(
-                scope.target_node,
-                backward_nodes,
-                forward_nodes,
-            )
-        all_triples.extend(derived_triples)
-
-        # 3. Extract ATOMIC FACTS (LLM-based)
-        all_facts: list[AtomicFact] = []
-        if self.llm_provider and not self.skip_fact_extraction:
-            all_facts = self._extract_facts_parallel(all_nodes)
-
-        # 4. Extract SUMMARIES (LLM-based)
-        all_summaries: list[Summary] = []
-        if self.llm_provider and not self.skip_summary_extraction:
-            all_summaries = self._extract_summaries_parallel(all_nodes)
-        else:
-            for node in all_nodes:
-                all_summaries.append(create_fallback_summary(node))
-
-        # Build L3 with FULL path context (backward + forward)
-        l3_trace = self._build_trace_layer_with_mixed_memory(
-            scope,
-            backward_nodes,
-            forward_nodes,
-            all_chunks,
-            all_triples,
-            all_facts,
-            all_summaries,
-        )
-
-        # Build L4 with all four structures for target node
-        l4_episode = self._build_episode_layer_with_mixed_memory(
-            scope, all_chunks, all_triples, all_facts, all_summaries
-        )
-
-        # Format context string
-        context_string = self._format_context(
-            l1_domain,
-            l2_category,
-            l3_trace,
-            scope,
-            all_chunks,
-            all_triples,
-            all_facts,
-            all_summaries,
-            derived_triples,
-        )
+        layers = self._build_layer_contexts(scope, retrieval_result)
+        context_string = self._format_context(layers)
 
         return ContextResult(
             strategy=self.strategy_type,
             context_string=context_string,
-            layers=[l1_domain, l2_category, l3_trace, l4_episode],
-            chunks=all_chunks,
-            triples=all_triples,
-            facts=all_facts,
-            summaries=all_summaries,
+            layers=layers,
+            triples=[],
+            facts=[],
             metadata={
                 "target_node_id": str(scope.target_node.id),
                 "target_node_name": scope.target_node.name,
                 "chart_id": str(scope.chart.id),
-                "chunk_count": len(all_chunks),
-                "triple_count": len(all_triples),
-                "fact_count": len(all_facts),
-                "summary_count": len(all_summaries),
-                "derived_triple_count": len(derived_triples),
-                "backward_path_length": len(backward_nodes),
-                "forward_path_length": len(forward_nodes),
+                "query": query,
+                "total_retrieved": retrieval_result.total_retrieved,
+                "embedding_model": self.embedding_model,
+                "includes_target_description": True,
+                "routing_path": retrieval_result.routing_path,
+                "retrieval_per_layer": {
+                    layer: len(results)
+                    for layer, results in retrieval_result.results_by_layer.items()
+                },
+                "similarity_thresholds": {
+                    "l2": self.l2_similarity_threshold,
+                    "l3": self.l3_similarity_threshold,
+                },
             },
         )
 
-    def _extract_facts_parallel(self, nodes: list[Any]) -> list[AtomicFact]:
-        async def run() -> list[AtomicFact]:
-            # Cast LLMProvider since both protocols are compatible
-            assert self.llm_provider is not None
-            tasks = [
-                extract_atomic_facts_async(
-                    node, cast(FactsLLMProvider, self.llm_provider)
-                )
-                for node in nodes
-            ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            facts: list[AtomicFact] = []
-            for result in results:
-                if isinstance(result, list):
-                    facts.extend(result)
-            return facts
-
-        try:
-            return asyncio.run(run())
-        except RuntimeError:
-            facts: list[AtomicFact] = []
-            for node in nodes:
-                facts.extend(extract_atomic_facts(node, self.llm_provider))
-            return facts
-
-    def _extract_summaries_parallel(self, nodes: list[Any]) -> list[Summary]:
-        async def run() -> list[Summary]:
-            # Cast LLMProvider since both protocols are compatible
-            assert self.llm_provider is not None
-            tasks = [
-                extract_summary_async(
-                    node, cast(SummariesLLMProvider, self.llm_provider)
-                )
-                for node in nodes
-            ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            summaries: list[Summary] = []
-            for result in results:
-                if isinstance(result, Summary):
-                    summaries.append(result)
-            return summaries
-
-        try:
-            return asyncio.run(run())
-        except RuntimeError:
-            return [extract_summary(node, self.llm_provider) for node in nodes]
-
-    def get_layer_context(
-        self,
-        scope: EvaluationScope,
-        layer: int,
-    ) -> LayerContext:
-        """Get context for a specific layer."""
-        if layer == 1:
-            return self._build_domain_layer(scope)
-        elif layer == 2:
-            return self._build_category_layer(scope)
-        elif layer == 3:
-            # Build full context to get L3
-            result = self.build_context(scope)
-            return (
-                result.layers[2]
-                if len(result.layers) > 2
-                else LayerContext(
-                    layer=3, layer_name="trace", content="No path context"
-                )
-            )
-        else:  # layer == 4
-            result = self.build_context(scope)
-            return (
-                result.layers[3]
-                if len(result.layers) > 3
-                else LayerContext(
-                    layer=4, layer_name="episode", content="No episode context"
-                )
-            )
-
-    def _build_domain_layer(self, scope: EvaluationScope) -> LayerContext:
-        """
-        Build L1 Domain layer from project context.
-
-        NO TRUNCATION - preserve full game concept and all pillars.
-        """
-        content_parts = []
-
-        # Full game concept - no truncation
-        if scope.game_concept:
-            concept = getattr(scope.game_concept, "content", "")
-            if concept:
-                content_parts.append(f"Game Concept:\n{concept}")
-
-        # All pillars with full descriptions - no truncation
-        if scope.project_pillars:
-            pillar_texts = []
-            for p in scope.project_pillars:  # All pillars, not limited
-                name = getattr(p, "name", "")
-                desc = getattr(p, "description", "")  # Full description
-                if desc:
-                    pillar_texts.append(f"- {name}: {desc}")
-                else:
-                    pillar_texts.append(f"- {name}")
-            content_parts.append("Design Pillars:\n" + "\n".join(pillar_texts))
-
-        return LayerContext(
-            layer=1,
-            layer_name=get_layer_name(1),
-            content=(
-                "\n\n".join(content_parts) if content_parts else "No project context"
-            ),
-            metadata={"source": "combined_l1"},
-        )
-
-    def _build_category_layer(self, scope: EvaluationScope) -> LayerContext:
-        """Build L2 Category layer from chart."""
-        chart = scope.chart
-        content = f"Chart: {chart.name}\nDescription: {chart.description or 'N/A'}"
-
-        return LayerContext(
-            layer=2,
-            layer_name=get_layer_name(2),
-            content=content,
-            metadata={"chart_id": str(chart.id), "source": "combined_l2"},
-        )
-
-    def _build_trace_layer_with_mixed_memory(
-        self,
-        scope: EvaluationScope,
-        backward_nodes: list[Any],
-        forward_nodes: list[Any],
-        chunks: list[Chunk],
-        triples: list[KnowledgeTriple],
-        facts: list[AtomicFact],
-        summaries: list[Summary],
-    ) -> LayerContext:
-        """
-        Build L3 Trace layer with mixed memory from FULL path.
-
-        Uses hierarchical graph's BFS traversal for complete path context.
-        """
-        content_parts = []
-
-        # PREVIOUS NODES (backward path) - full content
-        if backward_nodes:
-            path_names = [n.name for n in backward_nodes]
-            content_parts.append(
-                f"PREVIOUS NODES (Path leading to target):\n"
-                f"  {' -> '.join(path_names)} -> [TARGET]"
-            )
-
-            # Format each previous node with mixed memory
-            for i, node in enumerate(backward_nodes, 1):
-                node_content = self._format_node_mixed_memory(
-                    node.name,
-                    str(node.id),
-                    chunks,
-                    triples,
-                    facts,
-                    summaries,
-                    index=i,
-                )
-                if node_content:
-                    content_parts.append(node_content)
-        else:
-            content_parts.append("PREVIOUS NODES: None (this is the start)")
-
-        # FUTURE NODES (forward path) - full content
-        if forward_nodes:
-            next_names = [n.name for n in forward_nodes]
-            content_parts.append(
-                f"\nFUTURE NODES (What comes after target):\n"
-                f"  [TARGET] -> {' -> '.join(next_names)}"
-            )
-
-            for i, node in enumerate(forward_nodes, 1):
-                node_content = self._format_node_mixed_memory(
-                    node.name,
-                    str(node.id),
-                    chunks,
-                    triples,
-                    facts,
-                    summaries,
-                    index=i,
-                )
-                if node_content:
-                    content_parts.append(node_content)
-        else:
-            content_parts.append("\nFUTURE NODES: None (this is the end)")
-
-        return LayerContext(
-            layer=3,
-            layer_name=get_layer_name(3),
-            content="\n".join(content_parts) if content_parts else "No path context",
-            metadata={
-                "backward_count": len(backward_nodes),
-                "forward_count": len(forward_nodes),
-                "source": "combined_l3",
-            },
-        )
-
-    def _build_episode_layer_with_mixed_memory(
-        self,
-        scope: EvaluationScope,
-        chunks: list[Chunk],
-        triples: list[KnowledgeTriple],
-        facts: list[AtomicFact],
-        summaries: list[Summary],
-    ) -> LayerContext:
-        """Build L4 Episode layer with all four memory structures."""
+    def _build_episode_content(self, scope: EvaluationScope) -> str:
+        """Build L4 episode content using mixed structural memory."""
         node = scope.target_node
-        node_id = str(node.id)
-        node_name = node.name
-
-        content_parts = [f"Target Node: {node_name}"]
-
-        # Filter for target node
-        node_summaries = [s for s in summaries if s.node_id == node_id]
-        node_triples = [t for t in triples if t.head == node_name]
-        node_facts = [f for f in facts if f.node_id == node_id]
-        node_chunks = [c for c in chunks if c.node_id == node_id]
-
-        # 1. Summary
-        if node_summaries:
-            content_parts.append("\nSummary:")
-            for s in node_summaries:
-                content_parts.append(f"  {s.content}")
-
-        # 2. Knowledge Triples
-        if node_triples:
-            content_parts.append("\nKnowledge Triples:")
-            for t in node_triples[:20]:
-                content_parts.append(f"  - {t}")
-
-        # 3. Atomic Facts
-        if node_facts:
-            content_parts.append("\nAtomic Facts:")
-            for f in node_facts[:15]:
-                content_parts.append(f"  - {f.fact}")
-
-        # 4. Raw Text (description chunks only)
-        desc_chunks = [c for c in node_chunks if c.source == "description"]
-        if desc_chunks:
-            content_parts.append("\nRaw Text:")
-            for c in desc_chunks:
-                content_parts.append(f"  {c.content}")
-
-        return LayerContext(
-            layer=4,
-            layer_name=get_layer_name(4),
-            content="\n".join(content_parts),
-            metadata={
-                "node_id": node_id,
-                "summary_count": len(node_summaries),
-                "triples_count": len(node_triples),
-                "facts_count": len(node_facts),
-                "chunks_count": len(node_chunks),
-                "source": "combined_l4",
-            },
+        parts = [f"Node: {node.name}", f"Description: {node.description or 'N/A'}"]
+        mixed = self._get_node_mixed_memory(node)
+        parts.append(
+            self._format_mixed_memory_block(
+                "Mixed Memory:",
+                mixed["summary"],
+                mixed["triples"],
+                mixed["facts"],
+                chunks=mixed["chunks"],
+            )
         )
 
-    def _format_node_mixed_memory(
-        self,
-        node_name: str,
-        node_id: str,
-        chunks: list[Chunk],
-        triples: list[KnowledgeTriple],
-        facts: list[AtomicFact],
-        summaries: list[Summary],
-        index: int = 0,
-    ) -> str:
+        return "\n".join(parts)
+
+    def _build_category_entries(self, scope: EvaluationScope) -> list[tuple[str, str]]:
         """
-        Format all four memory structures for a single node.
+        Build L2 entries using mixed memory for chart nodes and path snippets.
 
-        NO TRUNCATION - preserve full content for each node.
+        Keeps chart-level overview entries, then adds mixed memory for nodes and
+        path snippets to capture inter-node transitions.
         """
-        # Filter for this node
-        node_summaries = [s for s in summaries if s.node_id == node_id]
-        node_triples = [t for t in triples if t.head == node_name]
-        node_facts = [f for f in facts if f.node_id == node_id]
-        node_chunks = [c for c in chunks if c.node_id == node_id]
+        entries = super()._build_category_entries(scope)
 
-        # Get description chunk for raw text
-        desc_chunks = [c for c in node_chunks if c.source == "description"]
+        chart_nodes = self._get_chart_nodes(scope.chart)
+        max_nodes = 30
+        for node in chart_nodes[:max_nodes]:
+            node_name = getattr(node, "name", "") or "Unnamed"
+            key = f"chart_node_{self._slugify(node_name)}"
+            mixed = self._get_node_mixed_memory(node)
+            content = self._format_mixed_memory_block(
+                f"Node: {node_name}",
+                mixed["summary"],
+                mixed["triples"],
+                mixed["facts"],
+                chunks=None,
+            )
+            entries.append((key, content))
 
-        if not any([node_summaries, node_triples, node_facts, desc_chunks]):
-            return ""
+        return entries
 
-        lines = [f"\n  {index}. {node_name}:"]
-
-        # Summary - full content (no truncation)
-        if node_summaries:
-            lines.append(f"     Summary: {node_summaries[0].content}")
-
-        # Raw description - full content
-        if desc_chunks:
-            lines.append(f"     Description: {desc_chunks[0].content}")
-
-        # Triples - all relevant triples
-        if node_triples:
-            lines.append("     Triples:")
-            for t in node_triples:
-                lines.append(f"       - {t}")
-
-        # Facts - all facts
-        if node_facts:
-            lines.append("     Facts:")
-            for f in node_facts:
-                lines.append(f"       - {f.fact}")
-
-        return "\n".join(lines)
-
-    def _format_context(
+    def _build_trace_entries(
         self,
-        l1: LayerContext,
-        l2: LayerContext,
-        l3: LayerContext,
         scope: EvaluationScope,
-        chunks: list[Chunk],
-        triples: list[KnowledgeTriple],
-        facts: list[AtomicFact],
-        summaries: list[Summary],
-        derived_triples: list[KnowledgeTriple],
-    ) -> str:
+        backward_path: list[Any],
+        forward_path: list[Any],
+    ) -> list[tuple[str, str]]:
         """
-        Format all components into combined context string.
+        Build L3 entries following H-MEM structure, augmented with mixed memory.
 
-        NO TRUNCATION - preserve full content for target node.
+        Includes:
+        - Node entries (mixed memory summary/triples/facts)
+        - Path snippets (summary only, H-MEM style)
+        - Milestones (from H-MEM heuristic)
         """
-        target_id = str(scope.target_node.id)
-        target_name = scope.target_node.name
+        entries: list[tuple[str, str]] = []
+        full_path = list(backward_path) + [scope.target_node] + list(forward_path)
+        if not full_path:
+            return entries
 
-        # Filter for target node
-        target_summaries = [s for s in summaries if s.node_id == target_id]
-        target_triples = [t for t in triples if t.head == target_name]
-        target_facts = [f for f in facts if f.node_id == target_id]
+        path_id = compute_path_hash(full_path)
 
-        # Format L4 sections - NO TRUNCATION
-        l4_summary_str = (
-            target_summaries[0].content if target_summaries else "(no summary)"
-        )
+        summaries: list[str] = []
+        for idx, node in enumerate(full_path):
+            node_name = getattr(node, "name", "") or f"node_{idx + 1}"
+            key = f"{path_id}_node_{idx + 1}_{self._slugify(node_name)}"
+            mixed = self._get_node_mixed_memory(node)
+            summaries.append(mixed["summary"])
+            content = self._format_mixed_memory_block(
+                f"Node: {node_name}",
+                mixed["summary"],
+                mixed["triples"],
+                mixed["facts"],
+                chunks=None,
+            )
+            entries.append((key, content))
 
-        # Full description from node
-        l4_description_str = scope.target_node.description or "(no description)"
+        for window_size in (2, 3):
+            if len(full_path) < window_size:
+                continue
+            for i in range(len(full_path) - window_size + 1):
+                snippet_nodes = full_path[i : i + window_size]
+                snippet_names = " -> ".join(
+                    getattr(node, "name", "") or f"Node {i + 1}"
+                    for node in snippet_nodes
+                )
+                snippet_summaries = [
+                    self._get_node_mixed_memory(node)["summary"]
+                    for node in snippet_nodes
+                ]
+                summary = "; ".join(s for s in snippet_summaries if s)
 
-        # All triples - no limit
-        l4_triples_str = (
-            "\n".join(f"  - {t}" for t in target_triples)
-            if target_triples
-            else "  (none)"
-        )
+                key = f"{path_id}_path_{window_size}_{i + 1}"
+                content = self._format_mixed_memory_block(
+                    f"Path snippet: {snippet_names}",
+                    summary or "N/A",
+                    triples=[],
+                    facts=[],
+                    chunks=None,
+                    max_facts=12,
+                )
+                entries.append((key, content))
 
-        # All facts - no limit
-        l4_facts_str = (
-            "\n".join(f"  - {f.fact}" for f in target_facts)
-            if target_facts
-            else "  (none)"
-        )
+        milestones = self._extract_path_milestones(full_path, summaries)
+        for idx, milestone in enumerate(milestones, 1):
+            key = f"{path_id}_milestone_{idx}"
+            entries.append((key, f"Milestone: {milestone}"))
 
-        # Derived triples (computed metrics)
-        derived_str = (
-            "\n".join(f"  - {t}" for t in derived_triples)
-            if derived_triples
-            else "  (none)"
-        )
-
-        return COMBINED_CONTEXT_TEMPLATE.format(
-            l1_content=l1.content,
-            l2_content=l2.content,
-            l3_content=l3.content,
-            l4_summary=l4_summary_str,
-            l4_description=l4_description_str,
-            l4_triples=l4_triples_str,
-            l4_facts=l4_facts_str,
-            derived_triples=derived_str,
-        )
-
-    @property
-    def requires_embeddings(self) -> bool:
-        """Combined uses structural data, not necessarily embeddings."""
-        return False
+        return entries
 
     @property
     def requires_llm(self) -> bool:
-        """Requires LLM for atomic fact extraction (unless skipped)."""
-        return not self.skip_fact_extraction
+        """Combined strategy relies on LLM extraction for mixed memory."""
+        return True

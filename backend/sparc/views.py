@@ -208,8 +208,12 @@ class SPARCQuickScanView(APIView):
         """Execute quick scan evaluation with agentic execution."""
         logfire = get_logfire()
 
+        context_strategy = request.data.get("context_strategy", "default")
         with logfire.span(
-            "sparc.quick_scan",
+            f"sparc.evaluate.quick_scan.{context_strategy}.agentic",
+            feature="sparc",
+            strategy=context_strategy,
+            execution_mode="agentic",
             model=request.data.get("model", "openai"),
             game_text_length=len(request.data.get("game_text", "")),
         ):
@@ -322,7 +326,10 @@ class SPARCMonolithicView(APIView):
         logfire = get_logfire()
 
         with logfire.span(
-            "sparc.monolithic",
+            "sparc.evaluate.monolithic.default.monolithic",
+            feature="sparc",
+            strategy="default",
+            execution_mode="monolithic",
             model=request.data.get("model", "openai"),
             game_text_length=len(request.data.get("game_text", "")),
         ):

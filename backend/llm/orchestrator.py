@@ -86,7 +86,7 @@ class LLMOrchestrator:
                 result = handler.execute(
                     data=request.data,
                     model_name=model_name,
-                    temperature=request.temperature or 0.7,
+                    temperature=request.temperature or 0,
                     max_tokens=request.max_tokens,
                     **(request.provider_options or {}),
                 )

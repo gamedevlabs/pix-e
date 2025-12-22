@@ -222,7 +222,7 @@ async def extract_summary_async(
     node_name = node.name
 
     with logfire.span(
-        "extract_summary",
+        "structural_memory.extract.summary",
         node_id=node_id,
         node_name=node_name,
     ):

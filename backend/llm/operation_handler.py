@@ -91,7 +91,7 @@ class BaseOperationHandler(ABC):
         self,
         data: Dict[str, Any],
         model_name: str,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs,
     ) -> BaseModel:
