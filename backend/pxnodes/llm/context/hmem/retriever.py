@@ -415,7 +415,18 @@ class HMEMRetriever:
         results: list[HMEMRetrievalResult] = []
         query_np = np.array(query_embedding)
 
+        l2_allowed = {
+            "chart_overview",
+            "chart_nodes",
+            "chart_pacing",
+            "chart_mechanics",
+            "chart_narrative",
+        }
         for candidate in candidates:
+            if candidate.layer == 2:
+                path_hash = getattr(candidate, "path_hash", "")
+                if path_hash not in l2_allowed:
+                    continue
             candidate_embedding = np.array(candidate.embedding)
             similarity = self._cosine_similarity(query_np, candidate_embedding)
 

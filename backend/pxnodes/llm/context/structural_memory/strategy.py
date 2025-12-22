@@ -28,6 +28,8 @@ import hashlib
 import logging
 from typing import Any, Optional, cast
 
+import logfire
+
 from pxnodes.llm.context.base.registry import StrategyRegistry
 from pxnodes.llm.context.base.strategy import BaseContextStrategy, LLMProvider
 from pxnodes.llm.context.base.types import (
@@ -37,16 +39,19 @@ from pxnodes.llm.context.base.types import (
     StrategyType,
     get_layer_name,
 )
-from pxnodes.llm.context.structural_memory.chunks import (
-    Chunk,
-    extract_chunks,
+from pxnodes.llm.context.shared.prompts import (
+    ATOMIC_FACT_EXTRACTION_PROMPT,
+    KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
 )
+from pxnodes.llm.context.structural_memory.chunks import Chunk, extract_chunks
 from pxnodes.llm.context.structural_memory.facts import (
     AtomicFact,
     extract_atomic_facts,
     extract_atomic_facts_async,
+    parse_atomic_facts,
 )
 from pxnodes.llm.context.structural_memory.summaries import (
+    SUMMARY_EXTRACTION_PROMPT,
     Summary,
     create_fallback_summary,
     extract_summary,
@@ -56,6 +61,7 @@ from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
     extract_llm_triples_only,
     extract_llm_triples_only_async,
+    parse_llm_triples,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,6 +109,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         use_iterative_retrieval: bool = True,
         skip_fact_extraction: bool = False,
         skip_summary_extraction: bool = False,
+        max_chunks_per_node: int = 2,
         **kwargs: Any,
     ):
         """
@@ -125,6 +132,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         self.use_iterative_retrieval = use_iterative_retrieval
         self.skip_fact_extraction = skip_fact_extraction
         self.skip_summary_extraction = skip_summary_extraction
+        self.max_chunks_per_node = max_chunks_per_node
+        self._domain_layer_cache: Optional[LayerContext] = None
+        self._domain_layer_cache_key: Optional[str] = None
 
     def build_context(
         self,
@@ -291,8 +301,6 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         Iterative retrieval assumes knowledge triples and atomic facts exist
         in the vector store. If missing, generate and store them.
         """
-        import logfire
-
         from pxnodes.llm.context.shared.embeddings import OpenAIEmbeddingGenerator
         from pxnodes.llm.context.shared.vector_store import VectorStore
 
@@ -450,8 +458,6 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         if self.llm_provider and not self.skip_summary_extraction:
             import asyncio
             import concurrent.futures
-
-            import logfire
 
             async def _extract_summaries_parallel() -> list[Summary]:
                 tasks = [
@@ -699,7 +705,6 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         """
         import asyncio
 
-        import logfire
         from asgiref.sync import sync_to_async
 
         from pxnodes.llm.context.shared.graph_retrieval import get_full_path
@@ -1054,11 +1059,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             for f in node_facts:
                 lines.append(f"    - {f.fact}")
 
-        # 4. Chunks (raw text - only include description chunks, skip name)
+        # 4. Chunks (raw text segments)
         desc_chunks = [c for c in node_chunks if c.source == "description"]
         if desc_chunks:
-            lines.append("\n  Raw Text:")
-            for c in desc_chunks:
+            lines.append("\n  Chunks:")
+            for c in desc_chunks[: self.max_chunks_per_node]:
                 # Indent multi-line content
                 content = c.content.replace("\n", "\n    ")
                 lines.append(f"    {content}")
@@ -1119,31 +1124,157 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         return layers
 
     def _build_domain_layer(self, scope: EvaluationScope) -> LayerContext:
-        """Build L1 Domain layer from project context."""
-        content_parts = []
-
+        """Build L1 Domain layer using mixed memory for concept and pillars."""
+        cache_key_parts = []
+        concept_text = ""
         if scope.game_concept:
-            content_parts.append(f"Game Concept:\n{scope.game_concept.content}")
+            concept_text = scope.game_concept.content or ""
+        cache_key_parts.append(concept_text)
 
         if scope.project_pillars:
-            pillar_lines = []
-            for p in scope.project_pillars:
-                name = getattr(p, "name", "")
-                desc = getattr(p, "description", "")
-                if desc:
-                    pillar_lines.append(f"- {name}: {desc}")
-                else:
-                    pillar_lines.append(f"- {name}")
-            content_parts.append("Design Pillars:\n" + "\n".join(pillar_lines))
+            for pillar in scope.project_pillars:
+                name = getattr(pillar, "name", "") or ""
+                desc = getattr(pillar, "description", "") or ""
+                cache_key_parts.append(f"{name}:{desc}")
 
-        return LayerContext(
+        cache_key = hashlib.sha256("\n".join(cache_key_parts).encode()).hexdigest()
+        if self._domain_layer_cache_key == cache_key and self._domain_layer_cache:
+            return self._domain_layer_cache
+
+        content_parts = []
+
+        def chunk_text(text: str, max_size: int = 500) -> list[str]:
+            if not text:
+                return []
+            text = text.strip()
+            return [text[i : i + max_size] for i in range(0, len(text), max_size)]
+
+        def summarize_text(title: str, description: str) -> str:
+            if not self.llm_provider:
+                return description.split(".")[0][:200].strip() if description else "N/A"
+            prompt = SUMMARY_EXTRACTION_PROMPT.format(
+                title=title,
+                description=description or "No description provided.",
+                components="- No components attached",
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                return response.strip() or "N/A"
+            except Exception as exc:
+                logger.warning(f"Domain summary extraction failed: {exc}")
+                return description.split(".")[0][:200].strip() if description else "N/A"
+
+        def extract_domain_facts(title: str, description: str) -> list[str]:
+            if not self.llm_provider or self.skip_fact_extraction:
+                return []
+            prompt = ATOMIC_FACT_EXTRACTION_PROMPT.format(
+                title=title,
+                description=description or "No description provided.",
+                components="- No components attached",
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                return parse_atomic_facts(response)
+            except Exception as exc:
+                logger.warning(f"Domain fact extraction failed: {exc}")
+                return []
+
+        def extract_domain_triples(title: str, description: str) -> list[str]:
+            if not self.llm_provider:
+                return []
+            prompt = KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT.format(
+                title=title,
+                description=description or "No description provided.",
+                components="- No components attached",
+            )
+            try:
+                response = self.llm_provider.generate(prompt)
+                triples = parse_llm_triples(response)
+                return [str(t) for t in triples]
+            except Exception as exc:
+                logger.warning(f"Domain triple extraction failed: {exc}")
+                return []
+
+        def build_mixed_block(title: str, text: str) -> list[str]:
+            if not text:
+                return []
+            summary = summarize_text(title, text)
+            facts = extract_domain_facts(title, text)
+            triples = extract_domain_triples(title, text)
+            chunks = chunk_text(text)
+
+            lines = [f"{title}:", f"Summary: {summary}"]
+            if triples:
+                lines.append("Knowledge Triples:")
+                for t in triples[:8]:
+                    lines.append(f"- {t}")
+            if facts:
+                lines.append("Atomic Facts:")
+                for f in facts[:10]:
+                    lines.append(f"- {f}")
+            if chunks:
+                lines.append("Chunks:")
+                for c in chunks[: self.max_chunks_per_node]:
+                    lines.append(f"- {c}")
+            return lines
+
+        entries: list[tuple[str, str]] = []
+        if scope.game_concept:
+            entries.append(("Game Concept", scope.game_concept.content or ""))
+        if scope.project_pillars:
+            for pillar in scope.project_pillars:
+                name = getattr(pillar, "name", "") or "Pillar"
+                desc = getattr(pillar, "description", "") or ""
+                entries.append((f"Pillar: {name}", desc))
+
+        if entries:
+            try:
+                import asyncio
+                import concurrent.futures
+
+                async def run_parallel() -> list[Any]:
+                    with logfire.span(
+                        "structural_memory.domain_mixed.parallel",
+                        entry_count=len(entries),
+                    ):
+                        tasks = [
+                            asyncio.to_thread(build_mixed_block, title, text)
+                            for title, text in entries
+                        ]
+                        return await asyncio.gather(*tasks, return_exceptions=True)
+
+                results = asyncio.run(run_parallel())
+            except RuntimeError:
+                results = []
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    futures = [
+                        executor.submit(build_mixed_block, title, text)
+                        for title, text in entries
+                    ]
+                    for future in futures:
+                        try:
+                            results.append(future.result())
+                        except Exception as exc:
+                            logger.warning(f"Domain mixed block failed: {exc}")
+                            results.append([])
+
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning(f"Domain mixed block failed: {result}")
+                    continue
+                content_parts.extend(result)
+
+        layer = LayerContext(
             layer=1,
             layer_name=get_layer_name(1),
             content=(
-                "\n\n".join(content_parts) if content_parts else "No project context"
+                "\n".join(content_parts) if content_parts else "No project context"
             ),
-            metadata={"source": "project_config"},
+            metadata={"source": "project_config", "mixed_memory": True},
         )
+        self._domain_layer_cache = layer
+        self._domain_layer_cache_key = cache_key
+        return layer
 
     def _build_chart_layer(self, scope: EvaluationScope) -> LayerContext:
         """Build L2 Category layer from chart."""
