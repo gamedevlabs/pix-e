@@ -60,7 +60,7 @@ class ForwardSetupAgent(CoherenceDimensionAgent):
     dimension_name = "Forward Setup"
     response_schema = ForwardSetupResult
     prompt_template = FORWARD_PROMPT
-    temperature = 0.3
+    temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
         """Build forward-specific context."""
@@ -86,4 +86,4 @@ class ForwardSetupAgent(CoherenceDimensionAgent):
                     f"Future requirements: {', '.join(set(requirements))}"
                 )
 
-        return "\n".join(context_parts) if context_parts else "No forward context"
+        return "\n".join(context_parts)

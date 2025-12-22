@@ -324,7 +324,7 @@ class AnthropicProvider(BaseProvider):
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=kwargs.get("max_tokens", 1024),
-            temperature=kwargs.get("temperature", 0.7)
+            temperature=kwargs.get("temperature", 0)
         )
         return response.content[0].text
 

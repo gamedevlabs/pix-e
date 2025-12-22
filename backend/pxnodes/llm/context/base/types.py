@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class StrategyType(Enum):
     """Available context engineering strategies."""
 
+    FULL_CONTEXT = "full_context"
     STRUCTURAL_MEMORY = "structural_memory"
     HIERARCHICAL_GRAPH = "hierarchical_graph"
     HMEM = "hmem"

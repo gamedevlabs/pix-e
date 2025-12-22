@@ -47,7 +47,7 @@ class PlayerExperienceAgent(SPARCBaseAgent):
 
     name = "player_experience"
     response_schema = PlayerExperienceResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = PLAYER_EXPERIENCE_PROMPT
 
 
@@ -56,7 +56,7 @@ class ThemeAgent(SPARCBaseAgent):
 
     name = "theme"
     response_schema = ThemeResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = THEME_PROMPT
 
 
@@ -65,7 +65,7 @@ class PurposeAgent(SPARCBaseAgent):
 
     name = "purpose"
     response_schema = PurposeResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = PURPOSE_PROMPT
 
 
@@ -79,7 +79,7 @@ class GameplayAgent(SPARCBaseAgent):
 
     name = "gameplay"
     response_schema = GameplayResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = GAMEPLAY_PROMPT
 
 
@@ -88,7 +88,7 @@ class GoalsChallengesRewardsAgent(SPARCBaseAgent):
 
     name = "goals_challenges_rewards"
     response_schema = GoalsChallengesRewardsResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = GOALS_CHALLENGES_REWARDS_PROMPT
 
 
@@ -102,7 +102,7 @@ class PlaceAgent(SPARCBaseAgent):
 
     name = "place"
     response_schema = PlaceResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = PLACE_PROMPT
 
 
@@ -111,7 +111,7 @@ class StoryNarrativeAgent(SPARCBaseAgent):
 
     name = "story_narrative"
     response_schema = StoryNarrativeResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = STORY_NARRATIVE_PROMPT
 
 
@@ -125,7 +125,7 @@ class UniqueFeaturesAgent(SPARCBaseAgent):
 
     name = "unique_features"
     response_schema = UniqueFeaturesResponse
-    temperature = 0.4
+    temperature = 0
     prompt_template = UNIQUE_FEATURES_PROMPT
 
 
@@ -134,7 +134,7 @@ class ArtDirectionAgent(SPARCBaseAgent):
 
     name = "art_direction"
     response_schema = ArtDirectionResponse
-    temperature = 0.4
+    temperature = 0
     prompt_template = ART_DIRECTION_PROMPT
 
 
@@ -143,5 +143,5 @@ class OpportunitiesRisksAgent(SPARCBaseAgent):
 
     name = "opportunities_risks"
     response_schema = OpportunitiesRisksResponse
-    temperature = 0.3
+    temperature = 0
     prompt_template = OPPORTUNITIES_RISKS_PROMPT

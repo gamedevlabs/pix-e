@@ -60,10 +60,20 @@ class ContextualFitAgent(CoherenceDimensionAgent):
     dimension_name = "Contextual Fit"
     response_schema = ContextualFitResult
     prompt_template = CONTEXTUAL_PROMPT
-    temperature = 0.3
+    temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
         """Build contextual-specific context."""
+        strategy_type = data.get("strategy_type")
+        if strategy_type in {
+            "full_context",
+            "structural_memory",
+            "hmem",
+            "combined",
+            "hierarchical_graph",
+        }:
+            return ""
+
         pillars = data.get("pillars", [])
         game_concept = data.get("game_concept", "")
 

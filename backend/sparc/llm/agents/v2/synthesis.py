@@ -23,7 +23,7 @@ class SynthesisAgent(V2BaseAgent):
     name = "synthesis"
     response_schema = SPARCSynthesis
     aspect_name = "synthesis"
-    temperature = 0.3
+    temperature = 0
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """Validate that aspect_results are provided."""

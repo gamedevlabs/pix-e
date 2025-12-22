@@ -131,7 +131,7 @@ CHECK FOR:
 1. CONTRADICTIONS
    - Do different parts of the node contradict each other?
    - Does the description match the node type/category?
-   - Example: "Calm exploration" with intensity 95
+   - Example: "Calm exploration" with Tension=95
 
 2. CLARITY
    - Is the node's purpose clear?
@@ -140,7 +140,7 @@ CHECK FOR:
 
 3. COMPONENT HARMONY
    - Do all node components work together?
-   - Is the intensity appropriate for the content?
+   - Is the component category and value appropriate for the content?
    - Are visual/audio hints consistent with the experience?
 
 4. COMPLETENESS
@@ -257,7 +257,7 @@ class PxNodesCoherenceWorkflow:
         strategy_type: StrategyType = StrategyType.STRUCTURAL_MEMORY,
         max_parallel: int = 4,
         llm_provider: Optional[Any] = None,
-        use_iterative_retrieval: bool = False,
+        use_iterative_retrieval: bool = True,
     ):
         """
         Initialize the workflow.
@@ -323,98 +323,122 @@ class PxNodesCoherenceWorkflow:
         start_time = time.time()
         total_tokens = 0
 
+        span_name = f"coherence.evaluate.pxnodes.{self.strategy_type.value}.agentic"
+
         # Determine which dimensions to evaluate
         dimensions_to_run = dimensions or list(DIMENSION_AGENTS.keys())
 
-        # Build context using strategy
-        # Use async version for parallel extraction if available (StructuralMemory)
-        strategy = self._get_strategy()
-        scope = EvaluationScope(
-            target_node=node,
-            chart=chart,
-            project_pillars=project_pillars,
-            game_concept=game_concept,
-        )
-
-        # Use async build_context if available (for parallel extraction)
-        if hasattr(strategy, "build_context_async"):
-            with logfire.span(
-                "build_context_async",
-                strategy=self.strategy_type.value,
-                target_node=node.name,
-            ):
-                context_result = await strategy.build_context_async(scope)
-        else:
-            # Fallback to sync version wrapped in async
-            context_result = await sync_to_async(
-                strategy.build_context, thread_sensitive=True
-            )(scope)
-
-        # Prepare shared context data for all agents
-        # Note: _extract_node_details contains Django ORM calls (node.components.all())
-        # Wrap in sync_to_async to avoid SynchronousOnlyOperation errors.
-        node_details = await sync_to_async(
-            self._extract_node_details, thread_sensitive=True
-        )(node)
-
-        base_data = {
-            "context_string": context_result.context_string,
-            "target_node_name": node.name,
-            "node_details": node_details,
-            "backward_nodes": self._extract_path_nodes(context_result, "backward"),
-            "forward_nodes": self._extract_path_nodes(context_result, "forward"),
-            "pillars": self._format_pillars(project_pillars),
-            "game_concept": game_concept,
-            "player_state": context_result.metadata.get("player_state", {}),
-        }
-
-        # Build execution context
-        execution_context = {
-            "model_manager": self.model_manager,
-            "model_id": model_id,
-            "data": base_data,
-        }
-
-        # Run dimension agents in parallel
-        semaphore = asyncio.Semaphore(self.max_parallel)
-        tasks = []
-
-        for dimension_name in dimensions_to_run:
-            agent_class = DIMENSION_AGENTS.get(dimension_name)
-            if agent_class:
-                tasks.append(
-                    self._run_dimension_agent(
-                        agent_class=agent_class,
-                        context=execution_context,
-                        semaphore=semaphore,
-                    )
-                )
-
-        # Gather all results
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Process results into typed dimension results
-        dimension_results = self._process_dimension_results(results, dimensions_to_run)
-
-        # Calculate total tokens
-        for r in results:
-            if isinstance(r, AgentResult) and r.success:
-                total_tokens += r.total_tokens
-
-        # Build aggregated result
-        execution_time_ms = int((time.time() - start_time) * 1000)
-
-        return CoherenceAggregatedResult.from_dimension_results(
+        with logfire.span(
+            span_name,
+            feature="pxnodes",
+            strategy=self.strategy_type.value,
+            execution_mode="agentic",
             node_id=str(node.id),
             node_name=node.name,
-            strategy_used=self.strategy_type.value,
-            prerequisite=dimension_results.get("prerequisite_alignment"),
-            forward=dimension_results.get("forward_setup"),
-            internal=dimension_results.get("internal_consistency"),
-            contextual=dimension_results.get("contextual_fit"),
-            execution_time_ms=execution_time_ms,
-            total_tokens=total_tokens,
-        )
+        ):
+            # Build context using strategy
+            # Use async version for parallel extraction if available (StructuralMemory)
+            strategy = self._get_strategy()
+            scope = EvaluationScope(
+                target_node=node,
+                chart=chart,
+                project_pillars=project_pillars,
+                game_concept=game_concept,
+            )
+
+            # Use async build_context if available (for parallel extraction)
+            if hasattr(strategy, "build_context_async"):
+                with logfire.span(
+                    "context.build.async",
+                    strategy=self.strategy_type.value,
+                    target_node=node.name,
+                ):
+                    context_result = await strategy.build_context_async(scope)
+            else:
+                # Fallback to sync version wrapped in async
+                context_result = await sync_to_async(
+                    strategy.build_context, thread_sensitive=True
+                )(scope)
+
+            # Prepare shared context data for all agents
+            # Note: _extract_node_details contains Django ORM calls
+            # (node.components.all()). Wrap in sync_to_async to avoid
+            # SynchronousOnlyOperation errors.
+            node_details = await sync_to_async(
+                self._extract_node_details, thread_sensitive=True
+            )(node)
+
+            include_target_description = not context_result.metadata.get(
+                "includes_target_description"
+            )
+
+            base_data = {
+                "context_string": context_result.context_string,
+                "target_node_name": node.name,
+                "target_node_description": (
+                    node_details.get("description")
+                    if include_target_description
+                    else None
+                ),
+                "node_details": node_details,
+                "backward_nodes": self._extract_path_nodes(context_result, "backward"),
+                "forward_nodes": self._extract_path_nodes(context_result, "forward"),
+                "pillars": self._format_pillars(project_pillars),
+                "game_concept": game_concept,
+                "is_full_context": bool(context_result.metadata.get("full_context")),
+                "strategy_type": self.strategy_type.value,
+                "player_state": context_result.metadata.get("player_state", {}),
+            }
+
+            # Build execution context
+            execution_context = {
+                "model_manager": self.model_manager,
+                "model_id": model_id,
+                "data": base_data,
+            }
+
+            # Run dimension agents in parallel
+            semaphore = asyncio.Semaphore(self.max_parallel)
+            tasks = []
+
+            for dimension_name in dimensions_to_run:
+                agent_class = DIMENSION_AGENTS.get(dimension_name)
+                if agent_class:
+                    tasks.append(
+                        self._run_dimension_agent(
+                            agent_class=agent_class,
+                            context=execution_context,
+                            semaphore=semaphore,
+                        )
+                    )
+
+            # Gather all results
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Process results into typed dimension results
+            dimension_results = self._process_dimension_results(
+                results, dimensions_to_run
+            )
+
+            # Calculate total tokens
+            for r in results:
+                if isinstance(r, AgentResult) and r.success:
+                    total_tokens += r.total_tokens
+
+            # Build aggregated result
+            execution_time_ms = int((time.time() - start_time) * 1000)
+
+            return CoherenceAggregatedResult.from_dimension_results(
+                node_id=str(node.id),
+                node_name=node.name,
+                strategy_used=self.strategy_type.value,
+                prerequisite=dimension_results.get("prerequisite_alignment"),
+                forward=dimension_results.get("forward_setup"),
+                internal=dimension_results.get("internal_consistency"),
+                contextual=dimension_results.get("contextual_fit"),
+                execution_time_ms=execution_time_ms,
+                total_tokens=total_tokens,
+            )
 
     async def _run_dimension_agent(
         self,
@@ -487,9 +511,11 @@ class PxNodesCoherenceWorkflow:
         # Extract components if available
         if hasattr(node, "components") and node.components:
             for comp in node.components.all()[:10]:
+                definition = getattr(comp, "definition", None)
+                definition_name = getattr(definition, "name", None)
                 components.append(
                     {
-                        "name": getattr(comp, "name", "Unknown"),
+                        "name": definition_name or getattr(comp, "name", "Unknown"),
                         "value": getattr(comp, "value", ""),
                     }
                 )
@@ -497,7 +523,6 @@ class PxNodesCoherenceWorkflow:
         details: Dict[str, Any] = {
             "name": node.name,
             "category": getattr(node, "category", None),
-            "intensity": getattr(node, "intensity", None),
             "description": getattr(node, "description", None),
             "components": components,
         }
@@ -569,7 +594,7 @@ class PxNodesCoherenceMonolithicWorkflow:
         model_manager: ModelManager,
         strategy_type: StrategyType = StrategyType.STRUCTURAL_MEMORY,
         llm_provider: Optional[LLMProvider] = None,
-        use_iterative_retrieval: bool = False,
+        use_iterative_retrieval: bool = True,
     ):
         """
         Initialize the workflow.
@@ -628,11 +653,14 @@ class PxNodesCoherenceMonolithicWorkflow:
 
         start_time = time.time()
 
+        span_name = f"coherence.evaluate.pxnodes.{self.strategy_type.value}.monolithic"
         with logfire.span(
-            "monolithic_coherence_evaluation",
+            span_name,
+            feature="pxnodes",
+            strategy=self.strategy_type.value,
+            execution_mode="monolithic",
             node_id=str(node.id),
             node_name=node.name,
-            strategy=self.strategy_type.value,
         ):
             # Build context using strategy
             strategy = self._get_strategy()
@@ -646,7 +674,7 @@ class PxNodesCoherenceMonolithicWorkflow:
             # Use async build_context if available (for parallel extraction)
             if hasattr(strategy, "build_context_async"):
                 with logfire.span(
-                    "build_context_async",
+                    "context.build.async",
                     strategy=self.strategy_type.value,
                     target_node=node.name,
                 ):
@@ -666,15 +694,22 @@ class PxNodesCoherenceMonolithicWorkflow:
             )
 
             # Build the unified prompt
+            target_node_block = node.name
+            include_target_description = not context_result.metadata.get(
+                "includes_target_description"
+            )
+            if node.description and include_target_description:
+                target_node_block = f"{node.name}\nDescription: {node.description}"
+
             prompt = MONOLITHIC_COHERENCE_PROMPT.format(
                 context=context_result.context_string,
-                target_node_name=node.name,
+                target_node_name=target_node_block,
                 dimension_context=dimension_context,
             )
 
             # Single LLM call for all 4 dimensions
             with logfire.span(
-                "llm_generate_monolithic",
+                "llm.generate.coherence_monolithic",
                 node_name=node.name,
                 prompt_length=len(prompt),
             ):
@@ -688,9 +723,10 @@ class PxNodesCoherenceMonolithicWorkflow:
             # Calculate execution time
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            # Token count from response (estimate based on response length)
-            # In production, the LLM provider should return actual token counts
-            total_tokens = len(prompt.split()) + len(response.split())
+            total_tokens = getattr(self.llm_provider, "last_total_tokens", 0)
+            if not total_tokens:
+                # Fallback when provider does not report usage
+                total_tokens = len(prompt.split()) + len(response.split())
 
             logfire.info(
                 "monolithic_evaluation_complete",
@@ -764,8 +800,6 @@ class PxNodesCoherenceMonolithicWorkflow:
         # Node details context (for internal consistency)
         if node_details.get("category"):
             context_parts.append(f"Category: {node_details['category']}")
-        if node_details.get("intensity") is not None:
-            context_parts.append(f"Intensity: {node_details['intensity']}")
         if node_details.get("components"):
             components = node_details["components"]
             context_parts.append(f"Components: {len(components)} defined")
@@ -773,27 +807,6 @@ class PxNodesCoherenceMonolithicWorkflow:
                 name = comp.get("name", "Unknown")
                 value = comp.get("value", "")
                 context_parts.append(f"  - {name}: {value}")
-
-        # Pillars context (for contextual fit)
-        if project_pillars:
-            context_parts.append(f"\nDESIGN PILLARS ({len(project_pillars)} defined):")
-            for pillar in project_pillars[:6]:
-                if isinstance(pillar, dict):
-                    name = pillar.get("name", "Unknown")
-                    desc = pillar.get("description", "")
-                    context_parts.append(f"  - {name}: {desc[:100]}")
-                elif hasattr(pillar, "name"):
-                    context_parts.append(
-                        f"  - {pillar.name}: {getattr(pillar, 'description', '')[:100]}"
-                    )
-
-        # Game concept context (for contextual fit)
-        if game_concept:
-            concept_text = game_concept
-            if hasattr(game_concept, "content"):
-                concept_text = game_concept.content
-            context_parts.append(f"\nGAME CONCEPT:\n{str(concept_text)[:500]}")
-
         return "\n".join(context_parts) if context_parts else "No additional context"
 
     def _extract_node_details(self, node: PxNode) -> Dict[str, Any]:
@@ -803,9 +816,11 @@ class PxNodesCoherenceMonolithicWorkflow:
         # Extract components if available
         if hasattr(node, "components") and node.components:
             for comp in node.components.all()[:10]:
+                definition = getattr(comp, "definition", None)
+                definition_name = getattr(definition, "name", None)
                 components.append(
                     {
-                        "name": getattr(comp, "name", "Unknown"),
+                        "name": definition_name or getattr(comp, "name", "Unknown"),
                         "value": getattr(comp, "value", ""),
                     }
                 )
@@ -813,7 +828,6 @@ class PxNodesCoherenceMonolithicWorkflow:
         details: Dict[str, Any] = {
             "name": node.name,
             "category": getattr(node, "category", None),
-            "intensity": getattr(node, "intensity", None),
             "description": getattr(node, "description", None),
             "components": components,
         }

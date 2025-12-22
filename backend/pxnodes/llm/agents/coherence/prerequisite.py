@@ -64,7 +64,7 @@ class PrerequisiteAlignmentAgent(CoherenceDimensionAgent):
     dimension_name = "Prerequisite Alignment"
     response_schema = PrerequisiteAlignmentResult
     prompt_template = PREREQUISITE_PROMPT
-    temperature = 0.3
+    temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
         """Build prerequisite-specific context."""
@@ -90,4 +90,4 @@ class PrerequisiteAlignmentAgent(CoherenceDimensionAgent):
             if mechanics:
                 context_parts.append(f"Unlocked mechanics: {', '.join(mechanics)}")
 
-        return "\n".join(context_parts) if context_parts else "No additional context"
+        return "\n".join(context_parts)

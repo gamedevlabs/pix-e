@@ -176,7 +176,7 @@ class GeminiProvider(BaseProvider):
         self,
         model_name: str,
         prompt: str,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> str:
@@ -241,7 +241,7 @@ class GeminiProvider(BaseProvider):
         model_name: str,
         prompt: str,
         response_schema: type,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:

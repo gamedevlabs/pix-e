@@ -428,7 +428,7 @@ def _generate_text(
 
     try:
         result = model_manager.generate_with_model(
-            model_id, prompt, temperature=0.2, max_tokens=800
+            model_id, prompt, temperature=0, max_tokens=800
         )
         return result.text.strip()
     except Exception as exc:

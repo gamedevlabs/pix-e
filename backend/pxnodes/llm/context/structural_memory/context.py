@@ -24,8 +24,7 @@ from pxnodes.llm.context.structural_memory.facts import (
 )
 from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
-    compute_derived_triples,
-    extract_all_triples,
+    extract_llm_triples_only,
 )
 from pxnodes.models import PxNode
 
@@ -51,7 +50,7 @@ class StructuralMemoryResult:
     @property
     def triple_count(self) -> int:
         """Total number of triples extracted."""
-        return len(self.triples) + len(self.derived_triples)
+        return len(self.triples)
 
     @property
     def fact_count(self) -> int:
@@ -109,15 +108,12 @@ class StructuralMemoryContext:
         # Get graph slice
         graph_slice = get_graph_slice(target_node, chart, depth=depth)
 
-        # Extract triples
+        # Extract triples (LLM-only)
         all_triples: list[KnowledgeTriple] = []
-        all_triples.extend(
-            extract_all_triples(target_node, chart, include_neighbors=False)
-        )
-        for node in graph_slice.previous_nodes + graph_slice.next_nodes:
-            all_triples.extend(
-                extract_all_triples(node, chart, include_neighbors=False)
-            )
+        if self.llm_provider:
+            all_triples.extend(extract_llm_triples_only(target_node, self.llm_provider))
+            for node in graph_slice.previous_nodes + graph_slice.next_nodes:
+                all_triples.extend(extract_llm_triples_only(node, self.llm_provider))
 
         # Extract atomic facts (if provider available)
         all_facts: list[AtomicFact] = []
@@ -125,13 +121,6 @@ class StructuralMemoryContext:
             all_facts.extend(extract_atomic_facts(target_node, self.llm_provider))
             for node in graph_slice.previous_nodes:
                 all_facts.extend(extract_atomic_facts(node, self.llm_provider))
-
-        # Compute derived triples
-        derived_triples = compute_derived_triples(
-            target_node,
-            graph_slice.previous_nodes,
-            graph_slice.next_nodes,
-        )
 
         # Build context string
         context = build_structural_context(
@@ -146,7 +135,7 @@ class StructuralMemoryContext:
             graph_slice=graph_slice,
             triples=all_triples,
             facts=all_facts,
-            derived_triples=derived_triples,
+            derived_triples=[],
         )
 
     def build_minimal(

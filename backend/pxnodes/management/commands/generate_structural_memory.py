@@ -12,9 +12,8 @@ from django.core.management.base import BaseCommand, CommandError
 from pxcharts.models import PxChart
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
-from pxnodes.llm.context.graph_retrieval import get_graph_slice
 from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
-from pxnodes.llm.context.triples import compute_derived_triples, extract_all_triples
+from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
 
@@ -78,7 +77,7 @@ class Command(BaseCommand):
                 # Initialize LLM and embedding generators
                 llm_provider = LLMProviderAdapter(
                     model_name=options["model"],
-                    temperature=0.3,  # Lower temp for more consistent extraction
+                    temperature=0,
                 )
 
                 embedding_generator = None
@@ -229,34 +228,22 @@ class Command(BaseCommand):
                     self.stdout.write(f"   Cleared {deleted} existing memories")
                 vector_store.close()
 
-            # 1. Extract knowledge triples (deterministic)
-            triples = extract_all_triples(node, chart, include_neighbors=False)
+            # 1. Extract knowledge triples (LLM-only)
+            triples = extract_llm_triples_only(node, llm_provider)
             self.stdout.write(f"   ✓ Extracted {len(triples)} knowledge triples")
 
             # 2. Extract atomic facts (using real LLM)
             facts = extract_atomic_facts(node, llm_provider)
             self.stdout.write(f"   ✓ Extracted {len(facts)} atomic facts (LLM)")
 
-            # 3. Compute derived triples
-            derived = []
-            if chart:
-                graph_slice = get_graph_slice(node, chart, depth=1)
-                derived = compute_derived_triples(
-                    node,
-                    graph_slice.previous_nodes,
-                    graph_slice.next_nodes,
-                )
-                if derived:
-                    self.stdout.write(f"   ✓ Computed {len(derived)} derived triples")
-
-            # 4. Generate and store embeddings
+            # 3. Generate and store embeddings
             embeddings_stored = 0
             if embedding_generator:
                 embeddings_stored = self._store_embeddings(
                     node=node,
                     chart=chart,
                     triples=triples,
-                    derived=derived,
+                    derived=[],
                     facts=facts,
                     embedding_generator=embedding_generator,
                 )
@@ -273,7 +260,7 @@ class Command(BaseCommand):
 
                 self.stdout.write(
                     f"   📊 Context: {len(context)} chars, "
-                    f"{len(triples) + len(derived)} triples, "
+                    f"{len(triples)} triples, "
                     f"{len(facts)} facts"
                 )
 
@@ -283,12 +270,11 @@ class Command(BaseCommand):
                 node_name=node.name,
                 triples=len(triples),
                 facts=len(facts),
-                derived=len(derived),
                 embeddings=embeddings_stored,
             )
 
             return {
-                "triples": len(triples) + len(derived),
+                "triples": len(triples),
                 "facts": len(facts),
                 "embeddings": embeddings_stored,
             }

@@ -36,7 +36,7 @@ class ConceptFitAgent(BaseAgent):
 
     name = "concept_fit"
     response_schema = PillarCompletenessResponse
-    temperature = 0.3
+    temperature = 0
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         """Build prompt for concept fit evaluation."""
@@ -66,7 +66,7 @@ class ContradictionsAgent(BaseAgent):
 
     name = "contradictions"
     response_schema = PillarContradictionResponse
-    temperature = 0.3
+    temperature = 0
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         """Build prompt for contradiction detection."""
@@ -97,7 +97,7 @@ class SuggestAdditionsAgent(BaseAgent):
 
     name = "suggest_additions"
     response_schema = PillarAdditionsFeedback
-    temperature = 0.4
+    temperature = 0
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         """Build prompt for suggesting additional pillars.
@@ -158,7 +158,7 @@ class ContradictionResolutionAgent(BaseAgent):
 
     name = "contradiction_resolution"
     response_schema = ContradictionResolutionResponse
-    temperature = 0.4
+    temperature = 0
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         """Build prompt for contradiction resolution suggestions."""
@@ -219,7 +219,7 @@ class SynthesisAgent(BaseAgent):
 
     name = "synthesis"
     response_schema = SynthesisResult
-    temperature = 0.3
+    temperature = 0
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         """Build prompt for synthesis with all agent results."""

@@ -7,7 +7,7 @@ game design content.
 
 This strategy extracts four types of memory structures:
 - Chunks: Raw text segments (deterministic)
-- Knowledge Triples: Structured relationships (deterministic from components/edges)
+- Knowledge Triples: Structured relationships (LLM-extracted from descriptions)
 - Atomic Facts: Indivisible information units (LLM-based from descriptions)
 - Summaries: Condensed overviews (LLM-based)
 
@@ -24,6 +24,7 @@ for game design coherence evaluation while preserving the benefits of
 iterative query refinement from Zeng et al. (2024).
 """
 
+import hashlib
 import logging
 from typing import Any, Optional, cast
 
@@ -53,9 +54,8 @@ from pxnodes.llm.context.structural_memory.summaries import (
 )
 from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
-    compute_derived_triples,
-    extract_all_triples,
-    extract_all_triples_async,
+    extract_llm_triples_only,
+    extract_llm_triples_only_async,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
     Implements the full mixed memory approach with four structures:
     - Chunks: Raw text segments (deterministic)
-    - Knowledge Triples: Structured relationships (deterministic)
+    - Knowledge Triples: Structured relationships (LLM-extracted)
     - Atomic Facts: Indivisible information units (LLM-based)
     - Summaries: Condensed overviews (LLM-based)
 
@@ -155,14 +155,24 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         Returns:
             ContextResult with all four memory structures and formatted context
         """
-        from pxnodes.llm.context.shared.graph_retrieval import get_graph_slice
+        from pxnodes.llm.context.shared.graph_retrieval import (
+            get_full_path,
+            get_graph_slice,
+        )
 
         # ============================================================
         # STAGE 1: Deterministic Graph Scoping (Domain Adaptation)
         # ============================================================
-        # Use BFS to identify path-relevant nodes. This constrains the
-        # search space for retrieval to only contextually relevant nodes.
-        graph_slice = get_graph_slice(scope.target_node, scope.chart, depth=scope.depth)
+        # Use full path when iterative retrieval is enabled (paper setting),
+        # otherwise fall back to BFS depth scoping.
+        if self.use_iterative_retrieval and self.llm_provider:
+            graph_slice = get_full_path(scope.target_node, scope.chart)
+        else:
+            # Use BFS to identify path-relevant nodes. This constrains the
+            # search space for retrieval to only contextually relevant nodes.
+            graph_slice = get_graph_slice(
+                scope.target_node, scope.chart, depth=scope.depth
+            )
         all_nodes = (
             [scope.target_node] + graph_slice.previous_nodes + graph_slice.next_nodes
         )
@@ -171,6 +181,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         logger.info(
             f"Stage 1 (Scoping): Found {len(all_nodes)} path-relevant nodes "
             f"via BFS traversal (depth={scope.depth})"
+        )
+        logger.info(
+            "structural_memory.scoped_nodes: node_count=%d, node_names=%s",
+            len(all_nodes),
+            [n.name for n in all_nodes],
         )
 
         # ============================================================
@@ -230,6 +245,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         )
 
         try:
+            # Ensure vector store has memories for scoped nodes
+            self._ensure_vector_store_memories(scope, all_nodes)
+
             # Perform iterative retrieval SCOPED to path-relevant nodes
             # This is the key domain adaptation: we don't search all memories,
             # only those belonging to nodes in the evaluation path
@@ -263,6 +281,97 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             )
         finally:
             retriever.close()
+
+    def _ensure_vector_store_memories(
+        self, scope: EvaluationScope, nodes: list
+    ) -> None:
+        """
+        Ensure vector store has memories for scoped nodes.
+
+        Iterative retrieval assumes knowledge triples and atomic facts exist
+        in the vector store. If missing, generate and store them.
+        """
+        import logfire
+
+        from pxnodes.llm.context.shared.embeddings import OpenAIEmbeddingGenerator
+        from pxnodes.llm.context.shared.vector_store import VectorStore
+
+        if not self.llm_provider:
+            return
+
+        vector_store = VectorStore()
+        to_embed: list[dict[str, Any]] = []
+
+        with logfire.span(
+            "structural_memory.ensure_vector_store",
+            node_count=len(nodes),
+            chart_id=str(scope.chart.id),
+        ):
+            for node in nodes:
+                node_id = str(node.id)
+                existing = vector_store.get_memories_by_node(node_id=node_id)
+                if existing:
+                    continue
+
+                triples = extract_llm_triples_only(node, self.llm_provider)
+                for triple in triples:
+                    content = str(triple)
+                    metadata = {
+                        "head": triple.head,
+                        "relation": triple.relation,
+                        "tail": triple.tail,
+                    }
+                    to_embed.append(
+                        {
+                            "node_id": node_id,
+                            "chart_id": str(scope.chart.id),
+                            "memory_type": "knowledge_triple",
+                            "content": content,
+                            "metadata": metadata,
+                        }
+                    )
+
+                facts = extract_atomic_facts(
+                    node, self.llm_provider, force_regenerate=True
+                )
+                for fact in facts:
+                    to_embed.append(
+                        {
+                            "node_id": node_id,
+                            "chart_id": str(scope.chart.id),
+                            "memory_type": "atomic_fact",
+                            "content": fact.fact,
+                            "metadata": {"source_field": fact.source_field},
+                        }
+                    )
+
+            if to_embed:
+                generator = OpenAIEmbeddingGenerator(model=self.embedding_model)
+                embeddings = generator.generate_embeddings_batch(
+                    [item["content"] for item in to_embed]
+                )
+
+                for item, embedding in zip(to_embed, embeddings):
+                    hash_input = (
+                        f"{item['node_id']}:{item['chart_id']}:"
+                        f"{item['memory_type']}:{item['content']}"
+                    )
+                    memory_id = hashlib.md5(hash_input.encode()).hexdigest()
+                    vector_store.store_memory(
+                        memory_id=memory_id,
+                        node_id=item["node_id"],
+                        memory_type=item["memory_type"],
+                        content=item["content"],
+                        embedding=embedding,
+                        chart_id=item["chart_id"],
+                        metadata=item["metadata"],
+                    )
+
+                logfire.info(
+                    "structural_memory.vector_store_populated",
+                    stored_count=len(to_embed),
+                )
+        vector_store.close()
 
     def _generate_evaluation_query(self, scope: EvaluationScope) -> str:
         """
@@ -302,7 +411,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         Build ContextResult from iterative retrieval results.
 
         Combines retrieved memories with deterministic extractions
-        (chunks, derived triples, summaries).
+        (chunks, summaries) and retrieved memories.
         """
         # Retrieved memories are already filtered to scoped nodes
         retrieved_triples: list[KnowledgeTriple] = []
@@ -333,21 +442,51 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         for node in all_nodes:
             all_chunks.extend(extract_chunks(node))
 
-        # Compute derived triples (these are computed, not stored)
-        derived_triples = compute_derived_triples(
-            scope.target_node,
-            graph_slice.previous_nodes,
-            graph_slice.next_nodes,
-        )
+        # Use retrieved triples only (LLM-extracted in this pipeline)
+        all_triples = retrieved_triples
 
-        # Combine retrieved triples with derived triples
-        all_triples = retrieved_triples + derived_triples
-
-        # Extract summaries (or use fallback)
+        # Extract summaries (or use fallback) in parallel when possible
         all_summaries: list[Summary] = []
         if self.llm_provider and not self.skip_summary_extraction:
-            for node in all_nodes:
-                all_summaries.append(extract_summary(node, self.llm_provider))
+            import asyncio
+            import concurrent.futures
+
+            import logfire
+
+            async def _extract_summaries_parallel() -> list[Summary]:
+                tasks = [
+                    asyncio.to_thread(extract_summary, node, self.llm_provider)
+                    for node in all_nodes
+                ]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                summaries: list[Summary] = []
+                for result in results:
+                    if isinstance(result, Summary):
+                        summaries.append(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Summary extraction failed: {result}")
+                return summaries
+
+            with logfire.span(
+                "structural_memory.extract.summaries.parallel",
+                node_count=len(all_nodes),
+            ):
+                try:
+                    all_summaries = asyncio.run(_extract_summaries_parallel())
+                except RuntimeError:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        futures = [
+                            executor.submit(extract_summary, node, self.llm_provider)
+                            for node in all_nodes
+                        ]
+                        for future in futures:
+                            try:
+                                result = future.result()
+                            except Exception as exc:
+                                logger.warning(f"Summary extraction failed: {exc}")
+                                continue
+                            if isinstance(result, Summary):
+                                all_summaries.append(result)
         else:
             for node in all_nodes:
                 all_summaries.append(create_fallback_summary(node))
@@ -379,7 +518,6 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 "triple_count": len(all_triples),
                 "fact_count": len(retrieved_facts),
                 "summary_count": len(all_summaries),
-                "derived_triple_count": len(derived_triples),
                 # Retrieval metadata (thesis-relevant metrics)
                 "retrieval_method": "iterative",
                 "retrieval_iterations": retrieval_result.iterations_performed,
@@ -388,6 +526,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 "retrieval_scoped_nodes": len(graph_slice.previous_nodes)
                 + len(graph_slice.next_nodes)
                 + 1,
+                "includes_target_description": True,
             },
         )
 
@@ -407,37 +546,104 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         for node in all_nodes:
             all_chunks.extend(extract_chunks(node))
 
-        # 2. Extract KNOWLEDGE TRIPLES (deterministic - structured relationships)
+        # 2. Extract KNOWLEDGE TRIPLES + ATOMIC FACTS + SUMMARIES in parallel
         all_triples: list[KnowledgeTriple] = []
-        for node in all_nodes:
-            all_triples.extend(
-                extract_all_triples(node, scope.chart, include_neighbors=False)
-            )
-
-        # Compute derived triples (intensity deltas, category transitions)
-        derived_triples = compute_derived_triples(
-            scope.target_node,
-            graph_slice.previous_nodes,
-            graph_slice.next_nodes,
-        )
-        all_triples.extend(derived_triples)
-
-        # 3. Extract ATOMIC FACTS (LLM-based - indivisible information units)
-        # force_regenerate=True bypasses vector store cache to ensure fresh extraction
         all_facts: list[AtomicFact] = []
-        if self.llm_provider and not self.skip_fact_extraction:
-            for node in all_nodes:
-                all_facts.extend(
-                    extract_atomic_facts(node, self.llm_provider, force_regenerate=True)
-                )
-
-        # 4. Extract SUMMARIES (LLM-based - condensed overviews)
         all_summaries: list[Summary] = []
-        if self.llm_provider and not self.skip_summary_extraction:
-            for node in all_nodes:
-                all_summaries.append(extract_summary(node, self.llm_provider))
-        else:
-            # Use fallback summaries when LLM unavailable
+
+        if self.llm_provider:
+            import asyncio
+
+            async def run_parallel_extractions() -> None:
+                tasks: list[Any] = []
+                if not self.llm_provider:
+                    return
+                triple_tasks = [
+                    asyncio.to_thread(extract_llm_triples_only, node, self.llm_provider)
+                    for node in all_nodes
+                ]
+                tasks.extend(triple_tasks)
+
+                fact_tasks = []
+                if not self.skip_fact_extraction:
+                    fact_tasks = [
+                        asyncio.to_thread(
+                            extract_atomic_facts,
+                            node,
+                            self.llm_provider,
+                            None,
+                            True,
+                        )
+                        for node in all_nodes
+                    ]
+                    tasks.extend(fact_tasks)
+
+                summary_tasks = []
+                if not self.skip_summary_extraction:
+                    summary_tasks = [
+                        asyncio.to_thread(extract_summary, node, self.llm_provider)
+                        for node in all_nodes
+                    ]
+                    tasks.extend(summary_tasks)
+
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                idx = 0
+
+                triple_results = results[idx : idx + len(triple_tasks)]
+                idx += len(triple_tasks)
+                fact_results = results[idx : idx + len(fact_tasks)]
+                idx += len(fact_tasks)
+                summary_results = results[idx:]
+
+                for result in triple_results:
+                    if isinstance(result, list):
+                        all_triples.extend(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Triple extraction failed: {result}")
+
+                for result in fact_results:
+                    if isinstance(result, list):
+                        all_facts.extend(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Fact extraction failed: {result}")
+
+                for result in summary_results:
+                    if isinstance(result, Summary):
+                        all_summaries.append(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Summary extraction failed: {result}")
+
+            try:
+                asyncio.run(run_parallel_extractions())
+            except RuntimeError:
+                import concurrent.futures
+
+                for node in all_nodes:
+                    all_triples.extend(
+                        extract_llm_triples_only(node, self.llm_provider)
+                    )
+                    if not self.skip_fact_extraction:
+                        all_facts.extend(
+                            extract_atomic_facts(
+                                node, self.llm_provider, force_regenerate=True
+                            )
+                        )
+                if not self.skip_summary_extraction:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        futures = [
+                            executor.submit(extract_summary, node, self.llm_provider)
+                            for node in all_nodes
+                        ]
+                        for future in futures:
+                            try:
+                                result = future.result()
+                            except Exception as exc:
+                                logger.warning(f"Summary extraction failed: {exc}")
+                                continue
+                            if isinstance(result, Summary):
+                                all_summaries.append(result)
+
+        if not all_summaries:
             for node in all_nodes:
                 all_summaries.append(create_fallback_summary(node))
 
@@ -468,8 +674,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 "triple_count": len(all_triples),
                 "fact_count": len(all_facts),
                 "summary_count": len(all_summaries),
-                "derived_triple_count": len(derived_triples),
                 "retrieval_method": "direct_extraction",
+                "includes_target_description": True,
             },
         )
 
@@ -503,6 +709,14 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             target_node=scope.target_node.name,
             chart=scope.chart.name,
         ):
+            if self.use_iterative_retrieval and self.llm_provider:
+                with logfire.span(
+                    "structural_memory.build_context_async.iterative_retrieval",
+                    target_node=scope.target_node.name,
+                    chart=scope.chart.name,
+                ):
+                    return await asyncio.to_thread(self.build_context, scope, query)
+
             # ============================================================
             # STAGE 1: Full Path Traversal (NOT just neighbors)
             # ============================================================
@@ -526,6 +740,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     next_count=len(graph_slice.next_nodes),
                     path_order=[n.name for n in all_nodes],
                 )
+                logfire.info(
+                    "structural_memory.scoped_nodes",
+                    node_count=len(all_nodes),
+                    node_names=[n.name for n in all_nodes],
+                )
 
             # ============================================================
             # STAGE 2: Parallel Memory Extraction
@@ -541,19 +760,20 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     all_chunks.extend(chunks)
                 logfire.info("chunks_extracted", count=len(all_chunks))
 
-            # 2. PARALLEL: Extract knowledge triples + atomic facts for all nodes
+            # 2. PARALLEL: Extract knowledge triples + atomic facts + summaries
             all_triples: list[KnowledgeTriple] = []
             all_facts: list[AtomicFact] = []
+            all_summaries: list[Summary] = []
 
-            if self.llm_provider and not self.skip_fact_extraction:
+            if self.llm_provider:
                 with logfire.span(
-                    "extract_knowledge_structures",
+                    "structural_memory.extract.triples_facts_summaries.parallel",
                     node_count=len(all_nodes),
-                    extraction_types=["knowledge_triples", "atomic_facts"],
+                    extraction_types=["knowledge_triples", "atomic_facts", "summaries"],
                 ):
                     # Create parallel tasks for each node
                     triple_tasks = [
-                        extract_all_triples_async(node, scope.chart, self.llm_provider)
+                        extract_llm_triples_only_async(node, self.llm_provider)
                         for node in all_nodes
                     ]
                     fact_tasks = [
@@ -562,15 +782,30 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                         )
                         for node in all_nodes
                     ]
+                    summary_tasks = []
+                    if not self.skip_summary_extraction:
+                        summary_tasks = [
+                            extract_summary_async(node, self.llm_provider)
+                            for node in all_nodes
+                        ]
 
                     # Run all in parallel
                     results = await asyncio.gather(
-                        *triple_tasks, *fact_tasks, return_exceptions=True
+                        *triple_tasks,
+                        *fact_tasks,
+                        *summary_tasks,
+                        return_exceptions=True,
                     )
 
                     # Split results
-                    triple_results = results[: len(all_nodes)]
-                    fact_results = results[len(all_nodes) :]
+                    triple_results = results[: len(triple_tasks)]
+                    fact_results = results[
+                        len(triple_tasks) : len(triple_tasks) + len(fact_tasks)
+                    ]
+                    summary_results: list[Any] = []
+                    if summary_tasks:
+                        summary_start = len(triple_tasks) + len(fact_tasks)
+                        summary_results = results[summary_start:]
 
                     # Aggregate triples
                     for result in triple_results:
@@ -586,57 +821,24 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                         elif isinstance(result, Exception):
                             logger.warning(f"Fact extraction failed: {result}")
 
-                    logfire.info(
-                        "knowledge_structures_extracted",
-                        triple_count=len(all_triples),
-                        fact_count=len(all_facts),
-                    )
-            else:
-                # Fallback: extract triples only (no LLM)
-                for node in all_nodes:
-                    triples = await sync_to_async(
-                        extract_all_triples, thread_sensitive=True
-                    )(node, scope.chart, include_neighbors=False)
-                    all_triples.extend(triples)
-
-            # Compute derived triples (intensity deltas, category transitions)
-            with logfire.span("compute_derived_triples"):
-                derived_triples = await sync_to_async(
-                    compute_derived_triples, thread_sensitive=True
-                )(
-                    scope.target_node,
-                    graph_slice.previous_nodes,
-                    graph_slice.next_nodes,
-                )
-                all_triples.extend(derived_triples)
-                logfire.info("derived_triples_computed", count=len(derived_triples))
-
-            # 3. PARALLEL: Extract summaries for all nodes
-            all_summaries: list[Summary] = []
-
-            if self.llm_provider and not self.skip_summary_extraction:
-                with logfire.span(
-                    "extract_summaries",
-                    node_count=len(all_nodes),
-                ):
-                    summary_tasks = [
-                        extract_summary_async(node, self.llm_provider)
-                        for node in all_nodes
-                    ]
-
-                    summary_results = await asyncio.gather(
-                        *summary_tasks, return_exceptions=True
-                    )
-
+                    # Aggregate summaries
                     for result in summary_results:
                         if isinstance(result, Summary):
                             all_summaries.append(result)
                         elif isinstance(result, Exception):
                             logger.warning(f"Summary extraction failed: {result}")
 
-                    logfire.info("summaries_extracted", count=len(all_summaries))
+                    logfire.info(
+                        "memory_structures_extracted",
+                        triple_count=len(all_triples),
+                        fact_count=len(all_facts),
+                        summary_count=len(all_summaries),
+                    )
             else:
-                # Use fallback summaries when LLM unavailable
+                # No LLM provider: no knowledge triples extracted
+                all_triples = []
+
+            if not all_summaries:
                 for node in all_nodes:
                     all_summaries.append(create_fallback_summary(node))
 
@@ -680,8 +882,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     "triple_count": len(all_triples),
                     "fact_count": len(all_facts),
                     "summary_count": len(all_summaries),
-                    "derived_triple_count": len(derived_triples),
                     "retrieval_method": "async_parallel_extraction",
+                    "includes_target_description": True,
                 },
             )
 
@@ -729,6 +931,10 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         """
         sections = []
 
+        if scope.has_project_context:
+            domain_layer = self._build_domain_layer(scope)
+            sections.append("[PROJECT CONTEXT]\n" + domain_layer.content)
+
         # Previous nodes section
         if graph_slice.previous_nodes:
             prev_section = "[PREVIOUS NODES - Context Before Target]\n"
@@ -750,14 +956,26 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             facts,
             summaries,
             is_target=True,
+            skip_derived_triples=True,
         )
         sections.append(target_section)
 
         # Computed metrics (derived triples)
-        derived = [t for t in triples if "delta" in t.relation.lower()]
+        derived = [
+            t
+            for t in triples
+            if t.relation.lower().startswith(
+                ("component_delta_", "component_transition_", "component_change_")
+            )
+        ]
         if derived:
             metrics_section = "[COMPUTED METRICS]\n"
+            seen = set()
             for t in derived:
+                t_key = str(t)
+                if t_key in seen:
+                    continue
+                seen.add(t_key)
                 metrics_section += f"  - {t}\n"
             sections.append(metrics_section)
 
@@ -782,6 +1000,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         facts: list[AtomicFact],
         summaries: list[Summary],
         is_target: bool = False,
+        skip_derived_triples: bool = False,
     ) -> str:
         """
         Format all four memory structures for a single node.
@@ -793,6 +1012,14 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         # Other structures (chunks, facts, summaries) use node_id
         node_chunks = [c for c in chunks if c.node_id == node_id]
         node_triples = [t for t in triples if t.head == node_name]
+        if skip_derived_triples:
+            node_triples = [
+                t
+                for t in node_triples
+                if not t.relation.lower().startswith(
+                    ("component_delta_", "component_transition_", "component_change_")
+                )
+            ]
         node_facts = [f for f in facts if f.node_id == node_id]
         node_summaries = [s for s in summaries if s.node_id == node_id]
 
@@ -813,7 +1040,12 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         # 2. Knowledge Triples (structured relationships)
         if node_triples:
             lines.append("\n  Knowledge Triples:")
+            seen = set()
             for t in node_triples:
+                t_key = str(t)
+                if t_key in seen:
+                    continue
+                seen.add(t_key)
                 lines.append(f"    - {t}")
 
         # 3. Atomic Facts (indivisible information)
@@ -891,18 +1123,25 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         content_parts = []
 
         if scope.game_concept:
-            content_parts.append(f"Game Concept: {scope.game_concept.content[:500]}")
+            content_parts.append(f"Game Concept:\n{scope.game_concept.content}")
 
         if scope.project_pillars:
-            pillars_text = "; ".join(
-                f"{p.name}: {p.description[:100]}" for p in scope.project_pillars[:3]
-            )
-            content_parts.append(f"Design Pillars: {pillars_text}")
+            pillar_lines = []
+            for p in scope.project_pillars:
+                name = getattr(p, "name", "")
+                desc = getattr(p, "description", "")
+                if desc:
+                    pillar_lines.append(f"- {name}: {desc}")
+                else:
+                    pillar_lines.append(f"- {name}")
+            content_parts.append("Design Pillars:\n" + "\n".join(pillar_lines))
 
         return LayerContext(
             layer=1,
             layer_name=get_layer_name(1),
-            content="\n".join(content_parts) if content_parts else "No project context",
+            content=(
+                "\n\n".join(content_parts) if content_parts else "No project context"
+            ),
             metadata={"source": "project_config"},
         )
 
@@ -964,9 +1203,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
         # Use pre-computed triples if provided, otherwise extract
         if triples is None:
-            node_triples = extract_all_triples(
-                node, scope.chart, include_neighbors=False
-            )
+            node_triples = []
+            if self.llm_provider:
+                node_triples = extract_llm_triples_only(node, self.llm_provider)
         else:
             # Filter triples for this node
             node_triples = [t for t in triples if t.head == node.name]

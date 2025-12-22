@@ -27,7 +27,7 @@ class LLMProviderAdapter:
         self,
         model_manager: Optional[ModelManager] = None,
         model_name: Optional[str] = None,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
     ):
         """
@@ -43,6 +43,9 @@ class LLMProviderAdapter:
         self.model_name = model_name
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.last_prompt_tokens = 0
+        self.last_completion_tokens = 0
+        self.last_total_tokens = 0
 
         # Auto-select model if not specified
         if not self.model_name:
@@ -77,7 +80,7 @@ class LLMProviderAdapter:
             )
 
         with logfire.span(
-            "llm_adapter.generate",
+            "llm.generate",
             model=model_name,
             temperature=temperature,
             prompt_length=len(prompt),
@@ -91,8 +94,12 @@ class LLMProviderAdapter:
                     **kwargs,
                 )
 
+                self.last_prompt_tokens = result.prompt_tokens
+                self.last_completion_tokens = result.completion_tokens
+                self.last_total_tokens = result.total_tokens
+
                 logfire.info(
-                    "llm_generation_complete",
+                    "llm.generate.complete",
                     model=result.model,
                     provider=result.provider,
                     response_length=len(result.text),
@@ -103,7 +110,7 @@ class LLMProviderAdapter:
             except Exception as e:
                 logger.error(f"LLM generation failed: {e}")
                 logfire.error(
-                    "llm_generation_failed",
+                    "llm.generate.failed",
                     error=str(e),
                     model=model_name,
                     prompt_preview=prompt[:200],
@@ -114,7 +121,7 @@ class LLMProviderAdapter:
 # Convenience function to create adapter with specific model
 def create_llm_provider(
     model_name: Optional[str] = None,
-    temperature: float = 0.7,
+    temperature: float = 0,
 ) -> LLMProviderAdapter:
     """
     Create an LLM provider adapter.

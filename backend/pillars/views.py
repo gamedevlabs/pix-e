@@ -236,9 +236,10 @@ class LLMFeedbackView(ViewSet):
             logfire = get_logfire()
             context_strategy = request.data.get("context_strategy", "raw")
             with logfire.span(
-                "pillars.context_strategy",
+                f"pillars.evaluate.overall.{context_strategy}.monolithic",
+                feature="pillars",
                 strategy=context_strategy,
-                execution_mode="evaluate_all",
+                execution_mode="monolithic",
                 pillars_count=len(pillars),
             ):
                 context_payload = build_pillars_context(
@@ -581,8 +582,10 @@ class LLMFeedbackView(ViewSet):
                 )
 
                 with logfire.span(
-                    "pillars.evaluate_all.monolithic",
+                    f"pillars.evaluate.all.{context_payload.strategy.value}.monolithic",
+                    feature="pillars",
                     strategy=context_payload.strategy.value,
+                    execution_mode="monolithic",
                 ):
                     response = self.orchestrator.execute(llm_request)
 
@@ -670,9 +673,14 @@ class LLMFeedbackView(ViewSet):
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
+                    span_name = (
+                        f"pillars.evaluate.all.{context_payload.strategy.value}.agentic"
+                    )
                     with logfire.span(
-                        "pillars.evaluate_all.agentic",
+                        span_name,
+                        feature="pillars",
                         strategy=context_payload.strategy.value,
+                        execution_mode="agentic",
                     ):
                         result = loop.run_until_complete(workflow.run(llm_request))
                 finally:

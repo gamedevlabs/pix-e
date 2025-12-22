@@ -156,7 +156,10 @@ def forward_bfs(
     return successors
 
 
-def aggregate_player_state(path_nodes: list[Any]) -> PlayerState:
+def aggregate_player_state(
+    path_nodes: list[Any],
+    llm_provider: Optional[Any] = None,
+) -> PlayerState:
     """
     Aggregate player state from traversing a path of nodes.
 
@@ -199,24 +202,44 @@ def aggregate_player_state(path_nodes: list[Any]) -> PlayerState:
                     node_name = getattr(node, "name", "Checkpoint")
                     state.checkpoints_passed.append(node_name)
 
-        # Extract narrative from description (simplified)
         description = getattr(node, "description", "")
-        if description:
-            # Look for narrative indicators
-            narrative_keywords = [
-                "reveals",
-                "discovers",
-                "learns",
-                "meets",
-                "defeats",
-                "unlocks",
-            ]
-            desc_lower = description.lower()
-            for keyword in narrative_keywords:
-                if keyword in desc_lower:
-                    # Add full description as narrative beat (no truncation)
-                    state.narrative_beats.append(description)
-                    break
+        if description and not llm_provider:
+            sentence = description.split(".")[0].strip()
+            if sentence:
+                state.narrative_beats.append(sentence)
+
+    if llm_provider and path_nodes:
+        node_summaries = []
+        for node in path_nodes:
+            node_summaries.append(
+                f"- {getattr(node, 'name', '')}: {getattr(node, 'description', '')}"
+            )
+
+        prompt = (
+            "From the previous nodes, extract accumulated player context.\n"
+            "Return exactly two lines:\n"
+            "Mechanics Introduced: <short list>\n"
+            "Story Events: <short list>\n\n"
+            "Nodes:\n" + "\n".join(node_summaries)
+        )
+        try:
+            response = llm_provider.generate(prompt)
+            lines = [line.strip() for line in response.splitlines() if line.strip()]
+            for line in lines:
+                if line.lower().startswith("mechanics introduced:"):
+                    items = line.split(":", 1)[-1]
+                    for item in items.split(","):
+                        item = item.strip()
+                        if item:
+                            state.mechanics_unlocked.append(item)
+                elif line.lower().startswith("story events:"):
+                    items = line.split(":", 1)[-1]
+                    for item in items.split(","):
+                        item = item.strip()
+                        if item:
+                            state.narrative_beats.append(item)
+        except Exception:
+            pass
 
     return state
 
