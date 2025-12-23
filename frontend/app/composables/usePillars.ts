@@ -1,4 +1,5 @@
 import { usePillarsApi } from '@/composables/api/pillarsApi'
+import { useProject } from '@/composables/useProject'
 
 // Shared state - singleton pattern for cross-component reactivity
 const items = ref<Pillar[]>([])
@@ -24,6 +25,7 @@ export function usePillars() {
   const pillarsApi = usePillarsApi()
   const { success, error: errorToast } = usePixeToast()
   const API_URL = `${config.public.apiBase}/llm/pillars/`
+  const projectStore = useProject()
 
   // Use shared game concept state
   const {
@@ -159,6 +161,16 @@ export function usePillars() {
   async function resolveContradictions(contradictions: ContradictionsResponse) {
     return await pillarsApi.resolveContradictionsAPICall(contradictions, contextStrategy.value)
   }
+
+  watch(
+    () => projectStore.activeProjectId,
+    async (nextId, previousId) => {
+      if (previousId !== null && nextId !== previousId) {
+        await fetchAll()
+        await fetchGameConcept()
+      }
+    },
+  )
 
   async function acceptAddition(name: string, description: string) {
     return await pillarsApi.acceptAdditionAPICall(name, description)

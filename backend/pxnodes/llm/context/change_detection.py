@@ -152,6 +152,8 @@ def update_processing_state(
     triples_count: int = 0,
     facts_count: int = 0,
     embeddings_count: int = 0,
+    summary_text: str | None = None,
+    trace_summary: str | None = None,
 ) -> StructuralMemoryState:
     """
     Update or create processing state after successful generation.
@@ -168,18 +170,60 @@ def update_processing_state(
     """
     content_hash = compute_node_content_hash(node, chart)
 
+    defaults = {
+        "content_hash": content_hash,
+        "triples_count": triples_count,
+        "facts_count": facts_count,
+        "embeddings_count": embeddings_count,
+    }
+    if summary_text is not None:
+        defaults["summary_text"] = summary_text
+    if trace_summary is not None:
+        defaults["trace_summary"] = trace_summary
+
     state, _ = StructuralMemoryState.objects.update_or_create(
         node=node,
         chart=chart,
-        defaults={
-            "content_hash": content_hash,
-            "triples_count": triples_count,
-            "facts_count": facts_count,
-            "embeddings_count": embeddings_count,
-        },
+        defaults=defaults,
     )
 
     return state
+
+
+def update_summary_cache(
+    node: PxNode,
+    chart: PxChart,
+    summary_text: str | None = None,
+    trace_summary: str | None = None,
+) -> StructuralMemoryState:
+    """Update cached summaries without clobbering counts."""
+    content_hash = compute_node_content_hash(node, chart)
+    try:
+        state = StructuralMemoryState.objects.get(node=node, chart=chart)
+        if summary_text is not None:
+            state.summary_text = summary_text
+        if trace_summary is not None:
+            state.trace_summary = trace_summary
+        state.content_hash = content_hash
+        state.save(
+            update_fields=["summary_text", "trace_summary", "content_hash"]
+        )
+        return state
+    except StructuralMemoryState.DoesNotExist:
+        return update_processing_state(
+            node=node,
+            chart=chart,
+            summary_text=summary_text,
+            trace_summary=trace_summary,
+        )
+
+
+def get_processing_state_map(
+    chart: PxChart, nodes: list[PxNode]
+) -> dict[str, StructuralMemoryState]:
+    """Return StructuralMemoryState map keyed by node id."""
+    states = StructuralMemoryState.objects.filter(chart=chart, node__in=nodes)
+    return {str(state.node_id): state for state in states}
 
 
 def get_processing_stats(chart: PxChart) -> dict:

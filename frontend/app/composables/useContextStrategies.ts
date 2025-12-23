@@ -1,8 +1,9 @@
 /**
  * Composable for Context Strategy API.
  *
- * Supports 4 context engineering strategies for LLM evaluation:
+ * Supports context engineering strategies for LLM evaluation:
  * - structural_memory: Knowledge Triples + Atomic Facts (Zeng et al. 2024)
+ * - simple_sm: Full path with summaries, triples, and facts only
  * - hierarchical_graph: Deterministic 4-layer graph traversal
  * - hmem: Vector embeddings with positional index routing (Sun & Zeng 2025)
  * - combined: Structural data + hierarchical organization
@@ -13,6 +14,7 @@ const BASE_URL = 'http://localhost:8000/'
 export type StrategyType =
   | 'full_context'
   | 'structural_memory'
+  | 'simple_sm'
   | 'hierarchical_graph'
   | 'hmem'
   | 'combined'

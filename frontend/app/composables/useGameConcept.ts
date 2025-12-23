@@ -1,3 +1,5 @@
+import { useProject } from '@/composables/useProject'
+
 // Shared state - singleton pattern for cross-component reactivity
 const designIdea = ref<string>('')
 const isSavingConcept = ref(false)
@@ -8,6 +10,7 @@ const isRestoringConcept = ref(false)
 export function useGameConcept() {
   const config = useRuntimeConfig()
   const { success, error: errorToast } = usePixeToast()
+  const projectStore = useProject()
 
   async function fetchGameConcept() {
     try {
@@ -86,6 +89,15 @@ export function useGameConcept() {
       isRestoringConcept.value = false
     }
   }
+
+  watch(
+    () => projectStore.activeProjectId,
+    async (nextId, previousId) => {
+      if (previousId !== null && nextId !== previousId) {
+        await fetchGameConcept()
+      }
+    },
+  )
 
   return {
     designIdea,

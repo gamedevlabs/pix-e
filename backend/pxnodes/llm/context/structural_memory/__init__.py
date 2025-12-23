@@ -37,7 +37,10 @@ from pxnodes.llm.context.structural_memory.retriever import (
     RetrievalResult,
     RetrievedMemory,
 )
-from pxnodes.llm.context.structural_memory.strategy import StructuralMemoryStrategy
+from pxnodes.llm.context.structural_memory.strategy import (
+    SimpleStructuralMemoryStrategy,
+    StructuralMemoryStrategy,
+)
 from pxnodes.llm.context.structural_memory.summaries import (
     Summary,
     create_fallback_summary,
@@ -52,6 +55,7 @@ from pxnodes.llm.context.structural_memory.triples import (
 __all__ = [
     # Strategy (new)
     "StructuralMemoryStrategy",
+    "SimpleStructuralMemoryStrategy",
     # Context Builder (legacy interface)
     "StructuralMemoryContext",
     "StructuralMemoryResult",

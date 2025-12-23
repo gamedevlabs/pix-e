@@ -5,6 +5,13 @@ class Pillar(models.Model):
     user = models.ForeignKey(
         "auth.User", on_delete=models.CASCADE, related_name="pillars"
     )
+    project = models.ForeignKey(
+        "game_concept.GameConcept",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pillars",
+    )
 
     name = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)

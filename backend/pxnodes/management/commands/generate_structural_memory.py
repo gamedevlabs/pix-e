@@ -223,7 +223,9 @@ class Command(BaseCommand):
             # Clear existing memories if requested
             if clear_existing and embedding_generator:
                 vector_store = VectorStore()
-                deleted = vector_store.delete_memories_by_node(str(node.id))
+                deleted = vector_store.delete_memories_by_node(
+                    str(node.id), chart_id=str(chart.id)
+                )
                 if deleted > 0:
                     self.stdout.write(f"   Cleared {deleted} existing memories")
                 vector_store.close()

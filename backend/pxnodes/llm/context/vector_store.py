@@ -352,6 +352,7 @@ class VectorStore:
         self,
         node_id: str,
         memory_type: Optional[str] = None,
+        chart_id: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         """Get all memories for a specific node."""
         cursor = self.conn.cursor()
@@ -365,6 +366,10 @@ class VectorStore:
         if memory_type:
             query += " AND memory_type = ?"
             params.append(memory_type)
+
+        if chart_id:
+            query += " AND chart_id = ?"
+            params.append(chart_id)
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
@@ -381,14 +386,22 @@ class VectorStore:
             for row in rows
         ]
 
-    def delete_memories_by_node(self, node_id: str) -> int:
-        """Delete all memories for a node. Returns count deleted."""
+    def delete_memories_by_node(
+        self, node_id: str, chart_id: Optional[str] = None
+    ) -> int:
+        """Delete all memories for a node (optionally scoped to chart)."""
         cursor = self.conn.cursor()
 
         # Get rowids to delete
-        cursor.execute(
-            "SELECT rowid FROM memory_embeddings WHERE node_id = ?", (node_id,)
-        )
+        if chart_id:
+            cursor.execute(
+                "SELECT rowid FROM memory_embeddings WHERE node_id = ? AND chart_id = ?",
+                (node_id, chart_id),
+            )
+        else:
+            cursor.execute(
+                "SELECT rowid FROM memory_embeddings WHERE node_id = ?", (node_id,)
+            )
         rowids = [row[0] for row in cursor.fetchall()]
 
         if rowids:
@@ -404,9 +417,15 @@ class VectorStore:
                     logger.warning(f"Failed to delete from vec0 table: {e}")
 
             # Delete from main table
-            cursor.execute(
-                "DELETE FROM memory_embeddings WHERE node_id = ?", (node_id,)
-            )
+            if chart_id:
+                cursor.execute(
+                    "DELETE FROM memory_embeddings WHERE node_id = ? AND chart_id = ?",
+                    (node_id, chart_id),
+                )
+            else:
+                cursor.execute(
+                    "DELETE FROM memory_embeddings WHERE node_id = ?", (node_id,)
+                )
 
         # APSW auto-commits, sqlite3 needs explicit commit
         if not USING_APSW and hasattr(self.conn, "commit"):

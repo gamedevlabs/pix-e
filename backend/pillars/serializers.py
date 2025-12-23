@@ -6,4 +6,5 @@ from .models import Pillar
 class PillarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pillar
-        fields = ["id", "name", "description"]
+        fields = ["id", "name", "description", "project"]
+        read_only_fields = ["project"]

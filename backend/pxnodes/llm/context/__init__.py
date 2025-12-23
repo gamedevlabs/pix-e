@@ -88,6 +88,7 @@ from pxnodes.llm.context.structural_memory import (
     KnowledgeTriple,
     RetrievalResult,
     RetrievedMemory,
+    SimpleStructuralMemoryStrategy,
     StructuralMemoryContext,
     StructuralMemoryResult,
     StructuralMemoryStrategy,
@@ -115,6 +116,7 @@ __all__ = [
     "create_llm_provider",
     # Structural Memory Strategy
     "StructuralMemoryStrategy",
+    "SimpleStructuralMemoryStrategy",
     "StructuralMemoryContext",
     "StructuralMemoryResult",
     "build_context",
