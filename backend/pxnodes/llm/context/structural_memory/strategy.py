@@ -229,8 +229,10 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         scope: EvaluationScope,
         nodes: list[Any],
     ) -> str:
-        """Build a cache key that changes when any scoped node or project context changes."""
-        from pxnodes.llm.context.change_detection import compute_node_content_hash
+        """Build cache key for scoped node or project context changes."""
+        from pxnodes.llm.context.change_detection import (
+            compute_node_content_hash,
+        )
 
         node_hashes = [
             f"{node.id}:{compute_node_content_hash(node, scope.chart)}"
@@ -337,8 +339,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
         from pxnodes.llm.context.change_detection import compute_node_content_hash
         from pxnodes.llm.context.structural_memory.retriever import (
-            RetrievedMemory,
             RetrievalResult,
+            RetrievedMemory,
         )
 
         content_hash = compute_node_content_hash(scope.target_node, scope.chart)
@@ -488,9 +490,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
             async def _extract_node_memories(node: Any) -> tuple[str, Any, Any]:
                 node_id = str(node.id)
-                triples_task = extract_llm_triples_only_async(
-                    node, self.llm_provider
-                )
+                if not self.llm_provider:
+                    return node_id, [], []
+                triples_task = extract_llm_triples_only_async(node, self.llm_provider)
                 facts_task = extract_atomic_facts_async(
                     node,
                     self.llm_provider,
@@ -504,6 +506,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
             def _extract_node_memories_sync(node: Any) -> tuple[str, Any, Any]:
                 node_id = str(node.id)
+                if not self.llm_provider:
+                    return node_id, [], []
                 triples = extract_llm_triples_only(node, self.llm_provider)
                 facts = extract_atomic_facts(
                     node,
@@ -520,12 +524,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
                     async def _run_parallel() -> list[Any]:
                         tasks = [
-                            _extract_node_memories(node)
-                            for node in nodes_to_process
+                            _extract_node_memories(node) for node in nodes_to_process
                         ]
-                        return await asyncio.gather(
-                            *tasks, return_exceptions=True
-                        )
+                        return await asyncio.gather(*tasks, return_exceptions=True)
 
                     results = asyncio.run(_run_parallel())
                 except RuntimeError:
@@ -544,15 +545,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
             for result in results:
                 if isinstance(result, Exception):
-                    logger.warning(
-                        "Vector store extraction failed: %s", result
-                    )
+                    logger.warning("Vector store extraction failed: %s", result)
                     continue
                 node_id, triples, facts = result
                 if isinstance(triples, Exception):
-                    logger.warning(
-                        "Triple extraction failed: %s", triples
-                    )
+                    logger.warning("Triple extraction failed: %s", triples)
                     triples = []
                 if isinstance(facts, Exception):
                     logger.warning("Fact extraction failed: %s", facts)
@@ -737,11 +734,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         for node in all_nodes:
             node_id = str(node.id)
             state = state_map.get(node_id)
-            if (
-                state
-                and not has_node_changed(node, scope.chart)
-                and state.summary_text
-            ):
+            if state and not has_node_changed(node, scope.chart) and state.summary_text:
                 cached_summary_map[node_id] = Summary(
                     node_id=node_id,
                     content=state.summary_text,
@@ -1047,11 +1040,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
         node_lookup = {str(node.id): node for node in nodes_needing_summary}
         for summary in all_summaries:
-            node = node_lookup.get(summary.node_id)
-            if not node:
+            maybe_node = node_lookup.get(summary.node_id)
+            if not maybe_node:
                 continue
             update_summary_cache(
-                node=node,
+                node=maybe_node,
                 chart=scope.chart,
                 summary_text=summary.content,
             )
@@ -2019,11 +2012,11 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
 
         node_lookup = {str(node.id): node for node in nodes_needing_summary}
         for summary in all_summaries:
-            node = node_lookup.get(summary.node_id)
-            if not node:
+            maybe_node = node_lookup.get(summary.node_id)
+            if not maybe_node:
                 continue
             update_summary_cache(
-                node=node,
+                node=maybe_node,
                 chart=scope.chart,
                 summary_text=summary.content,
             )
@@ -2070,7 +2063,7 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
             graph_slice=graph_slice,
         )
 
-        result = ContextResult(
+        ctx_result = ContextResult(
             strategy=self.strategy_type,
             context_string=context_string,
             layers=layers,
@@ -2092,8 +2085,8 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
             },
         )
 
-        self._set_cached_context(cache_key, result)
-        return result
+        self._set_cached_context(cache_key, ctx_result)
+        return ctx_result
 
     async def build_context_async(
         self,

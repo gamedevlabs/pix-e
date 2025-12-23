@@ -205,9 +205,7 @@ def update_summary_cache(
         if trace_summary is not None:
             state.trace_summary = trace_summary
         state.content_hash = content_hash
-        state.save(
-            update_fields=["summary_text", "trace_summary", "content_hash"]
-        )
+        state.save(update_fields=["summary_text", "trace_summary", "content_hash"])
         return state
     except StructuralMemoryState.DoesNotExist:
         return update_processing_state(

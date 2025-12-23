@@ -61,10 +61,11 @@ class NodeFeedbackView(ViewSet):
                 if pk is None:
                     return JsonResponse({"error": "Node ID is required"}, status=400)
 
-                project = get_current_project(request.user)
-                node_filters = {"id": pk}
+                user = cast(User, request.user)
+                project = get_current_project(user)
+                node_filters: dict[str, Any] = {"id": pk}
                 if project:
-                    node_filters["project"] = project
+                    node_filters["project"] = project.id
                 else:
                     node_filters["project__isnull"] = True
                 node = PxNode.objects.filter(**node_filters).first()
@@ -116,10 +117,11 @@ class NodeFeedbackView(ViewSet):
                 if pk is None:
                     return JsonResponse({"error": "Node ID is required"}, status=400)
 
-                project = get_current_project(request.user)
-                node_filters = {"id": pk}
+                user = cast(User, request.user)
+                project = get_current_project(user)
+                node_filters: dict[str, Any] = {"id": pk}
                 if project:
-                    node_filters["project"] = project
+                    node_filters["project"] = project.id
                 else:
                     node_filters["project__isnull"] = True
                 node = PxNode.objects.filter(**node_filters).first()
@@ -194,10 +196,11 @@ class NodeFeedbackView(ViewSet):
                 if pk is None:
                     return JsonResponse({"error": "Node ID is required"}, status=400)
 
-                project = get_current_project(request.user)
-                node_filters = {"id": pk}
+                user = cast(User, request.user)
+                project = get_current_project(user)
+                node_filters: dict[str, Any] = {"id": pk}
                 if project:
-                    node_filters["project"] = project
+                    node_filters["project"] = project.id
                 else:
                     node_filters["project__isnull"] = True
                 node = PxNode.objects.filter(**node_filters).first()

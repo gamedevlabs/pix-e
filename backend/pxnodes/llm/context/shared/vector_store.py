@@ -395,7 +395,8 @@ class VectorStore:
         # Get rowids to delete
         if chart_id:
             cursor.execute(
-                "SELECT rowid FROM memory_embeddings WHERE node_id = ? AND chart_id = ?",
+                "SELECT rowid FROM memory_embeddings WHERE node_id = ? "
+                "AND chart_id = ?",
                 (node_id, chart_id),
             )
         else:

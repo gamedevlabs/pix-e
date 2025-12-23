@@ -54,9 +54,9 @@ def get_user_context(
             pillar_queryset = pillar_queryset.filter(project=project)
         else:
             pillar_queryset = pillar_queryset.filter(project__isnull=True)
-        pillars = pillar_queryset.only("id", "name", "description", "created_at").order_by(
-            "-created_at"
-        )
+        pillars = pillar_queryset.only(
+            "id", "name", "description", "created_at"
+        ).order_by("-created_at")
 
         context_data["pillars"] = [
             PillarData(
