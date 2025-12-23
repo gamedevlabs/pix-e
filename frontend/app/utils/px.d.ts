@@ -11,6 +11,7 @@ interface PxComponentDefinition {
   created_at: string
   updated_at: string
   owner: number | null
+  project?: number | null
 }
 
 interface PxComponent {
@@ -40,6 +41,7 @@ interface PxNode extends NamedEntity {
   created_at: string
   updated_at: string
   owner: number | null
+  project?: number | null
 }
 
 interface PxChart extends NamedEntity {
@@ -52,6 +54,7 @@ interface PxChart extends NamedEntity {
   owner?: number | null
   created_at: string
   updated_at: string
+  project?: number | null
 }
 
 interface PxChartContainer {

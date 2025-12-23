@@ -99,6 +99,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
     """
 
     strategy_type = StrategyType.STRUCTURAL_MEMORY
+    _domain_layer_cache_global: dict[str, LayerContext] = {}
 
     def __init__(
         self,
@@ -110,6 +111,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         skip_fact_extraction: bool = False,
         skip_summary_extraction: bool = False,
         max_chunks_per_node: int = 2,
+        include_chunks: bool = True,
         **kwargs: Any,
     ):
         """
@@ -133,6 +135,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         self.skip_fact_extraction = skip_fact_extraction
         self.skip_summary_extraction = skip_summary_extraction
         self.max_chunks_per_node = max_chunks_per_node
+        self.include_chunks = include_chunks
         self._domain_layer_cache: Optional[LayerContext] = None
         self._domain_layer_cache_key: Optional[str] = None
 
@@ -201,17 +204,106 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         # ============================================================
         # STAGE 2: Memory Extraction or Iterative Retrieval
         # ============================================================
+        cache_key = self._build_context_cache_key(scope, all_nodes)
+        cached = self._get_cached_context(cache_key)
+        if cached:
+            return cached
+
         if self.use_iterative_retrieval and self.llm_provider:
             # Use iterative retrieval from Zeng et al. (2024)
             # but SCOPED to path-relevant nodes only
-            return self._build_context_with_iterative_retrieval(
+            result = self._build_context_with_iterative_retrieval(
                 scope, graph_slice, all_nodes, scoped_node_ids, query
             )
         else:
             # Fallback: Direct extraction without retrieval
-            return self._build_context_with_direct_extraction(
+            result = self._build_context_with_direct_extraction(
                 scope, graph_slice, all_nodes
             )
+
+        self._set_cached_context(cache_key, result)
+        return result
+
+    def _build_context_cache_key(
+        self,
+        scope: EvaluationScope,
+        nodes: list[Any],
+    ) -> str:
+        """Build a cache key that changes when any scoped node or project context changes."""
+        from pxnodes.llm.context.change_detection import compute_node_content_hash
+
+        node_hashes = [
+            f"{node.id}:{compute_node_content_hash(node, scope.chart)}"
+            for node in nodes
+        ]
+        node_hashes_str = "\n".join(node_hashes)
+
+        context_parts: list[str] = []
+        if scope.game_concept:
+            context_parts.append(scope.game_concept.content or "")
+        if scope.project_pillars:
+            for pillar in scope.project_pillars:
+                name = getattr(pillar, "name", "") or ""
+                desc = getattr(pillar, "description", "") or ""
+                context_parts.append(f"{name}:{desc}")
+
+        context_hash = hashlib.sha256("\n".join(context_parts).encode()).hexdigest()
+        nodes_hash = hashlib.sha256(node_hashes_str.encode()).hexdigest()
+
+        return (
+            f"struct_mem:context:{self.strategy_type.value}:{scope.chart.id}:"
+            f"{scope.target_node.id}:{nodes_hash}:{context_hash}:"
+            f"{self.use_iterative_retrieval}:{self.include_chunks}:"
+            f"{self.skip_fact_extraction}:{self.skip_summary_extraction}:"
+            f"{self.retrieval_iterations}:{self.retrieval_top_k}"
+        )
+
+    def _get_cached_context(self, cache_key: str) -> Optional[ContextResult]:
+        """Return cached context result if available."""
+        from django.core.cache import cache
+
+        cached = cache.get(cache_key)
+        if not cached:
+            return None
+        layers = [
+            LayerContext(
+                layer=layer["layer"],
+                layer_name=layer["layer_name"],
+                content=layer["content"],
+                metadata=layer.get("metadata", {}),
+                positional_index=layer.get("positional_index"),
+            )
+            for layer in cached.get("layers", [])
+        ]
+        return ContextResult(
+            strategy=self.strategy_type,
+            context_string=cached["context_string"],
+            layers=layers,
+            metadata=cached.get("metadata", {}),
+        )
+
+    def _set_cached_context(self, cache_key: str, result: ContextResult) -> None:
+        """Persist context result in cache."""
+        from django.core.cache import cache
+
+        cache.set(
+            cache_key,
+            {
+                "context_string": result.context_string,
+                "layers": [
+                    {
+                        "layer": layer.layer,
+                        "layer_name": layer.layer_name,
+                        "content": layer.content,
+                        "metadata": layer.metadata,
+                        "positional_index": layer.positional_index,
+                    }
+                    for layer in result.layers
+                ],
+                "metadata": result.metadata,
+            },
+            timeout=None,
+        )
 
     def _build_context_with_iterative_retrieval(
         self,
@@ -240,6 +332,43 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         # Generate query if not provided
         if not query:
             query = self._generate_evaluation_query(scope)
+
+        from django.core.cache import cache
+
+        from pxnodes.llm.context.change_detection import compute_node_content_hash
+        from pxnodes.llm.context.structural_memory.retriever import (
+            RetrievedMemory,
+            RetrievalResult,
+        )
+
+        content_hash = compute_node_content_hash(scope.target_node, scope.chart)
+        cache_key = (
+            f"struct_mem:retrieval:{scope.chart.id}:"
+            f"{scope.target_node.id}:{content_hash}:"
+            f"{self.retrieval_iterations}:{self.retrieval_top_k}"
+        )
+        cached = cache.get(cache_key)
+        if cached:
+            retrieval_result = RetrievalResult(query=cached["query"])
+            retrieval_result.refined_queries = cached.get("refined_queries", [])
+            retrieval_result.iterations_performed = cached.get(
+                "iterations_performed", 0
+            )
+            for mem in cached.get("memories", []):
+                retrieval_result.memories.append(
+                    RetrievedMemory(
+                        id=mem["id"],
+                        node_id=mem["node_id"],
+                        chart_id=mem.get("chart_id"),
+                        memory_type=mem["memory_type"],
+                        content=mem["content"],
+                        metadata=mem.get("metadata"),
+                        distance=mem.get("distance", 0.0),
+                    )
+                )
+            return self._build_context_from_retrieval(
+                scope, graph_slice, all_nodes, retrieval_result
+            )
 
         logger.info(
             f"Stage 2 (Iterative Retrieval): query='{query[:50]}...', "
@@ -276,6 +405,28 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 len(retrieval_result.refined_queries),
             )
 
+            cache.set(
+                cache_key,
+                {
+                    "query": retrieval_result.query,
+                    "refined_queries": retrieval_result.refined_queries,
+                    "iterations_performed": retrieval_result.iterations_performed,
+                    "memories": [
+                        {
+                            "id": memory.id,
+                            "node_id": memory.node_id,
+                            "chart_id": memory.chart_id,
+                            "memory_type": memory.memory_type,
+                            "content": memory.content,
+                            "metadata": memory.metadata,
+                            "distance": memory.distance,
+                        }
+                        for memory in retrieval_result.memories
+                    ],
+                },
+                timeout=None,
+            )
+
             # Build context combining retrieved + deterministic data
             return self._build_context_from_retrieval(
                 scope, graph_slice, all_nodes, retrieval_result
@@ -310,18 +461,108 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         vector_store = VectorStore()
         to_embed: list[dict[str, Any]] = []
 
+        from pxnodes.llm.context.change_detection import has_node_changed
+
         with logfire.span(
             "structural_memory.ensure_vector_store",
             node_count=len(nodes),
             chart_id=str(scope.chart.id),
         ):
+            nodes_to_process: list[Any] = []
             for node in nodes:
                 node_id = str(node.id)
-                existing = vector_store.get_memories_by_node(node_id=node_id)
-                if existing:
+                existing = vector_store.get_memories_by_node(
+                    node_id=node_id, chart_id=str(scope.chart.id)
+                )
+                if existing and not has_node_changed(node, scope.chart):
                     continue
+                nodes_to_process.append(node)
 
+            node_map = {str(node.id): node for node in nodes_to_process}
+            node_counts: dict[str, dict[str, int]] = {}
+
+            for node in nodes_to_process:
+                vector_store.delete_memories_by_node(
+                    str(node.id), chart_id=str(scope.chart.id)
+                )
+
+            async def _extract_node_memories(node: Any) -> tuple[str, Any, Any]:
+                node_id = str(node.id)
+                triples_task = extract_llm_triples_only_async(
+                    node, self.llm_provider
+                )
+                facts_task = extract_atomic_facts_async(
+                    node,
+                    self.llm_provider,
+                    force_regenerate=True,
+                    chart_id=str(scope.chart.id),
+                )
+                triples, facts = await asyncio.gather(
+                    triples_task, facts_task, return_exceptions=True
+                )
+                return node_id, triples, facts
+
+            def _extract_node_memories_sync(node: Any) -> tuple[str, Any, Any]:
+                node_id = str(node.id)
                 triples = extract_llm_triples_only(node, self.llm_provider)
+                facts = extract_atomic_facts(
+                    node,
+                    self.llm_provider,
+                    force_regenerate=True,
+                    chart_id=str(scope.chart.id),
+                )
+                return node_id, triples, facts
+
+            results: list[Any] = []
+            if nodes_to_process:
+                try:
+                    import asyncio
+
+                    async def _run_parallel() -> list[Any]:
+                        tasks = [
+                            _extract_node_memories(node)
+                            for node in nodes_to_process
+                        ]
+                        return await asyncio.gather(
+                            *tasks, return_exceptions=True
+                        )
+
+                    results = asyncio.run(_run_parallel())
+                except RuntimeError:
+                    import concurrent.futures
+
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        futures = [
+                            executor.submit(_extract_node_memories_sync, node)
+                            for node in nodes_to_process
+                        ]
+                        for future in futures:
+                            try:
+                                results.append(future.result())
+                            except Exception as exc:
+                                results.append(exc)
+
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning(
+                        "Vector store extraction failed: %s", result
+                    )
+                    continue
+                node_id, triples, facts = result
+                if isinstance(triples, Exception):
+                    logger.warning(
+                        "Triple extraction failed: %s", triples
+                    )
+                    triples = []
+                if isinstance(facts, Exception):
+                    logger.warning("Fact extraction failed: %s", facts)
+                    facts = []
+
+                node_counts[node_id] = {
+                    "triples": len(triples),
+                    "facts": len(facts),
+                }
+
                 for triple in triples:
                     content = str(triple)
                     metadata = {
@@ -339,9 +580,6 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                         }
                     )
 
-                facts = extract_atomic_facts(
-                    node, self.llm_provider, force_regenerate=True
-                )
                 for fact in facts:
                     to_embed.append(
                         {
@@ -379,6 +617,38 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     "structural_memory.vector_store_populated",
                     stored_count=len(to_embed),
                 )
+                from pxnodes.llm.context.change_detection import (
+                    update_processing_state,
+                )
+
+                for node_id, counts in node_counts.items():
+                    node = node_map.get(node_id)
+                    if not node:
+                        continue
+                    update_processing_state(
+                        node=node,
+                        chart=scope.chart,
+                        triples_count=counts.get("triples", 0),
+                        facts_count=counts.get("facts", 0),
+                        embeddings_count=counts.get("triples", 0)
+                        + counts.get("facts", 0),
+                    )
+            elif node_counts:
+                from pxnodes.llm.context.change_detection import (
+                    update_processing_state,
+                )
+
+                for node_id, counts in node_counts.items():
+                    node = node_map.get(node_id)
+                    if not node:
+                        continue
+                    update_processing_state(
+                        node=node,
+                        chart=scope.chart,
+                        triples_count=counts.get("triples", 0),
+                        facts_count=counts.get("facts", 0),
+                        embeddings_count=0,
+                    )
         vector_store.close()
 
     def _generate_evaluation_query(self, scope: EvaluationScope) -> str:
@@ -455,6 +725,33 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
         # Extract summaries (or use fallback) in parallel when possible
         all_summaries: list[Summary] = []
+        from pxnodes.llm.context.change_detection import (
+            get_processing_state_map,
+            has_node_changed,
+            update_summary_cache,
+        )
+
+        state_map = get_processing_state_map(scope.chart, all_nodes)
+        cached_summary_map: dict[str, Summary] = {}
+        nodes_needing_summary: list[Any] = []
+        for node in all_nodes:
+            node_id = str(node.id)
+            state = state_map.get(node_id)
+            if (
+                state
+                and not has_node_changed(node, scope.chart)
+                and state.summary_text
+            ):
+                cached_summary_map[node_id] = Summary(
+                    node_id=node_id,
+                    content=state.summary_text,
+                    source="cached",
+                )
+            else:
+                nodes_needing_summary.append(node)
+
+        node_lookup = {str(node.id): node for node in nodes_needing_summary}
+
         if self.llm_provider and not self.skip_summary_extraction:
             import asyncio
             import concurrent.futures
@@ -462,7 +759,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             async def _extract_summaries_parallel() -> list[Summary]:
                 tasks = [
                     asyncio.to_thread(extract_summary, node, self.llm_provider)
-                    for node in all_nodes
+                    for node in nodes_needing_summary
                 ]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
                 summaries: list[Summary] = []
@@ -475,7 +772,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
             with logfire.span(
                 "structural_memory.extract.summaries.parallel",
-                node_count=len(all_nodes),
+                node_count=len(nodes_needing_summary),
             ):
                 try:
                     all_summaries = asyncio.run(_extract_summaries_parallel())
@@ -483,7 +780,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         futures = [
                             executor.submit(extract_summary, node, self.llm_provider)
-                            for node in all_nodes
+                            for node in nodes_needing_summary
                         ]
                         for future in futures:
                             try:
@@ -493,13 +790,55 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                                 continue
                             if isinstance(result, Summary):
                                 all_summaries.append(result)
+
+            for summary in all_summaries:
+                node = node_lookup.get(summary.node_id)
+                if not node:
+                    continue
+                update_summary_cache(
+                    node=node,
+                    chart=scope.chart,
+                    summary_text=summary.content,
+                )
         else:
-            for node in all_nodes:
-                all_summaries.append(create_fallback_summary(node))
+            for node in nodes_needing_summary:
+                summary = create_fallback_summary(node)
+                all_summaries.append(summary)
+                update_summary_cache(
+                    node=node,
+                    chart=scope.chart,
+                    summary_text=summary.content,
+                )
+
+        summary_map = {s.node_id: s for s in all_summaries}
+        for node_id, node in node_lookup.items():
+            if node_id in summary_map:
+                continue
+            summary = create_fallback_summary(node)
+            summary_map[node_id] = summary
+            update_summary_cache(
+                node=node,
+                chart=scope.chart,
+                summary_text=summary.content,
+            )
+        for node_id, summary in cached_summary_map.items():
+            summary_map[node_id] = summary
+
+        all_summaries = [
+            summary_map[str(node.id)]
+            for node in all_nodes
+            if str(node.id) in summary_map
+        ]
 
         # Build context string
         context_string = self._build_context_string(
-            scope, graph_slice, all_chunks, all_triples, retrieved_facts, all_summaries
+            scope,
+            graph_slice,
+            all_chunks,
+            all_triples,
+            retrieved_facts,
+            all_summaries,
+            include_chunks=self.include_chunks,
         )
 
         # Create synthetic layers
@@ -557,6 +896,59 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         all_facts: list[AtomicFact] = []
         all_summaries: list[Summary] = []
 
+        from pxnodes.llm.context.change_detection import (
+            get_processing_state_map,
+            has_node_changed,
+            update_summary_cache,
+        )
+        from pxnodes.llm.context.structural_memory.facts import (
+            get_cached_facts_from_vector_store,
+        )
+        from pxnodes.llm.context.structural_memory.triples import (
+            get_cached_triples_from_vector_store,
+        )
+
+        state_map = get_processing_state_map(scope.chart, all_nodes)
+        cached_summary_map: dict[str, Summary] = {}
+        nodes_needing_triples: list[Any] = []
+        nodes_needing_facts: list[Any] = []
+        nodes_needing_summary: list[Any] = []
+
+        for node in all_nodes:
+            node_id = str(node.id)
+            changed = has_node_changed(node, scope.chart)
+
+            if not changed:
+                cached_triples = get_cached_triples_from_vector_store(
+                    node_id, chart_id=str(scope.chart.id)
+                )
+                if cached_triples:
+                    all_triples.extend(cached_triples)
+                else:
+                    nodes_needing_triples.append(node)
+
+                cached_facts = get_cached_facts_from_vector_store(
+                    node_id, chart_id=str(scope.chart.id)
+                )
+                if cached_facts:
+                    all_facts.extend(cached_facts)
+                else:
+                    nodes_needing_facts.append(node)
+
+                state = state_map.get(node_id)
+                if state and state.summary_text:
+                    cached_summary_map[node_id] = Summary(
+                        node_id=node_id,
+                        content=state.summary_text,
+                        source="cached",
+                    )
+                else:
+                    nodes_needing_summary.append(node)
+            else:
+                nodes_needing_triples.append(node)
+                nodes_needing_facts.append(node)
+                nodes_needing_summary.append(node)
+
         if self.llm_provider:
             import asyncio
 
@@ -566,7 +958,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     return
                 triple_tasks = [
                     asyncio.to_thread(extract_llm_triples_only, node, self.llm_provider)
-                    for node in all_nodes
+                    for node in nodes_needing_triples
                 ]
                 tasks.extend(triple_tasks)
 
@@ -579,8 +971,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                             self.llm_provider,
                             None,
                             True,
+                            str(scope.chart.id),
                         )
-                        for node in all_nodes
+                        for node in nodes_needing_facts
                     ]
                     tasks.extend(fact_tasks)
 
@@ -588,7 +981,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 if not self.skip_summary_extraction:
                     summary_tasks = [
                         asyncio.to_thread(extract_summary, node, self.llm_provider)
-                        for node in all_nodes
+                        for node in nodes_needing_summary
                     ]
                     tasks.extend(summary_tasks)
 
@@ -624,21 +1017,24 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             except RuntimeError:
                 import concurrent.futures
 
-                for node in all_nodes:
+                for node in nodes_needing_triples:
                     all_triples.extend(
                         extract_llm_triples_only(node, self.llm_provider)
                     )
                     if not self.skip_fact_extraction:
                         all_facts.extend(
                             extract_atomic_facts(
-                                node, self.llm_provider, force_regenerate=True
+                                node,
+                                self.llm_provider,
+                                force_regenerate=True,
+                                chart_id=str(scope.chart.id),
                             )
                         )
                 if not self.skip_summary_extraction:
                     with concurrent.futures.ThreadPoolExecutor() as executor:
                         futures = [
                             executor.submit(extract_summary, node, self.llm_provider)
-                            for node in all_nodes
+                            for node in nodes_needing_summary
                         ]
                         for future in futures:
                             try:
@@ -649,13 +1045,49 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                             if isinstance(result, Summary):
                                 all_summaries.append(result)
 
-        if not all_summaries:
+        node_lookup = {str(node.id): node for node in nodes_needing_summary}
+        for summary in all_summaries:
+            node = node_lookup.get(summary.node_id)
+            if not node:
+                continue
+            update_summary_cache(
+                node=node,
+                chart=scope.chart,
+                summary_text=summary.content,
+            )
+
+        summary_map = {s.node_id: s for s in all_summaries}
+        summary_map.update(cached_summary_map)
+        for node_id, node in node_lookup.items():
+            if node_id in summary_map:
+                continue
+            summary = create_fallback_summary(node)
+            summary_map[node_id] = summary
+            update_summary_cache(
+                node=node,
+                chart=scope.chart,
+                summary_text=summary.content,
+            )
+
+        if not summary_map:
             for node in all_nodes:
-                all_summaries.append(create_fallback_summary(node))
+                summary_map[str(node.id)] = create_fallback_summary(node)
+
+        all_summaries = [
+            summary_map[str(node.id)]
+            for node in all_nodes
+            if str(node.id) in summary_map
+        ]
 
         # Build context string with all four structures
         context_string = self._build_context_string(
-            scope, graph_slice, all_chunks, all_triples, all_facts, all_summaries
+            scope,
+            graph_slice,
+            all_chunks,
+            all_triples,
+            all_facts,
+            all_summaries,
+            include_chunks=self.include_chunks,
         )
 
         # Create synthetic layers for compatibility with hierarchical views
@@ -858,6 +1290,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     all_triples,
                     all_facts,
                     all_summaries,
+                    include_chunks=self.include_chunks,
                 )
 
                 # Pass graph_slice to avoid sync Django ORM calls in async context
@@ -924,6 +1357,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         triples: list[KnowledgeTriple],
         facts: list[AtomicFact],
         summaries: list[Summary],
+        include_chunks: bool = True,
     ) -> str:
         """
         Build the formatted context string for LLM prompt.
@@ -946,7 +1380,13 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             for node in graph_slice.previous_nodes:
                 node_id = str(node.id)
                 prev_section += self._format_node_memory(
-                    node.name, node_id, chunks, triples, facts, summaries
+                    node.name,
+                    node_id,
+                    chunks,
+                    triples,
+                    facts,
+                    summaries,
+                    include_chunks=include_chunks,
                 )
             sections.append(prev_section)
 
@@ -962,6 +1402,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             summaries,
             is_target=True,
             skip_derived_triples=True,
+            include_chunks=include_chunks,
         )
         sections.append(target_section)
 
@@ -990,7 +1431,13 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             for node in graph_slice.next_nodes:
                 node_id = str(node.id)
                 next_section += self._format_node_memory(
-                    node.name, node_id, chunks, triples, facts, summaries
+                    node.name,
+                    node_id,
+                    chunks,
+                    triples,
+                    facts,
+                    summaries,
+                    include_chunks=include_chunks,
                 )
             sections.append(next_section)
 
@@ -1006,6 +1453,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         summaries: list[Summary],
         is_target: bool = False,
         skip_derived_triples: bool = False,
+        include_chunks: bool = True,
     ) -> str:
         """
         Format all four memory structures for a single node.
@@ -1060,13 +1508,14 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 lines.append(f"    - {f.fact}")
 
         # 4. Chunks (raw text segments)
-        desc_chunks = [c for c in node_chunks if c.source == "description"]
-        if desc_chunks:
-            lines.append("\n  Chunks:")
-            for c in desc_chunks[: self.max_chunks_per_node]:
-                # Indent multi-line content
-                content = c.content.replace("\n", "\n    ")
-                lines.append(f"    {content}")
+        if include_chunks:
+            desc_chunks = [c for c in node_chunks if c.source == "description"]
+            if desc_chunks:
+                lines.append("\n  Chunks:")
+                for c in desc_chunks[: self.max_chunks_per_node]:
+                    # Indent multi-line content
+                    content = c.content.replace("\n", "\n    ")
+                    lines.append(f"    {content}")
 
         # Add trailing newline for spacing between nodes/sections
         lines.append("")
@@ -1138,8 +1587,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 cache_key_parts.append(f"{name}:{desc}")
 
         cache_key = hashlib.sha256("\n".join(cache_key_parts).encode()).hexdigest()
-        if self._domain_layer_cache_key == cache_key and self._domain_layer_cache:
-            return self._domain_layer_cache
+        cached = self._domain_layer_cache_global.get(cache_key)
+        if cached:
+            return cached
 
         content_parts = []
 
@@ -1201,7 +1651,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             summary = summarize_text(title, text)
             facts = extract_domain_facts(title, text)
             triples = extract_domain_triples(title, text)
-            chunks = chunk_text(text)
+            chunks = chunk_text(text) if self.include_chunks else []
 
             lines = [f"{title}:", f"Summary: {summary}"]
             if triples:
@@ -1212,7 +1662,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 lines.append("Atomic Facts:")
                 for f in facts[:10]:
                     lines.append(f"- {f}")
-            if chunks:
+            if chunks and self.include_chunks:
                 lines.append("Chunks:")
                 for c in chunks[: self.max_chunks_per_node]:
                     lines.append(f"- {c}")
@@ -1272,6 +1722,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             ),
             metadata={"source": "project_config", "mixed_memory": True},
         )
+        self._domain_layer_cache_global[cache_key] = layer
         self._domain_layer_cache = layer
         self._domain_layer_cache_key = cache_key
         return layer
@@ -1366,3 +1817,294 @@ class StructuralMemoryStrategy(BaseContextStrategy):
     def requires_llm(self) -> bool:
         """Requires LLM for atomic fact extraction (unless skipped)."""
         return not self.skip_fact_extraction
+
+
+@StrategyRegistry.register(StrategyType.SIMPLE_SM)
+class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
+    """
+    Simple Structural Memory strategy.
+
+    Uses full-path context and replaces raw descriptions with
+    summaries, knowledge triples, and atomic facts only.
+    """
+
+    def __init__(
+        self,
+        llm_provider: Optional[LLMProvider] = None,
+        **kwargs: Any,
+    ):
+        kwargs.pop("include_chunks", None)
+        kwargs.pop("use_iterative_retrieval", None)
+        super().__init__(
+            llm_provider=llm_provider,
+            use_iterative_retrieval=False,
+            include_chunks=False,
+            **kwargs,
+        )
+
+    def build_context(
+        self,
+        scope: EvaluationScope,
+        query: Optional[str] = None,
+    ) -> ContextResult:
+        """
+        Build simple structural memory context for evaluation.
+
+        Full-path traversal + summaries/triples/facts only (no chunks).
+        """
+        from pxnodes.llm.context.shared.graph_retrieval import get_full_path
+
+        graph_slice = get_full_path(scope.target_node, scope.chart)
+        all_nodes = (
+            graph_slice.previous_nodes + [scope.target_node] + graph_slice.next_nodes
+        )
+
+        cache_key = self._build_context_cache_key(scope, all_nodes)
+        cached = self._get_cached_context(cache_key)
+        if cached:
+            return cached
+
+        all_triples: list[KnowledgeTriple] = []
+        all_facts: list[AtomicFact] = []
+        all_summaries: list[Summary] = []
+
+        from pxnodes.llm.context.change_detection import (
+            get_processing_state_map,
+            has_node_changed,
+            update_summary_cache,
+        )
+        from pxnodes.llm.context.structural_memory.facts import (
+            get_cached_facts_from_vector_store,
+        )
+        from pxnodes.llm.context.structural_memory.triples import (
+            get_cached_triples_from_vector_store,
+        )
+
+        state_map = get_processing_state_map(scope.chart, all_nodes)
+        cached_summary_map: dict[str, Summary] = {}
+        nodes_needing_triples: list[Any] = []
+        nodes_needing_facts: list[Any] = []
+        nodes_needing_summary: list[Any] = []
+
+        for node in all_nodes:
+            node_id = str(node.id)
+            changed = has_node_changed(node, scope.chart)
+
+            if not changed:
+                cached_triples = get_cached_triples_from_vector_store(
+                    node_id, chart_id=str(scope.chart.id)
+                )
+                if cached_triples:
+                    all_triples.extend(cached_triples)
+                else:
+                    nodes_needing_triples.append(node)
+
+                cached_facts = get_cached_facts_from_vector_store(
+                    node_id, chart_id=str(scope.chart.id)
+                )
+                if cached_facts:
+                    all_facts.extend(cached_facts)
+                else:
+                    nodes_needing_facts.append(node)
+
+                state = state_map.get(node_id)
+                if state and state.summary_text:
+                    cached_summary_map[node_id] = Summary(
+                        node_id=node_id,
+                        content=state.summary_text,
+                        source="cached",
+                    )
+                else:
+                    nodes_needing_summary.append(node)
+            else:
+                nodes_needing_triples.append(node)
+                nodes_needing_facts.append(node)
+                nodes_needing_summary.append(node)
+
+        if self.llm_provider:
+            import asyncio
+
+            async def run_parallel_extractions() -> None:
+                tasks: list[Any] = []
+                if not self.llm_provider:
+                    return
+                triple_tasks = [
+                    asyncio.to_thread(extract_llm_triples_only, node, self.llm_provider)
+                    for node in nodes_needing_triples
+                ]
+                tasks.extend(triple_tasks)
+
+                fact_tasks = []
+                if not self.skip_fact_extraction:
+                    fact_tasks = [
+                        asyncio.to_thread(
+                            extract_atomic_facts,
+                            node,
+                            self.llm_provider,
+                            None,
+                            True,
+                            str(scope.chart.id),
+                        )
+                        for node in nodes_needing_facts
+                    ]
+                    tasks.extend(fact_tasks)
+
+                summary_tasks = []
+                if not self.skip_summary_extraction:
+                    summary_tasks = [
+                        asyncio.to_thread(extract_summary, node, self.llm_provider)
+                        for node in nodes_needing_summary
+                    ]
+                    tasks.extend(summary_tasks)
+
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                idx = 0
+
+                triple_results = results[idx : idx + len(triple_tasks)]
+                idx += len(triple_tasks)
+                fact_results = results[idx : idx + len(fact_tasks)]
+                idx += len(fact_tasks)
+                summary_results = results[idx:]
+
+                for result in triple_results:
+                    if isinstance(result, list):
+                        all_triples.extend(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Triple extraction failed: {result}")
+
+                for result in fact_results:
+                    if isinstance(result, list):
+                        all_facts.extend(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Fact extraction failed: {result}")
+
+                for result in summary_results:
+                    if isinstance(result, Summary):
+                        all_summaries.append(result)
+                    elif isinstance(result, Exception):
+                        logger.warning(f"Summary extraction failed: {result}")
+
+            try:
+                asyncio.run(run_parallel_extractions())
+            except RuntimeError:
+                import concurrent.futures
+
+                for node in nodes_needing_triples:
+                    all_triples.extend(
+                        extract_llm_triples_only(node, self.llm_provider)
+                    )
+                    if not self.skip_fact_extraction:
+                        all_facts.extend(
+                            extract_atomic_facts(
+                                node,
+                                self.llm_provider,
+                                force_regenerate=True,
+                                chart_id=str(scope.chart.id),
+                            )
+                        )
+                if not self.skip_summary_extraction:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        futures = [
+                            executor.submit(extract_summary, node, self.llm_provider)
+                            for node in nodes_needing_summary
+                        ]
+                        for future in futures:
+                            try:
+                                result = future.result()
+                            except Exception as exc:
+                                logger.warning(f"Summary extraction failed: {exc}")
+                                continue
+                            if isinstance(result, Summary):
+                                all_summaries.append(result)
+
+        node_lookup = {str(node.id): node for node in nodes_needing_summary}
+        for summary in all_summaries:
+            node = node_lookup.get(summary.node_id)
+            if not node:
+                continue
+            update_summary_cache(
+                node=node,
+                chart=scope.chart,
+                summary_text=summary.content,
+            )
+
+        summary_map = {s.node_id: s for s in all_summaries}
+        summary_map.update(cached_summary_map)
+        for node_id, node in node_lookup.items():
+            if node_id in summary_map:
+                continue
+            summary = create_fallback_summary(node)
+            summary_map[node_id] = summary
+            update_summary_cache(
+                node=node,
+                chart=scope.chart,
+                summary_text=summary.content,
+            )
+
+        if not summary_map:
+            for node in all_nodes:
+                summary_map[str(node.id)] = create_fallback_summary(node)
+
+        all_summaries = [
+            summary_map[str(node.id)]
+            for node in all_nodes
+            if str(node.id) in summary_map
+        ]
+
+        context_string = self._build_context_string(
+            scope,
+            graph_slice,
+            [],
+            all_triples,
+            all_facts,
+            all_summaries,
+            include_chunks=False,
+        )
+
+        layers = self._create_synthetic_layers(
+            scope,
+            [],
+            all_triples,
+            all_facts,
+            all_summaries,
+            graph_slice=graph_slice,
+        )
+
+        result = ContextResult(
+            strategy=self.strategy_type,
+            context_string=context_string,
+            layers=layers,
+            chunks=[],
+            triples=all_triples,
+            facts=all_facts,
+            summaries=all_summaries,
+            metadata={
+                "target_node_id": str(scope.target_node.id),
+                "target_node_name": scope.target_node.name,
+                "previous_count": len(graph_slice.previous_nodes),
+                "next_count": len(graph_slice.next_nodes),
+                "chunk_count": 0,
+                "triple_count": len(all_triples),
+                "fact_count": len(all_facts),
+                "summary_count": len(all_summaries),
+                "retrieval_method": "simple_structural_memory",
+                "includes_target_description": True,
+            },
+        )
+
+        self._set_cached_context(cache_key, result)
+        return result
+
+    async def build_context_async(
+        self,
+        scope: EvaluationScope,
+        query: Optional[str] = None,
+    ) -> ContextResult:
+        import asyncio
+
+        return await asyncio.to_thread(self.build_context, scope, query)
+
+    @property
+    def requires_embeddings(self) -> bool:
+        """Simple SM does not use vector embeddings."""
+        return False

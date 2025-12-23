@@ -5,6 +5,7 @@ const authentication = useAuthentication()
 await authentication.checkAuthentication()
 
 const llmStore = useLLM()
+const projectStore = useProject()
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -89,6 +90,39 @@ const isSidebarCollapsed = ref(false)
 function toggleSidebar() {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
+
+function formatProjectLabel(content: string) {
+  const trimmed = content.trim()
+  if (!trimmed) return 'Untitled Project'
+  const firstLine = trimmed.split('\n')[0]
+  return firstLine.length > 50 ? `${firstLine.slice(0, 50)}...` : firstLine
+}
+
+const projectOptions = computed(() =>
+  projectStore.projects.map((project) => ({
+    label: formatProjectLabel(project.content),
+    value: project.id,
+  })),
+)
+
+const selectedProjectId = computed({
+  get: () => projectStore.activeProjectId,
+  set: (value) => {
+    if (value && value !== projectStore.activeProjectId) {
+      projectStore.switchProject(value)
+    }
+  },
+})
+
+watch(
+  () => authentication.isLoggedIn.value,
+  async (isLoggedIn) => {
+    if (isLoggedIn) {
+      await projectStore.fetchProjects()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -121,6 +155,16 @@ function toggleSidebar() {
           />
           <div v-else class="flex items-center gap-2">
             <!-- Put user info, settings, logout etc. here -->
+            <USelectMenu
+              v-model="selectedProjectId"
+              :items="projectOptions"
+              value-key="value"
+              placeholder="Select project"
+              class="w-60"
+              :loading="projectStore.isLoading || projectStore.isSwitching"
+              :disabled="projectOptions.length === 0"
+              searchable
+            />
             <USelect
               v-model="llmStore.active_llm"
               :items="llmStore.llm_models"

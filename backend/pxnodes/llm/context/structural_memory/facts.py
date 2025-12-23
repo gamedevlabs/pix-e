@@ -90,7 +90,9 @@ def get_node_components_for_prompt(node: PxNode) -> list[dict[str, Any]]:
     return components
 
 
-def get_cached_facts_from_vector_store(node_id: str) -> list[AtomicFact]:
+def get_cached_facts_from_vector_store(
+    node_id: str, chart_id: Optional[str] = None
+) -> list[AtomicFact]:
     """
     Retrieve cached atomic facts from the vector store.
 
@@ -103,6 +105,7 @@ def get_cached_facts_from_vector_store(node_id: str) -> list[AtomicFact]:
         memories = vector_store.get_memories_by_node(
             node_id=node_id,
             memory_type="atomic_fact",
+            chart_id=chart_id,
         )
         vector_store.close()
 
@@ -129,6 +132,7 @@ def extract_atomic_facts(
     llm_provider: Optional[LLMProvider] = None,
     model_id: Optional[str] = None,
     force_regenerate: bool = False,
+    chart_id: Optional[str] = None,
 ) -> list[AtomicFact]:
     """
     Extract atomic facts from a PxNode's description and components.
@@ -152,7 +156,7 @@ def extract_atomic_facts(
 
     # Check for cached facts in vector store first
     if not force_regenerate:
-        cached_facts = get_cached_facts_from_vector_store(node_id)
+        cached_facts = get_cached_facts_from_vector_store(node_id, chart_id=chart_id)
         if cached_facts:
             logger.debug(f"Using {len(cached_facts)} cached facts for {node.name}")
             return cached_facts
@@ -238,6 +242,7 @@ async def extract_atomic_facts_async(
     node: PxNode,
     llm_provider: LLMProvider,
     force_regenerate: bool = True,
+    chart_id: Optional[str] = None,
 ) -> list[AtomicFact]:
     """
     Async version of extract_atomic_facts for parallel execution.
@@ -260,7 +265,7 @@ async def extract_atomic_facts_async(
         if not force_regenerate:
             cached_facts = await sync_to_async(
                 get_cached_facts_from_vector_store, thread_sensitive=True
-            )(node_id)
+            )(node_id, chart_id)
             if cached_facts:
                 logfire.info(
                     "atomic_facts_from_cache",

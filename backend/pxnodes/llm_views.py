@@ -12,6 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
+from game_concept.utils import get_current_project
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
@@ -60,7 +61,13 @@ class NodeFeedbackView(ViewSet):
                 if pk is None:
                     return JsonResponse({"error": "Node ID is required"}, status=400)
 
-                node = PxNode.objects.filter(id=pk).first()
+                project = get_current_project(request.user)
+                node_filters = {"id": pk}
+                if project:
+                    node_filters["project"] = project
+                else:
+                    node_filters["project__isnull"] = True
+                node = PxNode.objects.filter(**node_filters).first()
                 if not node:
                     return JsonResponse({"error": "Node not found"}, status=404)
 
@@ -109,7 +116,13 @@ class NodeFeedbackView(ViewSet):
                 if pk is None:
                     return JsonResponse({"error": "Node ID is required"}, status=400)
 
-                node = PxNode.objects.filter(id=pk).first()
+                project = get_current_project(request.user)
+                node_filters = {"id": pk}
+                if project:
+                    node_filters["project"] = project
+                else:
+                    node_filters["project__isnull"] = True
+                node = PxNode.objects.filter(**node_filters).first()
                 if not node:
                     return JsonResponse({"error": "Node not found"}, status=404)
 
@@ -181,7 +194,13 @@ class NodeFeedbackView(ViewSet):
                 if pk is None:
                     return JsonResponse({"error": "Node ID is required"}, status=400)
 
-                node = PxNode.objects.filter(id=pk).first()
+                project = get_current_project(request.user)
+                node_filters = {"id": pk}
+                if project:
+                    node_filters["project"] = project
+                else:
+                    node_filters["project__isnull"] = True
+                node = PxNode.objects.filter(**node_filters).first()
                 if not node:
                     return JsonResponse({"error": "Node not found"}, status=404)
 

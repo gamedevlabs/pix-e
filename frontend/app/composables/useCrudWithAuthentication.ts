@@ -1,4 +1,6 @@
-﻿const BASE_URL = 'http://localhost:8000/'
+﻿import { useProject } from '@/composables/useProject'
+
+const BASE_URL = 'http://localhost:8000/'
 
 export function useCrudWithAuthentication<T>(apiUrl: string) {
   const items = ref<T[]>([])
@@ -6,6 +8,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
   const API_URL = BASE_URL + apiUrl
+  const projectStore = useProject()
 
   async function fetchAll() {
     loading.value = true
@@ -95,6 +98,15 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
       errorToast(err)
     }
   }
+
+  watch(
+    () => projectStore.activeProjectId,
+    async (nextId, previousId) => {
+      if (previousId !== null && nextId !== previousId) {
+        await fetchAll()
+      }
+    },
+  )
 
   return {
     items,

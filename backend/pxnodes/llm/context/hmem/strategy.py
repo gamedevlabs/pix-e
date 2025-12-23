@@ -105,6 +105,8 @@ class HMEMStrategy(BaseContextStrategy):
         self.top_k_per_layer = top_k_per_layer
         self.auto_embed = auto_embed
         self.retriever = HMEMRetriever(embedding_model=embedding_model)
+        self._trace_summary_state_map: dict[str, Any] = {}
+        self._trace_summary_chart = None
 
     def build_context(
         self,
@@ -285,6 +287,13 @@ class HMEMStrategy(BaseContextStrategy):
 
         # L3: Trace (Path level) - snippets + node summaries + milestones
         backward_path, forward_path = self._get_full_path(scope)
+        from pxnodes.llm.context.change_detection import get_processing_state_map
+
+        path_nodes = backward_path + forward_path
+        self._trace_summary_state_map = get_processing_state_map(
+            scope.chart, path_nodes
+        )
+        self._trace_summary_chart = scope.chart
         l3_items = []
         l3_indices = []
         for key, content in self._build_trace_entries(
@@ -1014,6 +1023,21 @@ class HMEMStrategy(BaseContextStrategy):
 
         This creates the "keyword summary" that H-MEM expects at L3.
         """
+        from pxnodes.llm.context.change_detection import (
+            has_node_changed,
+            update_summary_cache,
+        )
+
+        node_id = str(getattr(node, "id", ""))
+        if self._trace_summary_chart and node_id:
+            state = self._trace_summary_state_map.get(node_id)
+            if (
+                state
+                and not has_node_changed(node, self._trace_summary_chart)
+                and state.trace_summary
+            ):
+                return state.trace_summary
+
         description = getattr(node, "description", "") or ""
         components = getattr(node, "components", None)
         comp_list = (
@@ -1041,6 +1065,12 @@ class HMEMStrategy(BaseContextStrategy):
                 response = self.llm_provider.generate(prompt)
                 summary = response.strip()
                 if summary:
+                    if self._trace_summary_chart and node_id:
+                        update_summary_cache(
+                            node=node,
+                            chart=self._trace_summary_chart,
+                            trace_summary=summary,
+                        )
                     return summary
             except Exception:
                 logger.warning("Trace summary LLM failed, falling back to heuristic.")
@@ -1050,7 +1080,14 @@ class HMEMStrategy(BaseContextStrategy):
             parts.append(description.split(".")[0][:180])
         if comp_lines:
             parts.append(f"[{', '.join(comp_lines)[:180]}]")
-        return " ".join(p for p in parts if p).strip() or "(no details)"
+        fallback = " ".join(p for p in parts if p).strip() or "(no details)"
+        if self._trace_summary_chart and node_id:
+            update_summary_cache(
+                node=node,
+                chart=self._trace_summary_chart,
+                trace_summary=fallback,
+            )
+        return fallback
 
     def _summarize_nodes_for_trace(self, nodes: list[Any]) -> list[str]:
         """Summarize multiple nodes, parallelizing LLM calls when possible."""

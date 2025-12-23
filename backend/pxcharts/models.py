@@ -11,6 +11,13 @@ class PxChart(models.Model):
 
     name = models.CharField(max_length=255)
     description = models.TextField()
+    project = models.ForeignKey(
+        "game_concept.GameConcept",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pxcharts",
+    )
     associatedNode = models.ForeignKey(
         PxNode, on_delete=models.SET_NULL, null=True, blank=True, related_name="charts"
     )

@@ -2,11 +2,13 @@ import logging
 
 import logfire
 from rest_framework import status, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from game_concept.models import GameConcept
+from game_concept.utils import get_current_project
 from pillars.models import Pillar
 from pxcharts.models import PxChart
 
@@ -27,9 +29,11 @@ class PxNodeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerPermission]
 
     def get_queryset(self):
-        if self.action == "list":
-            return PxNode.objects.filter(owner=self.request.user)
-        return PxNode.objects.order_by("created_at")
+        project = get_current_project(self.request.user)
+        queryset = PxNode.objects.filter(owner=self.request.user)
+        if project:
+            return queryset.filter(project=project)
+        return queryset.filter(project__isnull=True)
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -37,7 +41,8 @@ class PxNodeViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        project = get_current_project(self.request.user)
+        serializer.save(owner=self.request.user, project=project)
 
 
 class PxComponentDefinitionViewSet(viewsets.ModelViewSet):
@@ -45,12 +50,15 @@ class PxComponentDefinitionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerPermission]
 
     def get_queryset(self):
-        if self.action == "list":
-            return PxComponentDefinition.objects.filter(owner=self.request.user)
-        return PxComponentDefinition.objects.order_by("created_at")
+        project = get_current_project(self.request.user)
+        queryset = PxComponentDefinition.objects.filter(owner=self.request.user)
+        if project:
+            return queryset.filter(project=project)
+        return queryset.filter(project__isnull=True)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        project = get_current_project(self.request.user)
+        serializer.save(owner=self.request.user, project=project)
 
 
 class PxComponentViewSet(viewsets.ModelViewSet):
@@ -58,11 +66,17 @@ class PxComponentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerPermission]
 
     def get_queryset(self):
-        if self.action == "list":
-            return PxComponent.objects.filter(owner=self.request.user)
-        return PxComponent.objects.order_by("created_at")
+        project = get_current_project(self.request.user)
+        queryset = PxComponent.objects.filter(owner=self.request.user)
+        if project:
+            return queryset.filter(node__project=project)
+        return queryset.filter(node__project__isnull=True)
 
     def perform_create(self, serializer):
+        project = get_current_project(self.request.user)
+        node = serializer.validated_data.get("node")
+        if node and node.project_id != (project.id if project else None):
+            raise ValidationError("Node does not belong to the active project.")
         serializer.save(owner=self.request.user)
 
 
@@ -103,9 +117,15 @@ class StructuralMemoryGenerateView(APIView):
             embedding_model = request.data.get(
                 "embedding_model", "text-embedding-3-small"
             )
+            project = get_current_project(request.user)
 
             # Verify user owns these charts
-            charts = PxChart.objects.filter(id__in=chart_ids, owner=request.user)
+            chart_filters = {"id__in": chart_ids, "owner": request.user}
+            if project:
+                chart_filters["project"] = project
+            else:
+                chart_filters["project__isnull"] = True
+            charts = PxChart.objects.filter(**chart_filters)
             if charts.count() != len(chart_ids):
                 return Response(
                     {"error": "One or more charts not found or not owned by user"},
@@ -200,7 +220,13 @@ class StructuralMemoryStatsView(APIView):
             )
 
         # Verify user owns these charts
-        charts = PxChart.objects.filter(id__in=chart_ids, owner=request.user)
+        project = get_current_project(request.user)
+        chart_filters = {"id__in": chart_ids, "owner": request.user}
+        if project:
+            chart_filters["project"] = project
+        else:
+            chart_filters["project__isnull"] = True
+        charts = PxChart.objects.filter(**chart_filters)
 
         from pxnodes.llm.context.change_detection import get_processing_stats
 
@@ -250,10 +276,16 @@ class CoherenceEvaluateView(APIView):
             node_ids = request.data.get("node_ids")
             iterations = request.data.get("iterations", 3)
             llm_model = request.data.get("llm_model", "gpt-4o-mini")
+            project = get_current_project(request.user)
 
             # Verify user owns the chart
             try:
-                chart = PxChart.objects.get(id=chart_id, owner=request.user)
+                chart_filters = {"id": chart_id, "owner": request.user}
+                if project:
+                    chart_filters["project"] = project
+                else:
+                    chart_filters["project__isnull"] = True
+                chart = PxChart.objects.get(**chart_filters)
             except PxChart.DoesNotExist:
                 return Response(
                     {"error": "Chart not found or not owned by user"},
@@ -345,6 +377,13 @@ class ContextStrategiesView(APIView):
                 "requires_llm": True,
             },
             {
+                "id": "simple_sm",
+                "name": "Simple SM",
+                "description": "Full path with summaries, triples, and facts only",
+                "requires_embeddings": False,
+                "requires_llm": True,
+            },
+            {
                 "id": "hierarchical_graph",
                 "name": "Hierarchical Graph",
                 "description": "Deterministic 4-layer graph traversal",
@@ -399,6 +438,7 @@ class StrategyEvaluateView(APIView):
         chart_id = request.data.get("chart_id")
         node_id = request.data.get("node_id")
         strategy = request.data.get("strategy", "structural_memory")
+        project = get_current_project(request.user)
         execution_mode = request.data.get("execution_mode", "monolithic")
         llm_model = request.data.get("llm_model", "gpt-4o-mini")
 
@@ -420,6 +460,7 @@ class StrategyEvaluateView(APIView):
             valid_strategies = [
                 "full_context",
                 "structural_memory",
+                "simple_sm",
                 "hierarchical_graph",
                 "hmem",
                 "combined",
@@ -440,7 +481,12 @@ class StrategyEvaluateView(APIView):
 
             # Verify user owns the chart
             try:
-                chart = PxChart.objects.get(id=chart_id, owner=request.user)
+                chart_filters = {"id": chart_id, "owner": request.user}
+                if project:
+                    chart_filters["project"] = project
+                else:
+                    chart_filters["project__isnull"] = True
+                chart = PxChart.objects.get(**chart_filters)
             except PxChart.DoesNotExist:
                 return Response(
                     {"error": "Chart not found or not owned by user"},
@@ -449,7 +495,12 @@ class StrategyEvaluateView(APIView):
 
             # Get the node
             try:
-                node = PxNode.objects.get(id=node_id)
+                node_filters = {"id": node_id}
+                if project:
+                    node_filters["project"] = project
+                else:
+                    node_filters["project__isnull"] = True
+                node = PxNode.objects.get(**node_filters)
             except PxNode.DoesNotExist:
                 return Response(
                     {"error": "Node not found"},
@@ -457,7 +508,12 @@ class StrategyEvaluateView(APIView):
                 )
 
             # Fetch project-level context for L1 (Domain layer)
-            pillars = list(Pillar.objects.filter(user=request.user))
+            pillar_filters = {"user": request.user}
+            if project:
+                pillar_filters["project"] = project
+            else:
+                pillar_filters["project__isnull"] = True
+            pillars = list(Pillar.objects.filter(**pillar_filters))
             game_concept = GameConcept.objects.filter(
                 user=request.user, is_current=True
             ).first()
@@ -565,7 +621,7 @@ class StrategyEvaluateView(APIView):
 
 class StrategyCompareView(APIView):
     """
-    Compare all 4 context strategies for a single node.
+    Compare all context strategies for a single node.
 
     Useful for thesis research to compare strategy effectiveness.
 
@@ -573,7 +629,7 @@ class StrategyCompareView(APIView):
     {
         "chart_id": "uuid",
         "node_id": "uuid",
-        "strategies": ["structural_memory", "hmem"],  // optional, defaults to all
+        "strategies": ["structural_memory", "simple_sm"],  // optional, defaults to all
         "llm_model": "gpt-4o-mini"  // optional
     }
 
@@ -589,6 +645,7 @@ class StrategyCompareView(APIView):
         node_id = request.data.get("node_id")
         strategies_list = request.data.get("strategies")
         llm_model = request.data.get("llm_model", "gpt-4o-mini")
+        project = get_current_project(request.user)
 
         with logfire.span(
             "context.compare.pxnodes",
@@ -604,7 +661,12 @@ class StrategyCompareView(APIView):
 
             # Verify user owns the chart
             try:
-                chart = PxChart.objects.get(id=chart_id, owner=request.user)
+                chart_filters = {"id": chart_id, "owner": request.user}
+                if project:
+                    chart_filters["project"] = project
+                else:
+                    chart_filters["project__isnull"] = True
+                chart = PxChart.objects.get(**chart_filters)
             except PxChart.DoesNotExist:
                 return Response(
                     {"error": "Chart not found or not owned by user"},
@@ -613,7 +675,12 @@ class StrategyCompareView(APIView):
 
             # Get the node
             try:
-                node = PxNode.objects.get(id=node_id)
+                node_filters = {"id": node_id}
+                if project:
+                    node_filters["project"] = project
+                else:
+                    node_filters["project__isnull"] = True
+                node = PxNode.objects.get(**node_filters)
             except PxNode.DoesNotExist:
                 return Response(
                     {"error": "Node not found"},
@@ -621,7 +688,12 @@ class StrategyCompareView(APIView):
                 )
 
             # Fetch project-level context for L1 (Domain layer)
-            pillars = list(Pillar.objects.filter(user=request.user))
+            pillar_filters = {"user": request.user}
+            if project:
+                pillar_filters["project"] = project
+            else:
+                pillar_filters["project__isnull"] = True
+            pillars = list(Pillar.objects.filter(**pillar_filters))
             game_concept = GameConcept.objects.filter(
                 user=request.user, is_current=True
             ).first()
@@ -711,6 +783,7 @@ class ContextBuildView(APIView):
         chart_id = request.data.get("chart_id")
         node_id = request.data.get("node_id")
         strategy = request.data.get("strategy", "structural_memory")
+        project = get_current_project(request.user)
 
         with logfire.span(
             f"context.build.pxnodes.{strategy}",
@@ -727,6 +800,7 @@ class ContextBuildView(APIView):
             # Validate strategy
             valid_strategies = [
                 "structural_memory",
+                "simple_sm",
                 "hierarchical_graph",
                 "hmem",
                 "combined",
@@ -739,7 +813,12 @@ class ContextBuildView(APIView):
 
             # Verify user owns the chart
             try:
-                chart = PxChart.objects.get(id=chart_id, owner=request.user)
+                chart_filters = {"id": chart_id, "owner": request.user}
+                if project:
+                    chart_filters["project"] = project
+                else:
+                    chart_filters["project__isnull"] = True
+                chart = PxChart.objects.get(**chart_filters)
             except PxChart.DoesNotExist:
                 return Response(
                     {"error": "Chart not found or not owned by user"},
@@ -748,7 +827,12 @@ class ContextBuildView(APIView):
 
             # Get the node
             try:
-                node = PxNode.objects.get(id=node_id)
+                node_filters = {"id": node_id}
+                if project:
+                    node_filters["project"] = project
+                else:
+                    node_filters["project__isnull"] = True
+                node = PxNode.objects.get(**node_filters)
             except PxNode.DoesNotExist:
                 return Response(
                     {"error": "Node not found"},

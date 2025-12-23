@@ -21,6 +21,7 @@ class StrategyType(Enum):
 
     FULL_CONTEXT = "full_context"
     STRUCTURAL_MEMORY = "structural_memory"
+    SIMPLE_SM = "simple_sm"
     HIERARCHICAL_GRAPH = "hierarchical_graph"
     HMEM = "hmem"
     COMBINED = "combined"

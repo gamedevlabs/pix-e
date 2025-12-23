@@ -27,6 +27,7 @@ def get_user_context(
         UserContext object with requested data
     """
     from game_concept.models import GameConcept
+    from game_concept.utils import get_current_project
     from pillars.models import Pillar
 
     context_data: Dict[str, Any] = {
@@ -47,10 +48,14 @@ def get_user_context(
 
     # Retrieve pillars if requested
     if "pillars" in include:
-        pillars = (
-            Pillar.objects.filter(user=user)
-            .only("id", "name", "description", "created_at")
-            .order_by("-created_at")
+        project = get_current_project(user)
+        pillar_queryset = Pillar.objects.filter(user=user)
+        if project:
+            pillar_queryset = pillar_queryset.filter(project=project)
+        else:
+            pillar_queryset = pillar_queryset.filter(project__isnull=True)
+        pillars = pillar_queryset.only("id", "name", "description", "created_at").order_by(
+            "-created_at"
         )
 
         context_data["pillars"] = [

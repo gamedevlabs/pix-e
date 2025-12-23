@@ -9,6 +9,13 @@ class PxNode(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    project = models.ForeignKey(
+        "game_concept.GameConcept",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pxnodes",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -27,6 +34,13 @@ class PxComponentDefinition(models.Model):
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    project = models.ForeignKey(
+        "game_concept.GameConcept",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pxcomponentdefinitions",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -90,6 +104,8 @@ class StructuralMemoryState(models.Model):
     triples_count = models.IntegerField(default=0)
     facts_count = models.IntegerField(default=0)
     embeddings_count = models.IntegerField(default=0)
+    summary_text = models.TextField(blank=True, default="")
+    trace_summary = models.TextField(blank=True, default="")
 
     class Meta:
         unique_together = ["node", "chart"]

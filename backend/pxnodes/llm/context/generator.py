@@ -360,7 +360,9 @@ class StructuralMemoryGenerator:
                 node = data["node"]
 
                 # Clear existing memories for this node
-                self.vector_store.delete_memories_by_node(str(node.id))
+                self.vector_store.delete_memories_by_node(
+                    str(node.id), chart_id=str(chart.id)
+                )
 
                 # Add triples
                 for triple in data["triples"]:

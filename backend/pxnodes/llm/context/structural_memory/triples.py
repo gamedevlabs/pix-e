@@ -51,7 +51,9 @@ class KnowledgeTriple:
         return f"({self.head}, {self.relation}, {tail_str})"
 
 
-def get_cached_triples_from_vector_store(node_id: str) -> list[KnowledgeTriple]:
+def get_cached_triples_from_vector_store(
+    node_id: str, chart_id: Optional[str] = None
+) -> list[KnowledgeTriple]:
     """
     Retrieve cached knowledge triples from the vector store.
 
@@ -64,6 +66,7 @@ def get_cached_triples_from_vector_store(node_id: str) -> list[KnowledgeTriple]:
         memories = vector_store.get_memories_by_node(
             node_id=node_id,
             memory_type="knowledge_triple",
+            chart_id=chart_id,
         )
         vector_store.close()
 
@@ -528,6 +531,24 @@ def extract_llm_triples_only(
     narrative text (with components included in the prompt) instead of
     deterministic triples.
     """
+    if not llm_provider:
+        return []
+    return extract_narrative_triples(node, llm_provider)
+
+
+def extract_llm_triples_only_cached(
+    node: PxNode,
+    llm_provider: Optional[LLMProvider],
+    chart_id: Optional[str] = None,
+    force_regenerate: bool = False,
+) -> list[KnowledgeTriple]:
+    """Extract triples with optional vector store cache reuse."""
+    if not force_regenerate:
+        cached = get_cached_triples_from_vector_store(
+            str(node.id), chart_id=chart_id
+        )
+        if cached:
+            return cached
     if not llm_provider:
         return []
     return extract_narrative_triples(node, llm_provider)

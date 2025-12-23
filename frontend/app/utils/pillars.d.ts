@@ -23,6 +23,7 @@ interface Pillar extends NamedEntity {
   name: string
   description: string
   llm_feedback: PillarFeedback | null
+  project?: number | null
 }
 
 type GameDesign = {

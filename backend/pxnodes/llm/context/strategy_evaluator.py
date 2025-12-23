@@ -172,7 +172,7 @@ class StrategyEvaluator:
     Supports:
     - Single strategy evaluation
     - Multi-strategy comparison for thesis research
-    - All 4 strategies: structural_memory, hierarchical_graph, hmem, combined
+    - All strategies: structural_memory, simple_sm, hierarchical_graph, hmem, combined
     """
 
     def __init__(
@@ -477,7 +477,7 @@ def compare_all_strategies(
     llm_provider: Optional[LLMProvider] = None,
 ) -> dict[str, Any]:
     """
-    Compare all 4 strategies for a single node.
+    Compare all strategies for a single node.
 
     Args:
         node_id: UUID of the node to evaluate

@@ -2,8 +2,9 @@
 /**
  * Context Strategy Panel
  *
- * UI for comparing 4 context engineering strategies:
+ * UI for comparing context engineering strategies:
  * - Structural Memory (Zeng et al. 2024)
+ * - Simple SM (summaries + triples + facts only)
  * - Hierarchical Graph (deterministic)
  * - H-MEM (Sun & Zeng 2025)
  * - Combined
@@ -140,6 +141,7 @@ type ColorType = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'err
 function getStrategyColor(strategyId: string): ColorType {
   const colors: Record<string, ColorType> = {
     structural_memory: 'primary',
+    simple_sm: 'secondary',
     hierarchical_graph: 'success',
     hmem: 'warning',
     combined: 'info',
