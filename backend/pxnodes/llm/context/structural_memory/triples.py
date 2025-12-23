@@ -544,9 +544,7 @@ def extract_llm_triples_only_cached(
 ) -> list[KnowledgeTriple]:
     """Extract triples with optional vector store cache reuse."""
     if not force_regenerate:
-        cached = get_cached_triples_from_vector_store(
-            str(node.id), chart_id=chart_id
-        )
+        cached = get_cached_triples_from_vector_store(str(node.id), chart_id=chart_id)
         if cached:
             return cached
     if not llm_provider:

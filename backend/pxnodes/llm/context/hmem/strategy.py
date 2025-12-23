@@ -106,7 +106,7 @@ class HMEMStrategy(BaseContextStrategy):
         self.auto_embed = auto_embed
         self.retriever = HMEMRetriever(embedding_model=embedding_model)
         self._trace_summary_state_map: dict[str, Any] = {}
-        self._trace_summary_chart = None
+        self._trace_summary_chart: Optional[Any] = None
 
     def build_context(
         self,
