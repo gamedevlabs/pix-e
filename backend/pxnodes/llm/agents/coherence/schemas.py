@@ -44,7 +44,8 @@ class CoherenceDimensionResult(BaseModel):
     )
     path_variance: str = Field(
         default="",
-        description="Whether this assessment is consistent across paths or path-dependent",
+        description="Whether this assessment is consistent across paths "
+        "or path-dependent",
     )
 
 

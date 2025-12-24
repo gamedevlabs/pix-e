@@ -8,10 +8,10 @@ precompute only what they need.
 from dataclasses import dataclass, field
 
 from pxnodes.llm.context.artifacts import (
-    ARTIFACT_CHART_OVERVIEW,
-    ARTIFACT_CHART_PACING,
     ARTIFACT_CHART_MECHANICS,
     ARTIFACT_CHART_NARRATIVE,
+    ARTIFACT_CHART_OVERVIEW,
+    ARTIFACT_CHART_PACING,
     ARTIFACT_CHUNKS,
     ARTIFACT_EDGE_TRIPLES,
     ARTIFACT_FACTS,

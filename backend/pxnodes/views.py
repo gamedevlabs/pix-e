@@ -11,6 +11,11 @@ from game_concept.models import GameConcept
 from game_concept.utils import get_current_project
 from pillars.models import Pillar
 from pxcharts.models import PxChart
+from pxnodes.llm.context.artifacts import ArtifactInventory
+from pxnodes.llm.context.base.types import StrategyType
+from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+from pxnodes.llm.context.shared.graph_retrieval import get_full_path
+from pxnodes.llm.context.strategy_needs import get_strategy_needs
 
 from .models import (
     ArtifactEmbedding,
@@ -28,11 +33,6 @@ from .serializers import (
     PxNodeDetailSerializer,
     PxNodeSerializer,
 )
-from pxnodes.llm.context.artifacts import ArtifactInventory
-from pxnodes.llm.context.base.types import StrategyType
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
-from pxnodes.llm.context.shared.graph_retrieval import get_full_path
-from pxnodes.llm.context.strategy_needs import get_strategy_needs
 
 logger = logging.getLogger(__name__)
 
@@ -301,9 +301,8 @@ class ContextArtifactsPrecomputeView(APIView):
                 )
             inventory = ArtifactInventory(llm_provider=llm_provider)
 
-            containers = (
-                chart.containers.select_related("content")
-                .filter(content__isnull=False)
+            containers = chart.containers.select_related("content").filter(
+                content__isnull=False
             )
             nodes = [c.content for c in containers if c.content]
 
@@ -514,29 +513,7 @@ class ContextArtifactsResetView(APIView):
                         positional_index__startswith=f"L1.{concept.id}.",
                     ).delete()
 
-        return Response(
-            {"success": True, "chart_id": str(chart.id), "scope": scope}
-        )
-
-        # Verify user owns these charts
-        project = get_current_project(request.user)
-        chart_filters = {"id__in": chart_ids, "owner": request.user}
-        if project:
-            chart_filters["project"] = project
-        else:
-            chart_filters["project__isnull"] = True
-        charts = PxChart.objects.filter(**chart_filters)
-
-        from pxnodes.llm.context.change_detection import get_processing_stats
-
-        results = []
-        for chart in charts:
-            stats = get_processing_stats(chart)
-            stats["chart_id"] = str(chart.id)
-            stats["chart_name"] = chart.name
-            results.append(stats)
-
-        return Response({"charts": results})
+        return Response({"success": True, "chart_id": str(chart.id), "scope": scope})
 
 
 class CoherenceEvaluateView(APIView):

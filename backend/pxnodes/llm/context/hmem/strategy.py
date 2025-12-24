@@ -21,6 +21,15 @@ import logging
 import re
 from typing import Any, Optional
 
+from pxnodes.llm.context.artifacts import (
+    ARTIFACT_CHART_MECHANICS,
+    ARTIFACT_CHART_NARRATIVE,
+    ARTIFACT_CHART_OVERVIEW,
+    ARTIFACT_CHART_PACING,
+    ARTIFACT_NODE_LIST,
+    ARTIFACT_SUMMARY,
+    ArtifactInventory,
+)
 from pxnodes.llm.context.base.registry import StrategyRegistry
 from pxnodes.llm.context.base.strategy import BaseContextStrategy, LLMProvider
 from pxnodes.llm.context.base.types import (
@@ -29,15 +38,6 @@ from pxnodes.llm.context.base.types import (
     LayerContext,
     StrategyType,
     get_layer_name,
-)
-from pxnodes.llm.context.artifacts import (
-    ARTIFACT_CHART_OVERVIEW,
-    ARTIFACT_CHART_MECHANICS,
-    ARTIFACT_CHART_NARRATIVE,
-    ARTIFACT_CHART_PACING,
-    ARTIFACT_NODE_LIST,
-    ARTIFACT_SUMMARY,
-    ArtifactInventory,
 )
 from pxnodes.llm.context.hmem.retriever import (
     HMEMContextResult,
@@ -108,7 +108,8 @@ class HMEMStrategy(BaseContextStrategy):
             llm_provider: Optional LLM for content summarization
             embedding_model: OpenAI embedding model name
             top_k_per_layer: Number of results to retrieve per layer
-            similarity_thresholds: Optional per-layer similarity thresholds (default 0.5)
+            similarity_thresholds: Optional per-layer similarity thresholds
+                (default 0.5)
             auto_embed: Whether to auto-embed missing content
         """
         super().__init__(llm_provider=llm_provider, **kwargs)
@@ -451,9 +452,10 @@ class HMEMStrategy(BaseContextStrategy):
 
         entries: list[tuple[str, str]] = []
 
+        desc = (chart_overview or {}).get("description", chart.description or "N/A")
         overview = [
             f"Chart: {(chart_overview or {}).get('name', chart.name)}",
-            f"Description: {(chart_overview or {}).get('description', chart.description or 'N/A')}",
+            f"Description: {desc}",
             f"Total Nodes: {(chart_overview or {}).get('total_nodes', len(nodes))}",
         ]
         entries.append(("chart_overview", "\n".join(overview)))
@@ -478,13 +480,16 @@ class HMEMStrategy(BaseContextStrategy):
         if pacing_summary:
             entries.append(("chart_pacing_summary", pacing_summary))
 
-        mechanics = next(
+        raw_mechanics: Any = next(
             (
                 artifact.content
                 for artifact in artifacts
                 if artifact.artifact_type == ARTIFACT_CHART_MECHANICS
             ),
             [],
+        )
+        mechanics: list[str] = (
+            list(raw_mechanics) if isinstance(raw_mechanics, list) else []
         )
         if mechanics:
             for mechanic in mechanics:
@@ -552,7 +557,9 @@ class HMEMStrategy(BaseContextStrategy):
 
         return entries
 
-    def _load_path_summaries(self, scope: EvaluationScope, nodes: list[Any]) -> list[str]:
+    def _load_path_summaries(
+        self, scope: EvaluationScope, nodes: list[Any]
+    ) -> list[str]:
         inventory = ArtifactInventory(self.llm_provider, allow_llm_summaries=True)
         node_artifacts = inventory.get_or_build_node_artifacts(
             chart=scope.chart,
@@ -1092,9 +1099,7 @@ class HMEMStrategy(BaseContextStrategy):
                 "Return a single line."
             )
             try:
-                response = self.llm_provider.generate(
-                    prompt, operation="trace_summary"
-                )
+                response = self.llm_provider.generate(prompt, operation="trace_summary")
                 summary = response.strip()
                 if summary:
                     if self._trace_summary_chart and node_id:

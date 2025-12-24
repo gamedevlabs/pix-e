@@ -3,10 +3,10 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CoherenceEvaluateView,
-    ContextBuildView,
-    ContextStrategiesView,
     ContextArtifactsPrecomputeView,
     ContextArtifactsResetView,
+    ContextBuildView,
+    ContextStrategiesView,
     PxComponentDefinitionViewSet,
     PxComponentViewSet,
     PxNodeViewSet,

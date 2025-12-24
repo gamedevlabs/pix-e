@@ -38,9 +38,13 @@ class StrategyRegistry:
     _strategies: dict[StrategyType, Type[BaseContextStrategy]] = {}
     _strategy_modules: dict[StrategyType, str] = {
         StrategyType.FULL_CONTEXT: "pxnodes.llm.context.full_context.strategy",
-        StrategyType.STRUCTURAL_MEMORY: "pxnodes.llm.context.structural_memory.strategy",
-        StrategyType.SIMPLE_SM: "pxnodes.llm.context.structural_memory.strategy",
-        StrategyType.HIERARCHICAL_GRAPH: "pxnodes.llm.context.hierarchical_graph.strategy",
+        StrategyType.STRUCTURAL_MEMORY: (
+            "pxnodes.llm.context.structural_memory.strategy"
+        ),
+        StrategyType.SIMPLE_SM: ("pxnodes.llm.context.structural_memory.strategy"),
+        StrategyType.HIERARCHICAL_GRAPH: (
+            "pxnodes.llm.context.hierarchical_graph.strategy"
+        ),
         StrategyType.HMEM: "pxnodes.llm.context.hmem.strategy",
         StrategyType.COMBINED: "pxnodes.llm.context.combined.strategy",
     }
@@ -97,7 +101,8 @@ class StrategyRegistry:
             if strategy_type not in cls._strategies:
                 available = [s.value for s in cls._strategies.keys()]
                 raise ValueError(
-                    f"Unknown strategy: {strategy_type.value}. " f"Available: {available}"
+                    f"Unknown strategy: {strategy_type.value}. "
+                    f"Available: {available}"
                 )
         return cls._strategies[strategy_type]
 

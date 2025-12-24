@@ -56,8 +56,10 @@ class FullContextStrategy(BaseContextStrategy):
         )
 
         containers = scope.chart.containers.select_related("content").all()
-        nodes = [c.content for c in containers if getattr(c, "content", None)]
-        edges = list(scope.chart.edges.select_related("source__content", "target__content").all())
+        nodes = [c.content for c in containers if c.content is not None]
+        edges = list(
+            scope.chart.edges.select_related("source__content", "target__content").all()
+        )
 
         node_lines: list[str] = []
         for node in nodes:
@@ -66,7 +68,9 @@ class FullContextStrategy(BaseContextStrategy):
                 node_lines.append(f"  Description: {node.description}")
             components = getattr(node, "components", None)
             if components:
-                comp_list = components.all() if hasattr(components, "all") else list(components)
+                comp_list = (
+                    components.all() if hasattr(components, "all") else list(components)
+                )
                 for comp in comp_list:
                     def_name = getattr(getattr(comp, "definition", None), "name", "")
                     value = getattr(comp, "value", "")

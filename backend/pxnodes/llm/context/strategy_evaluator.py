@@ -183,7 +183,8 @@ Respond with a JSON object:
   }}
 }}
 
-IMPORTANT: Only report genuine issues. If context is insufficient, list in "unknowns"."""
+IMPORTANT: Only report genuine issues. If context is insufficient,
+list in "unknowns"."""
 
 
 class StrategyEvaluator:

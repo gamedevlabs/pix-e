@@ -52,7 +52,10 @@ class Migration(migrations.Migration):
                         max_length=32,
                     ),
                 ),
-                ("project_id", models.CharField(blank=True, default="", max_length=128)),
+                (
+                    "project_id",
+                    models.CharField(blank=True, default="", max_length=128),
+                ),
                 ("content", models.JSONField()),
                 ("content_hash", models.CharField(db_index=True, max_length=64)),
                 ("source_hash", models.CharField(db_index=True, max_length=64)),
@@ -95,7 +98,9 @@ class Migration(migrations.Migration):
                         name="pxnodes_con_node_id_8b22ea_idx",
                     ),
                 ],
-                "unique_together": {("scope_type", "scope_id", "artifact_type", "chart", "project_id")},
+                "unique_together": {
+                    ("scope_type", "scope_id", "artifact_type", "chart", "project_id")
+                },
             },
         ),
         migrations.CreateModel(
