@@ -69,6 +69,7 @@ class LLMProviderAdapter:
             Generated text
         """
         # Extract parameters, preferring kwargs over instance defaults
+        operation = kwargs.pop("operation", None)
         temperature = kwargs.get("temperature", self.temperature)
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         model_name = kwargs.get("model_name", self.model_name)
@@ -80,8 +81,9 @@ class LLMProviderAdapter:
                 "during initialization"
             )
 
+        span_name = f"llm.generate.{operation}" if operation else "llm.generate"
         with logfire.span(
-            "llm.generate",
+            span_name,
             model=model_name,
             temperature=temperature,
             prompt_length=len(prompt),

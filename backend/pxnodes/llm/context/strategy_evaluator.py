@@ -122,47 +122,68 @@ class ComparisonResult:
 
 # Evaluation prompt template (strategy-agnostic)
 COHERENCE_EVALUATION_PROMPT = """You are a game design coherence analyzer.
-Your task is to evaluate if a game node is coherent based on the provided context.
+Your task is to evaluate how well a node fits in a chart based on the provided context.
 
 {context}
 
-TASK: Analyze the TARGET NODE for coherence issues. Check for:
+TASK: Evaluate ALL FOUR coherence dimensions for the target node.
 
-1. PREREQUISITE VIOLATIONS (severity: error)
-   - Items, abilities, or keys required but not granted in previous context
-   - Example: "Requires Double Jump but player doesn't have it yet"
-
-2. PACING ISSUES (severity: warning)
-   - Intensity spikes without justification
-   - Sudden drops that feel jarring
-   - Example: "Intensity jumps from 10 to 85 without buildup"
-
-3. STORY COHERENCE (severity: warning or error)
-   - Narrative inconsistencies or contradictions
-   - References to events that haven't happened
-   - Example: "Mentions escaping prison but player was never captured"
-
-4. CATEGORY FLOW (severity: info or warning)
-   - Unusual gameplay category transitions
-   - Example: "Boss fight immediately after Tutorial"
+DIMENSIONS:
+1) BACKWARD COHERENCE (prerequisites across incoming paths)
+2) FORWARD COHERENCE (setup across outgoing paths)
+3) PATH ROBUSTNESS (cross-path consistency)
+4) NODE INTEGRITY (title/description/components alignment)
 
 Respond with a JSON object:
 {{
-  "is_coherent": true or false,
-  "issues": [
-    {{
-      "type": "prerequisite" | "pacing" | "story" | "category",
-      "severity": "error" | "warning" | "info",
-      "description": "Clear description of the issue",
-      "affected_nodes": ["node_id_1", "node_id_2"]
-    }}
-  ]
+  "backward_coherence": {{
+    "score": <1-6>,
+    "reasoning": "...",
+    "issues": ["..."],
+    "suggestions": ["..."],
+    "evidence": ["..."],
+    "unknowns": ["..."],
+    "path_variance": "...",
+    "missing_prerequisites": ["..."],
+    "satisfied_prerequisites": ["..."]
+  }},
+  "forward_coherence": {{
+    "score": <1-6>,
+    "reasoning": "...",
+    "issues": ["..."],
+    "suggestions": ["..."],
+    "evidence": ["..."],
+    "unknowns": ["..."],
+    "path_variance": "...",
+    "elements_introduced": ["..."],
+    "potential_payoffs": ["..."]
+  }},
+  "path_robustness": {{
+    "score": <1-6>,
+    "reasoning": "...",
+    "issues": ["..."],
+    "suggestions": ["..."],
+    "evidence": ["..."],
+    "unknowns": ["..."],
+    "path_variance": "...",
+    "path_dependencies": ["..."],
+    "robust_paths": ["..."],
+    "fragile_paths": ["..."]
+  }},
+  "node_integrity": {{
+    "score": <1-6>,
+    "reasoning": "...",
+    "issues": ["..."],
+    "suggestions": ["..."],
+    "evidence": ["..."],
+    "unknowns": ["..."],
+    "path_variance": "...",
+    "contradictions": ["..."],
+    "unclear_elements": ["..."]
+  }}
 }}
 
-If the node is coherent with no issues, respond:
-{{"is_coherent": true, "issues": []}}
-
-IMPORTANT: Only report genuine issues."""
+IMPORTANT: Only report genuine issues. If context is insufficient, list in "unknowns"."""
 
 
 class StrategyEvaluator:
@@ -405,23 +426,44 @@ class StrategyEvaluator:
 
             data = json.loads(json_str)
 
-            # Build issues
-            issues = []
-            for issue_data in data.get("issues", []):
-                issues.append(
-                    CoherenceIssue(
-                        issue_type=issue_data.get("type", "unknown"),
-                        severity=issue_data.get("severity", "info"),
-                        description=issue_data.get("description", ""),
-                        affected_nodes=issue_data.get("affected_nodes", []),
+            issues: list[CoherenceIssue] = []
+            scores: list[float] = []
+            dimension_keys = [
+                "backward_coherence",
+                "forward_coherence",
+                "path_robustness",
+                "node_integrity",
+            ]
+            for key in dimension_keys:
+                dim = data.get(key, {}) or {}
+                score = dim.get("score")
+                if isinstance(score, (int, float)):
+                    scores.append(float(score))
+                dim_issues = dim.get("issues", []) or []
+                severity = "info"
+                if isinstance(score, (int, float)):
+                    if score <= 2:
+                        severity = "error"
+                    elif score <= 4:
+                        severity = "warning"
+                for issue in dim_issues:
+                    issues.append(
+                        CoherenceIssue(
+                            issue_type=key,
+                            severity=severity,
+                            description=str(issue),
+                            affected_nodes=[],
+                        )
                     )
-                )
+
+            overall_score = sum(scores) / len(scores) if scores else 3.0
+            is_coherent = overall_score >= 4.0
 
             return StrategyEvaluationResult(
                 node_id=str(node.id),
                 node_name=node.name,
                 strategy=strategy_type.value,
-                is_coherent=data.get("is_coherent", True),
+                is_coherent=is_coherent,
                 issues=issues,
                 context_result=context_result,
             )

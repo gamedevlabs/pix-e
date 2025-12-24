@@ -2,17 +2,17 @@
 PxNodes Coherence Agents - Agentic evaluation of node coherence.
 
 Provides 4 specialized agents that evaluate different coherence dimensions:
-- PrerequisiteAlignmentAgent: Does node respect what came before?
-- ForwardSetupAgent: Does node properly set up future?
-- InternalConsistencyAgent: Is node internally coherent?
-- ContextualFitAgent: Does node fit game concept/pillars?
+- BackwardCoherenceAgent: Does node respect what came before?
+- ForwardCoherenceAgent: Does node properly set up future?
+- PathRobustnessAgent: Does node work across paths?
+- NodeIntegrityAgent: Is node internally coherent?
 """
 
 from pxnodes.llm.agents.coherence.base import CoherenceDimensionAgent
-from pxnodes.llm.agents.coherence.contextual import ContextualFitAgent
-from pxnodes.llm.agents.coherence.forward import ForwardSetupAgent
-from pxnodes.llm.agents.coherence.internal import InternalConsistencyAgent
-from pxnodes.llm.agents.coherence.prerequisite import PrerequisiteAlignmentAgent
+from pxnodes.llm.agents.coherence.contextual import PathRobustnessAgent
+from pxnodes.llm.agents.coherence.forward import ForwardCoherenceAgent
+from pxnodes.llm.agents.coherence.internal import NodeIntegrityAgent
+from pxnodes.llm.agents.coherence.prerequisite import BackwardCoherenceAgent
 from pxnodes.llm.agents.coherence.schemas import (
     CoherenceAggregatedResult,
     CoherenceDimensionResult,
@@ -22,10 +22,10 @@ __all__ = [
     # Base
     "CoherenceDimensionAgent",
     # Agents
-    "PrerequisiteAlignmentAgent",
-    "ForwardSetupAgent",
-    "InternalConsistencyAgent",
-    "ContextualFitAgent",
+    "BackwardCoherenceAgent",
+    "ForwardCoherenceAgent",
+    "NodeIntegrityAgent",
+    "PathRobustnessAgent",
     # Schemas
     "CoherenceDimensionResult",
     "CoherenceAggregatedResult",

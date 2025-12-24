@@ -30,6 +30,15 @@ from pxnodes.llm.context.base.types import (
     StrategyType,
     get_layer_name,
 )
+from pxnodes.llm.context.artifacts import (
+    ARTIFACT_CHART_OVERVIEW,
+    ARTIFACT_CHART_MECHANICS,
+    ARTIFACT_CHART_NARRATIVE,
+    ARTIFACT_CHART_PACING,
+    ARTIFACT_NODE_LIST,
+    ARTIFACT_SUMMARY,
+    ArtifactInventory,
+)
 from pxnodes.llm.context.hmem.retriever import (
     HMEMContextResult,
     HMEMRetriever,
@@ -88,6 +97,7 @@ class HMEMStrategy(BaseContextStrategy):
         llm_provider: Optional[LLMProvider] = None,
         embedding_model: str = "text-embedding-3-small",
         top_k_per_layer: int = 3,
+        similarity_thresholds: Optional[dict[int, float]] = None,
         auto_embed: bool = True,
         **kwargs: Any,
     ):
@@ -98,11 +108,18 @@ class HMEMStrategy(BaseContextStrategy):
             llm_provider: Optional LLM for content summarization
             embedding_model: OpenAI embedding model name
             top_k_per_layer: Number of results to retrieve per layer
+            similarity_thresholds: Optional per-layer similarity thresholds (default 0.5)
             auto_embed: Whether to auto-embed missing content
         """
         super().__init__(llm_provider=llm_provider, **kwargs)
         self.embedding_model = embedding_model
         self.top_k_per_layer = top_k_per_layer
+        self.similarity_thresholds = similarity_thresholds or {
+            1: 0.3,
+            2: 0.05,
+            3: 0.6,
+            4: 0.9,
+        }
         self.auto_embed = auto_embed
         self.retriever = HMEMRetriever(embedding_model=embedding_model)
         self._trace_summary_state_map: dict[str, Any] = {}
@@ -147,6 +164,7 @@ class HMEMStrategy(BaseContextStrategy):
             chart_id=str(scope.chart.id),
             node_id=str(scope.target_node.id),
             top_k_per_layer=self.top_k_per_layer,
+            similarity_thresholds=self.similarity_thresholds,
         )
 
         # Build layer contexts (without scores in content)
@@ -175,6 +193,7 @@ class HMEMStrategy(BaseContextStrategy):
                     layer: len(results)
                     for layer, results in retrieval_result.results_by_layer.items()
                 },
+                "similarity_thresholds": self.similarity_thresholds,
             },
         )
 
@@ -194,6 +213,7 @@ class HMEMStrategy(BaseContextStrategy):
             chart_id=str(scope.chart.id),
             node_id=str(scope.target_node.id),
             top_k_per_layer=self.top_k_per_layer,
+            similarity_thresholds=self.similarity_thresholds,
             layers=[layer],
         )
 
@@ -401,55 +421,86 @@ class HMEMStrategy(BaseContextStrategy):
         chart = scope.chart
         nodes = self._get_chart_nodes(chart)
         node_names = [getattr(node, "name", "") for node in nodes if node]
+        inventory = ArtifactInventory(self.llm_provider)
+        artifacts = inventory.get_or_build_chart_artifacts(
+            chart=chart,
+            artifact_types=[
+                ARTIFACT_CHART_OVERVIEW,
+                ARTIFACT_NODE_LIST,
+                ARTIFACT_CHART_PACING,
+                ARTIFACT_CHART_MECHANICS,
+                ARTIFACT_CHART_NARRATIVE,
+            ],
+        )
+        chart_overview = next(
+            (
+                artifact.content
+                for artifact in artifacts
+                if artifact.artifact_type == ARTIFACT_CHART_OVERVIEW
+            ),
+            None,
+        )
+        chart_node_list = next(
+            (
+                artifact.content
+                for artifact in artifacts
+                if artifact.artifact_type == ARTIFACT_NODE_LIST
+            ),
+            None,
+        )
 
         entries: list[tuple[str, str]] = []
 
         overview = [
-            f"Chart: {chart.name}",
-            f"Description: {chart.description or 'N/A'}",
-            f"Total Nodes: {len(nodes)}",
+            f"Chart: {(chart_overview or {}).get('name', chart.name)}",
+            f"Description: {(chart_overview or {}).get('description', chart.description or 'N/A')}",
+            f"Total Nodes: {(chart_overview or {}).get('total_nodes', len(nodes))}",
         ]
         entries.append(("chart_overview", "\n".join(overview)))
 
-        if node_names:
+        if chart_node_list:
+            nodes_text = ", ".join(list(chart_node_list)[:30])
+        elif node_names:
             nodes_text = ", ".join(node_names[:30])
+        else:
+            nodes_text = ""
+        if nodes_text:
             entries.append(("chart_nodes", f"Nodes: {nodes_text}"))
 
-        pacing_lines = []
-        pacing_values: list[float] = []
-        for node in nodes:
-            node_name = getattr(node, "name", "") or "Unnamed"
-            planned = self._get_node_component_value(node, "Planned Time to Complete")
-            if planned is not None:
-                pacing_lines.append(f"{node_name}: {planned}")
-                try:
-                    pacing_values.append(float(planned))
-                except (TypeError, ValueError):
-                    pass
-        if pacing_lines:
-            summary = ""
-            if pacing_values:
-                avg = sum(pacing_values) / len(pacing_values)
-                summary = f"\nAverage Planned Time: {avg:.1f}"
-            entries.append(
-                (
-                    "chart_pacing",
-                    "Planned Time by Node:\n" + "\n".join(pacing_lines) + summary,
-                )
-            )
+        pacing_summary = next(
+            (
+                artifact.content
+                for artifact in artifacts
+                if artifact.artifact_type == ARTIFACT_CHART_PACING
+            ),
+            "",
+        )
+        if pacing_summary:
+            entries.append(("chart_pacing_summary", pacing_summary))
 
-        mechanics = self._get_chart_component_names(nodes)
+        mechanics = next(
+            (
+                artifact.content
+                for artifact in artifacts
+                if artifact.artifact_type == ARTIFACT_CHART_MECHANICS
+            ),
+            [],
+        )
         if mechanics:
-            entries.append(
-                (
-                    "chart_mechanics",
-                    "Chart Mechanics Focus:\n" + ", ".join(sorted(mechanics)),
-                )
-            )
+            for mechanic in mechanics:
+                key = f"chart_mechanic_{self._slugify(str(mechanic))}"
+                entries.append((key, f"Chart Mechanic: {mechanic}"))
 
-        narrative_summary = self._summarize_chart_narrative(nodes)
+        narrative_summary = next(
+            (
+                artifact.content
+                for artifact in artifacts
+                if artifact.artifact_type == ARTIFACT_CHART_NARRATIVE
+            ),
+            "",
+        )
         if narrative_summary:
-            entries.append(("chart_narrative", narrative_summary))
+            entries.append(("chart_narrative_summary", narrative_summary))
 
         return entries
 
@@ -466,7 +517,7 @@ class HMEMStrategy(BaseContextStrategy):
             return entries
 
         path_id = compute_path_hash(full_path)
-        summaries = self._summarize_nodes_for_trace(full_path)
+        summaries = self._load_path_summaries(scope, full_path)
 
         for idx, (node, summary) in enumerate(zip(full_path, summaries)):
             node_name = getattr(node, "name", "") or f"node_{idx + 1}"
@@ -500,6 +551,28 @@ class HMEMStrategy(BaseContextStrategy):
             entries.append((key, f"Milestone: {milestone}"))
 
         return entries
+
+    def _load_path_summaries(self, scope: EvaluationScope, nodes: list[Any]) -> list[str]:
+        inventory = ArtifactInventory(self.llm_provider, allow_llm_summaries=True)
+        node_artifacts = inventory.get_or_build_node_artifacts(
+            chart=scope.chart,
+            nodes=nodes,
+            artifact_types=[ARTIFACT_SUMMARY],
+        )
+        summaries: list[str] = []
+        for node in nodes:
+            node_id = str(getattr(node, "id", ""))
+            artifacts = node_artifacts.get(node_id, [])
+            summary = next(
+                (
+                    artifact.content
+                    for artifact in artifacts
+                    if artifact.artifact_type == ARTIFACT_SUMMARY
+                ),
+                None,
+            )
+            summaries.append(summary or "(no details)")
+        return summaries
 
     def _split_game_concept_sections(
         self, content: str
@@ -553,7 +626,9 @@ class HMEMStrategy(BaseContextStrategy):
                 + "\n".join(node_lines)
             )
             try:
-                response = self.llm_provider.generate(prompt)
+                response = self.llm_provider.generate(
+                    prompt, operation="path_milestones"
+                )
                 milestones_list = [
                     line.strip("- ").strip()
                     for line in response.splitlines()
@@ -618,60 +693,15 @@ class HMEMStrategy(BaseContextStrategy):
     def _get_node_component_value(
         self, node: Any, component_name: str
     ) -> Optional[Any]:
-        """Return a component value by definition name."""
-        components = getattr(node, "components", None)
-        if not components:
-            return None
-        comp_list = components.all() if hasattr(components, "all") else []
-        for comp in comp_list:
-            def_name = getattr(getattr(comp, "definition", None), "name", "")
-            if def_name == component_name:
-                return getattr(comp, "value", None)
+        """Deprecated: L2 pacing now comes from chart artifacts."""
         return None
 
     def _get_chart_component_names(self, nodes: list[Any]) -> set[str]:
-        """Collect component definition names from chart nodes."""
-        names: set[str] = set()
-        for node in nodes:
-            components = getattr(node, "components", None)
-            comp_list = (
-                components.all() if components and hasattr(components, "all") else []
-            )
-            for comp in comp_list:
-                def_name = getattr(getattr(comp, "definition", None), "name", "")
-                if def_name and def_name != "Planned Time to Complete":
-                    names.add(def_name)
-        return names
+        """Deprecated: L2 mechanics now come from chart artifacts."""
+        return set()
 
     def _summarize_chart_narrative(self, nodes: list[Any]) -> str:
-        """Summarize chart narrative arc."""
-        if not nodes:
-            return ""
-        if self.llm_provider:
-            node_lines = []
-            for node in nodes:
-                name = getattr(node, "name", "")
-                desc = getattr(node, "description", "") or ""
-                node_lines.append(f"- {name}: {desc}")
-            prompt = (
-                "Summarize the chart narrative arc in 2-3 sentences.\n\n"
-                + "\n".join(node_lines)
-            )
-            try:
-                response = self.llm_provider.generate(prompt)
-                summary = response.strip()
-                if summary:
-                    return "Chart Narrative Arc:\n" + summary
-            except Exception:
-                logger.warning("Chart narrative LLM failed, falling back.")
-
-        sentences = []
-        for node in nodes[:5]:
-            desc = getattr(node, "description", "") or ""
-            if desc:
-                sentences.append(desc.split(".")[0].strip())
-        if sentences:
-            return "Chart Narrative Arc:\n" + " ".join(sentences)
+        """Deprecated: narrative summaries are now built via chart artifacts."""
         return ""
 
     def _build_layer_contexts(
@@ -1062,7 +1092,9 @@ class HMEMStrategy(BaseContextStrategy):
                 "Return a single line."
             )
             try:
-                response = self.llm_provider.generate(prompt)
+                response = self.llm_provider.generate(
+                    prompt, operation="trace_summary"
+                )
                 summary = response.strip()
                 if summary:
                     if self._trace_summary_chart and node_id:
@@ -1150,7 +1182,9 @@ class HMEMStrategy(BaseContextStrategy):
                 "Nodes:\n" + "\n".join(node_summaries)
             )
             try:
-                response = self.llm_provider.generate(prompt)
+                response = self.llm_provider.generate(
+                    prompt, operation="path_accumulated_context"
+                )
                 return response.strip()
             except Exception:
                 logger.warning("Accumulated context LLM failed, falling back.")
@@ -1191,7 +1225,7 @@ class HMEMStrategy(BaseContextStrategy):
     def _build_fallback_content(self, scope: EvaluationScope, layer: int) -> str:
         """Build fallback content when no embeddings found."""
         if layer == 1:
-            return self._build_domain_content(scope)
+            return self._build_concept_summary_fallback(scope)
         elif layer == 2:
             return self._build_category_content(scope)
         elif layer == 3:
@@ -1202,6 +1236,51 @@ class HMEMStrategy(BaseContextStrategy):
             )
         else:
             return self._build_episode_content(scope)
+
+    def _build_concept_summary_fallback(self, scope: EvaluationScope) -> str:
+        """Build L1 fallback using the concept summary artifact only."""
+        if not scope.game_concept:
+            return "No domain context"
+        concept_text = getattr(scope.game_concept, "content", "") or ""
+        if not concept_text:
+            return "No domain context"
+
+        inventory = ArtifactInventory(self.llm_provider)
+        artifacts = inventory.get_or_build_concept_artifacts(
+            concept_id=str(scope.game_concept.id),
+            concept_text=concept_text,
+            artifact_types=[ARTIFACT_SUMMARY],
+            project_id=str(scope.game_concept.id),
+        )
+        summary = "N/A"
+        for artifact in artifacts:
+            if artifact.artifact_type == ARTIFACT_SUMMARY:
+                summary = artifact.content or "N/A"
+                break
+        parts = [f"Game Concept Summary:\n{summary}"]
+
+        if scope.project_pillars:
+            pillar_lines = []
+            for pillar in scope.project_pillars:
+                pillar_name = getattr(pillar, "name", "") or "Pillar"
+                pillar_desc = getattr(pillar, "description", "") or ""
+                pillar_artifacts = inventory.get_or_build_pillar_artifacts(
+                    pillar_id=str(pillar.id),
+                    pillar_name=pillar_name,
+                    pillar_description=pillar_desc,
+                    artifact_types=[ARTIFACT_SUMMARY],
+                    project_id=str(getattr(pillar, "project_id", "") or ""),
+                )
+                pillar_summary = "N/A"
+                for artifact in pillar_artifacts:
+                    if artifact.artifact_type == ARTIFACT_SUMMARY:
+                        pillar_summary = artifact.content or "N/A"
+                        break
+                pillar_lines.append(f"- {pillar_name}: {pillar_summary}")
+            if pillar_lines:
+                parts.append("Pillar Summaries:\n" + "\n".join(pillar_lines))
+
+        return "\n\n".join(parts)
 
     @property
     def requires_embeddings(self) -> bool:

@@ -34,10 +34,22 @@ class CoherenceDimensionResult(BaseModel):
         default_factory=list,
         description="Improvement recommendations for this dimension",
     )
+    evidence: List[str] = Field(
+        default_factory=list,
+        description="Concrete evidence references from context (node titles or quotes)",
+    )
+    unknowns: List[str] = Field(
+        default_factory=list,
+        description="Items that could not be verified due to missing context",
+    )
+    path_variance: str = Field(
+        default="",
+        description="Whether this assessment is consistent across paths or path-dependent",
+    )
 
 
-class PrerequisiteAlignmentResult(CoherenceDimensionResult):
-    """Result from prerequisite alignment evaluation."""
+class BackwardCoherenceResult(CoherenceDimensionResult):
+    """Result from backward coherence evaluation."""
 
     missing_prerequisites: List[str] = Field(
         default_factory=list,
@@ -49,8 +61,8 @@ class PrerequisiteAlignmentResult(CoherenceDimensionResult):
     )
 
 
-class ForwardSetupResult(CoherenceDimensionResult):
-    """Result from forward setup evaluation."""
+class ForwardCoherenceResult(CoherenceDimensionResult):
+    """Result from forward coherence evaluation."""
 
     elements_introduced: List[str] = Field(
         default_factory=list,
@@ -62,8 +74,8 @@ class ForwardSetupResult(CoherenceDimensionResult):
     )
 
 
-class InternalConsistencyResult(CoherenceDimensionResult):
-    """Result from internal consistency evaluation."""
+class NodeIntegrityResult(CoherenceDimensionResult):
+    """Result from node integrity evaluation."""
 
     contradictions: List[str] = Field(
         default_factory=list,
@@ -75,16 +87,20 @@ class InternalConsistencyResult(CoherenceDimensionResult):
     )
 
 
-class ContextualFitResult(CoherenceDimensionResult):
-    """Result from contextual fit evaluation."""
+class PathRobustnessResult(CoherenceDimensionResult):
+    """Result from path robustness evaluation."""
 
-    pillar_alignment: List[str] = Field(
+    path_dependencies: List[str] = Field(
         default_factory=list,
-        description="How the node aligns with game design pillars",
+        description="Path-specific requirements or assumptions",
     )
-    concept_alignment: str = Field(
-        default="",
-        description="How the node fits the overall game concept",
+    robust_paths: List[str] = Field(
+        default_factory=list,
+        description="Paths where the node fits cleanly",
+    )
+    fragile_paths: List[str] = Field(
+        default_factory=list,
+        description="Paths where the node conflicts or breaks",
     )
 
 
@@ -96,10 +112,10 @@ class CoherenceAggregatedResult(BaseModel):
     strategy_used: str = Field(..., description="Context strategy used for evaluation")
 
     # Individual dimension results
-    prerequisite_alignment: Optional[PrerequisiteAlignmentResult] = None
-    forward_setup: Optional[ForwardSetupResult] = None
-    internal_consistency: Optional[InternalConsistencyResult] = None
-    contextual_fit: Optional[ContextualFitResult] = None
+    backward_coherence: Optional[BackwardCoherenceResult] = None
+    forward_coherence: Optional[ForwardCoherenceResult] = None
+    path_robustness: Optional[PathRobustnessResult] = None
+    node_integrity: Optional[NodeIntegrityResult] = None
 
     # Aggregated metrics
     overall_score: float = Field(
@@ -137,10 +153,10 @@ class CoherenceAggregatedResult(BaseModel):
         node_id: str,
         node_name: str,
         strategy_used: str,
-        prerequisite: Optional[PrerequisiteAlignmentResult],
-        forward: Optional[ForwardSetupResult],
-        internal: Optional[InternalConsistencyResult],
-        contextual: Optional[ContextualFitResult],
+        backward: Optional[BackwardCoherenceResult],
+        forward: Optional[ForwardCoherenceResult],
+        path: Optional[PathRobustnessResult],
+        integrity: Optional[NodeIntegrityResult],
         execution_time_ms: int = 0,
         total_tokens: int = 0,
     ) -> "CoherenceAggregatedResult":
@@ -149,21 +165,21 @@ class CoherenceAggregatedResult(BaseModel):
         scores = []
         all_issues = []
 
-        if prerequisite:
-            scores.append(prerequisite.score)
-            all_issues.extend(prerequisite.issues)
+        if backward:
+            scores.append(backward.score)
+            all_issues.extend(backward.issues)
 
         if forward:
             scores.append(forward.score)
             all_issues.extend(forward.issues)
 
-        if internal:
-            scores.append(internal.score)
-            all_issues.extend(internal.issues)
+        if integrity:
+            scores.append(integrity.score)
+            all_issues.extend(integrity.issues)
 
-        if contextual:
-            scores.append(contextual.score)
-            all_issues.extend(contextual.issues)
+        if path:
+            scores.append(path.score)
+            all_issues.extend(path.issues)
 
         # Calculate overall score
         overall_score = sum(scores) / len(scores) if scores else 3.0
@@ -175,10 +191,10 @@ class CoherenceAggregatedResult(BaseModel):
             node_id=node_id,
             node_name=node_name,
             strategy_used=strategy_used,
-            prerequisite_alignment=prerequisite,
-            forward_setup=forward,
-            internal_consistency=internal,
-            contextual_fit=contextual,
+            backward_coherence=backward,
+            forward_coherence=forward,
+            path_robustness=path,
+            node_integrity=integrity,
             overall_score=round(overall_score, 2),
             is_coherent=overall_score >= 4.0,
             total_issues=len(all_issues),

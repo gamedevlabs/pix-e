@@ -19,6 +19,8 @@ const props = defineProps({ chartId: { type: String, default: -1 } })
 const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
+const BASE_URL = 'http://localhost:8000/'
+const { success: successToast, error: errorToast } = usePixeToast()
 
 const {
   nodes,
@@ -48,6 +50,23 @@ const selectedNodeForAnalysis = ref<{
   nodeName: string
 } | null>(null)
 const showStrategyPanel = ref(false)
+const precomputeLoading = ref(false)
+const precomputeStrategy = ref('structural_memory')
+const precomputeScope = ref('all')
+const precomputeScopeOptions = [
+  { value: 'global', label: 'Global Setup' },
+  { value: 'node', label: 'Node Setup' },
+  { value: 'all', label: 'All Setup' },
+]
+const precomputeStrategyOptions = [
+  { value: 'structural_memory', label: 'Structural Memory' },
+  { value: 'simple_sm', label: 'SM-Lite (facts + triples)' },
+  { value: 'hierarchical_graph', label: 'H-Graph' },
+  { value: 'hmem', label: 'H-MEM' },
+  { value: 'combined', label: 'Combined' },
+  { value: 'full_context', label: 'Full Context' },
+]
+const strategiesNeedingNode = new Set(['hmem', 'combined'])
 
 function handleNodeClick(event: { node: Node }) {
   const container = event.node.data as PxChartContainer
@@ -68,6 +87,67 @@ function openStrategyPanel() {
 
 function closeStrategyPanel() {
   showStrategyPanel.value = false
+}
+
+async function handlePrecomputeArtifacts() {
+  if (precomputeLoading.value) return
+  if (
+    precomputeScope.value !== 'global' &&
+    strategiesNeedingNode.has(precomputeStrategy.value) &&
+    !selectedNodeForAnalysis.value
+  ) {
+    errorToast('Select a node before precomputing this strategy.')
+    return
+  }
+  precomputeLoading.value = true
+
+  try {
+    const payload: Record<string, string> = {
+      chart_id: chartId,
+      strategy: precomputeStrategy.value,
+      scope: precomputeScope.value,
+    }
+    if (selectedNodeForAnalysis.value?.nodeId) {
+      payload.node_id = selectedNodeForAnalysis.value.nodeId
+    }
+
+    await $fetch(`${BASE_URL}context/precompute/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+      body: payload,
+    })
+
+    successToast('Precompute complete for this chart.')
+  } catch (err) {
+    errorToast(err)
+  } finally {
+    precomputeLoading.value = false
+  }
+}
+
+async function handleResetArtifacts() {
+  const confirmed = window.confirm('Clear cached artifacts for this chart?')
+  if (!confirmed) return
+
+  try {
+    await $fetch(`${BASE_URL}context/precompute/reset/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+      body: {
+        chart_id: chartId,
+        scope: precomputeScope.value,
+      },
+    })
+    successToast('Artifact cache cleared.')
+  } catch (err) {
+    errorToast(err)
+  }
 }
 
 onMounted(() => {
@@ -213,22 +293,58 @@ async function onContextMenu(mouseEvent: MouseEvent) {
 
     <!-- Context Strategy Analysis Button -->
     <Panel :position="'top-right'">
-      <UTooltip
-        :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
-        :content="{ align: 'center', side: 'left' }"
-      >
-        <UButton
-          size="lg"
-          icon="i-heroicons-cpu-chip"
-          color="warning"
-          :disabled="!selectedNodeForAnalysis"
-          @click="openStrategyPanel"
+      <div class="flex flex-col items-end gap-2">
+        <div class="flex items-center gap-2">
+          <USelect
+            v-model="precomputeScope"
+            :items="precomputeScopeOptions"
+            value-key="value"
+            label-key="label"
+            size="sm"
+          />
+          <USelect
+            v-model="precomputeStrategy"
+            :items="precomputeStrategyOptions"
+            value-key="value"
+            label-key="label"
+            size="sm"
+          />
+          <UButton
+            size="sm"
+            icon="i-heroicons-cog-6-tooth"
+            color="primary"
+            :loading="precomputeLoading"
+            @click="handlePrecomputeArtifacts"
+          >
+            Precompute Artifacts
+          </UButton>
+          <UButton
+            size="sm"
+            icon="i-heroicons-trash"
+            color="error"
+            variant="outline"
+            @click="handleResetArtifacts"
+          >
+            Reset Cache
+          </UButton>
+        </div>
+        <UTooltip
+          :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
+          :content="{ align: 'center', side: 'left' }"
         >
-          Context Analysis
-        </UButton>
-      </UTooltip>
-      <div v-if="selectedNodeForAnalysis" class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-        Selected: {{ selectedNodeForAnalysis.nodeName }}
+          <UButton
+            size="lg"
+            icon="i-heroicons-cpu-chip"
+            color="warning"
+            :disabled="!selectedNodeForAnalysis"
+            @click="openStrategyPanel"
+          >
+            Context Analysis
+          </UButton>
+        </UTooltip>
+        <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
+          Selected: {{ selectedNodeForAnalysis.nodeName }}
+        </div>
       </div>
     </Panel>
   </VueFlow>

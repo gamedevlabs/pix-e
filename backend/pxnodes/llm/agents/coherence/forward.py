@@ -1,10 +1,7 @@
 """
-Forward Setup Agent.
+Forward Coherence Agent.
 
-Evaluates whether a node properly sets up future nodes:
-- Are elements introduced that will be used later?
-- Is foreshadowing appropriate?
-- Are mechanics taught before being required?
+Evaluates whether a node properly sets up future nodes across possible paths.
 """
 
 from typing import Any, Dict
@@ -14,14 +11,14 @@ from pxnodes.llm.agents.coherence.base import (
     SCORING_INSTRUCTIONS,
     CoherenceDimensionAgent,
 )
-from pxnodes.llm.agents.coherence.schemas import ForwardSetupResult
+from pxnodes.llm.agents.coherence.schemas import ForwardCoherenceResult
 
-FORWARD_PROMPT = (
+FORWARD_COHERENCE_PROMPT = (
     COHERENCE_CONTEXT_HEADER
     + """
-TASK: Evaluate FORWARD SETUP
+TASK: Evaluate FORWARD COHERENCE
 
-Analyze whether the target node properly sets up what comes next in the game flow.
+Analyze whether the target node properly sets up what comes next across all valid outgoing paths.
 
 CHECK FOR:
 1. MECHANICAL SETUP
@@ -53,13 +50,13 @@ ADDITIONAL FIELDS:
 )
 
 
-class ForwardSetupAgent(CoherenceDimensionAgent):
+class ForwardCoherenceAgent(CoherenceDimensionAgent):
     """Evaluates whether a node properly sets up future content."""
 
-    name = "forward_setup"
-    dimension_name = "Forward Setup"
-    response_schema = ForwardSetupResult
-    prompt_template = FORWARD_PROMPT
+    name = "forward_coherence"
+    dimension_name = "Forward Coherence"
+    response_schema = ForwardCoherenceResult
+    prompt_template = FORWARD_COHERENCE_PROMPT
     temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:

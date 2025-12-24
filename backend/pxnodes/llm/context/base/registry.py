@@ -5,6 +5,7 @@ Provides a central registry for registering and retrieving
 context strategies by type.
 """
 
+import importlib
 import logging
 from typing import Any, Optional, Type
 
@@ -35,6 +36,14 @@ class StrategyRegistry:
     """
 
     _strategies: dict[StrategyType, Type[BaseContextStrategy]] = {}
+    _strategy_modules: dict[StrategyType, str] = {
+        StrategyType.FULL_CONTEXT: "pxnodes.llm.context.full_context.strategy",
+        StrategyType.STRUCTURAL_MEMORY: "pxnodes.llm.context.structural_memory.strategy",
+        StrategyType.SIMPLE_SM: "pxnodes.llm.context.structural_memory.strategy",
+        StrategyType.HIERARCHICAL_GRAPH: "pxnodes.llm.context.hierarchical_graph.strategy",
+        StrategyType.HMEM: "pxnodes.llm.context.hmem.strategy",
+        StrategyType.COMBINED: "pxnodes.llm.context.combined.strategy",
+    }
 
     @classmethod
     def register(cls, strategy_type: StrategyType):
@@ -75,10 +84,21 @@ class StrategyRegistry:
             ValueError: If strategy type is not registered
         """
         if strategy_type not in cls._strategies:
-            available = [s.value for s in cls._strategies.keys()]
-            raise ValueError(
-                f"Unknown strategy: {strategy_type.value}. " f"Available: {available}"
-            )
+            module_path = cls._strategy_modules.get(strategy_type)
+            if module_path:
+                try:
+                    importlib.import_module(module_path)
+                except Exception as exc:
+                    logger.warning(
+                        "Strategy module import failed for %s: %s",
+                        strategy_type.value,
+                        exc,
+                    )
+            if strategy_type not in cls._strategies:
+                available = [s.value for s in cls._strategies.keys()]
+                raise ValueError(
+                    f"Unknown strategy: {strategy_type.value}. " f"Available: {available}"
+                )
         return cls._strategies[strategy_type]
 
     @classmethod

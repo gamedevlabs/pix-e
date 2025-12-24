@@ -21,10 +21,10 @@ class CoherenceDimensionAgent(BaseAgent):
     Base class for coherence dimension evaluation agents.
 
     Each dimension agent evaluates one aspect of node coherence:
-    - Prerequisite Alignment: Does node respect what came before?
-    - Forward Setup: Does node properly set up future?
-    - Internal Consistency: Is node internally coherent?
-    - Contextual Fit: Does node fit game concept/pillars?
+    - Backward Coherence: Does node respect what came before?
+    - Forward Coherence: Does node properly set up future?
+    - Path Robustness: Does node work across incoming/outgoing paths?
+    - Node Integrity: Do title/description/components align?
 
     Subclasses must define:
     - name: Agent identifier
@@ -119,7 +119,10 @@ RESPONSE FORMAT:
   "score": <1-6>,
   "reasoning": "Detailed explanation of your score",
   "issues": ["Issue 1", "Issue 2", ...],
-  "suggestions": ["Suggestion 1", "Suggestion 2", ...]
+  "suggestions": ["Suggestion 1", "Suggestion 2", ...],
+  "evidence": ["Short references to nodes/edges/quotes"],
+  "unknowns": ["What could not be verified from context"],
+  "path_variance": "consistent across paths OR depends on path: <details>"
 }}
 """
 

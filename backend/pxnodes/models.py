@@ -291,3 +291,97 @@ class HMEMLayerEmbedding(models.Model):
         }
 
         return result
+
+
+class ContextArtifact(models.Model):
+    """
+    Stores precomputed context artifacts for strategies.
+
+    Artifacts are chart-scoped for nodes and paths to avoid cross-chart leakage.
+    """
+
+    SCOPE_CHOICES = [
+        ("node", "Node"),
+        ("chart", "Chart"),
+        ("path", "Path"),
+        ("concept", "Game Concept"),
+        ("pillar", "Pillar"),
+    ]
+
+    ARTIFACT_CHOICES = [
+        ("raw_text", "Raw Text"),
+        ("chunks", "Chunks"),
+        ("summary", "Summary"),
+        ("facts", "Atomic Facts"),
+        ("triples", "Knowledge Triples"),
+        ("chart_overview", "Chart Overview"),
+        ("node_list", "Node List"),
+        ("path_summary", "Path Summary"),
+        ("path_snippet", "Path Snippet"),
+        ("milestone", "Milestone"),
+    ]
+
+    scope_type = models.CharField(max_length=20, choices=SCOPE_CHOICES)
+    scope_id = models.CharField(max_length=128, db_index=True)
+    artifact_type = models.CharField(max_length=32, choices=ARTIFACT_CHOICES)
+
+    node = models.ForeignKey(
+        "PxNode",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="context_artifacts",
+    )
+    chart = models.ForeignKey(
+        "pxcharts.PxChart",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="context_artifacts",
+    )
+    project_id = models.CharField(max_length=128, blank=True, default="")
+
+    content = models.JSONField()
+    content_hash = models.CharField(max_length=64, db_index=True)
+    source_hash = models.CharField(max_length=64, db_index=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["scope_type", "artifact_type", "scope_id"]),
+            models.Index(fields=["chart", "scope_type"]),
+            models.Index(fields=["node", "artifact_type"]),
+        ]
+        unique_together = [
+            ("scope_type", "scope_id", "artifact_type", "chart", "project_id")
+        ]
+
+    def __str__(self) -> str:
+        return f"ContextArtifact({self.scope_type}:{self.artifact_type}:{self.scope_id})"
+
+
+class ArtifactEmbedding(models.Model):
+    """Tracks embeddings for ContextArtifact entries."""
+
+    artifact = models.ForeignKey(
+        "ContextArtifact",
+        on_delete=models.CASCADE,
+        related_name="embeddings",
+    )
+    embedding_model = models.CharField(max_length=100)
+    embedding_dim = models.IntegerField()
+    embedding_hash = models.CharField(max_length=64, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["artifact", "embedding_model"]),
+            models.Index(fields=["embedding_hash"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"ArtifactEmbedding({self.embedding_model}:{self.embedding_dim})"

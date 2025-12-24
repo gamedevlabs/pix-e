@@ -1,10 +1,10 @@
 """
-Internal Consistency Agent.
+Node Integrity Agent.
 
 Evaluates whether a node is internally coherent:
-- Are there contradictions within the node?
-- Are descriptions clear and unambiguous?
-- Do the components work together logically?
+- Do title, description, and components align?
+- Are descriptions clear and implementable?
+- Are there contradictions or missing details?
 """
 
 from typing import Any, Dict
@@ -14,12 +14,12 @@ from pxnodes.llm.agents.coherence.base import (
     SCORING_INSTRUCTIONS,
     CoherenceDimensionAgent,
 )
-from pxnodes.llm.agents.coherence.schemas import InternalConsistencyResult
+from pxnodes.llm.agents.coherence.schemas import NodeIntegrityResult
 
-INTERNAL_PROMPT = (
+INTEGRITY_PROMPT = (
     COHERENCE_CONTEXT_HEADER
     + """
-TASK: Evaluate INTERNAL CONSISTENCY
+TASK: Evaluate NODE INTEGRITY
 
 Analyze whether the target node is internally coherent and well-defined.
 
@@ -54,13 +54,13 @@ ADDITIONAL FIELDS:
 )
 
 
-class InternalConsistencyAgent(CoherenceDimensionAgent):
+class NodeIntegrityAgent(CoherenceDimensionAgent):
     """Evaluates whether a node is internally coherent."""
 
-    name = "internal_consistency"
-    dimension_name = "Internal Consistency"
-    response_schema = InternalConsistencyResult
-    prompt_template = INTERNAL_PROMPT
+    name = "node_integrity"
+    dimension_name = "Node Integrity"
+    response_schema = NodeIntegrityResult
+    prompt_template = INTEGRITY_PROMPT
     temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:

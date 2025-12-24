@@ -5,6 +5,8 @@ from .views import (
     CoherenceEvaluateView,
     ContextBuildView,
     ContextStrategiesView,
+    ContextArtifactsPrecomputeView,
+    ContextArtifactsResetView,
     PxComponentDefinitionViewSet,
     PxComponentViewSet,
     PxNodeViewSet,
@@ -61,5 +63,15 @@ urlpatterns = [
         "context/build/",
         ContextBuildView.as_view(),
         name="context-build",
+    ),
+    path(
+        "context/precompute/",
+        ContextArtifactsPrecomputeView.as_view(),
+        name="context-precompute",
+    ),
+    path(
+        "context/precompute/reset/",
+        ContextArtifactsResetView.as_view(),
+        name="context-precompute-reset",
     ),
 ]

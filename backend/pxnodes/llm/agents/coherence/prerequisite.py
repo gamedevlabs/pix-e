@@ -1,10 +1,7 @@
 """
-Prerequisite Alignment Agent.
+Backward Coherence Agent.
 
-Evaluates whether a node respects what came before in the game flow:
-- Are required items/abilities established?
-- Are referenced events/mechanics already introduced?
-- Are prerequisite conditions satisfied?
+Evaluates whether a node respects what came before across possible paths.
 """
 
 from typing import Any, Dict
@@ -14,34 +11,29 @@ from pxnodes.llm.agents.coherence.base import (
     SCORING_INSTRUCTIONS,
     CoherenceDimensionAgent,
 )
-from pxnodes.llm.agents.coherence.schemas import PrerequisiteAlignmentResult
+from pxnodes.llm.agents.coherence.schemas import BackwardCoherenceResult
 
-PREREQUISITE_PROMPT = (
+BACKWARD_COHERENCE_PROMPT = (
     COHERENCE_CONTEXT_HEADER
     + """
-TASK: Evaluate PREREQUISITE ALIGNMENT
+TASK: Evaluate BACKWARD COHERENCE
 
-Analyze whether the target node properly respects what came before in the game flow.
+Analyze whether the target node properly respects what came before across all valid predecessor paths.
 
 CHECK FOR:
-1. ITEM/ABILITY PREREQUISITES
-   - Does the node require items/abilities the player should have?
-   - Are all required mechanics already introduced?
-   - Example violation: "Use Double Jump" but player never acquired it
+1. REQUIRED MECHANICS/ITEMS
+   - Does the node require mechanics or items that appear earlier?
+   - Are they established on ALL valid incoming paths?
+   - If only on some paths, flag as path-dependent.
 
 2. NARRATIVE PREREQUISITES
    - Does the node reference events that have occurred?
    - Are character introductions properly sequenced?
    - Example violation: "Return to the castle" but player never visited it
 
-3. MECHANICAL PREREQUISITES
-   - Are gameplay mechanics properly introduced before use?
-   - Is complexity appropriately ramped up?
-   - Example violation: Complex combo required without tutorial
-
-4. STATE PREREQUISITES
+3. STATE PREREQUISITES
    - Does the node assume a game state that is achievable?
-   - Are triggers/conditions for reaching this node satisfiable?
+   - Are triggers/conditions for reaching this node satisfiable on all paths?
 
 """
     + SCORING_INSTRUCTIONS
@@ -56,14 +48,13 @@ ADDITIONAL FIELDS:
 """
 )
 
-
-class PrerequisiteAlignmentAgent(CoherenceDimensionAgent):
+class BackwardCoherenceAgent(CoherenceDimensionAgent):
     """Evaluates whether a node respects what came before."""
 
-    name = "prerequisite_alignment"
-    dimension_name = "Prerequisite Alignment"
-    response_schema = PrerequisiteAlignmentResult
-    prompt_template = PREREQUISITE_PROMPT
+    name = "backward_coherence"
+    dimension_name = "Backward Coherence"
+    response_schema = BackwardCoherenceResult
+    prompt_template = BACKWARD_COHERENCE_PROMPT
     temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
