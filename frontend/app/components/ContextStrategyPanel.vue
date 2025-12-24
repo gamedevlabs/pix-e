@@ -86,11 +86,7 @@ const showContextPreview = ref(false)
 const activeTab = ref<'evaluate' | 'compare'>('evaluate')
 
 // Agent selection and expansion state for agentic mode
-type AgentKey =
-  | 'backward_coherence'
-  | 'forward_coherence'
-  | 'path_robustness'
-  | 'node_integrity'
+type AgentKey = 'backward_coherence' | 'forward_coherence' | 'path_robustness' | 'node_integrity'
 const selectedAgent = ref<AgentKey>('backward_coherence')
 const showIssues = ref(true)
 const showSuggestions = ref(false)
@@ -416,19 +412,28 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                   <div class="p-2 space-y-2 text-sm text-gray-700 dark:text-gray-300">
                     <div v-if="selectedAgentResult.missing_prerequisites?.length">
                       <div class="font-medium">Missing prerequisites</div>
-                      <div v-for="(item, idx) in selectedAgentResult.missing_prerequisites" :key="idx">
+                      <div
+                        v-for="(item, idx) in selectedAgentResult.missing_prerequisites"
+                        :key="idx"
+                      >
                         - {{ item }}
                       </div>
                     </div>
                     <div v-if="selectedAgentResult.satisfied_prerequisites?.length">
                       <div class="font-medium">Satisfied prerequisites</div>
-                      <div v-for="(item, idx) in selectedAgentResult.satisfied_prerequisites" :key="idx">
+                      <div
+                        v-for="(item, idx) in selectedAgentResult.satisfied_prerequisites"
+                        :key="idx"
+                      >
                         - {{ item }}
                       </div>
                     </div>
                     <div v-if="selectedAgentResult.elements_introduced?.length">
                       <div class="font-medium">Elements introduced</div>
-                      <div v-for="(item, idx) in selectedAgentResult.elements_introduced" :key="idx">
+                      <div
+                        v-for="(item, idx) in selectedAgentResult.elements_introduced"
+                        :key="idx"
+                      >
                         - {{ item }}
                       </div>
                     </div>
@@ -494,14 +499,20 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                     @click="showEvidence = !showEvidence"
                   >
                     <span class="flex items-center gap-2">
-                      <UIcon name="i-heroicons-document-magnifying-glass" class="text-emerald-500" />
+                      <UIcon
+                        name="i-heroicons-document-magnifying-glass"
+                        class="text-emerald-500"
+                      />
                       Evidence ({{ selectedAgentResult.evidence?.length ?? 0 }})
                     </span>
                     <UIcon
                       :name="showEvidence ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
                     />
                   </button>
-                  <div v-if="showEvidence && (selectedAgentResult.evidence?.length ?? 0) > 0" class="p-2 space-y-1">
+                  <div
+                    v-if="showEvidence && (selectedAgentResult.evidence?.length ?? 0) > 0"
+                    class="p-2 space-y-1"
+                  >
                     <div
                       v-for="(item, idx) in selectedAgentResult.evidence || []"
                       :key="idx"
@@ -529,7 +540,10 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                       :name="showUnknowns ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
                     />
                   </button>
-                  <div v-if="showUnknowns && (selectedAgentResult.unknowns?.length ?? 0) > 0" class="p-2 space-y-1">
+                  <div
+                    v-if="showUnknowns && (selectedAgentResult.unknowns?.length ?? 0) > 0"
+                    class="p-2 space-y-1"
+                  >
                     <div
                       v-for="(item, idx) in selectedAgentResult.unknowns || []"
                       :key="idx"

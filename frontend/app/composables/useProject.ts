@@ -16,8 +16,7 @@ export const useProject = defineStore('project', () => {
         headers: useRequestHeaders(['cookie']),
       })
       projects.value = data || []
-      activeProjectId.value =
-        projects.value.find((project) => project.is_current)?.id ?? null
+      activeProjectId.value = projects.value.find((project) => project.is_current)?.id ?? null
     } catch (err) {
       errorToast(err)
     } finally {
