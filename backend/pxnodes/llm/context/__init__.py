@@ -97,8 +97,14 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "pxnodes.llm.context.shared.graph_retrieval",
         "get_graph_slice",
     ),
-    "LLMProviderAdapter": ("pxnodes.llm.context.shared.llm_adapter", "LLMProviderAdapter"),
-    "create_llm_provider": ("pxnodes.llm.context.shared.llm_adapter", "create_llm_provider"),
+    "LLMProviderAdapter": (
+        "pxnodes.llm.context.shared.llm_adapter",
+        "LLMProviderAdapter",
+    ),
+    "create_llm_provider": (
+        "pxnodes.llm.context.shared.llm_adapter",
+        "create_llm_provider",
+    ),
     # Structural Memory Strategy
     "StructuralMemoryStrategy": (
         "pxnodes.llm.context.structural_memory.strategy",
@@ -121,7 +127,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "pxnodes.llm.context.structural_memory.context",
         "get_context_stats",
     ),
-    "KnowledgeTriple": ("pxnodes.llm.context.structural_memory.triples", "KnowledgeTriple"),
+    "KnowledgeTriple": (
+        "pxnodes.llm.context.structural_memory.triples",
+        "KnowledgeTriple",
+    ),
     "extract_llm_triples_only": (
         "pxnodes.llm.context.structural_memory.triples",
         "extract_llm_triples_only",
@@ -172,17 +181,26 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "aggregate_player_state",
     ),
     # Full Context Strategy
-    "FullContextStrategy": ("pxnodes.llm.context.full_context.strategy", "FullContextStrategy"),
+    "FullContextStrategy": (
+        "pxnodes.llm.context.full_context.strategy",
+        "FullContextStrategy",
+    ),
     # H-MEM Strategy
     "HMEMStrategy": ("pxnodes.llm.context.hmem.strategy", "HMEMStrategy"),
     "HMEMRetriever": ("pxnodes.llm.context.hmem.retriever", "HMEMRetriever"),
-    "HMEMRetrievalResult": ("pxnodes.llm.context.hmem.retriever", "HMEMRetrievalResult"),
+    "HMEMRetrievalResult": (
+        "pxnodes.llm.context.hmem.retriever",
+        "HMEMRetrievalResult",
+    ),
     "HMEMContextResult": ("pxnodes.llm.context.hmem.retriever", "HMEMContextResult"),
     "compute_path_hash": ("pxnodes.llm.context.hmem.retriever", "compute_path_hash"),
     # Combined Strategy
     "CombinedStrategy": ("pxnodes.llm.context.combined.strategy", "CombinedStrategy"),
     # Strategy Evaluator
-    "StrategyEvaluator": ("pxnodes.llm.context.strategy_evaluator", "StrategyEvaluator"),
+    "StrategyEvaluator": (
+        "pxnodes.llm.context.strategy_evaluator",
+        "StrategyEvaluator",
+    ),
     "StrategyEvaluationResult": (
         "pxnodes.llm.context.strategy_evaluator",
         "StrategyEvaluationResult",
@@ -197,9 +215,15 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "compare_all_strategies",
     ),
     # Legacy - Generation
-    "StructuralMemoryGenerator": ("pxnodes.llm.context.generator", "StructuralMemoryGenerator"),
+    "StructuralMemoryGenerator": (
+        "pxnodes.llm.context.generator",
+        "StructuralMemoryGenerator",
+    ),
     "GenerationResult": ("pxnodes.llm.context.generator", "GenerationResult"),
-    "generate_structural_memory": ("pxnodes.llm.context.generator", "generate_structural_memory"),
+    "generate_structural_memory": (
+        "pxnodes.llm.context.generator",
+        "generate_structural_memory",
+    ),
     # Legacy - Change Detection
     "compute_node_content_hash": (
         "pxnodes.llm.context.change_detection",
@@ -207,8 +231,14 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     ),
     "has_node_changed": ("pxnodes.llm.context.change_detection", "has_node_changed"),
     "get_changed_nodes": ("pxnodes.llm.context.change_detection", "get_changed_nodes"),
-    "get_processing_stats": ("pxnodes.llm.context.change_detection", "get_processing_stats"),
-    "update_processing_state": ("pxnodes.llm.context.change_detection", "update_processing_state"),
+    "get_processing_stats": (
+        "pxnodes.llm.context.change_detection",
+        "get_processing_stats",
+    ),
+    "update_processing_state": (
+        "pxnodes.llm.context.change_detection",
+        "update_processing_state",
+    ),
 }
 
 

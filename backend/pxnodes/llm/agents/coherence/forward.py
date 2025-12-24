@@ -18,7 +18,8 @@ FORWARD_COHERENCE_PROMPT = (
     + """
 TASK: Evaluate FORWARD COHERENCE
 
-Analyze whether the target node properly sets up what comes next across all valid outgoing paths.
+Analyze whether the target node properly sets up what comes next
+across all valid outgoing paths.
 
 CHECK FOR:
 1. MECHANICAL SETUP

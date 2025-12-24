@@ -18,7 +18,8 @@ BACKWARD_COHERENCE_PROMPT = (
     + """
 TASK: Evaluate BACKWARD COHERENCE
 
-Analyze whether the target node properly respects what came before across all valid predecessor paths.
+Analyze whether the target node properly respects what came before
+across all valid predecessor paths.
 
 CHECK FOR:
 1. REQUIRED MECHANICS/ITEMS
@@ -47,6 +48,7 @@ ADDITIONAL FIELDS:
 ]
 """
 )
+
 
 class BackwardCoherenceAgent(CoherenceDimensionAgent):
     """Evaluates whether a node respects what came before."""

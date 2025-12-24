@@ -30,8 +30,8 @@ from pxnodes.llm.agents.coherence import (
     PathRobustnessAgent,
 )
 from pxnodes.llm.agents.coherence.schemas import (
-    CoherenceAggregatedResult,
     BackwardCoherenceResult,
+    CoherenceAggregatedResult,
     ForwardCoherenceResult,
     NodeIntegrityResult,
     PathRobustnessResult,

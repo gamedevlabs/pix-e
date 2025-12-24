@@ -55,7 +55,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "get_context_stats",
     ),
     "Chunk": ("pxnodes.llm.context.structural_memory.chunks", "Chunk"),
-    "extract_chunks": ("pxnodes.llm.context.structural_memory.chunks", "extract_chunks"),
+    "extract_chunks": (
+        "pxnodes.llm.context.structural_memory.chunks",
+        "extract_chunks",
+    ),
     "extract_chunks_batch": (
         "pxnodes.llm.context.structural_memory.chunks",
         "extract_chunks_batch",

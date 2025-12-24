@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 import logfire
 
@@ -36,7 +36,6 @@ from pxnodes.llm.context.structural_memory.triples import (
     parse_llm_triples,
 )
 from pxnodes.models import ContextArtifact, PxNode
-
 
 SCOPE_NODE = "node"
 SCOPE_CHART = "chart"
@@ -271,9 +270,7 @@ class ArtifactInventory:
             )
             if source_name or target_name:
                 edge_pairs.append(f"{source_name}->{target_name}")
-        node_hashes = [
-            compute_node_content_hash(node, chart) for node in nodes if node
-        ]
+        node_hashes = [compute_node_content_hash(node, chart) for node in nodes if node]
         chart_mechanics = self._get_chart_component_names(nodes)
         chart_pacing_summary = self._build_chart_pacing_summary(nodes, edges)
         chart_narrative_summary = self._build_chart_narrative_summary(nodes, edges)
@@ -285,58 +282,63 @@ class ArtifactInventory:
         node_list = node_names
         source_hash = compute_text_source_hash(
             [
-                overview["name"],
-                overview["description"],
+                str(overview["name"]),
+                str(overview["description"]),
                 ",".join(node_list),
                 ",".join(edge_pairs),
                 ",".join(node_hashes),
                 ",".join(sorted(chart_mechanics)),
-                chart_pacing_summary,
-                chart_narrative_summary,
+                str(chart_pacing_summary),
+                str(chart_narrative_summary),
             ]
         )
         entries: list[ContextArtifact] = []
+
+        def make_content_builder(c: Any) -> Callable[[], Any]:
+            def builder() -> Any:
+                return c
+
+            return builder
+
+        def build_edge_triples(payload_edges: Any = edges) -> list[dict[str, Any]]:
+            triples_payload = []
+            for edge in payload_edges:
+                for triple in extract_edge_triples(edge):
+                    source_node_id = (
+                        str(edge.source.content.id)
+                        if edge.source and edge.source.content
+                        else ""
+                    )
+                    target_node_id = (
+                        str(edge.target.content.id)
+                        if edge.target and edge.target.content
+                        else ""
+                    )
+                    triples_payload.append(
+                        {
+                            "head": triple.head,
+                            "relation": triple.relation,
+                            "tail": triple.tail,
+                            "text": str(triple),
+                            "source_node_id": source_node_id,
+                            "target_node_id": target_node_id,
+                        }
+                    )
+            return triples_payload
+
         for artifact_type in artifact_types:
             if artifact_type == ARTIFACT_CHART_OVERVIEW:
-                content = overview
-                builder = lambda c=content: c
+                builder = make_content_builder(overview)
             elif artifact_type == ARTIFACT_NODE_LIST:
-                content = node_list
-                builder = lambda c=content: c
+                builder = make_content_builder(node_list)
             elif artifact_type == ARTIFACT_EDGE_TRIPLES:
-                def build_edge_triples(payload_edges=edges) -> list[dict[str, Any]]:
-                    triples_payload = []
-                    for edge in payload_edges:
-                        for triple in extract_edge_triples(edge):
-                            source_node_id = (
-                                str(edge.source.content.id)
-                                if edge.source and edge.source.content
-                                else ""
-                            )
-                            target_node_id = (
-                                str(edge.target.content.id)
-                                if edge.target and edge.target.content
-                                else ""
-                            )
-                            triples_payload.append(
-                                {
-                                    "head": triple.head,
-                                    "relation": triple.relation,
-                                    "tail": triple.tail,
-                                    "text": str(triple),
-                                    "source_node_id": source_node_id,
-                                    "target_node_id": target_node_id,
-                                }
-                            )
-                    return triples_payload
-
                 builder = build_edge_triples
             elif artifact_type == ARTIFACT_CHART_PACING:
-                builder = lambda c=chart_pacing_summary: c
+                builder = make_content_builder(chart_pacing_summary)
             elif artifact_type == ARTIFACT_CHART_MECHANICS:
-                builder = lambda c=list(sorted(chart_mechanics)): c
+                builder = make_content_builder(list(sorted(chart_mechanics)))
             elif artifact_type == ARTIFACT_CHART_NARRATIVE:
-                builder = lambda c=chart_narrative_summary: c
+                builder = make_content_builder(chart_narrative_summary)
             else:
                 combined = "\n".join(
                     [
@@ -346,11 +348,11 @@ class ArtifactInventory:
                     ]
                 )
                 content = self._build_text_artifact(
-                    title=overview["name"] or "Chart",
+                    title=str(overview["name"] or "Chart"),
                     text=combined,
                     artifact_type=artifact_type,
                 )
-                builder = lambda c=content: c
+                builder = make_content_builder(content)
             entry = self._get_or_build_artifact(
                 scope_type=SCOPE_CHART,
                 scope_id=str(getattr(chart, "id", "")),
@@ -638,7 +640,9 @@ class ArtifactInventory:
     def _build_path_artifact(self, nodes: list[PxNode], artifact_type: str) -> Any:
         if artifact_type == ARTIFACT_PATH_SUMMARY:
             summaries = self._summarize_nodes_parallel(nodes)
-            return [f"{node.name}: {summary}" for node, summary in zip(nodes, summaries)]
+            return [
+                f"{node.name}: {summary}" for node, summary in zip(nodes, summaries)
+            ]
         return []
 
     def _build_text_artifact(self, title: str, text: str, artifact_type: str) -> Any:
@@ -709,9 +713,7 @@ class ArtifactInventory:
         )
         try:
             with logfire.span("artifact.summary.text", title=title):
-                response = self.llm_provider.generate(
-                    prompt, operation="text_summary"
-                )
+                response = self.llm_provider.generate(prompt, operation="text_summary")
             return response.strip() or _first_sentence(text)
         except Exception:
             return _first_sentence(text)
@@ -744,9 +746,7 @@ class ArtifactInventory:
         )
         try:
             with logfire.span("artifact.triples.text", title=title):
-                response = self.llm_provider.generate(
-                    prompt, operation="text_triples"
-                )
+                response = self.llm_provider.generate(prompt, operation="text_triples")
             triples = parse_llm_triples(response)
             return [
                 {
@@ -869,16 +869,18 @@ class ArtifactInventory:
                 results = await asyncio.gather(*tasks, return_exceptions=True)
                 summaries: list[str] = []
                 for node, result in zip(nodes, results):
-                    if isinstance(result, Exception):
+                    if isinstance(result, BaseException):
                         summaries.append(create_fallback_summary(node).content)
+                    elif result is None:
+                        summaries.append("")
                     else:
-                        summaries.append(result.content if result else "")
+                        summaries.append(result.content)
                 return summaries
 
             return asyncio.run(run_parallel())
         except RuntimeError:
-            summaries: list[str] = []
+            summaries_fallback: list[str] = []
             for node in nodes:
                 summary = extract_summary(node, self.llm_provider)
-                summaries.append(summary.content if summary else "")
-            return summaries
+                summaries_fallback.append(summary.content if summary else "")
+            return summaries_fallback

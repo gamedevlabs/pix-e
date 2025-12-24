@@ -24,6 +24,14 @@ from typing import Any, Optional, cast
 
 import logfire
 
+from pxnodes.llm.context.artifacts import (
+    ARTIFACT_CHUNKS,
+    ARTIFACT_EDGE_TRIPLES,
+    ARTIFACT_FACTS,
+    ARTIFACT_SUMMARY,
+    ARTIFACT_TRIPLES,
+    ArtifactInventory,
+)
 from pxnodes.llm.context.base.registry import StrategyRegistry
 from pxnodes.llm.context.base.strategy import BaseContextStrategy, LLMProvider
 from pxnodes.llm.context.base.types import (
@@ -33,37 +41,12 @@ from pxnodes.llm.context.base.types import (
     StrategyType,
     get_layer_name,
 )
-from pxnodes.llm.context.artifacts import (
-    ARTIFACT_CHUNKS,
-    ARTIFACT_EDGE_TRIPLES,
-    ARTIFACT_FACTS,
-    ARTIFACT_SUMMARY,
-    ARTIFACT_TRIPLES,
-    ArtifactInventory,
-)
-from pxnodes.llm.context.shared.prompts import (
-    ATOMIC_FACT_EXTRACTION_PROMPT,
-    KNOWLEDGE_TRIPLE_EXTRACTION_PROMPT,
-)
-from pxnodes.llm.context.structural_memory.chunks import Chunk, extract_chunks
-from pxnodes.llm.context.structural_memory.facts import (
-    AtomicFact,
-    extract_atomic_facts,
-    extract_atomic_facts_async,
-    parse_atomic_facts,
-)
-from pxnodes.llm.context.structural_memory.summaries import (
-    SUMMARY_EXTRACTION_PROMPT,
-    Summary,
-    create_fallback_summary,
-    extract_summary,
-    extract_summary_async,
-)
+from pxnodes.llm.context.structural_memory.chunks import Chunk
+from pxnodes.llm.context.structural_memory.facts import AtomicFact
+from pxnodes.llm.context.structural_memory.summaries import Summary
 from pxnodes.llm.context.structural_memory.triples import (
     KnowledgeTriple,
     extract_llm_triples_only,
-    extract_llm_triples_only_async,
-    parse_llm_triples,
 )
 
 logger = logging.getLogger(__name__)
@@ -173,7 +156,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         # STAGE 1: Deterministic Graph Scoping (Full chart baseline)
         # ============================================================
         containers = scope.chart.containers.select_related("content").all()
-        all_nodes = [c.content for c in containers if getattr(c, "content", None)]
+        all_nodes = [c.content for c in containers if c.content is not None]
         if scope.target_node not in all_nodes:
             all_nodes.append(scope.target_node)
 
@@ -564,7 +547,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     and mem.get("metadata", {}).get("source") == "edge"
                     for mem in existing
                 )
-                if existing and not has_node_changed(node, scope.chart) and has_edge_triples:
+                if (
+                    existing
+                    and not has_node_changed(node, scope.chart)
+                    and has_edge_triples
+                ):
                     continue
                 nodes_to_process.append(node)
 
@@ -1397,12 +1384,14 @@ class StructuralMemoryStrategy(BaseContextStrategy):
 
             if scope.project_pillars:
                 for pillar in scope.project_pillars:
-                    pillar_artifacts[str(pillar.id)] = inventory.get_or_build_pillar_artifacts(
-                        pillar_id=str(pillar.id),
-                        pillar_name=getattr(pillar, "name", "") or "Pillar",
-                        pillar_description=getattr(pillar, "description", "") or "",
-                        artifact_types=artifact_types,
-                        project_id=str(getattr(pillar, "project_id", "") or ""),
+                    pillar_artifacts[str(pillar.id)] = (
+                        inventory.get_or_build_pillar_artifacts(
+                            pillar_id=str(pillar.id),
+                            pillar_name=getattr(pillar, "name", "") or "Pillar",
+                            pillar_description=getattr(pillar, "description", "") or "",
+                            artifact_types=artifact_types,
+                            project_id=str(getattr(pillar, "project_id", "") or ""),
+                        )
                     )
 
             for title, text in entries:
@@ -1415,7 +1404,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                         if artifact.artifact_type == ARTIFACT_SUMMARY:
                             summary_text = artifact.content or "N/A"
                         elif artifact.artifact_type == ARTIFACT_FACTS:
-                            facts_list = [f.get("fact", "") for f in artifact.content or []]
+                            facts_list = [
+                                f.get("fact", "") for f in artifact.content or []
+                            ]
                         elif artifact.artifact_type == ARTIFACT_TRIPLES:
                             triples_list = [
                                 t.get("text", "") for t in artifact.content or []
@@ -1430,11 +1421,13 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                                     summary_text = artifact.content or "N/A"
                                 elif artifact.artifact_type == ARTIFACT_FACTS:
                                     facts_list = [
-                                        f.get("fact", "") for f in artifact.content or []
+                                        f.get("fact", "")
+                                        for f in artifact.content or []
                                     ]
                                 elif artifact.artifact_type == ARTIFACT_TRIPLES:
                                     triples_list = [
-                                        t.get("text", "") for t in artifact.content or []
+                                        t.get("text", "")
+                                        for t in artifact.content or []
                                     ]
                             break
 
@@ -1588,7 +1581,7 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
         Full-chart traversal + triples/facts only (no summaries/chunks).
         """
         containers = scope.chart.containers.select_related("content").all()
-        all_nodes = [c.content for c in containers if getattr(c, "content", None)]
+        all_nodes = [c.content for c in containers if c.content is not None]
         if scope.target_node not in all_nodes:
             all_nodes.append(scope.target_node)
         edge_triples = self._load_chart_edge_triples(scope.chart)
@@ -1694,12 +1687,14 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
 
             if scope.project_pillars:
                 for pillar in scope.project_pillars:
-                    pillar_artifacts[str(pillar.id)] = inventory.get_or_build_pillar_artifacts(
-                        pillar_id=str(pillar.id),
-                        pillar_name=getattr(pillar, "name", "") or "Pillar",
-                        pillar_description=getattr(pillar, "description", "") or "",
-                        artifact_types=artifact_types,
-                        project_id=str(getattr(pillar, "project_id", "") or ""),
+                    pillar_artifacts[str(pillar.id)] = (
+                        inventory.get_or_build_pillar_artifacts(
+                            pillar_id=str(pillar.id),
+                            pillar_name=getattr(pillar, "name", "") or "Pillar",
+                            pillar_description=getattr(pillar, "description", "") or "",
+                            artifact_types=artifact_types,
+                            project_id=str(getattr(pillar, "project_id", "") or ""),
+                        )
                     )
 
             for title, _ in entries:
@@ -1709,9 +1704,13 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
                 if title == "Game Concept" and concept_artifacts:
                     for artifact in concept_artifacts:
                         if artifact.artifact_type == ARTIFACT_FACTS:
-                            facts_list = [f.get("fact", "") for f in artifact.content or []]
+                            facts_list = [
+                                f.get("fact", "") for f in artifact.content or []
+                            ]
                         elif artifact.artifact_type == ARTIFACT_TRIPLES:
-                            triples_list = [t.get("text", "") for t in artifact.content or []]
+                            triples_list = [
+                                t.get("text", "") for t in artifact.content or []
+                            ]
                 else:
                     for pillar in scope.project_pillars or []:
                         pillar_name = getattr(pillar, "name", "") or "Pillar"
@@ -1720,11 +1719,13 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
                             for artifact in artifacts:
                                 if artifact.artifact_type == ARTIFACT_FACTS:
                                     facts_list = [
-                                        f.get("fact", "") for f in artifact.content or []
+                                        f.get("fact", "")
+                                        for f in artifact.content or []
                                     ]
                                 elif artifact.artifact_type == ARTIFACT_TRIPLES:
                                     triples_list = [
-                                        t.get("text", "") for t in artifact.content or []
+                                        t.get("text", "")
+                                        for t in artifact.content or []
                                     ]
 
                 lines = [f"{title}:"]
@@ -1741,7 +1742,9 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
         return LayerContext(
             layer=1,
             layer_name=get_layer_name(1),
-            content="\n\n".join(content_parts) if content_parts else "No project context",
+            content=(
+                "\n\n".join(content_parts) if content_parts else "No project context"
+            ),
             metadata={"source": "project_config", "mixed_memory": True},
         )
 

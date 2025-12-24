@@ -360,7 +360,9 @@ class ContextArtifact(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"ContextArtifact({self.scope_type}:{self.artifact_type}:{self.scope_id})"
+        return (
+            f"ContextArtifact({self.scope_type}:{self.artifact_type}:{self.scope_id})"
+        )
 
 
 class ArtifactEmbedding(models.Model):
