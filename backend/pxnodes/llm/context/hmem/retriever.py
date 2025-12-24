@@ -418,14 +418,15 @@ class HMEMRetriever:
         l2_allowed = {
             "chart_overview",
             "chart_nodes",
-            "chart_pacing",
-            "chart_mechanics",
-            "chart_narrative",
+            "chart_pacing_summary",
+            "chart_narrative_summary",
         }
         for candidate in candidates:
             if candidate.layer == 2:
                 path_hash = getattr(candidate, "path_hash", "")
-                if path_hash not in l2_allowed:
+                if path_hash not in l2_allowed and not path_hash.startswith(
+                    "chart_mechanic_"
+                ):
                     continue
             candidate_embedding = np.array(candidate.embedding)
             similarity = self._cosine_similarity(query_np, candidate_embedding)

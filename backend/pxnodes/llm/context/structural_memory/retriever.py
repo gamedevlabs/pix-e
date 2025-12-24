@@ -301,7 +301,7 @@ class IterativeRetriever:
         )
 
         try:
-            refined = self.llm_provider.generate(prompt)
+            refined = self.llm_provider.generate(prompt, operation="retrieval_refine")
             # Clean up response
             refined = refined.strip().strip('"').strip("'")
             return refined if refined else None

@@ -8,20 +8,20 @@ from pxnodes.llm.agents.coherence import (
     CoherenceAggregatedResult,
     CoherenceDimensionAgent,
     CoherenceDimensionResult,
-    ContextualFitAgent,
-    ForwardSetupAgent,
-    InternalConsistencyAgent,
-    PrerequisiteAlignmentAgent,
+    BackwardCoherenceAgent,
+    ForwardCoherenceAgent,
+    NodeIntegrityAgent,
+    PathRobustnessAgent,
 )
 
 __all__ = [
     # Base
     "CoherenceDimensionAgent",
     # Agents
-    "PrerequisiteAlignmentAgent",
-    "ForwardSetupAgent",
-    "InternalConsistencyAgent",
-    "ContextualFitAgent",
+    "BackwardCoherenceAgent",
+    "ForwardCoherenceAgent",
+    "NodeIntegrityAgent",
+    "PathRobustnessAgent",
     # Schemas
     "CoherenceDimensionResult",
     "CoherenceAggregatedResult",

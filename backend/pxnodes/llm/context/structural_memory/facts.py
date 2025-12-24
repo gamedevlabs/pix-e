@@ -185,7 +185,7 @@ def extract_atomic_facts(
 
     # Generate using LLM
     try:
-        response = llm_provider.generate(prompt)
+        response = llm_provider.generate(prompt, operation="node_facts")
         parsed_facts = parse_atomic_facts(response)
 
         for fact_text in parsed_facts:
@@ -298,7 +298,7 @@ async def extract_atomic_facts_async(
         try:
             response = await sync_to_async(
                 llm_provider.generate, thread_sensitive=False
-            )(prompt)
+            )(prompt, operation="node_facts")
             parsed_facts = parse_atomic_facts(response)
 
             facts = [

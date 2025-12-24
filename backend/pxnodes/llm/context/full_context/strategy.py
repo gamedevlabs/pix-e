@@ -17,15 +17,7 @@ from pxnodes.llm.context.base.types import (
     LayerContext,
     StrategyType,
 )
-from pxnodes.llm.context.hierarchical_graph.layers import (
-    build_domain_layer,
-    build_trace_layer,
-)
-from pxnodes.llm.context.hierarchical_graph.traversal import (
-    aggregate_player_state,
-    forward_bfs,
-    reverse_bfs,
-)
+from pxnodes.llm.context.hierarchical_graph.layers import build_domain_layer
 
 
 @StrategyRegistry.register(StrategyType.FULL_CONTEXT)
@@ -33,8 +25,13 @@ class FullContextStrategy(BaseContextStrategy):
     """
     Full Context strategy for RQ1 baselines.
 
-    Uses deterministic traversal to capture full path context but does not
-    perform any summarization, embedding retrieval, or routing.
+    Uses a raw graph dump for baseline comparisons:
+    - Full project context (concept + pillars)
+    - All nodes in the chart (name, description, components)
+    - All edges in the chart (source -> target)
+
+    This provides a high-noise, low-structure baseline to compare against
+    structured context strategies.
     """
 
     strategy_type = StrategyType.FULL_CONTEXT
@@ -53,62 +50,66 @@ class FullContextStrategy(BaseContextStrategy):
         scope: EvaluationScope,
         query: Optional[str] = None,
     ) -> ContextResult:
-        # Project context (full concept + pillars)
         l1_domain = build_domain_layer(
             project_pillars=scope.project_pillars,
             game_concept=scope.game_concept,
         )
 
-        # Full path traversal (backward + forward)
-        backward_nodes = reverse_bfs(
-            scope.target_node,
-            scope.chart,
-            max_depth=None,
-            stop_at_checkpoint=self.stop_at_checkpoint,
-        )
-        forward_nodes = forward_bfs(
-            scope.target_node,
-            scope.chart,
-            max_depth=None,
-        )
-        player_state = aggregate_player_state(backward_nodes)
-        l3_trace = build_trace_layer(
-            path_nodes=backward_nodes,
-            player_state=player_state,
-            target_node=scope.target_node,
-            forward_nodes=forward_nodes,
-        )
+        containers = scope.chart.containers.select_related("content").all()
+        nodes = [c.content for c in containers if getattr(c, "content", None)]
+        edges = list(scope.chart.edges.select_related("source__content", "target__content").all())
+
+        node_lines: list[str] = []
+        for node in nodes:
+            node_lines.append(f"- {node.name}")
+            if node.description:
+                node_lines.append(f"  Description: {node.description}")
+            components = getattr(node, "components", None)
+            if components:
+                comp_list = components.all() if hasattr(components, "all") else list(components)
+                for comp in comp_list:
+                    def_name = getattr(getattr(comp, "definition", None), "name", "")
+                    value = getattr(comp, "value", "")
+                    node_lines.append(f"  {def_name}: {value}")
+
+        edge_lines: list[str] = []
+        for edge in edges:
+            source_name = (
+                getattr(getattr(edge.source, "content", None), "name", "")
+                if edge.source
+                else ""
+            )
+            target_name = (
+                getattr(getattr(edge.target, "content", None), "name", "")
+                if edge.target
+                else ""
+            )
+            if source_name or target_name:
+                edge_lines.append(f"- {source_name} -> {target_name}")
 
         context_string = "\n\n".join(
             [
                 "FULL PROJECT CONTEXT",
                 l1_domain.content,
-                "FULL PATH CONTEXT",
-                l3_trace.content,
+                "FULL CHART NODES",
+                "\n".join(node_lines) if node_lines else "No nodes found.",
+                "FULL CHART EDGES",
+                "\n".join(edge_lines) if edge_lines else "No edges found.",
             ]
         )
 
         return ContextResult(
             strategy=self.strategy_type,
             context_string=context_string,
-            layers=[l1_domain, l3_trace],
+            layers=[l1_domain],
             metadata={
                 "full_context": True,
                 "target_node_id": str(scope.target_node.id),
                 "target_node_name": scope.target_node.name,
                 "chart_id": str(scope.chart.id),
                 "chart_name": scope.chart.name,
-                "backward_path": [
-                    {"id": str(getattr(n, "id", "")), "name": getattr(n, "name", "")}
-                    for n in backward_nodes
-                ],
-                "forward_path": [
-                    {"id": str(getattr(n, "id", "")), "name": getattr(n, "name", "")}
-                    for n in forward_nodes
-                ],
-                "backward_path_length": len(backward_nodes),
-                "forward_path_length": len(forward_nodes),
-                "stop_at_checkpoint": self.stop_at_checkpoint,
+                "node_count": len(nodes),
+                "edge_count": len(edges),
             },
         )
 
@@ -123,32 +124,19 @@ class FullContextStrategy(BaseContextStrategy):
                 game_concept=scope.game_concept,
             )
         if layer == 3:
-            backward_nodes = reverse_bfs(
-                scope.target_node,
-                scope.chart,
-                max_depth=None,
-                stop_at_checkpoint=self.stop_at_checkpoint,
-            )
-            forward_nodes = forward_bfs(
-                scope.target_node,
-                scope.chart,
-                max_depth=None,
-            )
-            player_state = aggregate_player_state(backward_nodes)
-            return build_trace_layer(
-                path_nodes=backward_nodes,
-                player_state=player_state,
-                target_node=scope.target_node,
-                forward_nodes=forward_nodes,
+            return LayerContext(
+                layer=3,
+                layer_name="trace",
+                content="Full context uses a raw chart dump, no trace layer.",
             )
         if layer == 2:
             return LayerContext(
                 layer=2,
                 layer_name="category",
-                content="No category layer in full context strategy.",
+                content="Full context uses a raw chart dump, no category layer.",
             )
         return LayerContext(
             layer=4,
             layer_name="episode",
-            content="Target node details are provided separately in prompts.",
+            content="Target node details are included in the raw chart dump.",
         )

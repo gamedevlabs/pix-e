@@ -395,7 +395,7 @@ def extract_narrative_triples(
 
     # Generate using LLM
     try:
-        response = llm_provider.generate(prompt)
+        response = llm_provider.generate(prompt, operation="node_triples")
         triples = parse_llm_triples(response)
         return triples
     except Exception as e:
@@ -493,7 +493,7 @@ async def extract_all_triples_async(
                 # Then: LLM call (HTTP - thread_sensitive=False for parallelism)
                 response = await sync_to_async(
                     llm_provider.generate, thread_sensitive=False
-                )(prompt)
+                )(prompt, operation="node_triples")
                 narrative_triples = parse_llm_triples(response)
                 all_triples.extend(narrative_triples)
 

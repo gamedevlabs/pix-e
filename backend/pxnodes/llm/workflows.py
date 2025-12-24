@@ -3,10 +3,10 @@ PxNodes Coherence Workflows - Agentic and Monolithic evaluation of node coherenc
 
 Agentic Workflow:
 Coordinates 4 specialized dimension agents running in parallel:
-- PrerequisiteAlignmentAgent
-- ForwardSetupAgent
-- InternalConsistencyAgent
-- ContextualFitAgent
+- BackwardCoherenceAgent
+- ForwardCoherenceAgent
+- PathRobustnessAgent
+- NodeIntegrityAgent
 
 Monolithic Workflow:
 Single LLM call evaluating all 4 dimensions with unified prompt.
@@ -24,17 +24,17 @@ from llm.providers.manager import ModelManager
 from llm.types import AgentResult, ErrorInfo
 from pxcharts.models import PxChart
 from pxnodes.llm.agents.coherence import (
-    ContextualFitAgent,
-    ForwardSetupAgent,
-    InternalConsistencyAgent,
-    PrerequisiteAlignmentAgent,
+    BackwardCoherenceAgent,
+    ForwardCoherenceAgent,
+    NodeIntegrityAgent,
+    PathRobustnessAgent,
 )
 from pxnodes.llm.agents.coherence.schemas import (
     CoherenceAggregatedResult,
-    ContextualFitResult,
-    ForwardSetupResult,
-    InternalConsistencyResult,
-    PrerequisiteAlignmentResult,
+    BackwardCoherenceResult,
+    ForwardCoherenceResult,
+    NodeIntegrityResult,
+    PathRobustnessResult,
 )
 from pxnodes.llm.context.base import (
     BaseContextStrategy,
@@ -73,105 +73,84 @@ TARGET NODE: {target_node_name}
 TASK: Evaluate ALL FOUR coherence dimensions for the target node.
 
 ================================================================================
-DIMENSION 1: PREREQUISITE ALIGNMENT
+DIMENSION 1: BACKWARD COHERENCE
 ================================================================================
-Analyze whether the target node properly respects what came before in the game flow.
+Analyze whether the target node properly respects what came before across all valid predecessor paths.
 
 CHECK FOR:
-1. ITEM/ABILITY PREREQUISITES
-   - Does the node require items/abilities the player should have?
-   - Are all required mechanics already introduced?
-   - Example violation: "Use Double Jump" but player never acquired it
+1. REQUIRED MECHANICS/ITEMS
+   - Are required mechanics or items established on ALL incoming paths?
+   - If only on some paths, flag as path-dependent.
 
 2. NARRATIVE PREREQUISITES
    - Does the node reference events that have occurred?
    - Are character introductions properly sequenced?
-   - Example violation: "Return to the castle" but player never visited it
 
-3. MECHANICAL PREREQUISITES
-   - Are gameplay mechanics properly introduced before use?
-   - Is complexity appropriately ramped up?
-   - Example violation: Complex combo required without tutorial
-
-4. STATE PREREQUISITES
-   - Does the node assume a game state that is achievable?
+3. STATE PREREQUISITES
+   - Does the node assume a game state that is achievable on all paths?
    - Are triggers/conditions for reaching this node satisfiable?
 
 ================================================================================
-DIMENSION 2: FORWARD SETUP
+DIMENSION 2: FORWARD COHERENCE
 ================================================================================
-Analyze whether the target node properly sets up what comes next in the game flow.
+Analyze whether the target node properly sets up what comes next across all valid outgoing paths.
 
 CHECK FOR:
 1. MECHANICAL SETUP
-   - Does the node introduce mechanics that will be needed later?
+   - Does the node introduce mechanics that are used later?
    - Are abilities/items granted that enable future progression?
-   - Example: Tutorial teaches wall-jump before wall-jump puzzle
 
 2. NARRATIVE SETUP
    - Are story elements introduced that pay off later?
    - Is foreshadowing appropriate and not heavy-handed?
-   - Example: NPC mentions a locked door player will encounter
 
 3. DIFFICULTY RAMP
-   - Does the node prepare player for upcoming challenges?
+   - Does the node prepare the player for upcoming challenges?
    - Is the skill progression appropriate?
-   - Example: Easy enemies before boss teach attack patterns
 
 4. WORLD BUILDING
    - Are locations/characters introduced properly?
    - Is context provided for future events?
 
 ================================================================================
-DIMENSION 3: INTERNAL CONSISTENCY
+DIMENSION 3: PATH ROBUSTNESS
 ================================================================================
-Analyze whether the target node is internally coherent and well-defined.
+Analyze whether the node works across incoming and outgoing branches.
+
+CHECK FOR:
+1. CROSS-PATH CONSISTENCY
+   - Does the node assume prerequisites missing on some paths?
+   - Are its outcomes compatible with all likely successors?
+
+2. BRANCH COMPATIBILITY
+   - If multiple predecessors exist, does the node still make sense?
+   - If multiple successors exist, does it set them up coherently?
+
+3. PATH-SPECIFIC DEPENDENCIES
+   - Identify any requirements that only hold on certain paths.
+
+================================================================================
+DIMENSION 4: NODE INTEGRITY
+================================================================================
+Analyze whether the node is internally coherent and well-defined.
 
 CHECK FOR:
 1. CONTRADICTIONS
    - Do different parts of the node contradict each other?
    - Does the description match the node type/category?
-   - Example: "Calm exploration" with Tension=95
 
 2. CLARITY
    - Is the node's purpose clear?
    - Are descriptions specific enough to implement?
-   - Example violation: "Do the thing with the stuff"
 
 3. COMPONENT HARMONY
    - Do all node components work together?
-   - Is the component category and value appropriate for the content?
-   - Are visual/audio hints consistent with the experience?
+   - Is component category/value appropriate for the content?
 
 4. COMPLETENESS
    - Is all necessary information present?
    - Are edge cases considered?
    - Are player choices well-defined?
-
-================================================================================
-DIMENSION 4: CONTEXTUAL FIT
-================================================================================
-Analyze whether the target node fits the broader game context and design vision.
-
-CHECK FOR:
-1. PILLAR ALIGNMENT
-   - Does the node support the game's design pillars?
-   - Are there conflicts with stated design goals?
-   - Example: Pillar is "Non-violent conflict resolution" but node has combat
-
-2. CONCEPT ALIGNMENT
-   - Does the node fit the overall game concept?
-   - Is it consistent with the game's genre and target audience?
-   - Example: Gritty realistic shooter with cartoon powerups
-
-3. TONE CONSISTENCY
-   - Does the node match the game's tone?
-   - Is the writing style consistent?
-   - Example: Dark horror game with comedic dialogue
-
-4. STYLE COHERENCE
-   - Do visual/audio directions fit the game's aesthetic?
-   - Are gameplay elements consistent with the genre?
 
 ================================================================================
 SCORING SCALE (1-6):
@@ -189,39 +168,52 @@ RESPONSE FORMAT:
 Respond with a JSON object containing evaluations for ALL 4 dimensions:
 
 {{
-  "prerequisite_alignment": {{
+  "backward_coherence": {{
     "score": <1-6>,
     "reasoning": "Detailed explanation of your score",
     "issues": ["Issue 1", "Issue 2", ...],
     "suggestions": ["Suggestion 1", "Suggestion 2", ...],
+    "evidence": ["Short references to nodes/edges/quotes"],
+    "unknowns": ["What could not be verified from context"],
+    "path_variance": "consistent across paths OR depends on path: <details>",
     "missing_prerequisites": [
         "List items/abilities/mechanics that are required but not established"
     ],
     "satisfied_prerequisites": ["List prerequisites that ARE properly established"]
   }},
-  "forward_setup": {{
+  "forward_coherence": {{
     "score": <1-6>,
     "reasoning": "Detailed explanation of your score",
     "issues": ["Issue 1", "Issue 2", ...],
     "suggestions": ["Suggestion 1", "Suggestion 2", ...],
+    "evidence": ["Short references to nodes/edges/quotes"],
+    "unknowns": ["What could not be verified from context"],
+    "path_variance": "consistent across paths OR depends on path: <details>",
     "elements_introduced": ["New elements introduced in this node"],
     "potential_payoffs": ["How these elements might pay off later"]
   }},
-  "internal_consistency": {{
+  "path_robustness": {{
     "score": <1-6>,
     "reasoning": "Detailed explanation of your score",
     "issues": ["Issue 1", "Issue 2", ...],
     "suggestions": ["Suggestion 1", "Suggestion 2", ...],
+    "evidence": ["Short references to nodes/edges/quotes"],
+    "unknowns": ["What could not be verified from context"],
+    "path_variance": "consistent across paths OR depends on path: <details>",
+    "path_dependencies": ["Path-specific requirements or assumptions"],
+    "robust_paths": ["Paths where the node fits cleanly"],
+    "fragile_paths": ["Paths where the node conflicts or breaks"]
+  }},
+  "node_integrity": {{
+    "score": <1-6>,
+    "reasoning": "Detailed explanation of your score",
+    "issues": ["Issue 1", "Issue 2", ...],
+    "suggestions": ["Suggestion 1", "Suggestion 2", ...],
+    "evidence": ["Short references to nodes/edges/quotes"],
+    "unknowns": ["What could not be verified from context"],
+    "path_variance": "consistent across paths OR depends on path: <details>",
     "contradictions": ["List of internal contradictions found"],
     "unclear_elements": ["Vague or unclear elements that need clarification"]
-  }},
-  "contextual_fit": {{
-    "score": <1-6>,
-    "reasoning": "Detailed explanation of your score",
-    "issues": ["Issue 1", "Issue 2", ...],
-    "suggestions": ["Suggestion 1", "Suggestion 2", ...],
-    "pillar_alignment": ["How the node aligns (or conflicts) with each pillar"],
-    "concept_alignment": "Overall assessment of fit with game concept"
   }}
 }}
 
@@ -230,10 +222,10 @@ IMPORTANT: Evaluate ALL 4 dimensions thoroughly. Report genuine issues only."""
 
 # Map of dimension names to agent classes
 DIMENSION_AGENTS: Dict[str, Type[BaseAgent]] = {
-    "prerequisite_alignment": PrerequisiteAlignmentAgent,
-    "forward_setup": ForwardSetupAgent,
-    "internal_consistency": InternalConsistencyAgent,
-    "contextual_fit": ContextualFitAgent,
+    "backward_coherence": BackwardCoherenceAgent,
+    "forward_coherence": ForwardCoherenceAgent,
+    "path_robustness": PathRobustnessAgent,
+    "node_integrity": NodeIntegrityAgent,
 }
 
 
@@ -243,10 +235,10 @@ class PxNodesCoherenceWorkflow:
 
     Uses 4 specialized agents running in parallel, each focusing on
     a different dimension of coherence:
-    1. Prerequisite Alignment - Does node respect what came before?
-    2. Forward Setup - Does node properly set up future?
-    3. Internal Consistency - Is node internally coherent?
-    4. Contextual Fit - Does node fit game concept/pillars?
+    1. Backward Coherence - Does node respect what came before?
+    2. Forward Coherence - Does node properly set up future?
+    3. Path Robustness - Does node work across paths?
+    4. Node Integrity - Is node internally coherent?
 
     Integrates with existing context strategies for context building.
     """
@@ -432,10 +424,10 @@ class PxNodesCoherenceWorkflow:
                 node_id=str(node.id),
                 node_name=node.name,
                 strategy_used=self.strategy_type.value,
-                prerequisite=dimension_results.get("prerequisite_alignment"),
-                forward=dimension_results.get("forward_setup"),
-                internal=dimension_results.get("internal_consistency"),
-                contextual=dimension_results.get("contextual_fit"),
+                backward=dimension_results.get("backward_coherence"),
+                forward=dimension_results.get("forward_coherence"),
+                path=dimension_results.get("path_robustness"),
+                integrity=dimension_results.get("node_integrity"),
                 execution_time_ms=execution_time_ms,
                 total_tokens=total_tokens,
             )
@@ -475,10 +467,10 @@ class PxNodesCoherenceWorkflow:
         dimension_results = {}
 
         result_schema_map = {
-            "prerequisite_alignment": PrerequisiteAlignmentResult,
-            "forward_setup": ForwardSetupResult,
-            "internal_consistency": InternalConsistencyResult,
-            "contextual_fit": ContextualFitResult,
+            "backward_coherence": BackwardCoherenceResult,
+            "forward_coherence": ForwardCoherenceResult,
+            "path_robustness": PathRobustnessResult,
+            "node_integrity": NodeIntegrityResult,
         }
 
         for i, result in enumerate(results):
@@ -580,10 +572,10 @@ class PxNodesCoherenceMonolithicWorkflow:
     Monolithic workflow for evaluating node coherence.
 
     Uses a single LLM call with a unified prompt covering all 4 dimensions:
-    1. Prerequisite Alignment - Does node respect what came before?
-    2. Forward Setup - Does node properly set up future?
-    3. Internal Consistency - Is node internally coherent?
-    4. Contextual Fit - Does node fit game concept/pillars?
+    1. Backward Coherence - Does node respect what came before?
+    2. Forward Coherence - Does node properly set up future?
+    3. Path Robustness - Does node work across paths?
+    4. Node Integrity - Is node internally coherent?
 
     Designed for thesis comparison between agentic vs monolithic approaches.
     Uses the same context strategies and response schemas as the agentic version.
@@ -740,10 +732,10 @@ class PxNodesCoherenceMonolithicWorkflow:
                 node_id=str(node.id),
                 node_name=node.name,
                 strategy_used=self.strategy_type.value,
-                prerequisite=dimension_results.get("prerequisite_alignment"),
-                forward=dimension_results.get("forward_setup"),
-                internal=dimension_results.get("internal_consistency"),
-                contextual=dimension_results.get("contextual_fit"),
+                backward=dimension_results.get("backward_coherence"),
+                forward=dimension_results.get("forward_coherence"),
+                path=dimension_results.get("path_robustness"),
+                integrity=dimension_results.get("node_integrity"),
                 execution_time_ms=execution_time_ms,
                 total_tokens=total_tokens,
             )
@@ -849,24 +841,24 @@ class PxNodesCoherenceMonolithicWorkflow:
             data = json.loads(json_str)
 
             # Parse each dimension
-            if "prerequisite_alignment" in data:
-                dimension_results["prerequisite_alignment"] = (
-                    PrerequisiteAlignmentResult(**data["prerequisite_alignment"])
+            if "backward_coherence" in data:
+                dimension_results["backward_coherence"] = BackwardCoherenceResult(
+                    **data["backward_coherence"]
                 )
 
-            if "forward_setup" in data:
-                dimension_results["forward_setup"] = ForwardSetupResult(
-                    **data["forward_setup"]
+            if "forward_coherence" in data:
+                dimension_results["forward_coherence"] = ForwardCoherenceResult(
+                    **data["forward_coherence"]
                 )
 
-            if "internal_consistency" in data:
-                dimension_results["internal_consistency"] = InternalConsistencyResult(
-                    **data["internal_consistency"]
+            if "path_robustness" in data:
+                dimension_results["path_robustness"] = PathRobustnessResult(
+                    **data["path_robustness"]
                 )
 
-            if "contextual_fit" in data:
-                dimension_results["contextual_fit"] = ContextualFitResult(
-                    **data["contextual_fit"]
+            if "node_integrity" in data:
+                dimension_results["node_integrity"] = NodeIntegrityResult(
+                    **data["node_integrity"]
                 )
 
         except json.JSONDecodeError as e:

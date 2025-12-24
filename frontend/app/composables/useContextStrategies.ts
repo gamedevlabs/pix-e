@@ -50,16 +50,28 @@ export interface CoherenceDimensionResult {
   reasoning: string
   issues: string[]
   suggestions: string[]
+  evidence: string[]
+  unknowns: string[]
+  path_variance: string
+  missing_prerequisites?: string[]
+  satisfied_prerequisites?: string[]
+  elements_introduced?: string[]
+  potential_payoffs?: string[]
+  contradictions?: string[]
+  unclear_elements?: string[]
+  path_dependencies?: string[]
+  robust_paths?: string[]
+  fragile_paths?: string[]
 }
 
 export interface AgenticEvaluationResult {
   node_id: string
   node_name: string
   strategy_used: string
-  prerequisite_alignment: CoherenceDimensionResult | null
-  forward_setup: CoherenceDimensionResult | null
-  internal_consistency: CoherenceDimensionResult | null
-  contextual_fit: CoherenceDimensionResult | null
+  backward_coherence: CoherenceDimensionResult | null
+  forward_coherence: CoherenceDimensionResult | null
+  path_robustness: CoherenceDimensionResult | null
+  node_integrity: CoherenceDimensionResult | null
   overall_score: number
   is_coherent: boolean
   total_issues: number

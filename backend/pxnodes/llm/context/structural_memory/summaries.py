@@ -102,7 +102,7 @@ def extract_summary(
 
     # Generate using LLM
     try:
-        response = llm_provider.generate(prompt)
+        response = llm_provider.generate(prompt, operation="node_summary")
         summary_text = _clean_summary(response)
 
         return Summary(node_id=node_id, content=summary_text, source="llm")
@@ -249,7 +249,7 @@ async def extract_summary_async(
         try:
             response = await sync_to_async(
                 llm_provider.generate, thread_sensitive=False
-            )(prompt)
+            )(prompt, operation="node_summary")
             summary_text = _clean_summary(response)
 
             logfire.info(

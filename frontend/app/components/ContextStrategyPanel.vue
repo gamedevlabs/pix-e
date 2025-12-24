@@ -87,20 +87,22 @@ const activeTab = ref<'evaluate' | 'compare'>('evaluate')
 
 // Agent selection and expansion state for agentic mode
 type AgentKey =
-  | 'prerequisite_alignment'
-  | 'forward_setup'
-  | 'internal_consistency'
-  | 'contextual_fit'
-const selectedAgent = ref<AgentKey>('prerequisite_alignment')
+  | 'backward_coherence'
+  | 'forward_coherence'
+  | 'path_robustness'
+  | 'node_integrity'
+const selectedAgent = ref<AgentKey>('backward_coherence')
 const showIssues = ref(true)
 const showSuggestions = ref(false)
 const showReasoning = ref(false)
+const showEvidence = ref(false)
+const showUnknowns = ref(false)
 
 const agentLabels: Record<AgentKey, string> = {
-  prerequisite_alignment: 'Prerequisite Alignment',
-  forward_setup: 'Forward Setup',
-  internal_consistency: 'Internal Consistency',
-  contextual_fit: 'Contextual Fit',
+  backward_coherence: 'Backward Coherence',
+  forward_coherence: 'Forward Coherence',
+  path_robustness: 'Path Robustness',
+  node_integrity: 'Node Integrity',
 }
 
 const selectedAgentResult = computed(() => {
@@ -294,10 +296,10 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
             <div class="grid grid-cols-4 gap-1">
               <button
                 v-for="agentKey in [
-                  'prerequisite_alignment',
-                  'forward_setup',
-                  'internal_consistency',
-                  'contextual_fit',
+                  'backward_coherence',
+                  'forward_coherence',
+                  'path_robustness',
+                  'node_integrity',
                 ] as AgentKey[]"
                 :key="agentKey"
                 class="p-2 rounded border text-center transition-all cursor-pointer"
@@ -339,6 +341,9 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
               </div>
 
               <div class="p-3 space-y-3">
+                <div v-if="selectedAgentResult.path_variance" class="text-xs text-gray-500">
+                  Path variance: {{ selectedAgentResult.path_variance }}
+                </div>
                 <!-- Issues Section -->
                 <div class="border rounded">
                   <button
@@ -400,6 +405,141 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                   </div>
                   <div v-else-if="showSuggestions" class="p-2 text-sm text-gray-500 italic">
                     No suggestions
+                  </div>
+                </div>
+
+                <!-- Dimension Details -->
+                <div class="border rounded">
+                  <div class="px-3 py-2 text-sm font-medium bg-gray-50 dark:bg-gray-800">
+                    Dimension Details
+                  </div>
+                  <div class="p-2 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                    <div v-if="selectedAgentResult.missing_prerequisites?.length">
+                      <div class="font-medium">Missing prerequisites</div>
+                      <div v-for="(item, idx) in selectedAgentResult.missing_prerequisites" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.satisfied_prerequisites?.length">
+                      <div class="font-medium">Satisfied prerequisites</div>
+                      <div v-for="(item, idx) in selectedAgentResult.satisfied_prerequisites" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.elements_introduced?.length">
+                      <div class="font-medium">Elements introduced</div>
+                      <div v-for="(item, idx) in selectedAgentResult.elements_introduced" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.potential_payoffs?.length">
+                      <div class="font-medium">Potential payoffs</div>
+                      <div v-for="(item, idx) in selectedAgentResult.potential_payoffs" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.path_dependencies?.length">
+                      <div class="font-medium">Path dependencies</div>
+                      <div v-for="(item, idx) in selectedAgentResult.path_dependencies" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.robust_paths?.length">
+                      <div class="font-medium">Robust paths</div>
+                      <div v-for="(item, idx) in selectedAgentResult.robust_paths" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.fragile_paths?.length">
+                      <div class="font-medium">Fragile paths</div>
+                      <div v-for="(item, idx) in selectedAgentResult.fragile_paths" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.contradictions?.length">
+                      <div class="font-medium">Contradictions</div>
+                      <div v-for="(item, idx) in selectedAgentResult.contradictions" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div v-if="selectedAgentResult.unclear_elements?.length">
+                      <div class="font-medium">Unclear elements</div>
+                      <div v-for="(item, idx) in selectedAgentResult.unclear_elements" :key="idx">
+                        - {{ item }}
+                      </div>
+                    </div>
+                    <div
+                      v-if="
+                        !selectedAgentResult.missing_prerequisites?.length &&
+                        !selectedAgentResult.satisfied_prerequisites?.length &&
+                        !selectedAgentResult.elements_introduced?.length &&
+                        !selectedAgentResult.potential_payoffs?.length &&
+                        !selectedAgentResult.path_dependencies?.length &&
+                        !selectedAgentResult.robust_paths?.length &&
+                        !selectedAgentResult.fragile_paths?.length &&
+                        !selectedAgentResult.contradictions?.length &&
+                        !selectedAgentResult.unclear_elements?.length
+                      "
+                      class="text-gray-500 italic"
+                    >
+                      No additional details
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Evidence Section -->
+                <div class="border rounded">
+                  <button
+                    class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    @click="showEvidence = !showEvidence"
+                  >
+                    <span class="flex items-center gap-2">
+                      <UIcon name="i-heroicons-document-magnifying-glass" class="text-emerald-500" />
+                      Evidence ({{ selectedAgentResult.evidence?.length ?? 0 }})
+                    </span>
+                    <UIcon
+                      :name="showEvidence ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                    />
+                  </button>
+                  <div v-if="showEvidence && (selectedAgentResult.evidence?.length ?? 0) > 0" class="p-2 space-y-1">
+                    <div
+                      v-for="(item, idx) in selectedAgentResult.evidence || []"
+                      :key="idx"
+                      class="text-sm p-2 bg-emerald-50 dark:bg-emerald-950 rounded text-emerald-800 dark:text-emerald-200"
+                    >
+                      {{ item }}
+                    </div>
+                  </div>
+                  <div v-else-if="showEvidence" class="p-2 text-sm text-gray-500 italic">
+                    No evidence provided
+                  </div>
+                </div>
+
+                <!-- Unknowns Section -->
+                <div class="border rounded">
+                  <button
+                    class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    @click="showUnknowns = !showUnknowns"
+                  >
+                    <span class="flex items-center gap-2">
+                      <UIcon name="i-heroicons-question-mark-circle" class="text-amber-500" />
+                      Unknowns ({{ selectedAgentResult.unknowns?.length ?? 0 }})
+                    </span>
+                    <UIcon
+                      :name="showUnknowns ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+                    />
+                  </button>
+                  <div v-if="showUnknowns && (selectedAgentResult.unknowns?.length ?? 0) > 0" class="p-2 space-y-1">
+                    <div
+                      v-for="(item, idx) in selectedAgentResult.unknowns || []"
+                      :key="idx"
+                      class="text-sm p-2 bg-amber-50 dark:bg-amber-950 rounded text-amber-800 dark:text-amber-200"
+                    >
+                      {{ item }}
+                    </div>
+                  </div>
+                  <div v-else-if="showUnknowns" class="p-2 text-sm text-gray-500 italic">
+                    No unknowns listed
                   </div>
                 </div>
 
