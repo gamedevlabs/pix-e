@@ -4,12 +4,10 @@ Precompute context artifacts for a chart and strategy.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import logfire
 from django.core.management.base import BaseCommand, CommandError
 
-from game_concept.models import GameConcept
+from game_concept.utils import get_current_game_concept
 from pillars.models import Pillar
 from pxcharts.models import PxChart
 from pxnodes.llm.context.artifacts import ArtifactInventory
@@ -100,7 +98,7 @@ class Command(BaseCommand):
                     concept_id=str(concept.id),
                     concept_text=concept.content or "",
                     artifact_types=needs.concept_artifacts,
-                    project_id=str(concept.id),
+                    project_id=str(getattr(chart.project, "id", "")) or "",
                 )
 
             pillars = self._get_pillars(chart)
@@ -167,8 +165,8 @@ class Command(BaseCommand):
         )
         return list(PxNode.objects.filter(id__in=node_ids))
 
-    def _get_game_concept(self, chart: PxChart) -> Optional[GameConcept]:
-        return getattr(chart, "project", None)
+    def _get_game_concept(self, chart: PxChart):
+        return get_current_game_concept(getattr(chart, "project", None))
 
     def _get_pillars(self, chart: PxChart) -> list[Pillar]:
         project = getattr(chart, "project", None)

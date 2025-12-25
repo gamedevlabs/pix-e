@@ -17,7 +17,8 @@ from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from game_concept.models import GameConcept
+from game_concept.models import Project
+from game_concept.utils import get_current_project
 from llm.config import get_config
 from llm.events import EventCollector
 from llm.providers.manager import ModelManager
@@ -46,8 +47,12 @@ def save_game_concept(
     if not user.is_authenticated:
         return
 
-    GameConcept.objects.filter(user=user, is_current=True).update(is_current=False)
-    GameConcept.objects.create(
+    project = get_current_project(user)
+    if not project:
+        project = Project.objects.create(user=user, name="Untitled Project")
+
+    project.game_concepts.filter(is_current=True).update(is_current=False)
+    project.game_concepts.create(
         user=user,
         content=game_text,
         is_current=True,

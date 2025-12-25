@@ -118,7 +118,7 @@ class HMEMStrategy(BaseContextStrategy):
         self.similarity_thresholds = similarity_thresholds or {
             1: 0.3,
             2: 0.05,
-            3: 0.6,
+            3: 0.5,
             4: 0.9,
         }
         self.auto_embed = auto_embed
@@ -846,8 +846,10 @@ class HMEMStrategy(BaseContextStrategy):
 
     def _get_project_id(self, scope: EvaluationScope) -> str:
         """Get project ID from scope or default."""
-        if scope.game_concept:
-            return str(getattr(scope.game_concept, "id", "default"))
+        if scope.project:
+            return str(getattr(scope.project, "id", "default"))
+        if scope.game_concept and getattr(scope.game_concept, "project_id", None):
+            return str(scope.game_concept.project_id)
         return "default"
 
     def _build_domain_content(self, scope: EvaluationScope) -> str:
@@ -1251,11 +1253,12 @@ class HMEMStrategy(BaseContextStrategy):
             return "No domain context"
 
         inventory = ArtifactInventory(self.llm_provider)
+        project_id = self._get_project_id(scope)
         artifacts = inventory.get_or_build_concept_artifacts(
             concept_id=str(scope.game_concept.id),
             concept_text=concept_text,
             artifact_types=[ARTIFACT_SUMMARY],
-            project_id=str(scope.game_concept.id),
+            project_id=project_id,
         )
         summary = "N/A"
         for artifact in artifacts:

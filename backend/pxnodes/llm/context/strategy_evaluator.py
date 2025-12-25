@@ -124,14 +124,43 @@ class ComparisonResult:
 COHERENCE_EVALUATION_PROMPT = """You are a game design coherence analyzer.
 Your task is to evaluate how well a node fits in a chart based on the provided context.
 
+EVIDENCE RULES (apply to ALL dimensions):
+- Only use information explicitly stated in the CONTEXT below. Do NOT assume \
+missing mechanics, items, or events.
+- The TARGET NODE text is not evidence of prior acquisition; it only defines \
+requirements or acts as setup for future nodes.
+- If a prerequisite is not explicitly supported by earlier context, list it \
+under "missing_prerequisites" (or "unknowns" if ambiguous).
+- Any mechanic or item in "satisfied_prerequisites" must cite a specific \
+earlier node/title/quote from the context.
+- Do NOT use words like "implied" or "assumed" as evidence. If you cannot \
+cite a passage from a previous node, it is missing.
+- In "satisfied_prerequisites", include the evidence inline, e.g., \
+"Ability X — evidence: <quoted passage from a previous node>".
+- Evidence must be a direct quote (or near-direct paraphrase) from the \
+CONTEXT. If the quoted phrase does not appear in a prior node description, \
+it does NOT count.
+- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
+cite the target node or future nodes for prerequisites.
+- If you cite a node title, you MUST include a quoted fragment from that \
+node's description that proves the prerequisite.
+- A prerequisite cannot be both "missing_prerequisites" and \
+"satisfied_prerequisites". If evidence is absent or invalid, it must be \
+missing.
+
 {context}
+
+PREREQUISITE CHECKLIST (for backward coherence):
+1) Extract required mechanics/items/abilities from the TARGET NODE text.
+2) For each requirement, find explicit evidence in PREVIOUS NODES only.
+3) If no quote exists, mark it as missing (do not invent evidence).
 
 TASK: Evaluate ALL FOUR coherence dimensions for the target node.
 
 DIMENSIONS:
 1) BACKWARD COHERENCE (prerequisites across incoming paths)
 2) FORWARD COHERENCE (setup across outgoing paths)
-3) PATH ROBUSTNESS (cross-path consistency)
+3) GLOBAL FIT (concept + pillars alignment)
 4) NODE INTEGRITY (title/description/components alignment)
 
 Respond with a JSON object:
@@ -158,7 +187,7 @@ Respond with a JSON object:
     "elements_introduced": ["..."],
     "potential_payoffs": ["..."]
   }},
-  "path_robustness": {{
+  "global_fit": {{
     "score": <1-6>,
     "reasoning": "...",
     "issues": ["..."],
@@ -166,9 +195,8 @@ Respond with a JSON object:
     "evidence": ["..."],
     "unknowns": ["..."],
     "path_variance": "...",
-    "path_dependencies": ["..."],
-    "robust_paths": ["..."],
-    "fragile_paths": ["..."]
+    "pillar_alignment": ["..."],
+    "concept_alignment": "..."
   }},
   "node_integrity": {{
     "score": <1-6>,
@@ -259,6 +287,7 @@ class StrategyEvaluator:
                 scope = EvaluationScope(
                     target_node=node,
                     chart=chart,
+                    project=getattr(game_concept, "project", None),
                     project_pillars=project_pillars,
                     game_concept=game_concept,
                 )
@@ -432,7 +461,7 @@ class StrategyEvaluator:
             dimension_keys = [
                 "backward_coherence",
                 "forward_coherence",
-                "path_robustness",
+                "global_fit",
                 "node_integrity",
             ]
             for key in dimension_keys:

@@ -1,7 +1,7 @@
 """
-Path Robustness Agent.
+Global Fit Agent.
 
-Evaluates whether a node works across incoming and outgoing paths.
+Evaluates whether a node aligns with the game concept and pillars.
 """
 
 from typing import Any, Dict
@@ -11,66 +11,68 @@ from pxnodes.llm.agents.coherence.base import (
     SCORING_INSTRUCTIONS,
     CoherenceDimensionAgent,
 )
-from pxnodes.llm.agents.coherence.schemas import PathRobustnessResult
+from pxnodes.llm.agents.coherence.schemas import GlobalFitResult
 
-PATH_ROBUSTNESS_PROMPT = (
+GLOBAL_FIT_PROMPT = (
     COHERENCE_CONTEXT_HEADER
     + """
-TASK: Evaluate PATH ROBUSTNESS
+TASK: Evaluate GLOBAL FIT
 
-Analyze whether the target node makes sense across incoming and outgoing paths.
+Analyze whether the target node aligns with the overall game concept, pillars,
+tone, and genre expectations.
 
 CHECK FOR:
-1. CROSS-PATH CONSISTENCY
-   - Does the node assume prerequisites that are missing on some paths?
-   - Are its outcomes compatible with all likely successors?
+1. PILLAR ALIGNMENT
+   - Does the node reinforce or conflict with the stated design pillars?
+   - Are there explicit violations (e.g., non-violent pillar vs combat-only node)?
 
-2. BRANCH COMPATIBILITY
-   - If multiple predecessors exist, does the node still make sense?
-   - If multiple successors exist, does it set them up coherently?
+2. CONCEPT ALIGNMENT
+   - Is the node consistent with the game's concept, genre, and tone?
+   - Does it introduce themes or mechanics that contradict the core premise?
 
-3. PATH-SPECIFIC DEPENDENCIES
-   - Identify any requirements that only hold on certain paths.
+3. WORLD/TONE CONSISTENCY
+   - Does the node fit the established world and narrative tone?
+   - Are characters/locations consistent with the setting?
 
 """
     + SCORING_INSTRUCTIONS
     + """
 ADDITIONAL FIELDS:
-- "path_dependencies": ["Path-specific requirements or assumptions"]
-- "robust_paths": ["Paths where the node fits cleanly"]
-- "fragile_paths": ["Paths where the node conflicts or breaks"]
+- "pillar_alignment": ["How the node aligns or conflicts with each pillar"]
+- "concept_alignment": "Overall alignment with the game concept and tone"
 """
 )
 
 
-class PathRobustnessAgent(CoherenceDimensionAgent):
-    """Evaluates whether a node works across paths."""
+class GlobalFitAgent(CoherenceDimensionAgent):
+    """Evaluates whether a node aligns with concept and pillars."""
 
-    name = "path_robustness"
-    dimension_name = "Path Robustness"
-    response_schema = PathRobustnessResult
-    prompt_template = PATH_ROBUSTNESS_PROMPT
+    name = "global_fit"
+    dimension_name = "Global Fit"
+    response_schema = GlobalFitResult
+    prompt_template = GLOBAL_FIT_PROMPT
     temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
-        """Build path robustness context."""
-        backward_nodes = data.get("backward_nodes", [])
-        forward_nodes = data.get("forward_nodes", [])
+        """Build global fit context."""
+        pillars = data.get("pillars", [])
+        game_concept = data.get("game_concept")
 
         context_parts = []
 
-        if backward_nodes:
-            node_names = [n.get("name", "Unknown") for n in backward_nodes[:8]]
-            context_parts.append(
-                f"INCOMING CONTEXT ({len(backward_nodes)} nodes): "
-                + " → ".join(node_names)
-            )
+        if game_concept:
+            concept_text = getattr(game_concept, "content", "") or ""
+            if concept_text:
+                context_parts.append("GAME CONCEPT:")
+                context_parts.append(concept_text)
 
-        if forward_nodes:
-            node_names = [n.get("name", "Unknown") for n in forward_nodes[:8]]
-            context_parts.append(
-                f"OUTGOING CONTEXT ({len(forward_nodes)} nodes): "
-                + " → ".join(node_names)
-            )
+        if pillars:
+            context_parts.append("DESIGN PILLARS:")
+            for pillar in pillars:
+                name = pillar.get("name", "Pillar")
+                description = pillar.get("description", "")
+                context_parts.append(f"- {name}: {description}")
 
-        return "\n".join(context_parts) if context_parts else "No path context provided"
+        return (
+            "\n".join(context_parts) if context_parts else "No global context provided"
+        )

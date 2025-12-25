@@ -10,7 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from game_concept.models import GameConcept
+    from game_concept.models import GameConcept, Project
     from pillars.models import Pillar
     from pxcharts.models import PxChart
     from pxnodes.models import PxNode
@@ -135,6 +135,7 @@ class EvaluationScope:
     chart: "PxChart"
 
     # Project-level context (for L1 layer)
+    project: Optional["Project"] = None
     project_pillars: Optional[list["Pillar"]] = None
     game_concept: Optional["GameConcept"] = None
 

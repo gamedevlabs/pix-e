@@ -81,12 +81,12 @@ const {
   bestStrategy,
 } = useContextStrategies()
 
-const selectedStrategy = ref<StrategyType>('structural_memory')
+const selectedStrategy = ref<StrategyType>('full_context')
 const showContextPreview = ref(false)
 const activeTab = ref<'evaluate' | 'compare'>('evaluate')
 
 // Agent selection and expansion state for agentic mode
-type AgentKey = 'backward_coherence' | 'forward_coherence' | 'path_robustness' | 'node_integrity'
+type AgentKey = 'backward_coherence' | 'forward_coherence' | 'global_fit' | 'node_integrity'
 const selectedAgent = ref<AgentKey>('backward_coherence')
 const showIssues = ref(true)
 const showSuggestions = ref(false)
@@ -97,7 +97,7 @@ const showUnknowns = ref(false)
 const agentLabels: Record<AgentKey, string> = {
   backward_coherence: 'Backward Coherence',
   forward_coherence: 'Forward Coherence',
-  path_robustness: 'Path Robustness',
+  global_fit: 'Global Fit',
   node_integrity: 'Node Integrity',
 }
 
@@ -294,7 +294,7 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                 v-for="agentKey in [
                   'backward_coherence',
                   'forward_coherence',
-                  'path_robustness',
+                  'global_fit',
                   'node_integrity',
                 ] as AgentKey[]"
                 :key="agentKey"
@@ -443,23 +443,15 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                         - {{ item }}
                       </div>
                     </div>
-                    <div v-if="selectedAgentResult.path_dependencies?.length">
-                      <div class="font-medium">Path dependencies</div>
-                      <div v-for="(item, idx) in selectedAgentResult.path_dependencies" :key="idx">
+                    <div v-if="selectedAgentResult.pillar_alignment?.length">
+                      <div class="font-medium">Pillar alignment</div>
+                      <div v-for="(item, idx) in selectedAgentResult.pillar_alignment" :key="idx">
                         - {{ item }}
                       </div>
                     </div>
-                    <div v-if="selectedAgentResult.robust_paths?.length">
-                      <div class="font-medium">Robust paths</div>
-                      <div v-for="(item, idx) in selectedAgentResult.robust_paths" :key="idx">
-                        - {{ item }}
-                      </div>
-                    </div>
-                    <div v-if="selectedAgentResult.fragile_paths?.length">
-                      <div class="font-medium">Fragile paths</div>
-                      <div v-for="(item, idx) in selectedAgentResult.fragile_paths" :key="idx">
-                        - {{ item }}
-                      </div>
+                    <div v-if="selectedAgentResult.concept_alignment">
+                      <div class="font-medium">Concept alignment</div>
+                      <div>- {{ selectedAgentResult.concept_alignment }}</div>
                     </div>
                     <div v-if="selectedAgentResult.contradictions?.length">
                       <div class="font-medium">Contradictions</div>
@@ -479,9 +471,8 @@ function getCoherenceColor(isCoherent: boolean): 'success' | 'error' {
                         !selectedAgentResult.satisfied_prerequisites?.length &&
                         !selectedAgentResult.elements_introduced?.length &&
                         !selectedAgentResult.potential_payoffs?.length &&
-                        !selectedAgentResult.path_dependencies?.length &&
-                        !selectedAgentResult.robust_paths?.length &&
-                        !selectedAgentResult.fragile_paths?.length &&
+                        !selectedAgentResult.pillar_alignment?.length &&
+                        !selectedAgentResult.concept_alignment &&
                         !selectedAgentResult.contradictions?.length &&
                         !selectedAgentResult.unclear_elements?.length
                       "
