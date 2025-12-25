@@ -59,6 +59,7 @@ type SPARCMonolithicResponse = {
 type GameConcept = {
   id: number
   user: number
+  project: number | null
   content: string
   is_current: boolean
   last_sparc_evaluation: number | null

@@ -95,6 +95,7 @@ export function useGameConcept() {
     async (nextId, previousId) => {
       if (previousId !== null && nextId !== previousId) {
         await fetchGameConcept()
+        await fetchConceptHistory()
       }
     },
   )

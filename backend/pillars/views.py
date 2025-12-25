@@ -11,7 +11,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from game_concept.models import GameConcept
-from game_concept.utils import get_current_project
+from game_concept.utils import get_current_game_concept, get_current_project
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
@@ -40,6 +40,11 @@ def get_project_pillars(user: User) -> QuerySet[Pillar]:
     if project:
         return queryset.filter(project=project)
     return queryset.filter(project__isnull=True)
+
+
+def get_project_concept(user: User) -> Optional[GameConcept]:
+    project = get_current_project(user)
+    return get_current_game_concept(project)
 
 
 class PillarViewSet(ModelViewSet):
@@ -240,9 +245,7 @@ class LLMFeedbackView(ViewSet):
         """
         try:
             user = cast(User, self.request.user)
-            game_concept = GameConcept.objects.filter(
-                user=user, is_current=True
-            ).first()
+            game_concept = get_project_concept(user)
             pillars = list(get_project_pillars(user))
 
             if not game_concept:
@@ -339,9 +342,7 @@ class LLMFeedbackView(ViewSet):
         try:
             user = cast(User, self.request.user)
             pillars = list(get_project_pillars(user))
-            game_concept = GameConcept.objects.filter(
-                user=user, is_current=True
-            ).first()
+            game_concept = get_project_concept(user)
 
             if not game_concept:
                 return JsonResponse({"error": "No game concept found"}, status=404)
@@ -387,9 +388,7 @@ class LLMFeedbackView(ViewSet):
         try:
             user = cast(User, self.request.user)
             pillars = list(get_project_pillars(user))
-            game_concept = GameConcept.objects.filter(
-                user=user, is_current=True
-            ).first()
+            game_concept = get_project_concept(user)
 
             if not game_concept:
                 return JsonResponse({"error": "No game concept found"}, status=404)
@@ -435,9 +434,7 @@ class LLMFeedbackView(ViewSet):
         try:
             user = cast(User, self.request.user)
             pillars = list(get_project_pillars(user))
-            game_concept = GameConcept.objects.filter(
-                user=user, is_current=True
-            ).first()
+            game_concept = get_project_concept(user)
 
             if not game_concept:
                 return JsonResponse({"error": "No game concept found"}, status=404)
@@ -552,9 +549,7 @@ class LLMFeedbackView(ViewSet):
 
         try:
             user = cast(User, self.request.user)
-            game_concept = GameConcept.objects.filter(
-                user=user, is_current=True
-            ).first()
+            game_concept = get_project_concept(user)
             pillars = list(get_project_pillars(user))
 
             if not game_concept:
@@ -762,9 +757,7 @@ class LLMFeedbackView(ViewSet):
         """
         try:
             user = cast(User, self.request.user)
-            game_concept = GameConcept.objects.filter(
-                user=user, is_current=True
-            ).first()
+            game_concept = get_project_concept(user)
             pillars = list(get_project_pillars(user))
 
             if not game_concept:

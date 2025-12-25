@@ -88,20 +88,16 @@ class NodeIntegrityResult(CoherenceDimensionResult):
     )
 
 
-class PathRobustnessResult(CoherenceDimensionResult):
-    """Result from path robustness evaluation."""
+class GlobalFitResult(CoherenceDimensionResult):
+    """Result from global fit evaluation (concept + pillars)."""
 
-    path_dependencies: List[str] = Field(
+    pillar_alignment: List[str] = Field(
         default_factory=list,
-        description="Path-specific requirements or assumptions",
+        description="How the node aligns or conflicts with each pillar",
     )
-    robust_paths: List[str] = Field(
-        default_factory=list,
-        description="Paths where the node fits cleanly",
-    )
-    fragile_paths: List[str] = Field(
-        default_factory=list,
-        description="Paths where the node conflicts or breaks",
+    concept_alignment: str = Field(
+        default="",
+        description="Overall alignment with game concept and tone",
     )
 
 
@@ -115,7 +111,7 @@ class CoherenceAggregatedResult(BaseModel):
     # Individual dimension results
     backward_coherence: Optional[BackwardCoherenceResult] = None
     forward_coherence: Optional[ForwardCoherenceResult] = None
-    path_robustness: Optional[PathRobustnessResult] = None
+    global_fit: Optional[GlobalFitResult] = None
     node_integrity: Optional[NodeIntegrityResult] = None
 
     # Aggregated metrics
@@ -156,7 +152,7 @@ class CoherenceAggregatedResult(BaseModel):
         strategy_used: str,
         backward: Optional[BackwardCoherenceResult],
         forward: Optional[ForwardCoherenceResult],
-        path: Optional[PathRobustnessResult],
+        global_fit: Optional[GlobalFitResult],
         integrity: Optional[NodeIntegrityResult],
         execution_time_ms: int = 0,
         total_tokens: int = 0,
@@ -178,9 +174,9 @@ class CoherenceAggregatedResult(BaseModel):
             scores.append(integrity.score)
             all_issues.extend(integrity.issues)
 
-        if path:
-            scores.append(path.score)
-            all_issues.extend(path.issues)
+        if global_fit:
+            scores.append(global_fit.score)
+            all_issues.extend(global_fit.issues)
 
         # Calculate overall score
         overall_score = sum(scores) / len(scores) if scores else 3.0
@@ -194,7 +190,7 @@ class CoherenceAggregatedResult(BaseModel):
             strategy_used=strategy_used,
             backward_coherence=backward,
             forward_coherence=forward,
-            path_robustness=path,
+            global_fit=global_fit,
             node_integrity=integrity,
             overall_score=round(overall_score, 2),
             is_coherent=overall_score >= 4.0,

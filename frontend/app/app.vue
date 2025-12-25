@@ -86,13 +86,14 @@ async function handleLogout() {
 }
 
 const isSidebarCollapsed = ref(false)
+const isCloneModalOpen = ref(false)
 
 function toggleSidebar() {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
-function formatProjectLabel(content: string) {
-  const trimmed = content.trim()
+function formatProjectLabel(name: string) {
+  const trimmed = name.trim()
   if (!trimmed) return 'Untitled Project'
   const firstLine = trimmed.split('\n')[0]
   return firstLine.length > 50 ? `${firstLine.slice(0, 50)}...` : firstLine
@@ -100,9 +101,14 @@ function formatProjectLabel(content: string) {
 
 const projectOptions = computed(() =>
   projectStore.projects.map((project) => ({
-    label: formatProjectLabel(project.content),
+    label: formatProjectLabel(project.name),
     value: project.id,
   })),
+)
+
+const selectedProject = computed(
+  () =>
+    projectStore.projects.find((project) => project.id === projectStore.activeProjectId) || null,
 )
 
 const selectedProjectId = computed({
@@ -165,6 +171,13 @@ watch(
               :disabled="projectOptions.length === 0"
               searchable
             />
+            <UButton
+              label="Clone"
+              color="primary"
+              variant="subtle"
+              :disabled="!selectedProjectId"
+              @click="isCloneModalOpen = true"
+            />
             <USelect
               v-model="llmStore.active_llm"
               :items="llmStore.llm_models"
@@ -206,6 +219,7 @@ watch(
         </UMain>
       </UMain>
     </div>
+    <ProjectCloneModal v-model="isCloneModalOpen" :project="selectedProject" />
   </UApp>
 </template>
 

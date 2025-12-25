@@ -34,6 +34,7 @@ type GameDesign = {
 type GameConcept = {
   id: number
   user: string
+  project: number | null
   content: string
   is_current: boolean
   created_at: string

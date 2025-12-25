@@ -19,7 +19,8 @@ from backend.llm.cost_tracking import calculate_cost_eur
 from backend.llm.logfire_config import get_logfire
 from backend.llm.types import LLMRequest, LLMResponse
 from backend.llm.view_utils import get_model_id
-from game_concept.models import GameConcept
+from game_concept.models import Project
+from game_concept.utils import get_current_project
 
 # Import handlers and workflows to trigger auto-registration
 from sparc.llm import handlers, workflows  # noqa: F401
@@ -158,11 +159,15 @@ def save_game_concept(
     if not user.is_authenticated:
         return
 
+    project = get_current_project(user)
+    if not project:
+        project = Project.objects.create(user=user, name="Untitled Project")
+
     # Mark all existing concepts as not current
-    GameConcept.objects.filter(user=user, is_current=True).update(is_current=False)
+    project.game_concepts.filter(is_current=True).update(is_current=False)
 
     # Create new current concept with linked evaluation
-    GameConcept.objects.create(
+    project.game_concepts.create(
         user=user,
         content=game_text,
         is_current=True,

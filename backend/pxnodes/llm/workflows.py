@@ -5,7 +5,7 @@ Agentic Workflow:
 Coordinates 4 specialized dimension agents running in parallel:
 - BackwardCoherenceAgent
 - ForwardCoherenceAgent
-- PathRobustnessAgent
+- GlobalFitAgent
 - NodeIntegrityAgent
 
 Monolithic Workflow:
@@ -26,15 +26,15 @@ from pxcharts.models import PxChart
 from pxnodes.llm.agents.coherence import (
     BackwardCoherenceAgent,
     ForwardCoherenceAgent,
+    GlobalFitAgent,
     NodeIntegrityAgent,
-    PathRobustnessAgent,
 )
 from pxnodes.llm.agents.coherence.schemas import (
     BackwardCoherenceResult,
     CoherenceAggregatedResult,
     ForwardCoherenceResult,
+    GlobalFitResult,
     NodeIntegrityResult,
-    PathRobustnessResult,
 )
 from pxnodes.llm.context.base import (
     BaseContextStrategy,
@@ -61,7 +61,32 @@ class LLMProvider(Protocol):
 # This prompt mirrors the 4 agent prompts but in a single unified call.
 # Each dimension has the same evaluation criteria as its corresponding agent.
 
-MONOLITHIC_COHERENCE_PROMPT = """You are a game design coherence analyzer evaluating a node in a game flow chart.  # noqa: E501
+MONOLITHIC_COHERENCE_PROMPT = """You are a game design coherence analyzer \
+evaluating a node in a game flow chart.
+
+EVIDENCE RULES (apply to ALL dimensions):
+- Only use information explicitly stated in the CONTEXT below. Do NOT assume \
+missing mechanics, items, or events.
+- The TARGET NODE text is not evidence of prior acquisition; it only defines \
+requirements or acts as setup for future nodes.
+- If a prerequisite is not explicitly supported by earlier context, list it \
+under "missing_prerequisites" (or "unknowns" if ambiguous).
+- Any mechanic or item in "satisfied_prerequisites" must cite a specific \
+earlier node/title/quote from the context.
+- Do NOT use words like "implied" or "assumed" as evidence. If you cannot \
+cite a passage from a previous node, it is missing.
+- In "satisfied_prerequisites", include the evidence inline, e.g., \
+"Ability X — evidence: <quoted passage from a previous node>".
+- Evidence must be a direct quote (or near-direct paraphrase) from the \
+CONTEXT. If the quoted phrase does not appear in a prior node description, \
+it does NOT count.
+- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
+cite the target node or future nodes for prerequisites.
+- If you cite a node title, you MUST include a quoted fragment from that \
+node's description that proves the prerequisite.
+- A prerequisite cannot be both "missing_prerequisites" and \
+"satisfied_prerequisites". If evidence is absent or invalid, it must be \
+missing.
 
 CONTEXT:
 {context}
@@ -70,12 +95,18 @@ TARGET NODE: {target_node_name}
 
 {dimension_context}
 
+PREREQUISITE CHECKLIST (for backward coherence):
+1) Extract required mechanics/items/abilities from the TARGET NODE text.
+2) For each requirement, find explicit evidence in PREVIOUS NODES only.
+3) If no quote exists, mark it as missing (do not invent evidence).
+
 TASK: Evaluate ALL FOUR coherence dimensions for the target node.
 
 ================================================================================
 DIMENSION 1: BACKWARD COHERENCE
 ================================================================================
-Analyze whether the target node properly respects what came before across all valid predecessor paths.
+Analyze whether the target node properly respects what came before across \
+all valid predecessor paths.
 
 CHECK FOR:
 1. REQUIRED MECHANICS/ITEMS
@@ -93,7 +124,8 @@ CHECK FOR:
 ================================================================================
 DIMENSION 2: FORWARD COHERENCE
 ================================================================================
-Analyze whether the target node properly sets up what comes next across all valid outgoing paths.
+Analyze whether the target node properly sets up what comes next across \
+all valid outgoing paths.
 
 CHECK FOR:
 1. MECHANICAL SETUP
@@ -113,21 +145,21 @@ CHECK FOR:
    - Is context provided for future events?
 
 ================================================================================
-DIMENSION 3: PATH ROBUSTNESS
+DIMENSION 3: GLOBAL FIT
 ================================================================================
-Analyze whether the node works across incoming and outgoing branches.
+Analyze whether the node aligns with the overall game concept and design pillars.
 
 CHECK FOR:
-1. CROSS-PATH CONSISTENCY
-   - Does the node assume prerequisites missing on some paths?
-   - Are its outcomes compatible with all likely successors?
+1. PILLAR ALIGNMENT
+   - Does the node reinforce or conflict with stated pillars?
+   - Are there explicit pillar violations?
 
-2. BRANCH COMPATIBILITY
-   - If multiple predecessors exist, does the node still make sense?
-   - If multiple successors exist, does it set them up coherently?
+2. CONCEPT ALIGNMENT
+   - Is the node consistent with genre, premise, and tone?
+   - Does it introduce mechanics/themes that contradict the concept?
 
-3. PATH-SPECIFIC DEPENDENCIES
-   - Identify any requirements that only hold on certain paths.
+3. WORLD/TONE CONSISTENCY
+   - Are characters, locations, and tone consistent with the setting?
 
 ================================================================================
 DIMENSION 4: NODE INTEGRITY
@@ -192,7 +224,7 @@ Respond with a JSON object containing evaluations for ALL 4 dimensions:
     "elements_introduced": ["New elements introduced in this node"],
     "potential_payoffs": ["How these elements might pay off later"]
   }},
-  "path_robustness": {{
+  "global_fit": {{
     "score": <1-6>,
     "reasoning": "Detailed explanation of your score",
     "issues": ["Issue 1", "Issue 2", ...],
@@ -200,9 +232,8 @@ Respond with a JSON object containing evaluations for ALL 4 dimensions:
     "evidence": ["Short references to nodes/edges/quotes"],
     "unknowns": ["What could not be verified from context"],
     "path_variance": "consistent across paths OR depends on path: <details>",
-    "path_dependencies": ["Path-specific requirements or assumptions"],
-    "robust_paths": ["Paths where the node fits cleanly"],
-    "fragile_paths": ["Paths where the node conflicts or breaks"]
+    "pillar_alignment": ["How the node aligns or conflicts with each pillar"],
+    "concept_alignment": "Overall alignment with game concept and tone"
   }},
   "node_integrity": {{
     "score": <1-6>,
@@ -224,7 +255,7 @@ IMPORTANT: Evaluate ALL 4 dimensions thoroughly. Report genuine issues only."""
 DIMENSION_AGENTS: Dict[str, Type[BaseAgent]] = {
     "backward_coherence": BackwardCoherenceAgent,
     "forward_coherence": ForwardCoherenceAgent,
-    "path_robustness": PathRobustnessAgent,
+    "global_fit": GlobalFitAgent,
     "node_integrity": NodeIntegrityAgent,
 }
 
@@ -237,7 +268,7 @@ class PxNodesCoherenceWorkflow:
     a different dimension of coherence:
     1. Backward Coherence - Does node respect what came before?
     2. Forward Coherence - Does node properly set up future?
-    3. Path Robustness - Does node work across paths?
+    3. Global Fit - Does node align with concept and pillars?
     4. Node Integrity - Is node internally coherent?
 
     Integrates with existing context strategies for context building.
@@ -290,6 +321,7 @@ class PxNodesCoherenceWorkflow:
         node: PxNode,
         chart: PxChart,
         model_id: Optional[str] = None,
+        project: Optional[Any] = None,
         project_pillars: Optional[List] = None,
         game_concept: Optional[Any] = None,
         dimensions: Optional[List[str]] = None,
@@ -334,6 +366,7 @@ class PxNodesCoherenceWorkflow:
             scope = EvaluationScope(
                 target_node=node,
                 chart=chart,
+                project=project,
                 project_pillars=project_pillars,
                 game_concept=game_concept,
             )
@@ -426,7 +459,7 @@ class PxNodesCoherenceWorkflow:
                 strategy_used=self.strategy_type.value,
                 backward=dimension_results.get("backward_coherence"),
                 forward=dimension_results.get("forward_coherence"),
-                path=dimension_results.get("path_robustness"),
+                global_fit=dimension_results.get("global_fit"),
                 integrity=dimension_results.get("node_integrity"),
                 execution_time_ms=execution_time_ms,
                 total_tokens=total_tokens,
@@ -469,7 +502,7 @@ class PxNodesCoherenceWorkflow:
         result_schema_map = {
             "backward_coherence": BackwardCoherenceResult,
             "forward_coherence": ForwardCoherenceResult,
-            "path_robustness": PathRobustnessResult,
+            "global_fit": GlobalFitResult,
             "node_integrity": NodeIntegrityResult,
         }
 
@@ -574,7 +607,7 @@ class PxNodesCoherenceMonolithicWorkflow:
     Uses a single LLM call with a unified prompt covering all 4 dimensions:
     1. Backward Coherence - Does node respect what came before?
     2. Forward Coherence - Does node properly set up future?
-    3. Path Robustness - Does node work across paths?
+    3. Global Fit - Does node align with concept and pillars?
     4. Node Integrity - Is node internally coherent?
 
     Designed for thesis comparison between agentic vs monolithic approaches.
@@ -621,6 +654,7 @@ class PxNodesCoherenceMonolithicWorkflow:
         node: PxNode,
         chart: PxChart,
         model_id: Optional[str] = None,
+        project: Optional[Any] = None,
         project_pillars: Optional[List] = None,
         game_concept: Optional[Any] = None,
     ) -> CoherenceAggregatedResult:
@@ -659,6 +693,7 @@ class PxNodesCoherenceMonolithicWorkflow:
             scope = EvaluationScope(
                 target_node=node,
                 chart=chart,
+                project=project,
                 project_pillars=project_pillars,
                 game_concept=game_concept,
             )
@@ -734,7 +769,7 @@ class PxNodesCoherenceMonolithicWorkflow:
                 strategy_used=self.strategy_type.value,
                 backward=dimension_results.get("backward_coherence"),
                 forward=dimension_results.get("forward_coherence"),
-                path=dimension_results.get("path_robustness"),
+                global_fit=dimension_results.get("global_fit"),
                 integrity=dimension_results.get("node_integrity"),
                 execution_time_ms=execution_time_ms,
                 total_tokens=total_tokens,
@@ -851,10 +886,8 @@ class PxNodesCoherenceMonolithicWorkflow:
                     **data["forward_coherence"]
                 )
 
-            if "path_robustness" in data:
-                dimension_results["path_robustness"] = PathRobustnessResult(
-                    **data["path_robustness"]
-                )
+            if "global_fit" in data:
+                dimension_results["global_fit"] = GlobalFitResult(**data["global_fit"])
 
             if "node_integrity" in data:
                 dimension_results["node_integrity"] = NodeIntegrityResult(

@@ -10,8 +10,8 @@ from pxnodes.llm.agents.coherence import (
     CoherenceDimensionAgent,
     CoherenceDimensionResult,
     ForwardCoherenceAgent,
+    GlobalFitAgent,
     NodeIntegrityAgent,
-    PathRobustnessAgent,
 )
 
 __all__ = [
@@ -20,8 +20,8 @@ __all__ = [
     # Agents
     "BackwardCoherenceAgent",
     "ForwardCoherenceAgent",
+    "GlobalFitAgent",
     "NodeIntegrityAgent",
-    "PathRobustnessAgent",
     # Schemas
     "CoherenceDimensionResult",
     "CoherenceAggregatedResult",

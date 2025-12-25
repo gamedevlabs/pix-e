@@ -7,8 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from game_concept.models import GameConcept
-from game_concept.utils import get_current_project
+from game_concept.utils import get_current_game_concept, get_current_project
 from pillars.models import Pillar
 from pxcharts.models import PxChart
 from pxnodes.llm.context.artifacts import ArtifactInventory
@@ -319,25 +318,30 @@ class ContextArtifactsPrecomputeView(APIView):
                     artifact_types=needs.chart_artifacts,
                 )
 
-            concept = chart.project or project
+            project_context = chart.project or project
+            concept = get_current_game_concept(project_context)
             if concept and needs.concept_artifacts and scope in {"global", "all"}:
                 inventory.get_or_build_concept_artifacts(
                     concept_id=str(concept.id),
                     concept_text=concept.content or "",
                     artifact_types=needs.concept_artifacts,
-                    project_id=str(concept.id),
+                    project_id=str(getattr(project_context, "id", "")) or "",
                 )
 
             project_pillars = []
-            if concept and needs.pillar_artifacts and scope in {"global", "all"}:
-                project_pillars = list(Pillar.objects.filter(project=concept))
+            if (
+                project_context
+                and needs.pillar_artifacts
+                and scope in {"global", "all"}
+            ):
+                project_pillars = list(Pillar.objects.filter(project=project_context))
                 for pillar in project_pillars:
                     inventory.get_or_build_pillar_artifacts(
                         pillar_id=str(pillar.id),
                         pillar_name=pillar.name or "",
                         pillar_description=pillar.description or "",
                         artifact_types=needs.pillar_artifacts,
-                        project_id=str(concept.id),
+                        project_id=str(getattr(project_context, "id", "")) or "",
                     )
 
             if needs.path_artifacts and scope in {"node", "all"}:
@@ -378,6 +382,7 @@ class ContextArtifactsPrecomputeView(APIView):
                     scope = EvaluationScope(
                         target_node=target_node,
                         chart=chart,
+                        project=project_context,
                         project_pillars=project_pillars,
                         game_concept=concept,
                     )
@@ -401,6 +406,7 @@ class ContextArtifactsPrecomputeView(APIView):
                     scope = EvaluationScope(
                         target_node=target_node,
                         chart=chart,
+                        project=project_context,
                         project_pillars=project_pillars,
                         game_concept=concept,
                     )
@@ -493,24 +499,24 @@ class ContextArtifactsResetView(APIView):
                 HMEMLayerEmbedding.objects.filter(chart=chart).delete()
 
             if scope in {"global", "all"}:
-                concept = chart.project or project
+                project_context = chart.project or project
                 global_filters = ContextArtifact.objects.filter(
                     scope_type="chart",
                     chart=chart,
                 )
-                if concept:
+                if project_context:
                     global_filters = global_filters | ContextArtifact.objects.filter(
                         scope_type__in=["concept", "pillar"],
-                        project_id=str(concept.id),
+                        project_id=str(project_context.id),
                     )
 
                 ArtifactEmbedding.objects.filter(artifact__in=global_filters).delete()
                 global_filters.delete()
 
-                if concept:
+                if project_context:
                     HMEMLayerEmbedding.objects.filter(
                         chart__isnull=True,
-                        positional_index__startswith=f"L1.{concept.id}.",
+                        positional_index__startswith=f"L1.{project_context.id}.",
                     ).delete()
 
         return Response({"success": True, "chart_id": str(chart.id), "scope": scope})
@@ -790,9 +796,8 @@ class StrategyEvaluateView(APIView):
             else:
                 pillar_filters["project__isnull"] = True
             pillars = list(Pillar.objects.filter(**pillar_filters))
-            game_concept = GameConcept.objects.filter(
-                user=request.user, is_current=True
-            ).first()
+            project_context = chart.project or project
+            game_concept = get_current_game_concept(project_context)
 
             logfire.info(
                 "context.evaluate.start",
@@ -841,6 +846,7 @@ class StrategyEvaluateView(APIView):
                             node=node,
                             chart=chart,
                             model_id=llm_model,
+                            project=project_context,
                             project_pillars=pillars,
                             game_concept=game_concept,
                         )
@@ -860,6 +866,7 @@ class StrategyEvaluateView(APIView):
                             node=node,
                             chart=chart,
                             model_id=llm_model,
+                            project=project_context,
                             project_pillars=pillars,
                             game_concept=game_concept,
                         )
@@ -970,9 +977,8 @@ class StrategyCompareView(APIView):
             else:
                 pillar_filters["project__isnull"] = True
             pillars = list(Pillar.objects.filter(**pillar_filters))
-            game_concept = GameConcept.objects.filter(
-                user=request.user, is_current=True
-            ).first()
+            project_context = chart.project or project
+            game_concept = get_current_game_concept(project_context)
 
             logfire.info(
                 "context.compare.start",
@@ -1126,10 +1132,21 @@ class ContextBuildView(APIView):
                 strategy_type = StrategyType(strategy)
                 strategy_instance = StrategyRegistry.create(strategy_type)
 
+                project_context = chart.project or project
+                pillars = (
+                    list(Pillar.objects.filter(project=project_context))
+                    if project_context
+                    else []
+                )
+                game_concept = get_current_game_concept(project_context)
+
                 # Build evaluation scope
                 scope = EvaluationScope(
                     target_node=node,
                     chart=chart,
+                    project=project_context,
+                    project_pillars=pillars,
+                    game_concept=game_concept,
                 )
 
                 # Build context

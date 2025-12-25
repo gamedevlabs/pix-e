@@ -10,7 +10,7 @@ class PxNode(models.Model):
     description = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     project = models.ForeignKey(
-        "game_concept.GameConcept",
+        "game_concept.Project",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -35,7 +35,7 @@ class PxComponentDefinition(models.Model):
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     project = models.ForeignKey(
-        "game_concept.GameConcept",
+        "game_concept.Project",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

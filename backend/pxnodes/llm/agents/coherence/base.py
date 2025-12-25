@@ -23,7 +23,7 @@ class CoherenceDimensionAgent(BaseAgent):
     Each dimension agent evaluates one aspect of node coherence:
     - Backward Coherence: Does node respect what came before?
     - Forward Coherence: Does node properly set up future?
-    - Path Robustness: Does node work across incoming/outgoing paths?
+    - Global Fit: Does node align with concept and pillars?
     - Node Integrity: Do title/description/components align?
 
     Subclasses must define:
@@ -126,12 +126,42 @@ RESPONSE FORMAT:
 }}
 """
 
-COHERENCE_CONTEXT_HEADER = """You are a game design coherence analyzer evaluating a node in a game flow chart.  # noqa: E501
+COHERENCE_CONTEXT_HEADER = """You are a game design coherence analyzer \
+evaluating a node in a game flow chart.
+
+EVIDENCE RULES (apply to ALL dimensions):
+- Only use information explicitly stated in the CONTEXT below. Do NOT assume \
+missing mechanics, items, or events.
+- The TARGET NODE text is not evidence of prior acquisition; it only defines \
+requirements or acts as setup for future nodes.
+- If a prerequisite is not explicitly supported by earlier context, list it \
+under "missing_prerequisites" (or "unknowns" if ambiguous).
+- Any mechanic or item in "satisfied_prerequisites" must cite a specific \
+earlier node/title/quote from the context.
+- Do NOT use words like "implied" or "assumed" as evidence. If you cannot \
+cite a passage from a previous node, it is missing.
+- In "satisfied_prerequisites", include the evidence inline, e.g., \
+"Ability X — evidence: <quoted passage from a previous node>".
+- Evidence must be a direct quote (or near-direct paraphrase) from the \
+CONTEXT. If the quoted phrase does not appear in a prior node description, \
+it does NOT count.
+- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
+cite the target node or future nodes for prerequisites.
+- If you cite a node title, you MUST include a quoted fragment from that \
+node's description that proves the prerequisite.
+- A prerequisite cannot be both "missing_prerequisites" and \
+"satisfied_prerequisites". If evidence is absent or invalid, it must be \
+missing.
 
 CONTEXT:
 {context}
 
 TARGET NODE: {target_node_name}
+
+PREREQUISITE CHECKLIST (for backward coherence):
+1) Extract required mechanics/items/abilities from the TARGET NODE text.
+2) For each requirement, find explicit evidence in PREVIOUS NODES only.
+3) If no quote exists, mark it as missing (do not invent evidence).
 
 {dimension_context}
 """

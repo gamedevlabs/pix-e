@@ -1379,7 +1379,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                     concept_id=str(scope.game_concept.id),
                     concept_text=scope.game_concept.content or "",
                     artifact_types=artifact_types,
-                    project_id=str(scope.game_concept.id),
+                    project_id=str(getattr(scope.project, "id", ""))
+                    or str(getattr(scope.game_concept, "project_id", "")),
                 )
 
             if scope.project_pillars:
@@ -1682,7 +1683,8 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
                     concept_id=str(scope.game_concept.id),
                     concept_text=scope.game_concept.content or "",
                     artifact_types=artifact_types,
-                    project_id=str(scope.game_concept.id),
+                    project_id=str(getattr(scope.project, "id", ""))
+                    or str(getattr(scope.game_concept, "project_id", "")),
                 )
 
             if scope.project_pillars:

@@ -4,7 +4,22 @@ Serializers for the game_concept app.
 
 from rest_framework import serializers
 
-from .models import GameConcept
+from .models import GameConcept, Project
+from .utils import get_current_project
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "name",
+            "description",
+            "is_current",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class GameConceptSerializer(serializers.ModelSerializer):
@@ -28,13 +43,14 @@ class GameConceptSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user",
+            "project",
             "content",
             "is_current",
             "last_sparc_evaluation_id",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "user", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "project", "created_at", "updated_at"]
 
 
 class GameConceptListSerializer(serializers.ModelSerializer):
@@ -56,12 +72,13 @@ class GameConceptListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user",
+            "project",
             "content_preview",
             "is_current",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "user", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "project", "created_at", "updated_at"]
 
     def get_content_preview(self, obj: GameConcept) -> str:
         """Return preview of content (first 100 characters)."""
@@ -88,9 +105,16 @@ class GameConceptCreateSerializer(serializers.ModelSerializer):
         Automatically marks previous concepts as not current.
         """
         user = self.context["request"].user
+        project = get_current_project(user)
+        if not project:
+            project = Project.objects.create(user=user, name="Untitled Project")
 
         # Mark all existing concepts as not current
-        GameConcept.objects.filter(user=user, is_current=True).update(is_current=False)
+        GameConcept.objects.filter(project=project, is_current=True).update(
+            is_current=False
+        )
 
         # Create new current concept
-        return GameConcept.objects.create(user=user, is_current=True, **validated_data)
+        return GameConcept.objects.create(
+            user=user, project=project, is_current=True, **validated_data
+        )

@@ -57,11 +57,10 @@ export interface CoherenceDimensionResult {
   satisfied_prerequisites?: string[]
   elements_introduced?: string[]
   potential_payoffs?: string[]
+  pillar_alignment?: string[]
+  concept_alignment?: string
   contradictions?: string[]
   unclear_elements?: string[]
-  path_dependencies?: string[]
-  robust_paths?: string[]
-  fragile_paths?: string[]
 }
 
 export interface AgenticEvaluationResult {
@@ -70,7 +69,7 @@ export interface AgenticEvaluationResult {
   strategy_used: string
   backward_coherence: CoherenceDimensionResult | null
   forward_coherence: CoherenceDimensionResult | null
-  path_robustness: CoherenceDimensionResult | null
+  global_fit: CoherenceDimensionResult | null
   node_integrity: CoherenceDimensionResult | null
   overall_score: number
   is_coherent: boolean
@@ -146,7 +145,7 @@ export function useContextStrategies() {
   const lastEvaluation = ref<EvaluationResult | null>(null)
   const lastComparison = ref<ComparisonResult | null>(null)
   const lastContext = ref<ContextBuildResult | null>(null)
-  const executionMode = ref<ExecutionMode>('agentic') // Default to agentic mode
+  const executionMode = ref<ExecutionMode>('monolithic') // Default to agentic mode
 
   const { success: successToast, error: errorToast } = usePixeToast()
 

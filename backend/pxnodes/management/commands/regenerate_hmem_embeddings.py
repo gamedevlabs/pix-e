@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Optional
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
-from game_concept.models import GameConcept
+from game_concept.utils import get_current_game_concept, get_current_project
 from pillars.models import Pillar
 from pxcharts.models import PxChart
 from pxnodes.llm.context.base.types import EvaluationScope
@@ -80,8 +80,9 @@ class Command(BaseCommand):
             raise CommandError(f"Chart {options['chart_id']} not found")
 
         user = self._resolve_user(chart, options.get("user_id"))
-        game_concept = self._get_game_concept(user)
-        pillars = list(Pillar.objects.filter(user=user)) if user else []
+        project = chart.project or (get_current_project(user) if user else None)
+        game_concept = get_current_game_concept(project)
+        pillars = list(Pillar.objects.filter(project=project)) if project else []
 
         node = None
         if options.get("node_id"):
@@ -94,7 +95,7 @@ class Command(BaseCommand):
         if not nodes:
             raise CommandError("No nodes found to regenerate")
 
-        project_id = str(getattr(game_concept, "id", "default"))
+        project_id = str(getattr(project, "id", "default"))
 
         self.stdout.write(self.style.SUCCESS("Clearing H-MEM embeddings..."))
         cleared = self._clear_embeddings(
@@ -130,6 +131,7 @@ class Command(BaseCommand):
             scope = EvaluationScope(
                 target_node=target_node,
                 chart=chart,
+                project=project,
                 project_pillars=pillars,
                 game_concept=game_concept,
             )
@@ -150,13 +152,6 @@ class Command(BaseCommand):
             return chart.owner
 
         return UserModel.objects.first()
-
-    def _get_game_concept(
-        self, user: Optional["AbstractBaseUser"]
-    ) -> Optional[GameConcept]:
-        if not user:
-            return None
-        return GameConcept.objects.filter(user=user.pk, is_current=True).first()
 
     def _get_chart_nodes(self, chart: PxChart) -> list[PxNode]:
         containers = chart.containers.filter(content__isnull=False)
