@@ -272,8 +272,12 @@ class ArtifactInventory:
                 edge_pairs.append(f"{source_name}->{target_name}")
         node_hashes = [compute_node_content_hash(node, chart) for node in nodes if node]
         chart_mechanics = self._get_chart_component_names(nodes)
-        chart_pacing_summary = self._build_chart_pacing_summary(nodes, edges)
-        chart_narrative_summary = self._build_chart_narrative_summary(nodes, edges)
+        chart_pacing_summary = ""
+        chart_narrative_summary = ""
+        if ARTIFACT_CHART_PACING in artifact_types:
+            chart_pacing_summary = self._build_chart_pacing_summary(nodes, edges)
+        if ARTIFACT_CHART_NARRATIVE in artifact_types:
+            chart_narrative_summary = self._build_chart_narrative_summary(nodes, edges)
         overview = {
             "name": getattr(chart, "name", ""),
             "description": getattr(chart, "description", ""),

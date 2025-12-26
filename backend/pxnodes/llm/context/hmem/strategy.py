@@ -23,9 +23,7 @@ from typing import Any, Optional
 
 from pxnodes.llm.context.artifacts import (
     ARTIFACT_CHART_MECHANICS,
-    ARTIFACT_CHART_NARRATIVE,
     ARTIFACT_CHART_OVERVIEW,
-    ARTIFACT_CHART_PACING,
     ARTIFACT_NODE_LIST,
     ARTIFACT_SUMMARY,
     ArtifactInventory,
@@ -41,6 +39,7 @@ from pxnodes.llm.context.base.types import (
 )
 from pxnodes.llm.context.hmem.retriever import (
     HMEMContextResult,
+    HMEMRetrievalResult,
     HMEMRetriever,
     compute_path_hash,
 )
@@ -219,6 +218,7 @@ class HMEMStrategy(BaseContextStrategy):
         )
 
         results = retrieval_result.get_layer(layer)
+        results = self._dedupe_results(results)
 
         if results:
             # No scores in content - just the actual content
@@ -428,9 +428,7 @@ class HMEMStrategy(BaseContextStrategy):
             artifact_types=[
                 ARTIFACT_CHART_OVERVIEW,
                 ARTIFACT_NODE_LIST,
-                ARTIFACT_CHART_PACING,
                 ARTIFACT_CHART_MECHANICS,
-                ARTIFACT_CHART_NARRATIVE,
             ],
         )
         chart_overview = next(
@@ -469,17 +467,6 @@ class HMEMStrategy(BaseContextStrategy):
         if nodes_text:
             entries.append(("chart_nodes", f"Nodes: {nodes_text}"))
 
-        pacing_summary = next(
-            (
-                artifact.content
-                for artifact in artifacts
-                if artifact.artifact_type == ARTIFACT_CHART_PACING
-            ),
-            "",
-        )
-        if pacing_summary:
-            entries.append(("chart_pacing_summary", pacing_summary))
-
         raw_mechanics: Any = next(
             (
                 artifact.content
@@ -495,17 +482,6 @@ class HMEMStrategy(BaseContextStrategy):
             for mechanic in mechanics:
                 key = f"chart_mechanic_{self._slugify(str(mechanic))}"
                 entries.append((key, f"Chart Mechanic: {mechanic}"))
-
-        narrative_summary = next(
-            (
-                artifact.content
-                for artifact in artifacts
-                if artifact.artifact_type == ARTIFACT_CHART_NARRATIVE
-            ),
-            "",
-        )
-        if narrative_summary:
-            entries.append(("chart_narrative_summary", narrative_summary))
 
         return entries
 
@@ -549,11 +525,6 @@ class HMEMStrategy(BaseContextStrategy):
                         snippet_text,
                     )
                 )
-
-        milestones = self._extract_path_milestones(full_path, summaries)
-        for idx, milestone in enumerate(milestones, 1):
-            key = f"{path_id}_milestone_{idx}"
-            entries.append((key, f"Milestone: {milestone}"))
 
         return entries
 
@@ -620,63 +591,7 @@ class HMEMStrategy(BaseContextStrategy):
         self, path_nodes: list[Any], summaries: list[str]
     ) -> list[str]:
         """Extract milestone summaries from a path."""
-        if not path_nodes:
-            return []
-
-        if self.llm_provider:
-            node_lines = []
-            for node, summary in zip(path_nodes, summaries):
-                node_lines.append(f"- {getattr(node, 'name', '')}: {summary}")
-            prompt = (
-                "Extract 3-6 key milestones from the path. "
-                "Return each milestone as a short phrase on its own line.\n\n"
-                + "\n".join(node_lines)
-            )
-            try:
-                response = self.llm_provider.generate(
-                    prompt, operation="path_milestones"
-                )
-                milestones_list = [
-                    line.strip("- ").strip()
-                    for line in response.splitlines()
-                    if line.strip()
-                ]
-                return [m for m in milestones_list if m]
-            except Exception:
-                logger.warning("Milestone extraction LLM failed, falling back.")
-
-        milestones: list[str] = []
-        for node in path_nodes:
-            description = getattr(node, "description", "") or ""
-            lower = description.lower()
-            if any(
-                term in lower
-                for term in [
-                    "introduces",
-                    "introduce",
-                    "unlocks",
-                    "culminates",
-                    "finale",
-                ]
-            ):
-                sentence = description.split(".")[0].strip()
-                if sentence:
-                    milestones.append(sentence)
-
-        if path_nodes:
-            first_name = getattr(path_nodes[0], "name", "") or "Start"
-            last_name = getattr(path_nodes[-1], "name", "") or "End"
-            milestones.insert(0, f"Start of path: {first_name}")
-            if last_name != first_name:
-                milestones.append(f"End of path: {last_name}")
-
-        deduped: list[str] = []
-        seen = set()
-        for item in milestones:
-            if item and item not in seen:
-                deduped.append(item)
-                seen.add(item)
-        return deduped[:6]
+        return []
 
     def _slugify(self, value: str) -> str:
         """Normalize a string for positional index keys."""
@@ -729,12 +644,15 @@ class HMEMStrategy(BaseContextStrategy):
 
         for layer_num in [1, 2, 3, 4]:
             results = retrieval_result.get_layer(layer_num)
+            deduped_results = self._dedupe_results(results)
 
-            if results:
+            if deduped_results:
                 # Content WITHOUT scores - scores are retrieval metadata
-                content = "\n\n".join(r.content for r in results)
-                positional_index = results[0].positional_index
-                avg_similarity = sum(r.similarity_score for r in results) / len(results)
+                content = "\n\n".join(r.content for r in deduped_results)
+                positional_index = deduped_results[0].positional_index
+                avg_similarity = sum(r.similarity_score for r in deduped_results) / len(
+                    deduped_results
+                )
             else:
                 # Fallback to building content directly
                 content = self._build_fallback_content(scope, layer_num)
@@ -747,10 +665,12 @@ class HMEMStrategy(BaseContextStrategy):
                     layer_name=get_layer_name(layer_num),
                     content=content,
                     metadata={
-                        "retrieved_count": len(results),
+                        "retrieved_count": len(deduped_results),
                         "avg_similarity": avg_similarity,
                         "top_similarity": (
-                            results[0].similarity_score if results else 0
+                            deduped_results[0].similarity_score
+                            if deduped_results
+                            else 0
                         ),
                     },
                     positional_index=positional_index,
@@ -758,6 +678,20 @@ class HMEMStrategy(BaseContextStrategy):
             )
 
         return layers
+
+    def _dedupe_results(
+        self, results: list[HMEMRetrievalResult]
+    ) -> list[HMEMRetrievalResult]:
+        """Remove duplicate retrieval results with identical content."""
+        seen: set[str] = set()
+        deduped: list[HMEMRetrievalResult] = []
+        for result in results:
+            content = getattr(result, "content", "")
+            if not content or content in seen:
+                continue
+            seen.add(content)
+            deduped.append(result)
+        return deduped
 
     def _store_embeddings_batch(
         self, items: list[dict[str, Any]]

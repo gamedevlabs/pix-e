@@ -23,19 +23,13 @@ across all valid outgoing paths.
 
 CHECK FOR:
 1. MECHANICAL SETUP
-   - Does the node introduce mechanics that will be needed later?
-   - Are abilities/items granted that enable future progression?
-   - Example: Tutorial teaches wall-jump before wall-jump puzzle
+   - If the node introduces mechanics, items, characters, or plot points, \
+    are they used/referenced in a future node?
 
 2. NARRATIVE SETUP
-   - Are story elements introduced that pay off later?
+   - Do the story elements introduced in this node pay off later?
    - Is foreshadowing appropriate and not heavy-handed?
    - Example: NPC mentions a locked door player will encounter
-
-3. DIFFICULTY RAMP
-   - Does the node prepare player for upcoming challenges?
-   - Is the skill progression appropriate?
-   - Example: Easy enemies before boss teach attack patterns
 
 4. WORLD BUILDING
    - Are locations/characters introduced properly?
