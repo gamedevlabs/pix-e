@@ -26,7 +26,10 @@ Analyze whether the target node is internally coherent and well-defined.
 CHECK FOR:
 1. CONTRADICTIONS
    - Do different parts of the node contradict each other?
-   - Does the description match the node type/category?
+   - Does the title match the description?
+   - If there are components, does the description match the node components?
+   - Does a part of the node description contradict another part of the
+     node description?
    - Example: "Calm exploration" with Tension=95
 
 2. CLARITY
@@ -37,12 +40,6 @@ CHECK FOR:
 3. COMPONENT HARMONY
    - Do all node components work together?
    - Is the component category and value appropriate for the content?
-   - Are visual/audio hints consistent with the experience?
-
-4. COMPLETENESS
-   - Is all necessary information present?
-   - Are edge cases considered?
-   - Are player choices well-defined?
 
 """
     + SCORING_INSTRUCTIONS
@@ -65,6 +62,10 @@ class NodeIntegrityAgent(CoherenceDimensionAgent):
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
         """Build internal-specific context."""
+        context_string = data.get("context_string", "")
+        if "Components:" in context_string:
+            return ""
+
         node_details = data.get("node_details", {})
 
         context_parts = []

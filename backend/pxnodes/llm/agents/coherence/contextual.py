@@ -18,8 +18,7 @@ GLOBAL_FIT_PROMPT = (
     + """
 TASK: Evaluate GLOBAL FIT
 
-Analyze whether the target node aligns with the overall game concept, pillars,
-tone, and genre expectations.
+Analyze whether the target node aligns with the overall game concept and design pillars.
 
 CHECK FOR:
 1. PILLAR ALIGNMENT
@@ -27,12 +26,11 @@ CHECK FOR:
    - Are there explicit violations (e.g., non-violent pillar vs combat-only node)?
 
 2. CONCEPT ALIGNMENT
-   - Is the node consistent with the game's concept, genre, and tone?
-   - Does it introduce themes or mechanics that contradict the core premise?
+   - Is the node consistent with what the game concept defines?
+   - Does it introduce mechanics/themes that contradict the game concept?
 
 3. WORLD/TONE CONSISTENCY
-   - Does the node fit the established world and narrative tone?
-   - Are characters/locations consistent with the setting?
+   - Is the node consistent with the setting?
 
 """
     + SCORING_INSTRUCTIONS
@@ -57,8 +55,24 @@ class GlobalFitAgent(CoherenceDimensionAgent):
         """Build global fit context."""
         pillars = data.get("pillars", [])
         game_concept = data.get("game_concept")
+        node_details = data.get("node_details", {})
 
         context_parts = []
+
+        if node_details:
+            description = node_details.get("description")
+            components = node_details.get("components", [])
+            if description or components:
+                context_parts.append("TARGET NODE DETAILS:")
+            if description:
+                context_parts.append(f"Description: {description}")
+            if components:
+                context_parts.append("Components:")
+                for comp in components[:5]:
+                    if isinstance(comp, dict):
+                        name = comp.get("name", "Component")
+                        value = comp.get("value", "")
+                        context_parts.append(f"- {name}: {value}")
 
         if game_concept:
             concept_text = getattr(game_concept, "content", "") or ""
@@ -73,6 +87,6 @@ class GlobalFitAgent(CoherenceDimensionAgent):
                 description = pillar.get("description", "")
                 context_parts.append(f"- {name}: {description}")
 
-        return (
-            "\n".join(context_parts) if context_parts else "No global context provided"
-        )
+        if not context_parts:
+            return ""
+        return "\n".join(context_parts)

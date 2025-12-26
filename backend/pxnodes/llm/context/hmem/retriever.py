@@ -418,8 +418,6 @@ class HMEMRetriever:
         l2_allowed = {
             "chart_overview",
             "chart_nodes",
-            "chart_pacing_summary",
-            "chart_narrative_summary",
         }
         for candidate in candidates:
             if candidate.layer == 2:

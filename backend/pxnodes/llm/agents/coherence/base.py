@@ -69,17 +69,27 @@ class CoherenceDimensionAgent(BaseAgent):
         context_string = data.get("context_string", "No context provided")
         target_node_name = data.get("target_node_name", "Unknown")
         target_node_description = data.get("target_node_description")
+        node_details = data.get("node_details", {})
 
         # Get dimension-specific context
         dimension_context = self._build_dimension_context(data)
 
-        target_block = target_node_name
+        target_block_lines = [f"Title: {target_node_name}"]
         if target_node_description:
-            target_block = f"{target_node_name}\nDescription: {target_node_description}"
+            target_block_lines.append(f"Description: {target_node_description}")
+        components = node_details.get("components", [])
+        if components:
+            target_block_lines.append("Components:")
+            for comp in components[:10]:
+                if isinstance(comp, dict):
+                    name = comp.get("name", "Component")
+                    value = comp.get("value", "")
+                    target_block_lines.append(f"- {name}: {value}")
+        target_block = "\n".join(target_block_lines)
 
         return self.prompt_template.format(
             context=context_string,
-            target_node_name=target_block,
+            target_node_block=target_block,
             dimension_context=dimension_context,
         )
 
@@ -153,10 +163,11 @@ node's description that proves the prerequisite.
 "satisfied_prerequisites". If evidence is absent or invalid, it must be \
 missing.
 
+TARGET NODE DETAILS:
+{target_node_block}
+
 CONTEXT:
 {context}
-
-TARGET NODE: {target_node_name}
 
 PREREQUISITE CHECKLIST (for backward coherence):
 1) Extract required mechanics/items/abilities from the TARGET NODE text.

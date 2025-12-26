@@ -26,6 +26,9 @@ CHECK FOR:
    - Does the node require mechanics or items that appear earlier?
    - Are they established on ALL valid incoming paths?
    - If only on some paths, flag as path-dependent.
+   - Treat explicit action/knowledge verbs as requirements (e.g., "uses", \
+    "accesses", "knows how to", "has learned"). If the \
+    exact mechanic/knowledge is not introduced earlier, mark it missing.
 
 2. NARRATIVE PREREQUISITES
    - Does the node reference events that have occurred?
@@ -33,8 +36,14 @@ CHECK FOR:
    - Example violation: "Return to the castle" but player never visited it
 
 3. STATE PREREQUISITES
-   - Does the node assume a game state that is achievable?
+   - Does the node assume a game state that is achievable on all paths?
    - Are triggers/conditions for reaching this node satisfiable on all paths?
+
+PROCESS (strict):
+1) Extract REQUIRED mechanics/items/knowledge from the TARGET NODE details.
+2) For each requirement, find an explicit quote in PREVIOUS NODES only.
+3) If no explicit quote exists, list it under "missing_prerequisites".
+4) Do not use the TARGET NODE as evidence.
 
 """
     + SCORING_INSTRUCTIONS

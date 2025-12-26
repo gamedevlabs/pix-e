@@ -64,6 +64,8 @@ class LLMProvider(Protocol):
 MONOLITHIC_COHERENCE_PROMPT = """You are a game design coherence analyzer \
 evaluating a node in a game flow chart.
 
+TARGET NODE: {target_node_name}
+
 EVIDENCE RULES (apply to ALL dimensions):
 - Only use information explicitly stated in the CONTEXT below. Do NOT assume \
 missing mechanics, items, or events.
@@ -91,8 +93,6 @@ missing.
 CONTEXT:
 {context}
 
-TARGET NODE: {target_node_name}
-
 {dimension_context}
 
 PREREQUISITE CHECKLIST (for backward coherence):
@@ -105,7 +105,7 @@ TASK: Evaluate ALL FOUR coherence dimensions for the target node.
 ================================================================================
 DIMENSION 1: BACKWARD COHERENCE
 ================================================================================
-Analyze whether the target node properly respects what came before across \
+Analyze whether the target node properly respects what came before across
 all valid predecessor paths.
 
 CHECK FOR:
@@ -116,6 +116,7 @@ CHECK FOR:
 2. NARRATIVE PREREQUISITES
    - Does the node reference events that have occurred?
    - Are character introductions properly sequenced?
+   - Example violation: "Return to the castle" but player never visited it
 
 3. STATE PREREQUISITES
    - Does the node assume a game state that is achievable on all paths?
@@ -129,18 +130,14 @@ all valid outgoing paths.
 
 CHECK FOR:
 1. MECHANICAL SETUP
-   - Does the node introduce mechanics that are used later?
-   - Are abilities/items granted that enable future progression?
+   - If the node introduces mechanics, are they used/referenced in a \
+    future node?
 
 2. NARRATIVE SETUP
-   - Are story elements introduced that pay off later?
+   - Do the story elements introduced in this node pay off later?
    - Is foreshadowing appropriate and not heavy-handed?
 
-3. DIFFICULTY RAMP
-   - Does the node prepare the player for upcoming challenges?
-   - Is the skill progression appropriate?
-
-4. WORLD BUILDING
+3. WORLD BUILDING
    - Are locations/characters introduced properly?
    - Is context provided for future events?
 
@@ -151,15 +148,15 @@ Analyze whether the node aligns with the overall game concept and design pillars
 
 CHECK FOR:
 1. PILLAR ALIGNMENT
-   - Does the node reinforce or conflict with stated pillars?
-   - Are there explicit pillar violations?
+   - Does the node reinforce or conflict with the stated design pillars?
+   - Are there explicit violations (e.g., non-violent pillar vs combat-only node)?
 
 2. CONCEPT ALIGNMENT
-   - Is the node consistent with genre, premise, and tone?
-   - Does it introduce mechanics/themes that contradict the concept?
+   - Is the node consistent with what the game concept defines?
+   - Does it introduce mechanics/themes that contradict the game concept?
 
 3. WORLD/TONE CONSISTENCY
-   - Are characters, locations, and tone consistent with the setting?
+   - Is the node consistent with the setting?
 
 ================================================================================
 DIMENSION 4: NODE INTEGRITY
@@ -168,21 +165,14 @@ Analyze whether the node is internally coherent and well-defined.
 
 CHECK FOR:
 1. CONTRADICTIONS
-   - Do different parts of the node contradict each other?
-   - Does the description match the node type/category?
+   - Does the title match the description?
+   - If there are components, does the description match the node components?
+   - Does a part of the node description contradict another part of the
+     node description?
 
-2. CLARITY
-   - Is the node's purpose clear?
-   - Are descriptions specific enough to implement?
-
-3. COMPONENT HARMONY
+2. COMPONENT HARMONY
    - Do all node components work together?
    - Is component category/value appropriate for the content?
-
-4. COMPLETENESS
-   - Is all necessary information present?
-   - Are edge cases considered?
-   - Are player choices well-defined?
 
 ================================================================================
 SCORING SCALE (1-6):
@@ -398,7 +388,6 @@ class PxNodesCoherenceWorkflow:
             )
 
             base_data = {
-                "context_string": context_result.context_string,
                 "target_node_name": node.name,
                 "target_node_description": (
                     node_details.get("description")
@@ -415,13 +404,6 @@ class PxNodesCoherenceWorkflow:
                 "player_state": context_result.metadata.get("player_state", {}),
             }
 
-            # Build execution context
-            execution_context = {
-                "model_manager": self.model_manager,
-                "model_id": model_id,
-                "data": base_data,
-            }
-
             # Run dimension agents in parallel
             semaphore = asyncio.Semaphore(self.max_parallel)
             tasks = []
@@ -429,6 +411,19 @@ class PxNodesCoherenceWorkflow:
             for dimension_name in dimensions_to_run:
                 agent_class = DIMENSION_AGENTS.get(dimension_name)
                 if agent_class:
+                    agent_data = self._build_agent_data(
+                        dimension_name=dimension_name,
+                        base_data=base_data,
+                        context_result=context_result,
+                        node_details=node_details,
+                        project_pillars=project_pillars,
+                        game_concept=game_concept,
+                    )
+                    execution_context = {
+                        "model_manager": self.model_manager,
+                        "model_id": model_id,
+                        "data": agent_data,
+                    }
                     tasks.append(
                         self._run_dimension_agent(
                             agent_class=agent_class,
@@ -528,6 +523,186 @@ class PxNodesCoherenceWorkflow:
                 logger.warning(f"Agent {dimension_name} raised exception: {result}")
 
         return dimension_results
+
+    def _build_agent_data(
+        self,
+        dimension_name: str,
+        base_data: Dict[str, Any],
+        context_result: Any,
+        node_details: Dict[str, Any],
+        project_pillars: Optional[List],
+        game_concept: Optional[Any],
+    ) -> Dict[str, Any]:
+        """Build dimension-specific input for agentic evaluation."""
+        agent_data = dict(base_data)
+        omit_target_block = dimension_name in {
+            "backward_coherence",
+            "forward_coherence",
+            "node_integrity",
+        }
+        agent_data["context_string"] = self._build_dimension_context_string(
+            dimension_name=dimension_name,
+            context_result=context_result,
+            node_details=node_details,
+            project_pillars=project_pillars,
+            game_concept=game_concept,
+        )
+        agent_data["omit_target_block"] = omit_target_block
+
+        if dimension_name == "global_fit":
+            agent_data["target_node_description"] = node_details.get("description")
+            agent_data["pillars"] = []
+            agent_data["game_concept"] = None
+        else:
+            agent_data["pillars"] = []
+            agent_data["game_concept"] = None
+
+        return agent_data
+
+    def _build_dimension_context_string(
+        self,
+        dimension_name: str,
+        context_result: Any,
+        node_details: Dict[str, Any],
+        project_pillars: Optional[List],
+        game_concept: Optional[Any],
+    ) -> str:
+        """Filter context for agentic dimensions to reduce leakage."""
+        if dimension_name == "global_fit":
+            return self._build_global_fit_context(
+                context_result, project_pillars, game_concept
+            )
+        if dimension_name == "node_integrity":
+            return self._build_node_integrity_context(context_result, node_details)
+        if dimension_name == "backward_coherence":
+            return self._build_path_context(
+                context_result, node_details, direction="backward"
+            )
+        if dimension_name == "forward_coherence":
+            return self._build_path_context(
+                context_result, node_details, direction="forward"
+            )
+        return context_result.context_string
+
+    def _build_global_fit_context(
+        self,
+        context_result: Any,
+        project_pillars: Optional[List],
+        game_concept: Optional[Any],
+    ) -> str:
+        layer = context_result.get_layer(1) if context_result else None
+        if layer and getattr(layer, "content", None):
+            return layer.content
+
+        # Fallback for non-layered contexts
+        parts = []
+        if game_concept:
+            concept_text = getattr(game_concept, "content", "") or ""
+            if concept_text:
+                parts.append("Game Concept:")
+                parts.append(concept_text)
+        if project_pillars:
+            parts.append("Design Pillars:")
+            for pillar in project_pillars:
+                name = getattr(pillar, "name", "") or "Pillar"
+                desc = getattr(pillar, "description", "")
+                parts.append(f"- {name}: {desc}")
+        return "\n".join(parts) if parts else "No global context provided."
+
+    def _build_node_integrity_context(
+        self,
+        context_result: Any,
+        node_details: Dict[str, Any],
+    ) -> str:
+        layer = context_result.get_layer(4) if context_result else None
+        if layer and getattr(layer, "content", None):
+            return layer.content
+        return self._format_target_node(node_details)
+
+    def _build_path_context(
+        self,
+        context_result: Any,
+        node_details: Dict[str, Any],
+        direction: str,
+    ) -> str:
+        layer = context_result.get_layer(3) if context_result else None
+        layer_content = getattr(layer, "content", "") if layer else ""
+        layer_has_trace = (
+            layer_content and "no trace layer" not in layer_content.lower()
+        )
+
+        if layer_has_trace:
+            trace = self._filter_trace_content(layer_content, direction)
+        else:
+            trace = self._extract_full_chart_nodes(context_result.context_string)
+
+        node_block = self._build_node_integrity_context(context_result, node_details)
+        if "FULL CHART NODES" in trace:
+            node_block = ""
+
+        parts = [p for p in [trace, node_block] if p]
+        return "\n\n".join(parts) if parts else context_result.context_string
+
+    def _filter_trace_content(self, content: str, direction: str) -> str:
+        """Trim trace layer content to backward or forward sections."""
+        if "Previous:" in content or "Next:" in content:
+            lines = [line for line in content.splitlines() if line.strip()]
+            if direction == "backward":
+                return next(
+                    (line for line in lines if line.startswith("Previous:")), ""
+                )
+            return next((line for line in lines if line.startswith("Next:")), "")
+
+        if "PREVIOUS NODES" in content or "FUTURE NODES" in content:
+            if direction == "backward":
+                previous = self._extract_section(
+                    content, "PREVIOUS NODES", "FUTURE NODES"
+                )
+                accumulated = self._extract_section(content, "ACCUMULATED PLAYER STATE")
+                return "\n\n".join([p for p in [previous, accumulated] if p])
+            future = self._extract_section(
+                content, "FUTURE NODES", "ACCUMULATED PLAYER STATE"
+            )
+            return future
+
+        return content
+
+    def _extract_section(
+        self,
+        content: str,
+        start_marker: str,
+        end_marker: Optional[str] = None,
+    ) -> str:
+        start = content.find(start_marker)
+        if start == -1:
+            return ""
+        if end_marker:
+            end = content.find(end_marker, start)
+            if end == -1:
+                end = len(content)
+        else:
+            end = len(content)
+        return content[start:end].strip()
+
+    def _extract_full_chart_nodes(self, content: str) -> str:
+        nodes = self._extract_section(content, "FULL CHART NODES", "FULL CHART EDGES")
+        edges = self._extract_section(content, "FULL CHART EDGES")
+        parts = [p for p in [nodes, edges] if p]
+        return "\n\n".join(parts)
+
+    def _format_target_node(self, node_details: Dict[str, Any]) -> str:
+        lines = [f"Node: {node_details.get('name', 'Unknown')}"]
+        description = node_details.get("description")
+        if description:
+            lines.append(f"Description: {description}")
+        components = node_details.get("components", [])
+        if components:
+            lines.append("Components:")
+            for comp in components:
+                name = comp.get("name", "Component")
+                value = comp.get("value", "")
+                lines.append(f"- {name}: {value}")
+        return "\n".join(lines)
 
     def _extract_node_details(self, node: PxNode) -> Dict[str, Any]:
         """Extract node details for internal consistency evaluation."""
