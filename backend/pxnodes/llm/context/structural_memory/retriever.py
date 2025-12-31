@@ -137,6 +137,7 @@ class IterativeRetriever:
         memory_type: Optional[str] = None,
         iterations: int = 3,
         top_k: int = 10,
+        max_distance: Optional[float] = None,
     ) -> RetrievalResult:
         """
         Perform iterative retrieval.
@@ -173,6 +174,7 @@ class IterativeRetriever:
                         node_ids=node_ids,
                         memory_type=memory_type,
                         limit=top_k,
+                        max_distance=max_distance,
                     )
 
                     # Add only unseen memories
@@ -254,6 +256,7 @@ class IterativeRetriever:
         node_ids: Optional[list[str]] = None,
         memory_type: Optional[str] = None,
         limit: int = 10,
+        max_distance: Optional[float] = None,
     ) -> list[RetrievedMemory]:
         """Perform a single retrieval pass."""
         # Generate query embedding
@@ -270,6 +273,9 @@ class IterativeRetriever:
         # Convert to RetrievedMemory objects
         memories = []
         for r in raw_results:
+            distance = r.get("distance", 0.0)
+            if max_distance is not None and distance > max_distance:
+                continue
             memories.append(
                 RetrievedMemory(
                     id=r["id"],
@@ -278,7 +284,7 @@ class IterativeRetriever:
                     memory_type=r["memory_type"],
                     content=r["content"],
                     metadata=r.get("metadata"),
-                    distance=r.get("distance", 0.0),
+                    distance=distance,
                 )
             )
 

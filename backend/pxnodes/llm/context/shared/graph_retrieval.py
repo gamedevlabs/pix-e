@@ -61,7 +61,9 @@ def get_graph_slice(
     slice_result = GraphSlice(target=target_node, chart=chart)
 
     # Find container(s) containing this node
-    target_containers = list(chart.containers.filter(content=target_node))
+    target_containers = list(
+        chart.containers.filter(content_id=getattr(target_node, "id", None))
+    )
 
     if not target_containers:
         # Node not in chart, return just the target
@@ -237,6 +239,7 @@ def get_all_paths_through_node(
     node: PxNode,
     chart: PxChart,
     max_length: int = 5,
+    max_paths: int | None = None,
 ) -> list[list[PxNode]]:
     """
     Get all paths through a node in the chart.
@@ -245,7 +248,7 @@ def get_all_paths_through_node(
     """
     paths: list[list[PxNode]] = []
 
-    containers = list(chart.containers.filter(content=node))
+    containers = list(chart.containers.filter(content_id=getattr(node, "id", None)))
     if not containers:
         return paths
 
@@ -268,6 +271,8 @@ def get_all_paths_through_node(
                 backward_paths.extend(
                     get_backward_paths(edge.source, new_path, remaining - 1)
                 )
+                if max_paths is not None and len(backward_paths) >= max_paths:
+                    break
 
         if not has_incoming:
             return [path]
@@ -291,6 +296,8 @@ def get_all_paths_through_node(
                 forward_paths.extend(
                     get_forward_paths(edge.target, new_path, remaining - 1)
                 )
+                if max_paths is not None and len(forward_paths) >= max_paths:
+                    break
 
         if not has_outgoing:
             return [path]
@@ -310,5 +317,77 @@ def get_all_paths_through_node(
                 combined = back_path
             if combined not in paths:
                 paths.append(combined)
+            if max_paths is not None and len(paths) >= max_paths:
+                break
+        if max_paths is not None and len(paths) >= max_paths:
+            break
 
+    return paths
+
+
+def get_backward_paths_to_node(
+    node: PxNode,
+    chart: PxChart,
+    max_length: int = 6,
+    max_paths: int | None = None,
+) -> list[list[PxNode]]:
+    """Return backward paths that end at the target node."""
+    paths: list[list[PxNode]] = []
+    containers = list(chart.containers.filter(content_id=getattr(node, "id", None)))
+    if not containers:
+        return paths
+    container = containers[0]
+
+    def walk(c: PxChartContainer, path: list[PxNode], remaining: int) -> None:
+        if max_paths is not None and len(paths) >= max_paths:
+            return
+        if remaining <= 0:
+            paths.append(path)
+            return
+        has_incoming = False
+        for edge in c.incoming_edges.select_related("source__content").all():
+            if edge.source and edge.source.content:
+                has_incoming = True
+                new_path = [edge.source.content] + path
+                walk(edge.source, new_path, remaining - 1)
+                if max_paths is not None and len(paths) >= max_paths:
+                    return
+        if not has_incoming:
+            paths.append(path)
+
+    walk(container, [node], max_length)
+    return paths
+
+
+def get_forward_paths_from_node(
+    node: PxNode,
+    chart: PxChart,
+    max_length: int = 6,
+    max_paths: int | None = None,
+) -> list[list[PxNode]]:
+    """Return forward paths that start at the target node."""
+    paths: list[list[PxNode]] = []
+    containers = list(chart.containers.filter(content_id=getattr(node, "id", None)))
+    if not containers:
+        return paths
+    container = containers[0]
+
+    def walk(c: PxChartContainer, path: list[PxNode], remaining: int) -> None:
+        if max_paths is not None and len(paths) >= max_paths:
+            return
+        if remaining <= 0:
+            paths.append(path)
+            return
+        has_outgoing = False
+        for edge in c.outgoing_edges.select_related("target__content").all():
+            if edge.target and edge.target.content:
+                has_outgoing = True
+                new_path = path + [edge.target.content]
+                walk(edge.target, new_path, remaining - 1)
+                if max_paths is not None and len(paths) >= max_paths:
+                    return
+        if not has_outgoing:
+            paths.append(path)
+
+    walk(container, [node], max_length)
     return paths

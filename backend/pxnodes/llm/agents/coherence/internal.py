@@ -23,6 +23,9 @@ TASK: Evaluate NODE INTEGRITY
 
 Analyze whether the target node is internally coherent and well-defined.
 
+EVIDENCE RULES (node integrity):
+- Use only the TARGET NODE DETAILS (title/description/components).
+
 CHECK FOR:
 1. CONTRADICTIONS
    - Do different parts of the node contradict each other?
@@ -62,27 +65,4 @@ class NodeIntegrityAgent(CoherenceDimensionAgent):
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
         """Build internal-specific context."""
-        context_string = data.get("context_string", "")
-        if "Components:" in context_string:
-            return ""
-
-        node_details = data.get("node_details", {})
-
-        context_parts = []
-
-        # Add node component details
-        if node_details:
-            if node_details.get("category"):
-                context_parts.append(f"Category: {node_details['category']}")
-            if node_details.get("components"):
-                components = node_details["components"]
-                context_parts.append(f"Components: {len(components)} defined")
-                for comp in components[:5]:
-                    if isinstance(comp, dict):
-                        name = comp.get("name", "Unknown")
-                        value = comp.get("value", "")
-                        context_parts.append(f"  - {name}: {value}")
-
-        return (
-            "\n".join(context_parts) if context_parts else "No additional node details"
-        )
+        return ""

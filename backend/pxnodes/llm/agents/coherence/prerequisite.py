@@ -21,6 +21,17 @@ TASK: Evaluate BACKWARD COHERENCE
 Analyze whether the target node properly respects what came before
 across all valid predecessor paths.
 
+EVIDENCE RULES (backward coherence):
+- The TARGET NODE text is not evidence of prior acquisition; it only defines \
+requirements.
+- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
+cite the target node or future nodes.
+- Any item in "satisfied_prerequisites" must include a quoted fragment from \
+previous node descriptions.
+- A prerequisite cannot be both "missing_prerequisites" and \
+"satisfied_prerequisites". If evidence is absent or invalid, it must be \
+missing.
+
 CHECK FOR:
 1. REQUIRED MECHANICS/ITEMS
    - Does the node require mechanics or items that appear earlier?
@@ -44,6 +55,11 @@ PROCESS (strict):
 2) For each requirement, find an explicit quote in PREVIOUS NODES only.
 3) If no explicit quote exists, list it under "missing_prerequisites".
 4) Do not use the TARGET NODE as evidence.
+
+PREREQUISITE CHECKLIST:
+1) Extract required mechanics/items/abilities from the TARGET NODE text.
+2) For each requirement, find explicit evidence in PREVIOUS NODES only.
+3) If no quote exists, mark it as missing (do not invent evidence).
 
 """
     + SCORING_INSTRUCTIONS

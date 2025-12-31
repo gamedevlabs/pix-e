@@ -198,6 +198,13 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
             max_depth=None,  # Get complete forward path
         )
 
+        if not backward_nodes and not forward_nodes:
+            from pxnodes.llm.context.shared.graph_retrieval import get_full_path
+
+            graph_slice = get_full_path(scope.target_node, scope.chart)
+            backward_nodes = graph_slice.previous_nodes
+            forward_nodes = graph_slice.next_nodes
+
         # Aggregate player state along backward path
         player_state = aggregate_player_state(backward_nodes, self.llm_provider)
 

@@ -67,8 +67,8 @@ class LLMProviderAdapter:
         Returns:
             Generated text
         """
-        # Extract parameters, preferring kwargs over instance defaults
-        temperature = kwargs.get("temperature", self.temperature)
+        # Force deterministic output for all context prompts.
+        temperature = 0.0
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         model_name = kwargs.get("model_name", self.model_name)
 
@@ -135,5 +135,5 @@ def create_llm_provider(
     """
     return LLMProviderAdapter(
         model_name=model_name,
-        temperature=temperature,
+        temperature=0,
     )

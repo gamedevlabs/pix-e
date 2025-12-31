@@ -21,6 +21,10 @@ TASK: Evaluate FORWARD COHERENCE
 Analyze whether the target node properly sets up what comes next
 across all valid outgoing paths.
 
+EVIDENCE RULES (forward coherence):
+- The TARGET NODE can be cited as setup for future elements.
+- Use FUTURE NODES as evidence of payoff/setup.
+
 CHECK FOR:
 1. MECHANICAL SETUP
    - If the node introduces mechanics, items, characters, or plot points, \

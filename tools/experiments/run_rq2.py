@@ -62,6 +62,33 @@ def _get_project_context(chart):
     return project_context, concept, pillars
 
 
+def _resolve_target_node(chart, node_id: str, node_title: str | None):
+    container = (
+        chart.containers.select_related("content")
+        .filter(content_id=node_id)
+        .first()
+    )
+    if container and container.content:
+        return container.content
+
+    if node_title:
+        container = (
+            chart.containers.select_related("content")
+            .filter(content__name=node_title)
+            .first()
+        )
+        if container and container.content:
+            logfire.warning(
+                "rq2.node_id_not_in_chart_using_title_match",
+                node_id=node_id,
+                node_title=node_title,
+                chart_id=str(chart.id),
+            )
+            return container.content
+
+    return None
+
+
 def _reset_cache(chart, project_context, scope: str) -> None:
     from pxnodes.models import (
         ArtifactEmbedding,
@@ -127,6 +154,7 @@ def _precompute(
     embedding_model,
     scope,
     target_node_ids,
+    target_node_titles,
 ) -> None:
     from pxnodes.llm.context.artifacts import ArtifactInventory
     from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
@@ -175,8 +203,21 @@ def _precompute(
             )
 
     if needs.path_artifacts and scope in {"node", "all"}:
+        chart_nodes_by_title = {
+            getattr(node, "name", ""): node for node in nodes if node
+        }
         for node_id in target_node_ids:
-            target_node = PxNode.objects.get(id=node_id)
+            target_node = _resolve_target_node(
+                chart, node_id, target_node_titles.get(node_id, "")
+            )
+            if not target_node:
+                logfire.warning(
+                    "rq2.precompute_node_not_found_in_chart",
+                    node_id=node_id,
+                    node_title=target_node_titles.get(node_id, ""),
+                    chart_id=str(chart.id),
+                )
+                continue
             graph_slice = get_full_path(target_node, chart)
             path_nodes = (
                 graph_slice.previous_nodes
@@ -199,7 +240,17 @@ def _precompute(
             auto_embed=True,
         )
         for node_id in target_node_ids:
-            target_node = PxNode.objects.get(id=node_id)
+            target_node = _resolve_target_node(
+                chart, node_id, target_node_titles.get(node_id, "")
+            )
+            if not target_node:
+                logfire.warning(
+                    "rq2.precompute_embedding_node_not_found_in_chart",
+                    node_id=node_id,
+                    node_title=target_node_titles.get(node_id, ""),
+                    chart_id=str(chart.id),
+                )
+                continue
             scope_obj = EvaluationScope(
                 target_node=target_node,
                 chart=chart,
@@ -219,6 +270,7 @@ def _evaluate_nodes(
     llm_model,
     execution_mode,
     target_node_ids,
+    target_node_titles,
     node_parallelism: int,
 ) -> list[dict[str, Any]]:
     import asyncio
@@ -231,10 +283,12 @@ def _evaluate_nodes(
     )
     from pxnodes.models import PxNode
 
-    node_map = {
-        str(node.id): node
-        for node in PxNode.objects.filter(id__in=target_node_ids)
-    }
+    node_map: dict[str, Any] = {}
+    for node_id in target_node_ids:
+        if node_id not in node_map:
+            node_map[node_id] = _resolve_target_node(
+                chart, node_id, target_node_titles.get(node_id, "")
+            )
 
     llm_provider = create_llm_provider(model_name=llm_model, temperature=0)
     model_manager = ModelManager()
@@ -341,6 +395,17 @@ def main() -> int:
         action="store_true",
         help="Reuse existing cache and skip cache reset/precompute steps.",
     )
+    parser.add_argument(
+        "--debug-paths",
+        action="store_true",
+        help="Log resolved node/container and edge counts for each target.",
+    )
+    parser.add_argument(
+        "--limit-targets",
+        type=int,
+        default=None,
+        help="Limit evaluation to the first N target nodes from the CSV.",
+    )
 
     args = parser.parse_args()
 
@@ -352,8 +417,56 @@ def main() -> int:
     if not targets:
         raise SystemExit("No targets with is_target=true found in annotations CSV")
 
-    target_node_ids = [t["node_id"] for t in targets]
-    target_node_titles = {t["node_id"]: t.get("node_title", "") for t in targets}
+    if args.limit_targets is not None:
+        targets = targets[: max(0, args.limit_targets)]
+
+    # Resolve targets against chart containers to avoid stale node IDs.
+    resolved_targets: list[dict[str, str]] = []
+    container_qs = chart.containers.select_related("content").filter(
+        content__isnull=False
+    )
+    containers_by_content_id = {
+        str(c.content_id): c for c in container_qs if c.content
+    }
+    containers_by_title: dict[str, list[Any]] = {}
+    for c in container_qs:
+        if not c.content:
+            continue
+        containers_by_title.setdefault(c.content.name, []).append(c)
+
+    for t in targets:
+        original_id = t.get("node_id", "")
+        title = t.get("node_title", "")
+        container = containers_by_content_id.get(original_id)
+        if not container:
+            matches = containers_by_title.get(title, [])
+            if len(matches) > 1:
+                raise SystemExit(
+                    f"Multiple containers match title '{title}' in chart "
+                    f"{chart.id}. Please disambiguate or update the CSV."
+                )
+            container = matches[0] if matches else None
+            if container:
+                logfire.warning(
+                    "rq2.node_id_not_in_chart_using_title_match",
+                    node_id=original_id,
+                    node_title=title,
+                    chart_id=str(chart.id),
+                )
+        if not container or not container.content:
+            raise SystemExit(
+                f"Target node not found in chart: id={original_id} title='{title}'"
+            )
+        resolved_targets.append(
+            {
+                "node_id": str(container.content.id),
+                "node_title": container.content.name,
+                "original_node_id": original_id,
+            }
+        )
+
+    target_node_ids = [t["node_id"] for t in resolved_targets]
+    target_node_titles = {t["node_id"]: t.get("node_title", "") for t in resolved_targets}
 
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()]
 
@@ -378,10 +491,7 @@ def main() -> int:
         "embedding_model": args.embedding_model,
         "scope": args.scope,
         "skip_precompute": args.skip_precompute,
-        "targets": [
-            {"node_id": node_id, "node_title": target_node_titles.get(node_id, "")}
-            for node_id in target_node_ids
-        ],
+        "targets": resolved_targets,
         "started_at": timestamp,
     }
 
@@ -420,10 +530,48 @@ def main() -> int:
                         embedding_model=args.embedding_model,
                         scope=args.scope,
                         target_node_ids=target_node_ids,
+                        target_node_titles=target_node_titles,
                     )
                     precompute_ms = int((time.time() - precompute_start) * 1000)
 
                 eval_start = time.time()
+                if args.debug_paths:
+                    for node_id in target_node_ids:
+                        node = _resolve_target_node(
+                            chart, node_id, target_node_titles.get(node_id, "")
+                        )
+                        if not node:
+                            logfire.warning(
+                                "rq2.debug_paths.node_not_resolved",
+                                node_id=node_id,
+                                node_title=target_node_titles.get(node_id, ""),
+                                chart_id=str(chart.id),
+                            )
+                            continue
+                        container = (
+                            chart.containers.select_related("content")
+                            .filter(content=node)
+                            .first()
+                        )
+                        if not container:
+                            logfire.warning(
+                                "rq2.debug_paths.container_not_found",
+                                node_id=str(node.id),
+                                node_title=node.name,
+                                chart_id=str(chart.id),
+                            )
+                            continue
+                        incoming = container.incoming_edges.count()
+                        outgoing = container.outgoing_edges.count()
+                        logfire.info(
+                            "rq2.debug_paths.node_edges",
+                            node_id=str(node.id),
+                            node_title=node.name,
+                            container_id=str(container.id),
+                            incoming=incoming,
+                            outgoing=outgoing,
+                        )
+
                 results = _evaluate_nodes(
                     chart=chart,
                     project_context=project_context,
@@ -433,6 +581,7 @@ def main() -> int:
                     llm_model=args.model,
                     execution_mode=args.execution_mode,
                     target_node_ids=target_node_ids,
+                    target_node_titles=target_node_titles,
                     node_parallelism=effective_parallelism,
                 )
                 eval_ms = int((time.time() - eval_start) * 1000)

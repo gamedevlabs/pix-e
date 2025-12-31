@@ -20,6 +20,9 @@ TASK: Evaluate GLOBAL FIT
 
 Analyze whether the target node aligns with the overall game concept and design pillars.
 
+EVIDENCE RULES (global fit):
+- Use the GAME CONCEPT and DESIGN PILLARS provided in CONTEXT.
+
 CHECK FOR:
 1. PILLAR ALIGNMENT
    - Does the node reinforce or conflict with the stated design pillars?
@@ -55,24 +58,7 @@ class GlobalFitAgent(CoherenceDimensionAgent):
         """Build global fit context."""
         pillars = data.get("pillars", [])
         game_concept = data.get("game_concept")
-        node_details = data.get("node_details", {})
-
         context_parts = []
-
-        if node_details:
-            description = node_details.get("description")
-            components = node_details.get("components", [])
-            if description or components:
-                context_parts.append("TARGET NODE DETAILS:")
-            if description:
-                context_parts.append(f"Description: {description}")
-            if components:
-                context_parts.append("Components:")
-                for comp in components[:5]:
-                    if isinstance(comp, dict):
-                        name = comp.get("name", "Component")
-                        value = comp.get("value", "")
-                        context_parts.append(f"- {name}: {value}")
 
         if game_concept:
             concept_text = getattr(game_concept, "content", "") or ""

@@ -216,9 +216,11 @@ def aggregate_player_state(
             )
 
         prompt = (
-            "From the previous nodes, extract accumulated player context.\n"
-            "Return exactly two lines:\n"
+            "From the previous nodes, extract as much accumulated player "
+            "context as possible.\n"
+            "Return exactly three lines:\n"
             "Mechanics Introduced: <short list>\n"
+            "Items Collected: <short list>\n"
             "Story Events: <short list>\n\n"
             "Nodes:\n" + "\n".join(node_summaries)
         )
@@ -250,12 +252,30 @@ def _find_container_for_node(node: Any, chart: Any) -> Optional[Any]:
     if not containers:
         return None
 
-    # Try to filter by content
     container_qs = (
-        containers.filter(content=node) if hasattr(containers, "filter") else []
+        containers.filter(content_id=getattr(node, "id", None))
+        if hasattr(containers, "filter")
+        else []
     )
     if container_qs:
         return container_qs.first() if hasattr(container_qs, "first") else None
+
+    chart_edges = getattr(chart, "edges", None)
+    if chart_edges and hasattr(chart_edges, "filter"):
+        edge = (
+            chart_edges.filter(source__content_id=getattr(node, "id", None))
+            .select_related("source")
+            .first()
+        )
+        if edge and getattr(edge, "source", None):
+            return edge.source
+        edge = (
+            chart_edges.filter(target__content_id=getattr(node, "id", None))
+            .select_related("target")
+            .first()
+        )
+        if edge and getattr(edge, "target", None):
+            return edge.target
 
     # Fallback: iterate through containers
     container_list = (
