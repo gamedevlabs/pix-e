@@ -92,6 +92,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         embedding_model: str = "text-embedding-3-small",
         retrieval_iterations: int = 3,
         retrieval_top_k: int = 50,
+        retrieval_max_distance: Optional[float] = 2.0,
         use_iterative_retrieval: bool = True,
         skip_fact_extraction: bool = False,
         skip_summary_extraction: bool = False,
@@ -108,6 +109,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             embedding_model: OpenAI embedding model name
             retrieval_iterations: Number of query refinement iterations (N in paper)
             retrieval_top_k: Memories to retrieve per iteration (T in paper, default 50)
+            retrieval_max_distance: Maximum distance to keep retrieved memories
             use_iterative_retrieval: If True, use iterative retrieval from paper.
                                      If False, use direct extraction only.
             skip_fact_extraction: If True, skip LLM-based fact extraction
@@ -117,6 +119,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         self.embedding_model = embedding_model
         self.retrieval_iterations = retrieval_iterations
         self.retrieval_top_k = retrieval_top_k
+        self.retrieval_max_distance = retrieval_max_distance
         self.use_iterative_retrieval = use_iterative_retrieval
         self.skip_fact_extraction = skip_fact_extraction
         self.skip_summary_extraction = skip_summary_extraction
@@ -415,7 +418,8 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         cache_key = (
             f"struct_mem:retrieval:{scope.chart.id}:"
             f"{scope.target_node.id}:{content_hash}:"
-            f"{self.retrieval_iterations}:{self.retrieval_top_k}"
+            f"{self.retrieval_iterations}:{self.retrieval_top_k}:"
+            f"{self.retrieval_max_distance}"
         )
         cached = cache.get(cache_key)
         if cached:
@@ -463,6 +467,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                 node_ids=scoped_node_ids,  # Scoped to full chart for baseline parity
                 iterations=self.retrieval_iterations,
                 top_k=self.retrieval_top_k,
+                max_distance=self.retrieval_max_distance,
             )
 
             logger.info(
@@ -783,6 +788,34 @@ class StructuralMemoryStrategy(BaseContextStrategy):
                         source_field="retrieved",
                     )
                 )
+
+        from pxnodes.llm.context.structural_memory.facts import (
+            get_cached_facts_from_vector_store,
+        )
+        from pxnodes.llm.context.structural_memory.triples import (
+            get_cached_triples_from_vector_store,
+        )
+
+        target_triples = get_cached_triples_from_vector_store(
+            str(scope.target_node.id), chart_id=str(scope.chart.id)
+        )
+        target_facts = get_cached_facts_from_vector_store(
+            str(scope.target_node.id), chart_id=str(scope.chart.id)
+        )
+
+        if target_triples:
+            seen = {str(t) for t in retrieved_triples}
+            for t in target_triples:
+                if str(t) not in seen:
+                    retrieved_triples.append(t)
+                    seen.add(str(t))
+
+        if target_facts:
+            seen = {f.fact for f in retrieved_facts}
+            for f in target_facts:
+                if f.fact not in seen:
+                    retrieved_facts.append(f)
+                    seen.add(f.fact)
 
         # Use retrieved triples only (LLM-extracted in this pipeline)
         all_triples = retrieved_triples

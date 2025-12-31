@@ -98,6 +98,8 @@ class HMEMStrategy(BaseContextStrategy):
         top_k_per_layer: int = 3,
         similarity_thresholds: Optional[dict[int, float]] = None,
         auto_embed: bool = True,
+        max_trace_paths: int = 8,
+        max_trace_length: int = 12,
         **kwargs: Any,
     ):
         """
@@ -115,12 +117,14 @@ class HMEMStrategy(BaseContextStrategy):
         self.embedding_model = embedding_model
         self.top_k_per_layer = top_k_per_layer
         self.similarity_thresholds = similarity_thresholds or {
-            1: 0.3,
-            2: 0.05,
-            3: 0.5,
+            1: 0.25,
+            2: 0.5,
+            3: 0.25,
             4: 0.9,
         }
         self.auto_embed = auto_embed
+        self.max_trace_paths = max(1, max_trace_paths)
+        self.max_trace_length = max(2, max_trace_length)
         self.retriever = HMEMRetriever(embedding_model=embedding_model)
         self._trace_summary_state_map: dict[str, Any] = {}
         self._trace_summary_chart: Optional[Any] = None
@@ -493,40 +497,78 @@ class HMEMStrategy(BaseContextStrategy):
     ) -> list[tuple[str, str]]:
         """Build L3 entries from path snippets, node summaries, and milestones."""
         entries: list[tuple[str, str]] = []
-        full_path = list(backward_path) + [scope.target_node] + list(forward_path)
-        if not full_path:
+        raw_paths = self._get_relevant_paths(scope)
+        if not raw_paths:
             return entries
-
-        path_id = compute_path_hash(full_path)
-        summaries = self._load_path_summaries(scope, full_path)
-
-        for idx, (node, summary) in enumerate(zip(full_path, summaries)):
-            node_name = getattr(node, "name", "") or f"node_{idx + 1}"
-            key = f"{path_id}_node_{idx + 1}_{self._slugify(node_name)}"
-            entries.append((key, f"Node: {node_name}\nSummary: {summary}"))
-
-        for window_size in (2, 3):
-            if len(full_path) < window_size:
+        paths: list[list[Any]] = []
+        seen_path_keys: set[tuple[str, ...]] = set()
+        for path in raw_paths:
+            key = tuple(str(getattr(node, "id", "")) for node in path)
+            if key in seen_path_keys:
                 continue
-            for i in range(len(full_path) - window_size + 1):
-                snippet_nodes = full_path[i : i + window_size]
-                snippet_names = " -> ".join(
-                    getattr(node, "name", "") or f"Node {i + 1}"
-                    for node in snippet_nodes
-                )
-                snippet_summaries = "; ".join(summaries[i : i + window_size])
-                key = f"{path_id}_path_{window_size}_{i + 1}"
-                snippet_text = (
-                    f"Path snippet: {snippet_names}\nHighlights: {snippet_summaries}"
-                )
-                entries.append(
-                    (
-                        key,
-                        snippet_text,
+            seen_path_keys.add(key)
+            paths.append(path)
+
+        seen_nodes: dict[str, Any] = {}
+        for path in paths:
+            for node in path:
+                node_id = str(getattr(node, "id", ""))
+                if node_id and node_id not in seen_nodes:
+                    seen_nodes[node_id] = node
+
+        summary_nodes = list(seen_nodes.values())
+        summaries = self._load_path_summaries(scope, summary_nodes)
+        summary_map = {
+            str(getattr(node, "id", "")): summary
+            for node, summary in zip(summary_nodes, summaries)
+        }
+
+        for idx, node in enumerate(summary_nodes, 1):
+            node_name = getattr(node, "name", "") or f"node_{idx}"
+            summary = summary_map.get(str(getattr(node, "id", "")), "(no details)")
+            entry_key = f"node_{idx}_{self._slugify(node_name)}"
+            entries.append((entry_key, f"Node: {node_name}\nSummary: {summary}"))
+
+        for path in paths:
+            path_id = compute_path_hash(path)
+            for window_size in (2, 3):
+                if len(path) < window_size:
+                    continue
+                seen_snippets: set[str] = set()
+                for i in range(len(path) - window_size + 1):
+                    snippet_nodes = path[i : i + window_size]
+                    snippet_names = " -> ".join(
+                        getattr(node, "name", "") or f"Node {i + 1}"
+                        for node in snippet_nodes
                     )
-                )
+                    snippet_summaries = "; ".join(
+                        summary_map.get(str(getattr(node, "id", "")), "(no details)")
+                        for node in snippet_nodes
+                    )
+                    entry_key = f"{path_id}_path_{window_size}_{i + 1}"
+                    if entry_key in seen_snippets:
+                        continue
+                    seen_snippets.add(entry_key)
+                    snippet_text = (
+                        f"Path snippet: {snippet_names}\n"
+                        f"Highlights: {snippet_summaries}"
+                    )
+                    entries.append((entry_key, snippet_text))
 
         return entries
+
+    def _get_relevant_paths(self, scope: EvaluationScope) -> list[list[Any]]:
+        """Return a bounded set of paths through the target node."""
+        from pxnodes.llm.context.shared.graph_retrieval import (
+            get_all_paths_through_node,
+        )
+
+        return get_all_paths_through_node(
+            scope.target_node,
+            scope.chart,
+            max_length=self.max_trace_length,
+            max_paths=self.max_trace_paths,
+        )
 
     def _load_path_summaries(
         self, scope: EvaluationScope, nodes: list[Any]
@@ -1116,10 +1158,12 @@ class HMEMStrategy(BaseContextStrategy):
                 )
 
             prompt = (
-                "From the previous nodes, extract accumulated player context.\n"
-                "Return exactly two lines:\n"
-                "Mechanics Introduced: <short list>\n"
-                "Story Events: <short list>\n\n"
+                "From the previous nodes, extract as much accumulated player "
+                "context as possible.\n"
+                "Return exactly three lines:\n"
+                "Mechanics Introduced: <list>\n"
+                "Items Collected: <list>\n"
+                "Story Events: <list>\n\n"
                 "Nodes:\n" + "\n".join(node_summaries)
             )
             try:

@@ -64,41 +64,21 @@ class LLMProvider(Protocol):
 MONOLITHIC_COHERENCE_PROMPT = """You are a game design coherence analyzer \
 evaluating a node in a game flow chart.
 
-TARGET NODE: {target_node_name}
-
-EVIDENCE RULES (apply to ALL dimensions):
+EVIDENCE RULES (general):
 - Only use information explicitly stated in the CONTEXT below. Do NOT assume \
 missing mechanics, items, or events.
-- The TARGET NODE text is not evidence of prior acquisition; it only defines \
-requirements or acts as setup for future nodes.
-- If a prerequisite is not explicitly supported by earlier context, list it \
-under "missing_prerequisites" (or "unknowns" if ambiguous).
-- Any mechanic or item in "satisfied_prerequisites" must cite a specific \
-earlier node/title/quote from the context.
-- Do NOT use words like "implied" or "assumed" as evidence. If you cannot \
-cite a passage from a previous node, it is missing.
-- In "satisfied_prerequisites", include the evidence inline, e.g., \
-"Ability X — evidence: <quoted passage from a previous node>".
 - Evidence must be a direct quote (or near-direct paraphrase) from the \
-CONTEXT. If the quoted phrase does not appear in a prior node description, \
-it does NOT count.
-- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
-cite the target node or future nodes for prerequisites.
-- If you cite a node title, you MUST include a quoted fragment from that \
-node's description that proves the prerequisite.
-- A prerequisite cannot be both "missing_prerequisites" and \
-"satisfied_prerequisites". If evidence is absent or invalid, it must be \
-missing.
+CONTEXT.
+- If you cite a node title, include a quoted fragment from that node's \
+description that supports the claim.
+
+TARGET NODE DETAILS:
+{target_node_block}
 
 CONTEXT:
 {context}
 
 {dimension_context}
-
-PREREQUISITE CHECKLIST (for backward coherence):
-1) Extract required mechanics/items/abilities from the TARGET NODE text.
-2) For each requirement, find explicit evidence in PREVIOUS NODES only.
-3) If no quote exists, mark it as missing (do not invent evidence).
 
 TASK: Evaluate ALL FOUR coherence dimensions for the target node.
 
@@ -107,6 +87,17 @@ DIMENSION 1: BACKWARD COHERENCE
 ================================================================================
 Analyze whether the target node properly respects what came before across
 all valid predecessor paths.
+
+EVIDENCE RULES (backward coherence):
+- The TARGET NODE text is not evidence of prior acquisition; it only defines \
+requirements.
+- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
+cite the target node or future nodes.
+- Any item in "satisfied_prerequisites" must include a quoted fragment from \
+previous node descriptions.
+- A prerequisite cannot be both "missing_prerequisites" and \
+"satisfied_prerequisites". If evidence is absent or invalid, it must be \
+missing.
 
 CHECK FOR:
 1. REQUIRED MECHANICS/ITEMS
@@ -122,11 +113,20 @@ CHECK FOR:
    - Does the node assume a game state that is achievable on all paths?
    - Are triggers/conditions for reaching this node satisfiable?
 
+PREREQUISITE CHECKLIST:
+1) Extract required mechanics/items/abilities from the TARGET NODE text.
+2) For each requirement, find explicit evidence in PREVIOUS NODES only.
+3) If no quote exists, mark it as missing (do not invent evidence).
+
 ================================================================================
 DIMENSION 2: FORWARD COHERENCE
 ================================================================================
 Analyze whether the target node properly sets up what comes next across \
 all valid outgoing paths.
+
+EVIDENCE RULES (forward coherence):
+- The TARGET NODE can be cited as setup for future elements.
+- Use FUTURE NODES as evidence of payoff/setup.
 
 CHECK FOR:
 1. MECHANICAL SETUP
@@ -146,6 +146,9 @@ DIMENSION 3: GLOBAL FIT
 ================================================================================
 Analyze whether the node aligns with the overall game concept and design pillars.
 
+EVIDENCE RULES (global fit):
+- Use the GAME CONCEPT and DESIGN PILLARS provided in CONTEXT.
+
 CHECK FOR:
 1. PILLAR ALIGNMENT
    - Does the node reinforce or conflict with the stated design pillars?
@@ -162,6 +165,9 @@ CHECK FOR:
 DIMENSION 4: NODE INTEGRITY
 ================================================================================
 Analyze whether the node is internally coherent and well-defined.
+
+EVIDENCE RULES (node integrity):
+- Use only the TARGET NODE DETAILS (title/description/components).
 
 CHECK FOR:
 1. CONTRADICTIONS
@@ -382,18 +388,13 @@ class PxNodesCoherenceWorkflow:
             node_details = await sync_to_async(
                 self._extract_node_details, thread_sensitive=True
             )(node)
-
-            include_target_description = not context_result.metadata.get(
-                "includes_target_description"
-            )
+            path_metadata = await sync_to_async(
+                self._build_path_metadata, thread_sensitive=True
+            )(node, chart)
 
             base_data = {
                 "target_node_name": node.name,
-                "target_node_description": (
-                    node_details.get("description")
-                    if include_target_description
-                    else None
-                ),
+                "target_node_description": node_details.get("description"),
                 "node_details": node_details,
                 "backward_nodes": self._extract_path_nodes(context_result, "backward"),
                 "forward_nodes": self._extract_path_nodes(context_result, "forward"),
@@ -402,7 +403,31 @@ class PxNodesCoherenceWorkflow:
                 "is_full_context": bool(context_result.metadata.get("full_context")),
                 "strategy_type": self.strategy_type.value,
                 "player_state": context_result.metadata.get("player_state", {}),
+                "path_order": path_metadata.get("order", {}),
+                "path_predecessors": path_metadata.get("predecessors", set()),
+                "path_successors": path_metadata.get("successors", set()),
             }
+            if self.strategy_type in {
+                StrategyType.SIMPLE_SM,
+                StrategyType.STRUCTURAL_MEMORY,
+            }:
+                base_data.update(
+                    self._build_structural_memory_target_artifacts(
+                        context_result=context_result,
+                        node_details=node_details,
+                        include_summaries=self.strategy_type
+                        == StrategyType.STRUCTURAL_MEMORY,
+                        include_chunks=self.strategy_type
+                        == StrategyType.STRUCTURAL_MEMORY,
+                    )
+                )
+            context_result.metadata["path_order"] = path_metadata.get("order", {})
+            context_result.metadata["path_predecessors"] = path_metadata.get(
+                "predecessors", set()
+            )
+            context_result.metadata["path_successors"] = path_metadata.get(
+                "successors", set()
+            )
 
             # Run dimension agents in parallel
             semaphore = asyncio.Semaphore(self.max_parallel)
@@ -535,22 +560,18 @@ class PxNodesCoherenceWorkflow:
     ) -> Dict[str, Any]:
         """Build dimension-specific input for agentic evaluation."""
         agent_data = dict(base_data)
-        omit_target_block = dimension_name in {
-            "backward_coherence",
-            "forward_coherence",
-            "node_integrity",
-        }
-        agent_data["context_string"] = self._build_dimension_context_string(
+        context_string = self._build_dimension_context_string(
             dimension_name=dimension_name,
             context_result=context_result,
             node_details=node_details,
             project_pillars=project_pillars,
             game_concept=game_concept,
         )
-        agent_data["omit_target_block"] = omit_target_block
+        agent_data["context_string"] = (
+            context_string if context_string else "No additional context."
+        )
 
         if dimension_name == "global_fit":
-            agent_data["target_node_description"] = node_details.get("description")
             agent_data["pillars"] = []
             agent_data["game_concept"] = None
         else:
@@ -573,7 +594,7 @@ class PxNodesCoherenceWorkflow:
                 context_result, project_pillars, game_concept
             )
         if dimension_name == "node_integrity":
-            return self._build_node_integrity_context(context_result, node_details)
+            return "No additional context."
         if dimension_name == "backward_coherence":
             return self._build_path_context(
                 context_result, node_details, direction="backward"
@@ -592,7 +613,7 @@ class PxNodesCoherenceWorkflow:
     ) -> str:
         layer = context_result.get_layer(1) if context_result else None
         if layer and getattr(layer, "content", None):
-            return layer.content
+            return self._strip_target_block(layer.content)
 
         # Fallback for non-layered contexts
         parts = []
@@ -633,15 +654,17 @@ class PxNodesCoherenceWorkflow:
 
         if layer_has_trace:
             trace = self._filter_trace_content(layer_content, direction)
+            trace = self._filter_hmem_trace(
+                trace,
+                node_details,
+                direction,
+                context_result.metadata.get("path_predecessors", set()),
+                context_result.metadata.get("path_successors", set()),
+            )
         else:
             trace = self._extract_full_chart_nodes(context_result.context_string)
 
-        node_block = self._build_node_integrity_context(context_result, node_details)
-        if "FULL CHART NODES" in trace:
-            node_block = ""
-
-        parts = [p for p in [trace, node_block] if p]
-        return "\n\n".join(parts) if parts else context_result.context_string
+        return trace or context_result.context_string
 
     def _filter_trace_content(self, content: str, direction: str) -> str:
         """Trim trace layer content to backward or forward sections."""
@@ -690,8 +713,195 @@ class PxNodesCoherenceWorkflow:
         parts = [p for p in [nodes, edges] if p]
         return "\n\n".join(parts)
 
+    def _filter_hmem_trace(
+        self,
+        content: str,
+        node_details: Dict[str, Any],
+        direction: str,
+        predecessors: set[str],
+        successors: set[str],
+    ) -> str:
+        """Filter HMEM L3 snippets to avoid future nodes in backward/forward."""
+        if "Path snippet:" not in content and "Node:" not in content:
+            return content
+
+        target_name = (node_details.get("name") or "").strip()
+        if not target_name:
+            return content
+        allowed_names = (
+            set(predecessors) if direction == "backward" else set(successors)
+        )
+        allowed_names.add(target_name)
+
+        snippets: list[tuple[list[str], str]] = []
+        allowed: list[str] = []
+        for block in content.split("\n\n"):
+            block = block.strip()
+            if not block:
+                continue
+            if block.startswith("Path snippet:"):
+                header = block.splitlines()[0]
+                if ":" not in header:
+                    continue
+                snippet = header.split(":", 1)[1].strip()
+                nodes = [n.strip() for n in snippet.split("->") if n.strip()]
+                if not nodes:
+                    continue
+                if any(n not in allowed_names for n in nodes):
+                    continue
+                if direction == "backward":
+                    if target_name in nodes and nodes[-1] != target_name:
+                        continue
+                else:
+                    if target_name in nodes and nodes[0] != target_name:
+                        continue
+                snippets.append((nodes, block))
+            elif block.startswith("Node:"):
+                # Exclude target node summaries from path context
+                if target_name and f"Node: {target_name}" in block:
+                    continue
+                line = block.splitlines()[0]
+                node_name = line.replace("Node:", "").strip()
+                if node_name in allowed_names:
+                    allowed.append(block)
+            else:
+                allowed.append(block)
+
+        snippets = self._drop_subset_snippets(snippets)
+        allowed.extend([block for _, block in snippets])
+
+        return "\n\n".join(allowed) if allowed else content
+
+    def _drop_subset_snippets(
+        self, snippets: list[tuple[list[str], str]]
+    ) -> list[tuple[list[str], str]]:
+        """Remove snippet blocks that are strict contiguous subsets of longer ones."""
+        if len(snippets) < 2:
+            return snippets
+        kept: list[tuple[list[str], str]] = []
+        for nodes, block in snippets:
+            is_subset = False
+            for other_nodes, _ in snippets:
+                if nodes == other_nodes or len(nodes) >= len(other_nodes):
+                    continue
+                for i in range(len(other_nodes) - len(nodes) + 1):
+                    if other_nodes[i : i + len(nodes)] == nodes:
+                        is_subset = True
+                        break
+                if is_subset:
+                    break
+            if not is_subset:
+                kept.append((nodes, block))
+        return kept
+
+    def _build_path_metadata(self, node: PxNode, chart: PxChart) -> Dict[str, Any]:
+        """Build connected predecessor/successor sets for filtering."""
+        from collections import deque
+
+        node_id = str(getattr(node, "id", ""))
+        if not node_id:
+            return {"order": {}, "predecessors": set(), "successors": set()}
+
+        edges = chart.edges.select_related("source__content", "target__content").all()
+        forward: Dict[str, list[str]] = {}
+        backward: Dict[str, list[str]] = {}
+        name_map: Dict[str, str] = {node_id: getattr(node, "name", "")}
+
+        for edge in edges:
+            source = getattr(edge, "source", None)
+            target = getattr(edge, "target", None)
+            if not source or not target:
+                continue
+            source_node = getattr(source, "content", None)
+            target_node = getattr(target, "content", None)
+            if not source_node or not target_node:
+                continue
+            source_id = str(getattr(source_node, "id", ""))
+            target_id = str(getattr(target_node, "id", ""))
+            if not source_id or not target_id:
+                continue
+            forward.setdefault(source_id, []).append(target_id)
+            backward.setdefault(target_id, []).append(source_id)
+            if source_id not in name_map:
+                name_map[source_id] = getattr(source_node, "name", "")
+            if target_id not in name_map:
+                name_map[target_id] = getattr(target_node, "name", "")
+
+        def traverse(start: str, adjacency: Dict[str, list[str]]) -> set[str]:
+            visited: set[str] = set()
+            queue: deque[str] = deque([start])
+            while queue:
+                current = queue.popleft()
+                for nxt in adjacency.get(current, []):
+                    if nxt in visited:
+                        continue
+                    visited.add(nxt)
+                    queue.append(nxt)
+            return visited
+
+        predecessor_ids = traverse(node_id, backward)
+        successor_ids = traverse(node_id, forward)
+        predecessors = {
+            name_map.get(nid, "") for nid in predecessor_ids if nid in name_map
+        }
+        successors = {name_map.get(nid, "") for nid in successor_ids if nid in name_map}
+        return {"order": {}, "predecessors": predecessors, "successors": successors}
+
+    def _strip_target_block(self, content: str) -> str:
+        if "TARGET NODE DETAILS:" not in content:
+            return content
+        start = content.find("TARGET NODE DETAILS:")
+        end = content.find("CONTEXT:", start)
+        if end == -1:
+            return content[:start].strip()
+        return (content[:start] + content[end:]).strip()
+
+    def _build_structural_memory_target_artifacts(
+        self,
+        context_result: Any,
+        node_details: Dict[str, Any],
+        include_summaries: bool,
+        include_chunks: bool,
+    ) -> Dict[str, Any]:
+        node_id = str(node_details.get("id") or node_details.get("node_id") or "")
+        node_name = node_details.get("name", "")
+
+        facts = [
+            fact.fact
+            for fact in getattr(context_result, "facts", [])
+            if getattr(fact, "node_id", "") == node_id
+        ]
+        triples = [
+            str(triple)
+            for triple in getattr(context_result, "triples", [])
+            if getattr(triple, "head", "") == node_name
+        ]
+        summary = None
+        if include_summaries:
+            for s in getattr(context_result, "summaries", []):
+                if getattr(s, "node_id", "") == node_id:
+                    summary = getattr(s, "content", None)
+                    break
+        chunks = []
+        if include_chunks:
+            for c in getattr(context_result, "chunks", []):
+                if getattr(c, "node_id", "") == node_id:
+                    content = getattr(c, "content", "")
+                    if content:
+                        chunks.append(content)
+
+        return {
+            "target_node_facts": facts,
+            "target_node_triples": triples,
+            "target_node_summary": summary,
+            "target_node_chunks": chunks,
+        }
+
     def _format_target_node(self, node_details: Dict[str, Any]) -> str:
-        lines = [f"Node: {node_details.get('name', 'Unknown')}"]
+        return self._format_target_block(node_details)
+
+    def _format_target_block(self, node_details: Dict[str, Any]) -> str:
+        lines = [f"Title: {node_details.get('name', 'Unknown')}"]
         description = node_details.get("description")
         if description:
             lines.append(f"Description: {description}")
@@ -722,6 +932,7 @@ class PxNodesCoherenceWorkflow:
 
         details: Dict[str, Any] = {
             "name": node.name,
+            "id": str(node.id),
             "category": getattr(node, "category", None),
             "description": getattr(node, "description", None),
             "components": components,
@@ -896,16 +1107,14 @@ class PxNodesCoherenceMonolithicWorkflow:
             )
 
             # Build the unified prompt
-            target_node_block = node.name
-            include_target_description = not context_result.metadata.get(
-                "includes_target_description"
-            )
-            if node.description and include_target_description:
-                target_node_block = f"{node.name}\nDescription: {node.description}"
+            node_details = await sync_to_async(
+                self._extract_node_details, thread_sensitive=True
+            )(node)
+            target_node_block = self._format_target_block(node_details)
 
             prompt = MONOLITHIC_COHERENCE_PROMPT.format(
                 context=context_result.context_string,
-                target_node_name=target_node_block,
+                target_node_block=target_node_block,
                 dimension_context=dimension_context,
             )
 
@@ -958,14 +1167,7 @@ class PxNodesCoherenceMonolithicWorkflow:
         game_concept: Optional[Any],
     ) -> str:
         """Build additional context for all dimensions."""
-        from asgiref.sync import sync_to_async
-
         context_parts = []
-
-        # Extract node details (sync Django ORM call)
-        node_details = await sync_to_async(
-            self._extract_node_details, thread_sensitive=True
-        )(node)
 
         # Backward path context (for prerequisite alignment)
         backward_path = context_result.metadata.get("backward_path", [])
@@ -999,16 +1201,6 @@ class PxNodesCoherenceMonolithicWorkflow:
             ]
             context_parts.append(f"Upcoming nodes: {' → '.join(node_names)}")
 
-        # Node details context (for internal consistency)
-        if node_details.get("category"):
-            context_parts.append(f"Category: {node_details['category']}")
-        if node_details.get("components"):
-            components = node_details["components"]
-            context_parts.append(f"Components: {len(components)} defined")
-            for comp in components[:5]:
-                name = comp.get("name", "Unknown")
-                value = comp.get("value", "")
-                context_parts.append(f"  - {name}: {value}")
         return "\n".join(context_parts) if context_parts else "No additional context"
 
     def _extract_node_details(self, node: PxNode) -> Dict[str, Any]:
@@ -1035,6 +1227,20 @@ class PxNodesCoherenceMonolithicWorkflow:
         }
 
         return details
+
+    def _format_target_block(self, node_details: Dict[str, Any]) -> str:
+        lines = [f"Title: {node_details.get('name', 'Unknown')}"]
+        description = node_details.get("description")
+        if description:
+            lines.append(f"Description: {description}")
+        components = node_details.get("components", [])
+        if components:
+            lines.append("Components:")
+            for comp in components:
+                name = comp.get("name", "Component")
+                value = comp.get("value", "")
+                lines.append(f"- {name}: {value}")
+        return "\n".join(lines)
 
     def _parse_response(self, response: str) -> Dict[str, Any]:
         """Parse the LLM response into typed dimension results."""

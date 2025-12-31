@@ -70,6 +70,10 @@ class CoherenceDimensionAgent(BaseAgent):
         target_node_name = data.get("target_node_name", "Unknown")
         target_node_description = data.get("target_node_description")
         node_details = data.get("node_details", {})
+        target_facts = data.get("target_node_facts", [])
+        target_triples = data.get("target_node_triples", [])
+        target_summary = data.get("target_node_summary")
+        target_chunks = data.get("target_node_chunks", [])
 
         # Get dimension-specific context
         dimension_context = self._build_dimension_context(data)
@@ -85,6 +89,21 @@ class CoherenceDimensionAgent(BaseAgent):
                     name = comp.get("name", "Component")
                     value = comp.get("value", "")
                     target_block_lines.append(f"- {name}: {value}")
+        if target_summary:
+            target_block_lines.append("Summary:")
+            target_block_lines.append(f"- {target_summary}")
+        if target_facts:
+            target_block_lines.append("Atomic Facts:")
+            for fact in target_facts[:10]:
+                target_block_lines.append(f"- {fact}")
+        if target_triples:
+            target_block_lines.append("Knowledge Triples:")
+            for triple in target_triples[:10]:
+                target_block_lines.append(f"- {triple}")
+        if target_chunks:
+            target_block_lines.append("Chunks:")
+            for chunk in target_chunks[:4]:
+                target_block_lines.append(f"- {chunk}")
         target_block = "\n".join(target_block_lines)
 
         return self.prompt_template.format(
@@ -139,40 +158,19 @@ RESPONSE FORMAT:
 COHERENCE_CONTEXT_HEADER = """You are a game design coherence analyzer \
 evaluating a node in a game flow chart.
 
-EVIDENCE RULES (apply to ALL dimensions):
+EVIDENCE RULES (general):
 - Only use information explicitly stated in the CONTEXT below. Do NOT assume \
 missing mechanics, items, or events.
-- The TARGET NODE text is not evidence of prior acquisition; it only defines \
-requirements or acts as setup for future nodes.
-- If a prerequisite is not explicitly supported by earlier context, list it \
-under "missing_prerequisites" (or "unknowns" if ambiguous).
-- Any mechanic or item in "satisfied_prerequisites" must cite a specific \
-earlier node/title/quote from the context.
-- Do NOT use words like "implied" or "assumed" as evidence. If you cannot \
-cite a passage from a previous node, it is missing.
-- In "satisfied_prerequisites", include the evidence inline, e.g., \
-"Ability X — evidence: <quoted passage from a previous node>".
 - Evidence must be a direct quote (or near-direct paraphrase) from the \
-CONTEXT. If the quoted phrase does not appear in a prior node description, \
-it does NOT count.
-- You may only cite PREVIOUS NODES as evidence for prerequisites. Do not \
-cite the target node or future nodes for prerequisites.
-- If you cite a node title, you MUST include a quoted fragment from that \
-node's description that proves the prerequisite.
-- A prerequisite cannot be both "missing_prerequisites" and \
-"satisfied_prerequisites". If evidence is absent or invalid, it must be \
-missing.
+CONTEXT.
+- If you cite a node title, include a quoted fragment from that node's \
+description that supports the claim.
 
 TARGET NODE DETAILS:
 {target_node_block}
 
 CONTEXT:
 {context}
-
-PREREQUISITE CHECKLIST (for backward coherence):
-1) Extract required mechanics/items/abilities from the TARGET NODE text.
-2) For each requirement, find explicit evidence in PREVIOUS NODES only.
-3) If no quote exists, mark it as missing (do not invent evidence).
 
 {dimension_context}
 """

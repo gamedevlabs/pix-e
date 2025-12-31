@@ -68,9 +68,9 @@ class LLMProviderAdapter:
         Returns:
             Generated text
         """
-        # Extract parameters, preferring kwargs over instance defaults
+        # Force deterministic output for all context prompts.
         operation = kwargs.pop("operation", None)
-        temperature = kwargs.get("temperature", self.temperature)
+        temperature = 0.0
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         model_name = kwargs.get("model_name", self.model_name)
 
