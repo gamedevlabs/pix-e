@@ -12,7 +12,7 @@ const {
   items: movieScriptProjects,
   fetchAll,
   createItem: createMovieScriptProject,
-} = useMovieScriptEvaluator().useProjects()
+} = useMovieScriptEvaluator()
 
 onMounted(() => {
   fetchAll()
