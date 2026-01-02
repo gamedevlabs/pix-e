@@ -5,17 +5,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
-from moviescriptevaluator.models import AssetMetaData, MovieProject
+from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
+from moviescriptevaluator.models import AssetMetaData, MovieProject, MovieScript
 from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
     UnrealEngineDataSerializer,
 )
 from pxcharts.permissions import IsOwner
 
+movie_script_llm_connector = MovieScriptLLMConnector()
 
 class MovieProjectView(viewsets.ModelViewSet):
     serializer_class = MovieProjectSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    #permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
         data = MovieProject.objects.filter(owner=self.request.user).order_by(
@@ -29,6 +31,14 @@ class MovieProjectView(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["GET"], url_path="analyze")
+    def analyze_movie_script(self, request, pk):
+        script = MovieScript.objects.filter(project=pk).first()
+        assets = AssetMetaData.objects.filter(project=pk)
+
+        response = movie_script_llm_connector.analyze_movie_script(script, list(assets))
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class MovieScriptAssets(viewsets.ModelViewSet):
@@ -66,3 +76,4 @@ class MovieScriptAssets(viewsets.ModelViewSet):
             return Response(form.data, status=status.HTTP_200_OK)
 
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
