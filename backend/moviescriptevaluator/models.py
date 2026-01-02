@@ -51,7 +51,7 @@ class AssetMetaData(models.Model):
         verbose_name_plural = "asset metadata"
 
     def __str__(self):
-        return self.name
+        return "Name: {name}, Class Name: {class_name}, Path: {path}".format(name=self.name, class_name=self.class_name, path=self.path)
 
 
 class RequiredAssets(models.Model):

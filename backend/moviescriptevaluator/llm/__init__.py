@@ -1,3 +1,3 @@
-from pillars.llm import handlers
+from moviescriptevaluator.llm import handlers
 
 __all__ = ["handlers"]

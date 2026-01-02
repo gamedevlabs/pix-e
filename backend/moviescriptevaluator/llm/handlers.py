@@ -6,7 +6,9 @@ from moviescriptevaluator.llm.schemas import AssetListAnalysis
 
 
 class AnalyzeScene(BaseOperationHandler):
-    operation_id = "moviescriptevaluator.analyzescene"
+    operation_id = "movie-script-evaluator.analyze"
+    version = "1.0.0"
+    description = "Evaluate scene using movie script"
     response_schema = AssetListAnalysis
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
