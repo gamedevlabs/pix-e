@@ -6,4 +6,4 @@ from .models import MovieScript
 class MovieScriptForm(forms.ModelForm):
     class Meta:
         model = MovieScript
-        fields = ["title", "file"]
+        fields = ["title", "file", "project"]

@@ -1,9 +1,24 @@
 import type { Asset, MovieProject } from '../utils/movie-script-evaluator.d.ts'
+import { useMovieScriptEvaluatorApi } from './api/movieScriptEvaluatorApi.js'
 
 export function useMovieScriptEvaluator() {
-  return useCrudWithAuthentication<MovieProject>('movie-script-evaluator/')
-}
+  const movieScriptAPI = useMovieScriptEvaluatorApi()
 
-export function useMovieScriptEvaluatorAssets(project_id: string) {
-  return useCrudWithAuthentication<Asset>("movie-script-evaluator/"+project_id +"/assets/")
+  function useProjects() {
+    return useCrudWithAuthentication<MovieProject>('movie-script-evaluator/')
+  }
+
+  function useAssets(projectId: string) {
+    return useCrudWithAuthentication<Asset>('movie-script-evaluator/' + projectId + '/assets/')
+  }
+
+  async function useUploadFile(projectId: string, file: File) {
+    return await movieScriptAPI.uploadFile(projectId, file)
+  }
+
+  return {
+    useProjects,
+    useAssets,
+    useUploadFile,
+  }
 }
