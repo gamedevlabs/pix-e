@@ -5,12 +5,13 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 const props = defineProps<{
   maxFileSize: number
   acceptedFileTypes: string[]
-  onSubmit: (event: FormSubmitEvent<any>) => void
 
   // for image files
   minDimensions?: { width: number; height: number }
   maxDimensions?: { width: number; height: number }
 }>()
+
+const emit = defineEmits<{ (e: 'uploadFile', file: File): void }>()
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes'
@@ -68,7 +69,7 @@ const state = reactive<Partial<schema>>({
 })
 
 async function onSubmit(event: FormSubmitEvent<schema>) {
-  console.log(event.data)
+  emit('uploadFile', event.data.file)
 }
 </script>
 

@@ -1,5 +1,6 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -32,7 +33,7 @@ class MovieProjectView(viewsets.ModelViewSet):
 
 class MovieScriptAssets(viewsets.ModelViewSet):
     serializer_class = UnrealEngineDataSerializer
-    #permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
         if self.action == "list":
@@ -56,8 +57,8 @@ class MovieScriptAssets(viewsets.ModelViewSet):
         print(serializer.validated_data)
         serializer.save()
 
-    @action(detail=True, methods=["post"], url_path="upload-script")
-    def upload_script(self, request):
+    @action(detail=False, methods=["POST"], url_path="upload-script", parser_classes=[MultiPartParser, FormParser])
+    def upload_script(self, request, project_pk=None):
         form = MovieScriptForm(request.POST, request.FILES)
 
         if form.is_valid():

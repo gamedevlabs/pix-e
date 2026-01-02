@@ -21,11 +21,17 @@ class MovieProject(models.Model):
 
         def __str__(self):
             return self.verbose_name
-
+def upload_to_scripts(instance, filename):
+    return f"moviescriptevaluator/files/{filename}"
 
 class MovieScript(models.Model):
     title = models.CharField(max_length=255)
-    file = models.FileField()
+    file = models.FileField(upload_to=upload_to_scripts)
+    project = models.ForeignKey(
+        MovieProject, on_delete=models.CASCADE, related_name="scripts"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class AssetMetaData(models.Model):

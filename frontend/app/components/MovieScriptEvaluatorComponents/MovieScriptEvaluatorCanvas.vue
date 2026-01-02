@@ -1,24 +1,35 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui'
 import SingleFileUpload from '~/components/MovieScriptEvaluatorComponents/SingleFileUpload.vue'
 
 const props = defineProps<{
   projectId: string
 }>()
 
-const { items,fetchAll } = useMovieScriptEvaluatorAssets(props.projectId);
+const { useAssets, useUploadFile } = useMovieScriptEvaluator()
+const { items, fetchAll } = useAssets(props.projectId)
 const { user } = useAuthentication()
+const toast = useToast()
 
 onMounted(() => {
-  fetchAll();
+  fetchAll()
 })
 
-const state = reactive<Partial<any>>({
-  movieScriptFile: null,
-})
-
-async function onSubmit(event: FormSubmitEvent<any>) {
-  console.log(event.data)
+function uploadFile(file: File) {
+  useUploadFile(props.projectId, file)
+    .then((_) =>
+      toast.add({
+        title: 'File Upload Successful',
+        description: 'File has been uploaded successfully',
+        color: 'success',
+      }),
+    )
+    .catch((_) =>
+      toast.add({
+        title: 'File Upload Failed',
+        description: 'File couldnt be uploaded, server error',
+        color: 'error',
+      }),
+    )
 }
 </script>
 
@@ -37,7 +48,7 @@ async function onSubmit(event: FormSubmitEvent<any>) {
         <SingleFileUpload
           :max-file-size="2 * 1024 * 1024"
           :accepted-file-types="['application/pdf', 'text/plain']"
-          @submit="onSubmit"
+          @upload-file="uploadFile"
         />
       </div>
       <div class="mb-4">

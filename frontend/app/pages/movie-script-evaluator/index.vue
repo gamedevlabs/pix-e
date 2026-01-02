@@ -6,11 +6,13 @@ definePageMeta({
 })
 
 const { user } = useAuthentication()
+
+// Im not sure, if its a good approach
 const {
   items: movieScriptProjects,
   fetchAll,
   createItem: createMovieScriptProject,
-} = useMovieScriptEvaluator()
+} = useMovieScriptEvaluator().useProjects()
 
 onMounted(() => {
   fetchAll()
