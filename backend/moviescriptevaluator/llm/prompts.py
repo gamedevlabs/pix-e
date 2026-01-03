@@ -5,7 +5,7 @@ You will be given:
 
 A movie script, divided into scenes (each scene has a scene number and description).
 
-A list of available assets (e.g., locations, props, characters, VFX elements, images, videos).
+A list of available assets.
 
 Your task is to:
 

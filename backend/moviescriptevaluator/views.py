@@ -15,6 +15,7 @@ from pxcharts.permissions import IsOwner
 
 movie_script_llm_connector = MovieScriptLLMConnector()
 
+
 class MovieProjectView(viewsets.ModelViewSet):
     serializer_class = MovieProjectSerializer
     permission_classes = [IsAuthenticated, IsOwner]
@@ -48,9 +49,9 @@ class MovieScriptAssets(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.action == "list":
             project_id = self.kwargs["project_pk"]
-            return AssetMetaData.objects.filter(
-                project_id=project_id
-            ).order_by("created_at")
+            return AssetMetaData.objects.filter(project_id=project_id).order_by(
+                "created_at"
+            )
 
         return AssetMetaData.objects.filter(project=self.request.project).order_by(
             "created_at"
@@ -67,7 +68,12 @@ class MovieScriptAssets(viewsets.ModelViewSet):
         print(serializer.validated_data)
         serializer.save()
 
-    @action(detail=False, methods=["POST"], url_path="upload-script", parser_classes=[MultiPartParser, FormParser])
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="upload-script",
+        parser_classes=[MultiPartParser, FormParser],
+    )
     def upload_script(self, request, project_pk=None):
         form = MovieScriptForm(request.POST, request.FILES)
 
@@ -76,4 +82,3 @@ class MovieScriptAssets(viewsets.ModelViewSet):
             return Response(form.data, status=status.HTTP_200_OK)
 
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
-

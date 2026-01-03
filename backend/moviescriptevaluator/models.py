@@ -21,8 +21,11 @@ class MovieProject(models.Model):
 
         def __str__(self):
             return self.verbose_name
+
+
 def upload_to_scripts(instance, filename):
     return f"moviescriptevaluator/files/{filename}"
+
 
 class MovieScript(models.Model):
     title = models.CharField(max_length=255)
@@ -51,7 +54,9 @@ class AssetMetaData(models.Model):
         verbose_name_plural = "asset metadata"
 
     def __str__(self):
-        return "Name: {name}, Class Name: {class_name}, Path: {path}".format(name=self.name, class_name=self.class_name, path=self.path)
+        return "Name: {name}, Class Name: {class_name}, Path: {path}".format(
+            name=self.name, class_name=self.class_name, path=self.path
+        )
 
 
 class RequiredAssets(models.Model):
