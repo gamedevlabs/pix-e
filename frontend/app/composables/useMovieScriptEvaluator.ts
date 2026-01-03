@@ -1,4 +1,4 @@
-import type { Asset, MovieProject } from '../utils/movie-script-evaluator.d.ts'
+import type { Asset, AssetListAnalysis, MovieProject } from '../utils/movie-script-evaluator.d.ts'
 import { useMovieScriptEvaluatorApi } from './api/movieScriptEvaluatorApi.js'
 
 export function useMovieScriptEvaluator() {
@@ -13,9 +13,14 @@ export function useMovieScriptEvaluator() {
     return await movieScriptAPI.uploadFile(projectId, file)
   }
 
+  async function useAnalyzeMovieScript(projectId: string): Promise<AssetListAnalysis> {
+    return await movieScriptAPI.analyzeMovieScript(projectId)
+  }
+
   return {
     ...movieScriptProjects,
     useAssets,
+    useAnalyzeMovieScript,
     useUploadFile,
   }
 }
