@@ -17,7 +17,7 @@ movie_script_llm_connector = MovieScriptLLMConnector()
 
 class MovieProjectView(viewsets.ModelViewSet):
     serializer_class = MovieProjectSerializer
-    #permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get_queryset(self):
         data = MovieProject.objects.filter(owner=self.request.user).order_by(

@@ -20,7 +20,7 @@ class MovieScriptLLMConnector:
                 feature="movie-script-evaluator",
                 operation="analyze",
                 data={"scene_description": str(content), "elements": asset_list.__str__()},
-                model_id="deepseek-r1:8b",
+                model_id="gemma3:4b",
                 mode="monolithic",
                 model_preference="local"
             )
