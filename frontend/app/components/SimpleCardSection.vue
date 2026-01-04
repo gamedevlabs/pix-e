@@ -5,7 +5,7 @@ const emit = defineEmits<{ (e: 'addClicked'): void }>()
 </script>
 
 <template>
-  <div class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(288px, 1fr))">
+  <div class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(388px, 1fr))">
     <slot />
     <div>
       <UButton

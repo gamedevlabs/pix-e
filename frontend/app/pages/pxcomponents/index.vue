@@ -20,7 +20,7 @@ function handleDelete(id: string) {
     <SimpleContentWrapper>
       <template #header>Px Components</template>
 
-      <PxCardSection>
+      <SimpleCardSection>
         <div v-for="component in pxComponents" :key="component.id">
           <PxComponentCard
             visualization-style="detailed"
@@ -28,7 +28,7 @@ function handleDelete(id: string) {
             @delete="handleDelete"
           />
         </div>
-      </PxCardSection>
+      </SimpleCardSection>
     </SimpleContentWrapper>
   </div>
 </template>

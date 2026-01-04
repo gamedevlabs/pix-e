@@ -38,7 +38,7 @@ async function handleForeignAddComponent() {
     <SimpleContentWrapper>
       <template #header>Px Nodes</template>
 
-      <PxCardSection use-add-button @add-clicked="addItem">
+      <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="node in pxNodes" :key="node.id">
           <PxNodeCard
             :key="node.id"
@@ -57,7 +57,7 @@ async function handleForeignAddComponent() {
             @delete="newItem = null"
           />
         </div>
-      </PxCardSection>
+      </SimpleCardSection>
     </SimpleContentWrapper>
   </div>
 </template>

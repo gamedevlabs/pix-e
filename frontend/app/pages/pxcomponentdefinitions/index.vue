@@ -49,7 +49,7 @@ async function handleUpdate(updatedDefinition: PxComponentDefinition) {
 
     <div>
       <SimpleContentWrapper>
-        <PxCardSection>
+        <SimpleCardSection>
           <div v-for="definition in pxComponentDefinitions" :key="definition.id">
             <PxComponentDefinitionCardDetailed
               :definition="definition"
@@ -57,7 +57,7 @@ async function handleUpdate(updatedDefinition: PxComponentDefinition) {
               @delete="deletePxDefinition"
             />
           </div>
-        </PxCardSection>
+        </SimpleCardSection>
       </SimpleContentWrapper>
     </div>
   </div>
