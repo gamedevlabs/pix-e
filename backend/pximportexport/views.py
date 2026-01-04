@@ -134,7 +134,7 @@ class ImportDataView(APIView):
             obj, created = PxChartContainer.objects.update_or_create(
                 id=new_id,
                 owner=user,
-                content_id=total_id_map[old_node_id],
+                content_id=total_id_map.get(old_node_id),
                 px_chart_id=total_id_map[old_px_chart_id],
                 defaults={
                     k: v
