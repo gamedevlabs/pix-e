@@ -45,7 +45,7 @@ async function handleDelete() {
         @delete="handleDelete"
       />
     </div>
-    <div v-else-if="loadingPxComponent">Loading...</div>
+    <div v-else-if="loadingPxComponent">Loading Px Component {{ id }}</div>
     <UButton to="/pxcomponents" class="my-4">← Back to all Components</UButton>
   </div>
 </template>

@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -26,7 +28,7 @@ class PxNodeViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)
 
 
 class PxComponentDefinitionViewSet(viewsets.ModelViewSet):
@@ -39,7 +41,7 @@ class PxComponentDefinitionViewSet(viewsets.ModelViewSet):
         return PxComponentDefinition.objects.order_by("created_at")
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)
 
 
 class PxComponentViewSet(viewsets.ModelViewSet):
@@ -52,4 +54,4 @@ class PxComponentViewSet(viewsets.ModelViewSet):
         return PxComponent.objects.order_by("created_at")
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)

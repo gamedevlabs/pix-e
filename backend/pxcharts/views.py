@@ -1,3 +1,5 @@
+import uuid
+
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -29,7 +31,7 @@ class PxChartViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)
 
 
 class PxChartContainerViewSet(viewsets.ModelViewSet):
@@ -56,7 +58,11 @@ class PxChartContainerViewSet(viewsets.ModelViewSet):
         return PxChartContainer.objects.order_by("created_at")
 
     def perform_create(self, serializer):
-        serializer.save(px_chart_id=self.kwargs["px_chart_pk"], owner=self.request.user)
+        serializer.save(
+            id=uuid.uuid4(),
+            px_chart_id=self.kwargs["px_chart_pk"],
+            owner=self.request.user,
+        )
 
 
 class PxChartEdgeViewSet(viewsets.ModelViewSet):
@@ -76,4 +82,4 @@ class PxChartEdgeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         chart_id = self.kwargs["px_chart_pk"]
-        serializer.save(px_chart_id=chart_id, owner=self.request.user)
+        serializer.save(id=uuid.uuid4(), px_chart_id=chart_id, owner=self.request.user)

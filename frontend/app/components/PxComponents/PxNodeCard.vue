@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import PxNodeCardPreview from '~/components/PxNodeCardPreview.vue'
-
 const props = defineProps({
   nodeId: {
     type: String as PropType<string>,

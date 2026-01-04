@@ -1,3 +1,3 @@
 export function usePxCharts() {
-  return useCrudWithAuthentication<PxChart>('api/pxcharts/')
+  return useCrudForPxWithAuthentication<PxChart>('api/pxcharts/')
 }

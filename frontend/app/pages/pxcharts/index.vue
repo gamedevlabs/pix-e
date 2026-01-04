@@ -1,6 +1,4 @@
 ﻿<script setup lang="ts">
-import { v4 } from 'uuid'
-
 definePageMeta({
   middleware: 'authentication',
 })
@@ -23,8 +21,7 @@ function addItem() {
 }
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  const newUuid = v4()
-  await createPxChart({ id: newUuid, ...newEntityDraft })
+  await createPxChart({ ...newEntityDraft })
   newItem.value = null
 }
 </script>
