@@ -49,7 +49,7 @@ async function handleForeignAddComponent() {
           />
         </div>
         <div v-if="newItem">
-          <PxNamedEntityCard
+          <NamedEntityCard
             :named-entity="newItem"
             :is-being-edited="true"
             @edit="newItem = null"
