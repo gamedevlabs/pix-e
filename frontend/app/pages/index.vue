@@ -88,6 +88,20 @@
           game engine for virtual production purposes.
         </p>
       </UCard>
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
+          <h2 class="font-semibold text-lg">Workflow and Usability Layer</h2>
+        </template>
+        <p>
+          Lets users structure their PX process with a clear, step-by-step workflow that connects
+          existing pix:e modules and design artifacts into a smooth, unified process.
+        </p>
+        <!--
+        <template #footer>
+          <UButton color="neutral" variant="soft">Read more</UButton>
+        </template>
+        -->
+      </UCard>
     </section>
   </UContainer>
 </template>
