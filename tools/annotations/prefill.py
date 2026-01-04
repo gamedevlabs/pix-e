@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import sys
 import uuid
 from collections import defaultdict
@@ -18,6 +19,9 @@ def main() -> int:
     csv_path = Path(sys.argv[2])
     json_path = Path(sys.argv[3])
 
+    backend_root = Path(__file__).resolve().parents[2] / "backend"
+    sys.path.insert(0, str(backend_root))
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
     django.setup()
 
     from pxcharts.models import PxChart, PxChartEdge

@@ -2,6 +2,7 @@ import argparse
 import csv
 import json
 import os
+import sys
 import time
 import uuid
 from dataclasses import dataclass
@@ -620,6 +621,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    backend_root = Path(__file__).resolve().parents[2] / "backend"
+    sys.path.insert(0, str(backend_root))
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "api.settings")
     django.setup()
     raise SystemExit(main())
