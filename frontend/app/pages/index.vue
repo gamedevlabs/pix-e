@@ -102,6 +102,15 @@
         </template>
         -->
       </UCard>
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
+          <h2 class="font-semibold text-lg">Diagram-Based Pacing Analysis</h2>
+        </template>
+        <p>
+          The pacing diagram helps you with planning your game's levels and overall course, offering
+          useful insights and visualizations.
+        </p>
+      </UCard>
     </section>
   </UContainer>
 </template>
