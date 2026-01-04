@@ -430,6 +430,48 @@ class PillarFeedbackView(ViewSet):
         })
 ```
 
+### Important: Avoid Module-Level Instantiation
+
+**Never instantiate `LLMOrchestrator` or LLM connectors at module level.** This causes CI failures because LLM providers aren't available during Django's import phase (e.g., when running `makemigrations --check`).
+
+```python
+# BAD - fails in CI during import
+from backend.llm import LLMOrchestrator
+
+orchestrator = LLMOrchestrator()  # Runs at import time!
+
+class MyView(ViewSet):
+    def my_action(self, request):
+        orchestrator.execute(...)
+```
+
+```python
+# GOOD - instantiate inside __init__
+from backend.llm import LLMOrchestrator
+
+class MyView(ViewSet):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.orchestrator = LLMOrchestrator()
+```
+
+```python
+# GOOD - lazy initialization with getter function
+from backend.llm import LLMOrchestrator
+
+_orchestrator: LLMOrchestrator | None = None
+
+def get_orchestrator() -> LLMOrchestrator:
+    global _orchestrator
+    if _orchestrator is None:
+        _orchestrator = LLMOrchestrator()
+    return _orchestrator
+
+class MyView(ViewSet):
+    def my_action(self, request):
+        get_orchestrator().execute(...)
+```
+
 ## Project Structure Philosophy
 
 - **`backend/llm/`**: Orchestrator core - framework code, don't modify unless adding core features
