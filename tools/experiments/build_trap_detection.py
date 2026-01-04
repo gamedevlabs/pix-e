@@ -46,7 +46,12 @@ def _explode_traps(row: dict[str, str]) -> list[dict[str, str]]:
         "expected_evidence",
         "notes",
     ]
-    values = {field: _parse_list(row.get(field, "")) for field in fields}
+    values = {}
+    for field in fields:
+        if field == "expected_evidence":
+            values[field] = [row.get(field, "")]
+        else:
+            values[field] = _parse_list(row.get(field, ""))
     max_len = max((len(v) for v in values.values()), default=0)
 
     if max_len == 0:
