@@ -13,7 +13,14 @@ from moviescriptevaluator.serializers import (
 )
 from pxcharts.permissions import IsOwner
 
-movie_script_llm_connector = MovieScriptLLMConnector()
+_movie_script_llm_connector: MovieScriptLLMConnector | None = None
+
+
+def get_llm_connector() -> MovieScriptLLMConnector:
+    global _movie_script_llm_connector
+    if _movie_script_llm_connector is None:
+        _movie_script_llm_connector = MovieScriptLLMConnector()
+    return _movie_script_llm_connector
 
 
 class MovieProjectView(viewsets.ModelViewSet):
@@ -38,7 +45,7 @@ class MovieProjectView(viewsets.ModelViewSet):
         script = MovieScript.objects.filter(project=pk).first()
         assets = AssetMetaData.objects.filter(project=pk)
 
-        response = movie_script_llm_connector.analyze_movie_script(script, list(assets))
+        response = get_llm_connector().analyze_movie_script(script, list(assets))
         return Response(response, status=status.HTTP_200_OK)
 
 
