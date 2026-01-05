@@ -4,33 +4,13 @@ Layer building functions for Hierarchical Graph strategy.
 Implements the 4-layer hierarchy from the user's H-MEM adaptation:
 - L1 Domain: Project-level (Pillars + Game Concept)
 - L2 Category: Chart-level (Arc summary, pacing)
-- L3 Trace: Path-level (State accumulation via graph traversal)
+- L3 Trace: Path-level (Pool of nodes + explicit paths)
 - L4 Episode: Node-level (Atomic node details)
 """
 
-from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from pxnodes.llm.context.base.types import LayerContext, get_layer_name
-
-
-@dataclass
-class PlayerState:
-    """Accumulated player state from traversing the path."""
-
-    items_collected: list[str] = field(default_factory=list)
-    mechanics_unlocked: list[str] = field(default_factory=list)
-    narrative_beats: list[str] = field(default_factory=list)
-    checkpoints_passed: list[str] = field(default_factory=list)
-
-    def to_dict(self) -> dict[str, list[str]]:
-        """Convert to dictionary."""
-        return {
-            "items_collected": self.items_collected,
-            "mechanics_unlocked": self.mechanics_unlocked,
-            "narrative_beats": self.narrative_beats,
-            "checkpoints_passed": self.checkpoints_passed,
-        }
 
 
 def build_domain_layer(
@@ -147,19 +127,45 @@ def _format_node_for_trace(node: Any, index: int) -> str:
     return "\n".join(parts)
 
 
+def _format_paths(paths: list[list[Any]], direction: str) -> str:
+    """
+    Format a list of paths for display.
+
+    Args:
+        paths: List of paths, each path is a list of nodes
+        direction: "backward" or "forward" for appropriate empty message
+
+    Returns:
+        Formatted string with numbered paths
+    """
+    if not paths:
+        if direction == "backward":
+            return "  None (this is the start of the flow)"
+        else:
+            return "  None (this is the end of the flow)"
+
+    lines = []
+    for i, path in enumerate(paths, 1):
+        path_names = [getattr(node, "name", f"Node {j}") for j, node in enumerate(path)]
+        lines.append(f"  {i}. {' -> '.join(path_names)}")
+    return "\n".join(lines)
+
+
 def build_trace_layer(
-    path_nodes: list[Any],
-    player_state: PlayerState,
+    backward_nodes: list[Any],
     target_node: Any,
     forward_nodes: Optional[list[Any]] = None,
+    backward_paths: Optional[list[list[Any]]] = None,
+    forward_paths: Optional[list[list[Any]]] = None,
 ) -> LayerContext:
     """
     Build L3 Trace layer from path traversal.
 
     Content includes:
-    - PREVIOUS nodes: Full content of nodes leading to target
-    - FUTURE nodes: Full content of nodes after target
-    - Player state (accumulated items, mechanics, narrative)
+    - POOL OF ALL PRIOR NODES: All nodes that can lead to target
+    - ALL POSSIBLE PATHS TO TARGET: Explicit enumeration of paths
+    - POOL OF ALL FUTURE NODES: All nodes reachable from target
+    - ALL POSSIBLE PATHS FROM TARGET: Explicit enumeration of paths
 
     For coherence checking, we need both backward AND forward context
     to verify prerequisites and ensure proper setup for future nodes.
@@ -168,46 +174,46 @@ def build_trace_layer(
     """
     content_parts = []
 
-    # PREVIOUS NODES - with full content
-    if path_nodes:
-        content_parts.append("PREVIOUS NODES (Path leading to target):")
-        for i, node in enumerate(path_nodes, 1):
+    # POOL OF ALL PRIOR NODES - with full content
+    if backward_nodes:
+        content_parts.append("POOL OF ALL PRIOR NODES (nodes that can lead to target):")
+        for i, node in enumerate(backward_nodes, 1):
             content_parts.append(_format_node_for_trace(node, i))
     else:
-        content_parts.append("PREVIOUS NODES: None (this is the start of the path)")
+        content_parts.append(
+            "POOL OF ALL PRIOR NODES: None (this is the start of the flow)"
+        )
 
-    # FUTURE NODES - with full content
+    # ALL POSSIBLE PATHS TO TARGET
+    content_parts.append("\nALL POSSIBLE PATHS TO TARGET:")
+    content_parts.append(_format_paths(backward_paths or [], "backward"))
+
+    # POOL OF ALL FUTURE NODES - with full content
     if forward_nodes:
-        content_parts.append("\nFUTURE NODES (What comes after target):")
+        content_parts.append(
+            "\nPOOL OF ALL FUTURE NODES (nodes reachable from target):"
+        )
         for i, node in enumerate(forward_nodes, 1):
             content_parts.append(_format_node_for_trace(node, i))
     else:
-        content_parts.append("\nFUTURE NODES: None (this is the end of the path)")
+        content_parts.append(
+            "\nPOOL OF ALL FUTURE NODES: None (this is the end of the flow)"
+        )
 
-    # Player state (accumulated from backward path)
-    state_parts = []
-    if player_state.items_collected:
-        state_parts.append(f"Items: {', '.join(player_state.items_collected)}")
-    if player_state.mechanics_unlocked:
-        state_parts.append(f"Mechanics: {', '.join(player_state.mechanics_unlocked)}")
-    if player_state.narrative_beats:
-        state_parts.append(f"Narrative: {'; '.join(player_state.narrative_beats)}")
-    if player_state.checkpoints_passed:
-        state_parts.append(f"Checkpoints: {', '.join(player_state.checkpoints_passed)}")
-
-    if state_parts:
-        content_parts.append("\nACCUMULATED PLAYER STATE:")
-        content_parts.extend([f"  - {s}" for s in state_parts])
+    # ALL POSSIBLE PATHS FROM TARGET
+    content_parts.append("\nALL POSSIBLE PATHS FROM TARGET:")
+    content_parts.append(_format_paths(forward_paths or [], "forward"))
 
     return LayerContext(
         layer=3,
         layer_name=get_layer_name(3),
         content="\n".join(content_parts) if content_parts else "No path context",
         metadata={
-            "backward_count": len(path_nodes),
-            "forward_count": len(forward_nodes) if forward_nodes else 0,
+            "backward_node_count": len(backward_nodes),
+            "forward_node_count": len(forward_nodes) if forward_nodes else 0,
+            "backward_path_count": len(backward_paths) if backward_paths else 0,
+            "forward_path_count": len(forward_paths) if forward_paths else 0,
             "target_node_id": str(getattr(target_node, "id", "")),
-            "player_state": player_state.to_dict(),
         },
     )
 

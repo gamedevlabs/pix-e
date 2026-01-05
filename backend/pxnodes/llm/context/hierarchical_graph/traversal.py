@@ -4,13 +4,14 @@ Graph traversal utilities for Hierarchical Graph strategy.
 Implements BFS/DFS traversal for trace reconstruction:
 - Reverse traversal from target to start/checkpoint
 - Forward traversal for lookahead context
-- State aggregation along paths
+
+Note: The HierarchicalGraphStrategy now uses get_backward_paths_to_node and
+get_forward_paths_from_node from shared/graph_retrieval.py for explicit
+path enumeration. The BFS functions here are kept for backwards compatibility.
 """
 
 from collections import deque
 from typing import Any, Optional
-
-from pxnodes.llm.context.hierarchical_graph.layers import PlayerState
 
 
 def reverse_bfs(
@@ -154,96 +155,6 @@ def forward_bfs(
                             queue.append((target_edge, depth + 1))
 
     return successors
-
-
-def aggregate_player_state(
-    path_nodes: list[Any],
-    llm_provider: Optional[Any] = None,
-) -> PlayerState:
-    """
-    Aggregate player state from traversing a path of nodes.
-
-    Extracts items, mechanics, narrative beats from each node's
-    components and description.
-
-    Args:
-        path_nodes: List of nodes in path order
-
-    Returns:
-        PlayerState with accumulated state
-    """
-    state = PlayerState()
-
-    for node in path_nodes:
-        # Check components for state-affecting values
-        components = getattr(node, "components", None)
-        if components:
-            comp_list = components.all() if hasattr(components, "all") else []
-            for comp in comp_list:
-                definition = getattr(comp, "definition", None)
-                if not definition:
-                    continue
-
-                def_name = getattr(definition, "name", "").lower()
-                value = getattr(comp, "value", None)
-
-                # Extract items/rewards
-                if "item" in def_name or "reward" in def_name or "grants" in def_name:
-                    if value:
-                        state.items_collected.append(str(value))
-
-                # Extract mechanics
-                if "mechanic" in def_name or "ability" in def_name:
-                    if value:
-                        state.mechanics_unlocked.append(str(value))
-
-                # Check for checkpoint
-                if "checkpoint" in def_name or "save" in def_name:
-                    node_name = getattr(node, "name", "Checkpoint")
-                    state.checkpoints_passed.append(node_name)
-
-        description = getattr(node, "description", "")
-        if description and not llm_provider:
-            sentence = description.split(".")[0].strip()
-            if sentence:
-                state.narrative_beats.append(sentence)
-
-    if llm_provider and path_nodes:
-        node_summaries = []
-        for node in path_nodes:
-            node_summaries.append(
-                f"- {getattr(node, 'name', '')}: {getattr(node, 'description', '')}"
-            )
-
-        prompt = (
-            "From the previous nodes, extract as much accumulated player "
-            "context as possible.\n"
-            "Return exactly three lines:\n"
-            "Mechanics Introduced: <short list>\n"
-            "Items Collected: <short list>\n"
-            "Story Events: <short list>\n\n"
-            "Nodes:\n" + "\n".join(node_summaries)
-        )
-        try:
-            response = llm_provider.generate(prompt)
-            lines = [line.strip() for line in response.splitlines() if line.strip()]
-            for line in lines:
-                if line.lower().startswith("mechanics introduced:"):
-                    items = line.split(":", 1)[-1]
-                    for item in items.split(","):
-                        item = item.strip()
-                        if item:
-                            state.mechanics_unlocked.append(item)
-                elif line.lower().startswith("story events:"):
-                    items = line.split(":", 1)[-1]
-                    for item in items.split(","):
-                        item = item.strip()
-                        if item:
-                            state.narrative_beats.append(item)
-        except Exception:
-            pass
-
-    return state
 
 
 def _find_container_for_node(node: Any, chart: Any) -> Optional[Any]:

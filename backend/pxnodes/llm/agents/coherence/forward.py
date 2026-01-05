@@ -59,27 +59,24 @@ class ForwardCoherenceAgent(CoherenceDimensionAgent):
     temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
-        """Build forward-specific context."""
+        """Build forward-specific context.
+
+        Note: Path listings are already included in the filtered context from
+        _filter_trace_content(), so we only add summary info here.
+        """
         forward_nodes = data.get("forward_nodes", [])
+        forward_paths = data.get("forward_paths", [])
 
         context_parts = []
 
-        # Add forward path information
+        # Add forward node pool summary (paths are in filtered context)
         if forward_nodes:
             context_parts.append(
-                f"FORWARD PATH: {len(forward_nodes)} nodes follow this point"
+                f"POOL OF FUTURE NODES: {len(forward_nodes)} nodes are reachable "
+                "from this point"
             )
-            node_names = [n.get("name", "Unknown") for n in forward_nodes[:5]]
-            context_parts.append(f"Upcoming nodes: {' → '.join(node_names)}")
 
-            # Extract requirements from forward nodes if available
-            requirements = []
-            for node in forward_nodes[:5]:
-                if node.get("requires"):
-                    requirements.extend(node.get("requires", []))
-            if requirements:
-                context_parts.append(
-                    f"Future requirements: {', '.join(set(requirements))}"
-                )
+        if forward_paths:
+            context_parts.append(f"({len(forward_paths)} paths from target)")
 
         return "\n".join(context_parts)

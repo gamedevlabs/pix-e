@@ -4,9 +4,9 @@ Atomic Fact extraction for PX Node descriptions.
 LLM-based extraction following Zeng et al. (2024) methodology.
 Extracts the smallest, indivisible units of information from narrative text.
 
-Facts are cached in the vector store (memory_embeddings table) by the
-StructuralMemoryGenerator. This module checks the vector store first
-before generating new facts via LLM.
+Facts are cached in the ContextArtifact table (canonical storage) and
+optionally in the vector store for similarity retrieval. This module checks
+the ContextArtifact table first, then vector store, before generating via LLM.
 """
 
 import logging
@@ -133,29 +133,57 @@ def extract_atomic_facts(
     model_id: Optional[str] = None,
     force_regenerate: bool = False,
     chart_id: Optional[str] = None,
+    chart: Optional[Any] = None,
 ) -> list[AtomicFact]:
     """
     Extract atomic facts from a PxNode's description and components.
 
-    First checks the vector store for cached facts (stored by
-    StructuralMemoryGenerator). Only calls LLM if:
-    - No cached facts exist for this node in vector store
-    - force_regenerate is True
-    - llm_provider is provided
+    First checks the ContextArtifact table (canonical storage from experiments),
+    then falls back to vector store, and finally generates via LLM if needed.
 
     Args:
         node: The PxNode to extract facts from
         llm_provider: LLM provider for generation (optional if using cache)
         model_id: Optional specific model to use
         force_regenerate: If True, skip cache and regenerate
+        chart_id: Optional chart UUID string for cache lookup
+        chart: Optional PxChart object for cache lookup
 
     Returns:
         List of AtomicFact objects
     """
     node_id = str(node.id)
 
-    # Check for cached facts in vector store first
     if not force_regenerate:
+        # 1. Try ContextArtifact table first (canonical storage from experiments)
+        from pxnodes.llm.context.artifacts import (
+            ARTIFACT_FACTS,
+            SCOPE_NODE,
+            get_cached_artifact,
+        )
+
+        cached_content = get_cached_artifact(
+            SCOPE_NODE, node_id, ARTIFACT_FACTS, chart=chart, chart_id=chart_id
+        )
+        if cached_content and isinstance(cached_content, list):
+            logger.debug(
+                f"Using {len(cached_content)} cached facts from ContextArtifact "
+                f"for {node.name}"
+            )
+            return [
+                AtomicFact(
+                    node_id=node_id,
+                    fact=f.get("fact", "") if isinstance(f, dict) else str(f),
+                    source_field=(
+                        f.get("source_field", "description")
+                        if isinstance(f, dict)
+                        else "description"
+                    ),
+                )
+                for f in cached_content
+            ]
+
+        # 2. Fall back to vector store
         cached_facts = get_cached_facts_from_vector_store(node_id, chart_id=chart_id)
         if cached_facts:
             logger.debug(f"Using {len(cached_facts)} cached facts for {node.name}")
@@ -243,11 +271,12 @@ async def extract_atomic_facts_async(
     llm_provider: LLMProvider,
     force_regenerate: bool = True,
     chart_id: Optional[str] = None,
+    chart: Optional[Any] = None,
 ) -> list[AtomicFact]:
     """
     Async version of extract_atomic_facts for parallel execution.
 
-    Always uses force_regenerate=True to ensure fresh LLM-based extraction.
+    First checks ContextArtifact table, then vector store, before generating via LLM.
     Uses thread_sensitive=False for LLM calls to enable true parallelism.
     """
     import logfire
@@ -261,20 +290,51 @@ async def extract_atomic_facts_async(
         node_id=node_id,
         node_name=node_name,
     ):
-        # Check for cached facts in vector store first (if not force_regenerate)
+        # Check for cached facts (if not force_regenerate)
         if not force_regenerate:
+            # 1. Try ContextArtifact table first (canonical storage)
+            from pxnodes.llm.context.artifacts import (
+                ARTIFACT_FACTS,
+                SCOPE_NODE,
+                get_cached_artifact,
+            )
+
+            cached_content = await sync_to_async(
+                get_cached_artifact, thread_sensitive=True
+            )(SCOPE_NODE, node_id, ARTIFACT_FACTS, chart=chart, chart_id=chart_id)
+
+            if cached_content and isinstance(cached_content, list):
+                logfire.info(
+                    "atomic_facts_from_context_artifact",
+                    node_name=node_name,
+                    fact_count=len(cached_content),
+                )
+                return [
+                    AtomicFact(
+                        node_id=node_id,
+                        fact=f.get("fact", "") if isinstance(f, dict) else str(f),
+                        source_field=(
+                            f.get("source_field", "description")
+                            if isinstance(f, dict)
+                            else "description"
+                        ),
+                    )
+                    for f in cached_content
+                ]
+
+            # 2. Fall back to vector store
             cached_facts = await sync_to_async(
                 get_cached_facts_from_vector_store, thread_sensitive=True
             )(node_id, chart_id)
             if cached_facts:
                 logfire.info(
-                    "atomic_facts_from_cache",
+                    "atomic_facts_from_vector_store",
                     node_name=node_name,
                     fact_count=len(cached_facts),
                 )
                 return cached_facts
 
-        # Generate via LLM
+        # 3. Generate via LLM
         logfire.info("generating_atomic_facts", node_name=node_name)
 
         # Get components (sync Django ORM call - must use thread_sensitive=True)

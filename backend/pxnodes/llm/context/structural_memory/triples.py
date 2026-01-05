@@ -3,9 +3,9 @@ Knowledge Triple extraction for PX Nodes and Charts.
 
 Based on Zeng et al. (2024) "On the Structural Memory of LLM Agents".
 
-Triples are stored in the vector store (memory_embeddings table) by the
-StructuralMemoryGenerator. This module supports LLM-based triple extraction
-following Zeng et al. (2024).
+Triples are cached in the ContextArtifact table (canonical storage) and
+optionally in the vector store for similarity retrieval. This module checks
+the ContextArtifact table first, then vector store, before generating via LLM.
 """
 
 import asyncio
@@ -541,12 +541,51 @@ def extract_llm_triples_only_cached(
     llm_provider: Optional[LLMProvider],
     chart_id: Optional[str] = None,
     force_regenerate: bool = False,
+    chart: Optional[Any] = None,
 ) -> list[KnowledgeTriple]:
-    """Extract triples with optional vector store cache reuse."""
+    """
+    Extract triples with cache lookup.
+
+    Checks ContextArtifact table first (canonical storage from experiments),
+    then falls back to vector store, before generating via LLM.
+    """
+    node_id = str(node.id)
+
     if not force_regenerate:
-        cached = get_cached_triples_from_vector_store(str(node.id), chart_id=chart_id)
+        # 1. Try ContextArtifact table first (canonical storage from experiments)
+        from pxnodes.llm.context.artifacts import (
+            ARTIFACT_TRIPLES,
+            SCOPE_NODE,
+            get_cached_artifact,
+        )
+
+        cached_content = get_cached_artifact(
+            SCOPE_NODE, node_id, ARTIFACT_TRIPLES, chart=chart, chart_id=chart_id
+        )
+        if cached_content and isinstance(cached_content, list):
+            logger.debug(
+                f"Using {len(cached_content)} cached triples from ContextArtifact "
+                f"for {node.name}"
+            )
+            return [
+                KnowledgeTriple(
+                    head=t.get("head", ""),
+                    relation=t.get("relation", ""),
+                    tail=t.get("tail", ""),
+                )
+                for t in cached_content
+                if isinstance(t, dict)
+            ]
+
+        # 2. Fall back to vector store
+        cached = get_cached_triples_from_vector_store(node_id, chart_id=chart_id)
         if cached:
+            logger.debug(
+                f"Using {len(cached)} cached triples from vector store for {node.name}"
+            )
             return cached
+
+    # 3. No cache → Generate via LLM
     if not llm_provider:
         return []
     return extract_narrative_triples(node, llm_provider)

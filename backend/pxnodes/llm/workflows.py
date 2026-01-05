@@ -398,11 +398,12 @@ class PxNodesCoherenceWorkflow:
                 "node_details": node_details,
                 "backward_nodes": self._extract_path_nodes(context_result, "backward"),
                 "forward_nodes": self._extract_path_nodes(context_result, "forward"),
+                "backward_paths": context_result.metadata.get("backward_paths", []),
+                "forward_paths": context_result.metadata.get("forward_paths", []),
                 "pillars": self._format_pillars(project_pillars),
                 "game_concept": game_concept,
                 "is_full_context": bool(context_result.metadata.get("full_context")),
                 "strategy_type": self.strategy_type.value,
-                "player_state": context_result.metadata.get("player_state", {}),
                 "path_order": path_metadata.get("order", {}),
                 "path_predecessors": path_metadata.get("predecessors", set()),
                 "path_successors": path_metadata.get("successors", set()),
@@ -676,6 +677,33 @@ class PxNodesCoherenceWorkflow:
                 )
             return next((line for line in lines if line.startswith("Next:")), "")
 
+        # Handle new H-Graph format with pools and explicit paths
+        if (
+            "POOL OF ALL PRIOR NODES" in content
+            or "POOL OF ALL FUTURE NODES" in content
+        ):
+            if direction == "backward":
+                # Extract prior nodes pool + paths to target
+                prior_pool = self._extract_section(
+                    content, "POOL OF ALL PRIOR NODES", "ALL POSSIBLE PATHS TO TARGET"
+                )
+                paths_to = self._extract_section(
+                    content, "ALL POSSIBLE PATHS TO TARGET", "POOL OF ALL FUTURE NODES"
+                )
+                return "\n\n".join([p for p in [prior_pool, paths_to] if p])
+            else:
+                # Extract future nodes pool + paths from target
+                future_pool = self._extract_section(
+                    content,
+                    "POOL OF ALL FUTURE NODES",
+                    "ALL POSSIBLE PATHS FROM TARGET",
+                )
+                paths_from = self._extract_section(
+                    content, "ALL POSSIBLE PATHS FROM TARGET"
+                )
+                return "\n\n".join([p for p in [future_pool, paths_from] if p])
+
+        # Handle old format with PREVIOUS NODES / FUTURE NODES
         if "PREVIOUS NODES" in content or "FUTURE NODES" in content:
             if direction == "backward":
                 previous = self._extract_section(
@@ -721,7 +749,30 @@ class PxNodesCoherenceWorkflow:
         predecessors: set[str],
         successors: set[str],
     ) -> str:
-        """Filter HMEM L3 snippets to avoid future nodes in backward/forward."""
+        """Filter HMEM L3 entries based on direction markers.
+
+        New HMEM format uses direction prefixes:
+        - [BACKWARD] / [FORWARD] for node entries (including immediate neighbors)
+        - [BACKWARD TRANSITION] / [FORWARD TRANSITION] for transitions
+
+        For backward coherence: keep [BACKWARD...] entries
+        For forward coherence: keep [FORWARD...] entries
+        """
+        # Check for new format markers (direction-prefixed entries)
+        has_new_format = any(
+            marker in content
+            for marker in [
+                "[BACKWARD]",
+                "[FORWARD]",
+                "[BACKWARD TRANSITION]",
+                "[FORWARD TRANSITION]",
+            ]
+        )
+
+        if has_new_format:
+            return self._filter_hmem_new_format(content, direction)
+
+        # Legacy format handling (Path snippet: and Node:)
         if "Path snippet:" not in content and "Node:" not in content:
             return content
 
@@ -771,6 +822,34 @@ class PxNodesCoherenceWorkflow:
         allowed.extend([block for _, block in snippets])
 
         return "\n\n".join(allowed) if allowed else content
+
+    def _filter_hmem_new_format(self, content: str, direction: str) -> str:
+        """Filter HMEM entries with new direction-prefixed format.
+
+        STRICT filtering: only keeps blocks that start with the correct
+        direction marker. Does NOT keep "neutral" blocks (like old format
+        Path snippet: or Node: entries) because those are legacy data that
+        shouldn't appear in new format mode.
+        """
+        # Use prefix patterns to match "[BACKWARD]" and "[BACKWARD TRANSITION]"
+        # (Immediate neighbors now use regular [BACKWARD]/[FORWARD] tags)
+        if direction == "backward":
+            allowed_patterns = ["[BACKWARD"]
+        else:
+            allowed_patterns = ["[FORWARD"]
+
+        filtered_blocks: list[str] = []
+        for block in content.split("\n\n"):
+            block = block.strip()
+            if not block:
+                continue
+
+            # STRICT: only keep blocks that start with allowed direction patterns
+            if any(block.startswith(pattern) for pattern in allowed_patterns):
+                filtered_blocks.append(block)
+            # Skip everything else - old format entries, wrong direction, etc.
+
+        return "\n\n".join(filtered_blocks) if filtered_blocks else content
 
     def _drop_subset_snippets(
         self, snippets: list[tuple[list[str], str]]

@@ -43,6 +43,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4o",
         "gpt-4-turbo-2024-04-09",
         "gpt-4-turbo",
+        "gpt-5.2",
     }
 
     # Vision-capable models
@@ -51,6 +52,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4o-mini",
         "gpt-4-turbo",
         "gpt-4-vision-preview",
+        "gpt-5.2",
     }
 
     # Context window sizes
@@ -60,6 +62,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4-turbo": 128000,
         "gpt-4": 8192,
         "gpt-3.5-turbo": 16385,
+        "gpt-5.2": 400000,
     }
 
     def __init__(self, config: Dict[str, Any]):
@@ -126,7 +129,7 @@ class OpenAIProvider(BaseProvider):
             for model in response.data:
                 model_id = model.id
                 # Only include GPT models
-                if model_id.startswith(("gpt-4", "gpt-3.5")):
+                if model_id.startswith(("gpt-5", "gpt-4", "gpt-3.5")):
                     models.append(
                         ModelDetails(
                             name=model_id,

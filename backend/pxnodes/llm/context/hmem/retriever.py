@@ -107,6 +107,7 @@ class HMEMRetriever:
         top_k_per_layer: int = 3,
         similarity_thresholds: Optional[dict[int, float]] = None,
         layers: Optional[list[int]] = None,
+        direction: Optional[str] = None,
     ) -> HMEMContextResult:
         """
         Retrieve context using H-MEM hierarchical top-down routing.
@@ -123,7 +124,9 @@ class HMEMRetriever:
             chart_id: Chart ID (used for fallback if routing fails)
             node_id: Node ID (used for fallback if routing fails)
             top_k_per_layer: Number of results per layer
+            similarity_thresholds: Per-layer similarity thresholds
             layers: Specific layers to retrieve (default all)
+            direction: Direction filter for L3 ("backward", "forward", or None)
 
         Returns:
             HMEMContextResult with results organized by layer
@@ -186,13 +189,13 @@ class HMEMRetriever:
                 )
 
             elif layer == 3:
-                # L3 Trace: Constrained by L2 children
-                l3_results = self._retrieve_with_routing(
+                # L3 Trace: Direction-aware retrieval with immediate guarantee
+                l3_results = self._retrieve_l3_with_direction(
                     query_embedding=query_embedding,
-                    layer=3,
                     parent_child_indices=parent_child_indices,
                     fallback_project_id=project_id,
                     fallback_chart_id=chart_id,
+                    direction=direction,
                     top_k=top_k_per_layer,
                     similarity_threshold=(
                         similarity_thresholds.get(3) if similarity_thresholds else None
@@ -333,6 +336,105 @@ class HMEMRetriever:
             similarity_threshold=similarity_threshold,
         )
 
+    def _retrieve_l3_with_direction(
+        self,
+        query_embedding: list[float],
+        parent_child_indices: Optional[list[str]],
+        fallback_project_id: str,
+        fallback_chart_id: Optional[str],
+        direction: Optional[str],
+        top_k: int,
+        similarity_threshold: Optional[float],
+    ) -> list[HMEMRetrievalResult]:
+        """
+        Retrieve L3 entries with direction filtering and immediate guarantee.
+
+        Args:
+            query_embedding: Query vector
+            parent_child_indices: Child indices from L2 routing
+            fallback_project_id: Project ID for fallback search
+            fallback_chart_id: Chart ID for fallback search
+            direction: "backward", "forward", or None for all
+            top_k: Maximum number of similarity-ranked results
+            similarity_threshold: Minimum similarity score
+
+        Returns:
+            List of retrieval results with immediate neighbors guaranteed
+        """
+        results: list[HMEMRetrievalResult] = []
+        seen_indices: set[str] = set()
+
+        # STEP 1: Always include immediate neighbors (bypass similarity threshold)
+        # Immediate entries have keys like "L3.{project}.{chart}.immediate.*"
+        immediate_candidates = HMEMLayerEmbedding.objects.filter(
+            layer=3,
+            positional_index__contains=".immediate.",
+        )
+        if fallback_chart_id:
+            immediate_candidates = immediate_candidates.filter(
+                positional_index__contains=f".{fallback_chart_id}."
+            )
+
+        # Get immediate results with no threshold (guaranteed inclusion)
+        immediate_results = self._rank_by_similarity(
+            immediate_candidates,
+            query_embedding,
+            top_k=50,  # Get all immediate neighbors
+            similarity_threshold=0.0,  # No threshold - always include
+        )
+
+        for r in immediate_results:
+            if r.positional_index not in seen_indices:
+                seen_indices.add(r.positional_index)
+                results.append(r)
+
+        logger.debug(f"L3 direction-aware: {len(results)} immediate neighbors included")
+
+        # STEP 2: Direction-filtered retrieval for remaining entries
+        if direction:
+            # Filter by direction prefix (e.g., ".backward." or ".forward.")
+            direction_candidates = HMEMLayerEmbedding.objects.filter(
+                layer=3,
+                positional_index__contains=f".{direction}.",
+            )
+        else:
+            # No direction filter - get both backward and forward
+            direction_candidates = HMEMLayerEmbedding.objects.filter(
+                layer=3,
+            ).exclude(positional_index__contains=".immediate.")
+
+        if fallback_chart_id:
+            direction_candidates = direction_candidates.filter(
+                positional_index__contains=f".{fallback_chart_id}."
+            )
+
+        # Apply parent routing if available
+        if parent_child_indices:
+            routed_candidates = direction_candidates.filter(
+                positional_index__in=parent_child_indices
+            )
+            if routed_candidates.exists():
+                direction_candidates = routed_candidates
+
+        direction_results = self._rank_by_similarity(
+            direction_candidates,
+            query_embedding,
+            top_k=top_k,
+            similarity_threshold=similarity_threshold,
+        )
+
+        for r in direction_results:
+            if r.positional_index not in seen_indices:
+                seen_indices.add(r.positional_index)
+                results.append(r)
+
+        logger.debug(
+            f"L3 direction-aware: {len(direction_results)} direction-filtered, "
+            f"{len(results)} total"
+        )
+
+        return results
+
     def _retrieve_with_routing(
         self,
         query_embedding: list[float],
@@ -453,6 +555,7 @@ class HMEMRetriever:
         # Sort by similarity (descending) and take top_k
         results.sort(key=lambda x: x.similarity_score, reverse=True)
         if similarity_threshold is not None:
+            # Threshold-based: return all entries above threshold (no top_k limit)
             return [r for r in results if r.similarity_score >= similarity_threshold]
         return results[:top_k]
 

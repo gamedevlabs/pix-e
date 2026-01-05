@@ -26,6 +26,7 @@ from pxnodes.llm.context.artifacts import (
     ARTIFACT_CHART_OVERVIEW,
     ARTIFACT_NODE_LIST,
     ARTIFACT_SUMMARY,
+    PRECOMPUTE_MODEL,
     ArtifactInventory,
 )
 from pxnodes.llm.context.base.registry import StrategyRegistry
@@ -41,9 +42,13 @@ from pxnodes.llm.context.hmem.retriever import (
     HMEMContextResult,
     HMEMRetrievalResult,
     HMEMRetriever,
-    compute_path_hash,
 )
-from pxnodes.llm.context.shared.graph_retrieval import get_all_paths_through_node
+from pxnodes.llm.context.shared.graph_retrieval import (
+    get_all_paths_through_node,
+    get_backward_paths_to_node,
+    get_forward_paths_from_node,
+    get_graph_slice,
+)
 from pxnodes.models import HMEMLayerEmbedding
 
 logger = logging.getLogger(__name__)
@@ -105,21 +110,41 @@ class HMEMStrategy(BaseContextStrategy):
         """
         Initialize the H-MEM strategy.
 
+        Note: All LLM operations for precompute (trace summaries, accumulated
+        context) use the fixed PRECOMPUTE_MODEL (gpt-4o-mini) regardless of
+        what llm_provider is passed. This ensures consistent preprocessing
+        across experiments - only coherence evaluation uses the specified model.
+
         Args:
-            llm_provider: Optional LLM for content summarization
-            embedding_model: OpenAI embedding model name
+            llm_provider: Optional LLM for content summarization (ignored,
+                always uses PRECOMPUTE_MODEL)
+            embedding_model: OpenAI embedding model name (unchanged)
             top_k_per_layer: Number of results to retrieve per layer
             similarity_thresholds: Optional per-layer similarity thresholds
                 (default 0.5)
             auto_embed: Whether to auto-embed missing content
         """
-        super().__init__(llm_provider=llm_provider, **kwargs)
+        # Create a fixed precompute LLM provider if any provider was requested
+        if llm_provider is not None:
+            from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+
+            precompute_provider = LLMProviderAdapter(
+                model_name=PRECOMPUTE_MODEL,
+                temperature=0,
+            )
+            super().__init__(llm_provider=precompute_provider, **kwargs)
+            logger.debug(
+                f"HMEMStrategy using fixed precompute model: {PRECOMPUTE_MODEL}"
+            )
+        else:
+            super().__init__(llm_provider=None, **kwargs)
+
         self.embedding_model = embedding_model
         self.top_k_per_layer = top_k_per_layer
         self.similarity_thresholds = similarity_thresholds or {
             1: 0.25,
             2: 0.5,
-            3: 0.25,
+            3: 0.4,  # Higher threshold for L3 trace entries
             4: 0.9,
         }
         self.auto_embed = auto_embed
@@ -492,70 +517,217 @@ class HMEMStrategy(BaseContextStrategy):
     def _build_trace_entries(
         self,
         scope: EvaluationScope,
-        backward_path: list[Any],
-        forward_path: list[Any],
+        _backward_path: list[Any],
+        _forward_path: list[Any],
     ) -> list[tuple[str, str]]:
-        """Build L3 entries from path snippets, node summaries, and milestones."""
-        entries: list[tuple[str, str]] = []
-        raw_paths = self._get_relevant_paths(scope)
-        if not raw_paths:
-            return entries
-        paths: list[list[Any]] = []
-        seen_path_keys: set[tuple[str, ...]] = set()
-        for path in raw_paths:
-            key = tuple(str(getattr(node, "id", "")) for node in path)
-            if key in seen_path_keys:
-                continue
-            seen_path_keys.add(key)
-            paths.append(path)
+        """Build L3 entries with direction separation and no redundancy.
 
-        seen_nodes: dict[str, Any] = {}
-        for path in paths:
+        Creates three types of entries:
+        1. Immediate neighbors (guaranteed, bypass similarity threshold)
+        2. Node summaries (deduplicated, one per node per direction)
+        3. Transitions (A->B pairs showing sequential flow)
+        """
+        entries: list[tuple[str, str]] = []
+        target_node = scope.target_node
+        target_id = str(getattr(target_node, "id", ""))
+
+        # Get backward and forward paths separately
+        backward_paths = get_backward_paths_to_node(
+            target_node,
+            scope.chart,
+            max_length=self.max_trace_length,
+            max_paths=self.max_trace_paths,
+        )
+        forward_paths = get_forward_paths_from_node(
+            target_node,
+            scope.chart,
+            max_length=self.max_trace_length,
+            max_paths=self.max_trace_paths,
+        )
+
+        # Get immediate neighbors (guaranteed inclusion)
+        slice_result = get_graph_slice(target_node, scope.chart, depth=1)
+        immediate_predecessors = set(slice_result.previous_nodes)
+        immediate_successors = set(slice_result.next_nodes)
+
+        # Collect unique nodes per direction (excluding target and immediates)
+        backward_node_set: set[Any] = set()
+        for path in backward_paths:
             for node in path:
                 node_id = str(getattr(node, "id", ""))
-                if node_id and node_id not in seen_nodes:
-                    seen_nodes[node_id] = node
+                if node_id != target_id and node not in immediate_predecessors:
+                    backward_node_set.add(node)
 
-        summary_nodes = list(seen_nodes.values())
-        summaries = self._load_path_summaries(scope, summary_nodes)
-        summary_map = {
-            str(getattr(node, "id", "")): summary
-            for node, summary in zip(summary_nodes, summaries)
-        }
+        forward_node_set: set[Any] = set()
+        for path in forward_paths:
+            for node in path:
+                node_id = str(getattr(node, "id", ""))
+                if node_id != target_id and node not in immediate_successors:
+                    forward_node_set.add(node)
 
-        for idx, node in enumerate(summary_nodes, 1):
-            node_name = getattr(node, "name", "") or f"node_{idx}"
-            summary = summary_map.get(str(getattr(node, "id", "")), "(no details)")
-            entry_key = f"node_{idx}_{self._slugify(node_name)}"
-            entries.append((entry_key, f"Node: {node_name}\nSummary: {summary}"))
+        # TYPE 1: Immediate neighbor entries (full detail, guaranteed retrieval)
+        # Use regular [BACKWARD]/[FORWARD] tags to avoid LLM overfocus on immediates
+        for node in immediate_predecessors:
+            entry_key = f"backward.immediate_{self._slugify(node.name)}"
+            content = self._format_immediate_entry(node, "BACKWARD")
+            entries.append((entry_key, content))
 
-        for path in paths:
-            path_id = compute_path_hash(path)
-            for window_size in (2, 3):
-                if len(path) < window_size:
+        for node in immediate_successors:
+            entry_key = f"forward.immediate_{self._slugify(node.name)}"
+            content = self._format_immediate_entry(node, "FORWARD")
+            entries.append((entry_key, content))
+
+        # TYPE 2: Backward node entries (deduplicated, full details)
+        for node in backward_node_set:
+            entry_key = f"backward.node_{self._slugify(node.name)}"
+            content = self._format_direction_node_entry(node, "BACKWARD")
+            entries.append((entry_key, content))
+
+        # TYPE 3: Forward node entries (deduplicated, full details)
+        for node in forward_node_set:
+            entry_key = f"forward.node_{self._slugify(node.name)}"
+            content = self._format_direction_node_entry(node, "FORWARD")
+            entries.append((entry_key, content))
+
+        # TYPE 4: Backward transition entries (A->B pairs)
+        seen_transitions: set[str] = set()
+        for path in backward_paths:
+            # Path goes: [start, ..., target] so transitions are A->B pairs
+            for i in range(len(path) - 1):
+                node_a = path[i]
+                node_b = path[i + 1]
+                trans_key = f"{getattr(node_a, 'id', '')}_{getattr(node_b, 'id', '')}"
+                if trans_key in seen_transitions:
                     continue
-                seen_snippets: set[str] = set()
-                for i in range(len(path) - window_size + 1):
-                    snippet_nodes = path[i : i + window_size]
-                    snippet_names = " -> ".join(
-                        getattr(node, "name", "") or f"Node {i + 1}"
-                        for node in snippet_nodes
-                    )
-                    snippet_summaries = "; ".join(
-                        summary_map.get(str(getattr(node, "id", "")), "(no details)")
-                        for node in snippet_nodes
-                    )
-                    entry_key = f"{path_id}_path_{window_size}_{i + 1}"
-                    if entry_key in seen_snippets:
-                        continue
-                    seen_snippets.add(entry_key)
-                    snippet_text = (
-                        f"Path snippet: {snippet_names}\n"
-                        f"Highlights: {snippet_summaries}"
-                    )
-                    entries.append((entry_key, snippet_text))
+                seen_transitions.add(trans_key)
+                entry_key = f"backward.transition_{self._slugify(trans_key)}"
+                content = self._format_transition_entry(node_a, node_b, "BACKWARD")
+                entries.append((entry_key, content))
+
+        # TYPE 5: Forward transition entries (A->B pairs)
+        seen_transitions.clear()
+        for path in forward_paths:
+            # Path goes: [target, ..., end] so transitions are A->B pairs
+            for i in range(len(path) - 1):
+                node_a = path[i]
+                node_b = path[i + 1]
+                trans_key = f"{getattr(node_a, 'id', '')}_{getattr(node_b, 'id', '')}"
+                if trans_key in seen_transitions:
+                    continue
+                seen_transitions.add(trans_key)
+                entry_key = f"forward.transition_{self._slugify(trans_key)}"
+                content = self._format_transition_entry(node_a, node_b, "FORWARD")
+                entries.append((entry_key, content))
 
         return entries
+
+    def _format_immediate_entry(self, node: Any, direction: str) -> str:
+        """Format immediate neighbor with full detail.
+
+        Uses regular [BACKWARD]/[FORWARD] tags (not special IMMEDIATE tags)
+        to avoid biasing LLM toward immediate neighbors over other entries.
+        """
+        name = getattr(node, "name", "Unknown")
+        description = getattr(node, "description", "") or ""
+        components = getattr(node, "components", None)
+
+        comp_strs: list[str] = []
+        if components:
+            comp_list = components.all() if hasattr(components, "all") else []
+            for comp in comp_list:
+                def_name = getattr(getattr(comp, "definition", None), "name", "")
+                value = getattr(comp, "value", "")
+                if def_name and value is not None:
+                    comp_strs.append(f"{def_name}={value}")
+
+        comp_text = ", ".join(comp_strs) if comp_strs else "None"
+        return (
+            f"[{direction}] Node: {name}\n"
+            f"Description: {description}\n"
+            f"Components: {comp_text}"
+        )
+
+    def _format_direction_node_entry(self, node: Any, direction: str) -> str:
+        """Format direction-aware node entry with full details.
+
+        Uses same format as immediate neighbors: title, description, components.
+        """
+        name = getattr(node, "name", "Unknown")
+        description = getattr(node, "description", "") or ""
+        components = getattr(node, "components", None)
+
+        comp_strs: list[str] = []
+        if components:
+            comp_list = components.all() if hasattr(components, "all") else []
+            for comp in comp_list:
+                def_name = getattr(getattr(comp, "definition", None), "name", "")
+                value = getattr(comp, "value", "")
+                if def_name and value is not None:
+                    comp_strs.append(f"{def_name}={value}")
+
+        comp_text = ", ".join(comp_strs) if comp_strs else "None"
+        return (
+            f"[{direction}] Node: {name}\n"
+            f"Description: {description}\n"
+            f"Components: {comp_text}"
+        )
+
+    def _format_transition_entry(
+        self,
+        node_a: Any,
+        node_b: Any,
+        direction: str,
+    ) -> str:
+        """Format A->B transition entry using node descriptions."""
+        name_a = getattr(node_a, "name", "Unknown")
+        name_b = getattr(node_b, "name", "Unknown")
+        desc_a = getattr(node_a, "description", "") or "(no description)"
+        desc_b = getattr(node_b, "description", "") or "(no description)"
+        return (
+            f"[{direction} TRANSITION] {name_a} -> {name_b}\n"
+            f"From: {desc_a}\n"
+            f"To: {desc_b}"
+        )
+
+    def _compute_distance_to_target(
+        self, node: Any, paths: list[list[Any]], target: Any
+    ) -> int:
+        """Compute minimum steps from node to target across all backward paths."""
+        target_id = str(getattr(target, "id", ""))
+        node_id = str(getattr(node, "id", ""))
+        min_dist = 999
+
+        for path in paths:
+            # Backward path ends at target
+            path_ids = [str(getattr(n, "id", "")) for n in path]
+            if node_id in path_ids and target_id in path_ids:
+                node_idx = path_ids.index(node_id)
+                target_idx = path_ids.index(target_id)
+                dist = target_idx - node_idx
+                if dist > 0:
+                    min_dist = min(min_dist, dist)
+
+        return min_dist if min_dist != 999 else 0
+
+    def _compute_distance_from_target(
+        self, node: Any, paths: list[list[Any]], target: Any
+    ) -> int:
+        """Compute minimum steps from target to node across all forward paths."""
+        target_id = str(getattr(target, "id", ""))
+        node_id = str(getattr(node, "id", ""))
+        min_dist = 999
+
+        for path in paths:
+            # Forward path starts at target
+            path_ids = [str(getattr(n, "id", "")) for n in path]
+            if node_id in path_ids and target_id in path_ids:
+                node_idx = path_ids.index(node_id)
+                target_idx = path_ids.index(target_id)
+                dist = node_idx - target_idx
+                if dist > 0:
+                    min_dist = min(min_dist, dist)
+
+        return min_dist if min_dist != 999 else 0
 
     def _get_relevant_paths(self, scope: EvaluationScope) -> list[list[Any]]:
         """Return a bounded set of paths through the target node."""

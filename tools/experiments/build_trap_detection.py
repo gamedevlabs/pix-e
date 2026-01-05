@@ -91,11 +91,16 @@ def _iter_detection_rows(
     run_meta: dict[str, Any],
     include_clean: bool,
 ) -> Iterable[dict[str, str]]:
-    results_by_node: dict[str, list[dict[str, Any]]] = {}
+    # Index results by both node_id and node_name for flexible matching
+    results_by_node_id: dict[str, list[dict[str, Any]]] = {}
+    results_by_name: dict[str, list[dict[str, Any]]] = {}
     for result in results:
         node_id = str(result.get("node_id", ""))
+        node_name = str(result.get("node_name", ""))
         if node_id:
-            results_by_node.setdefault(node_id, []).append(result)
+            results_by_node_id.setdefault(node_id, []).append(result)
+        if node_name:
+            results_by_name.setdefault(node_name, []).append(result)
 
     for row in annotations:
         node_id = row.get("node_id", "")
@@ -107,7 +112,11 @@ def _iter_detection_rows(
             traps = [dict(row)]
 
         for trap in traps:
-            for result in results_by_node.get(node_id, []):
+            # Try matching by node_id first, fall back to node_title
+            matched_results = results_by_node_id.get(node_id, [])
+            if not matched_results and node_title:
+                matched_results = results_by_name.get(node_title, [])
+            for result in matched_results:
                 dimensions = result.get("dimensions", {})
                 base = {
                     "run_id": run_meta.get("run_id", ""),
@@ -136,9 +145,7 @@ def _iter_detection_rows(
                 base.update(_dimension_fields(dimensions, "node_integrity"))
                 base["overall_score"] = _stringify(result.get("overall_score"))
                 base["total_tokens"] = _stringify(result.get("total_tokens"))
-                base["execution_time_ms"] = _stringify(
-                    result.get("execution_time_ms")
-                )
+                base["execution_time_ms"] = _stringify(result.get("execution_time_ms"))
                 yield base
 
 

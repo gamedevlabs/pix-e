@@ -4,9 +4,9 @@ Summary extraction for PX Node content.
 Summaries are LLM-generated condensed overviews of node content,
 following Zeng et al. (2024) methodology.
 
-Note: Summaries are generated on-demand via LLM. Unlike facts and triples,
-they are not stored in the vector store by the StructuralMemoryGenerator.
-Consider using fallback summaries for faster context building.
+Summaries are cached in the ContextArtifact table (canonical storage) and
+optionally in the vector store for similarity retrieval. This module checks
+the ContextArtifact table first, then vector store, before generating via LLM.
 """
 
 import logging
@@ -63,24 +63,50 @@ def extract_summary(
     node: PxNode,
     llm_provider: Optional[LLMProvider] = None,
     model_id: Optional[str] = None,
+    force_regenerate: bool = False,
+    chart_id: Optional[str] = None,
+    chart: Optional[Any] = None,
 ) -> Summary:
     """
     Extract a condensed summary from a PxNode.
 
-    Generates summary via LLM if provider available, otherwise uses fallback.
-    Note: Unlike facts and triples, summaries are not cached in the vector store.
+    Checks ContextArtifact table first (canonical storage from experiments),
+    then generates via LLM if provider available, otherwise uses fallback.
 
     Args:
         node: The PxNode to summarize
         llm_provider: LLM provider for generation (optional)
         model_id: Optional specific model to use
+        force_regenerate: If True, skip cache and regenerate
+        chart_id: Optional chart UUID string for cache lookup
+        chart: Optional PxChart object for cache lookup
 
     Returns:
         Summary object
     """
     node_id = str(node.id)
 
-    # If no LLM provider, use fallback
+    if not force_regenerate:
+        # 1. Try ContextArtifact table first (canonical storage from experiments)
+        from pxnodes.llm.context.artifacts import (
+            ARTIFACT_SUMMARY,
+            SCOPE_NODE,
+            get_cached_artifact,
+        )
+
+        cached_content = get_cached_artifact(
+            SCOPE_NODE, node_id, ARTIFACT_SUMMARY, chart=chart, chart_id=chart_id
+        )
+        if cached_content:
+            logger.debug(f"Using cached summary from ContextArtifact for {node.name}")
+            # Handle both string and dict content
+            if isinstance(cached_content, dict):
+                content = cached_content.get("content", str(cached_content))
+            else:
+                content = str(cached_content)
+            return Summary(node_id=node_id, content=content, source="cache")
+
+    # 2. No cache → Generate via LLM or use fallback
     if not llm_provider:
         return create_fallback_summary(node)
 
@@ -209,10 +235,14 @@ def extract_summaries_batch(
 async def extract_summary_async(
     node: PxNode,
     llm_provider: LLMProvider,
+    force_regenerate: bool = False,
+    chart_id: Optional[str] = None,
+    chart: Optional[Any] = None,
 ) -> Summary:
     """
     Async version of extract_summary for parallel execution.
 
+    Checks ContextArtifact table first, then generates via LLM.
     Uses thread_sensitive=False for LLM calls to enable true parallelism.
     """
     import logfire
@@ -226,6 +256,31 @@ async def extract_summary_async(
         node_id=node_id,
         node_name=node_name,
     ):
+        # Check for cached summary (if not force_regenerate)
+        if not force_regenerate:
+            from pxnodes.llm.context.artifacts import (
+                ARTIFACT_SUMMARY,
+                SCOPE_NODE,
+                get_cached_artifact,
+            )
+
+            cached_content = await sync_to_async(
+                get_cached_artifact, thread_sensitive=True
+            )(SCOPE_NODE, node_id, ARTIFACT_SUMMARY, chart=chart, chart_id=chart_id)
+
+            if cached_content:
+                logfire.info(
+                    "summary_from_context_artifact",
+                    node_name=node_name,
+                )
+                # Handle both string and dict content
+                if isinstance(cached_content, dict):
+                    content = cached_content.get("content", str(cached_content))
+                else:
+                    content = str(cached_content)
+                return Summary(node_id=node_id, content=content, source="cache")
+
+        # Generate via LLM
         logfire.info("generating_summary", node_name=node_name)
 
         # Get components (sync Django ORM call - must use thread_sensitive=True)
