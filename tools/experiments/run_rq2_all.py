@@ -78,6 +78,11 @@ def main() -> int:
         default=None,
         help="Limit evaluation to the first N target nodes per chart.",
     )
+    parser.add_argument(
+        "--skip-reset",
+        action="store_true",
+        help="Skip cache reset but still run precompute if needed.",
+    )
 
     args = parser.parse_args()
     combined_path = Path(args.combined_csv)
@@ -136,6 +141,8 @@ def main() -> int:
         ]
         if args.limit_targets is not None:
             cmd += ["--limit-targets", str(args.limit_targets)]
+        if args.skip_reset:
+            cmd.append("--skip-reset")
 
         print(f"Running {chart_label} ({chart_id}) -> {chart_dir}")
         subprocess.run(cmd, check=True)

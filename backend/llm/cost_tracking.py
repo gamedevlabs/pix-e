@@ -13,9 +13,10 @@ MODEL_COSTS: Dict[str, Dict[str, float]] = {
     "gemini-2.0-flash-exp": {"input": 0.0, "output": 0.0},
     "gemini-1.5-flash": {"input": 0.075, "output": 0.30},
     "gemini-1.5-pro": {"input": 1.25, "output": 5.00},
-    "gpt-4o-mini": {"input": 0.135, "output": 0.540},
+    "gpt-4o-mini": {"input": 0.15, "output": 0.60},
     "gpt-4o": {"input": 2.25, "output": 9.00},
     "gpt-4-turbo": {"input": 9.00, "output": 27.00},
+    "gpt-5.2": {"input": 1.75, "output": 14.00},
 }
 
 

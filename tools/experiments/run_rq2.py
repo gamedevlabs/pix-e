@@ -52,22 +52,23 @@ def _resolve_chart(chart_id_raw: str):
 
 
 def _get_project_context(chart):
-    from game_concept.utils import get_current_game_concept, get_current_project
+    from game_concept.utils import (get_current_game_concept,
+                                    get_current_project)
     from pillars.models import Pillar
 
     owner = getattr(chart, "owner", None)
     project = get_current_project(owner) if owner else None
     project_context = chart.project or project
     concept = get_current_game_concept(project_context)
-    pillars = list(Pillar.objects.filter(project=project_context)) if project_context else []
+    pillars = (
+        list(Pillar.objects.filter(project=project_context)) if project_context else []
+    )
     return project_context, concept, pillars
 
 
 def _resolve_target_node(chart, node_id: str, node_title: str | None):
     container = (
-        chart.containers.select_related("content")
-        .filter(content_id=node_id)
-        .first()
+        chart.containers.select_related("content").filter(content_id=node_id).first()
     )
     if container and container.content:
         return container.content
@@ -91,12 +92,8 @@ def _resolve_target_node(chart, node_id: str, node_title: str | None):
 
 
 def _reset_cache(chart, project_context, scope: str) -> None:
-    from pxnodes.models import (
-        ArtifactEmbedding,
-        ContextArtifact,
-        HMEMLayerEmbedding,
-        StructuralMemoryState,
-    )
+    from pxnodes.models import (ArtifactEmbedding, ContextArtifact,
+                                HMEMLayerEmbedding, StructuralMemoryState)
 
     with logfire.span("rq2.reset_cache", chart_id=str(chart.id), scope=scope):
         if scope in {"node", "all"}:
@@ -278,10 +275,8 @@ def _evaluate_nodes(
 
     from llm.providers.manager import ModelManager
     from pxnodes.llm.context.shared import create_llm_provider
-    from pxnodes.llm.workflows import (
-        PxNodesCoherenceMonolithicWorkflow,
-        PxNodesCoherenceWorkflow,
-    )
+    from pxnodes.llm.workflows import (PxNodesCoherenceMonolithicWorkflow,
+                                       PxNodesCoherenceWorkflow)
     from pxnodes.models import PxNode
 
     node_map: dict[str, Any] = {}
@@ -397,6 +392,11 @@ def main() -> int:
         help="Reuse existing cache and skip cache reset/precompute steps.",
     )
     parser.add_argument(
+        "--skip-reset",
+        action="store_true",
+        help="Skip cache reset but still run precompute if needed.",
+    )
+    parser.add_argument(
         "--debug-paths",
         action="store_true",
         help="Log resolved node/container and edge counts for each target.",
@@ -406,6 +406,11 @@ def main() -> int:
         type=int,
         default=None,
         help="Limit evaluation to the first N target nodes from the CSV.",
+    )
+    parser.add_argument(
+        "--filter-nodes",
+        default=None,
+        help="Comma-separated list of node titles to run (filters targets).",
     )
 
     args = parser.parse_args()
@@ -426,9 +431,7 @@ def main() -> int:
     container_qs = chart.containers.select_related("content").filter(
         content__isnull=False
     )
-    containers_by_content_id = {
-        str(c.content_id): c for c in container_qs if c.content
-    }
+    containers_by_content_id = {str(c.content_id): c for c in container_qs if c.content}
     containers_by_title: dict[str, list[Any]] = {}
     for c in container_qs:
         if not c.content:
@@ -466,8 +469,22 @@ def main() -> int:
             }
         )
 
+    # Filter by node title if --filter-nodes is specified
+    if args.filter_nodes:
+        filter_titles = {t.strip() for t in args.filter_nodes.split(",")}
+        resolved_targets = [
+            t for t in resolved_targets if t.get("node_title", "") in filter_titles
+        ]
+        if not resolved_targets:
+            raise SystemExit(
+                f"No targets matched filter: {filter_titles}. "
+                "Check node titles in CSV."
+            )
+
     target_node_ids = [t["node_id"] for t in resolved_targets]
-    target_node_titles = {t["node_id"]: t.get("node_title", "") for t in resolved_targets}
+    target_node_titles = {
+        t["node_id"]: t.get("node_title", "") for t in resolved_targets
+    }
 
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()]
 
@@ -492,6 +509,8 @@ def main() -> int:
         "embedding_model": args.embedding_model,
         "scope": args.scope,
         "skip_precompute": args.skip_precompute,
+        "skip_reset": args.skip_reset,
+        "filter_nodes": args.filter_nodes,
         "targets": resolved_targets,
         "started_at": timestamp,
     }
@@ -518,7 +537,8 @@ def main() -> int:
                 if args.skip_precompute:
                     precompute_ms = 0
                 else:
-                    _reset_cache(chart, project_context, args.scope)
+                    if not args.skip_reset:
+                        _reset_cache(chart, project_context, args.scope)
 
                     precompute_start = time.time()
                     _precompute(

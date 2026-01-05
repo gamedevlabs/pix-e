@@ -85,27 +85,24 @@ class BackwardCoherenceAgent(CoherenceDimensionAgent):
     temperature = 0
 
     def _build_dimension_context(self, data: Dict[str, Any]) -> str:
-        """Build prerequisite-specific context."""
+        """Build prerequisite-specific context.
+
+        Note: Path listings are already included in the filtered context from
+        _filter_trace_content(), so we only add summary info here.
+        """
         backward_nodes = data.get("backward_nodes", [])
-        player_state = data.get("player_state", {})
+        backward_paths = data.get("backward_paths", [])
 
         context_parts = []
 
-        # Add backward path information
+        # Add backward node pool summary (paths are in filtered context)
         if backward_nodes:
             context_parts.append(
-                f"BACKWARD PATH: {len(backward_nodes)} nodes lead to this point"
+                f"POOL OF PRIOR NODES: {len(backward_nodes)} nodes can lead to "
+                "this point"
             )
-            node_names = [n.get("name", "Unknown") for n in backward_nodes[:5]]
-            context_parts.append(f"Recent path: {' → '.join(node_names)}")
 
-        # Add accumulated player state
-        if player_state:
-            items = player_state.get("items", [])
-            mechanics = player_state.get("mechanics", [])
-            if items:
-                context_parts.append(f"Player has items: {', '.join(items)}")
-            if mechanics:
-                context_parts.append(f"Unlocked mechanics: {', '.join(mechanics)}")
+        if backward_paths:
+            context_parts.append(f"({len(backward_paths)} paths to target)")
 
         return "\n".join(context_parts)

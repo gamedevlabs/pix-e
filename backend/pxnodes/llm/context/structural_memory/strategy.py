@@ -30,6 +30,7 @@ from pxnodes.llm.context.artifacts import (
     ARTIFACT_FACTS,
     ARTIFACT_SUMMARY,
     ARTIFACT_TRIPLES,
+    PRECOMPUTE_MODEL,
     ArtifactInventory,
 )
 from pxnodes.llm.context.base.registry import StrategyRegistry
@@ -104,9 +105,16 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         """
         Initialize the Mixed Structural Memory strategy.
 
+        Note: All LLM operations for precompute (facts, triples, summaries,
+        query refinement) use the fixed PRECOMPUTE_MODEL (gpt-4o-mini)
+        regardless of what llm_provider is passed. This ensures consistent
+        preprocessing across experiments - only coherence evaluation uses
+        the specified model.
+
         Args:
-            llm_provider: LLM for fact/summary extraction and query refinement
-            embedding_model: OpenAI embedding model name
+            llm_provider: LLM for extraction and query refinement (ignored,
+                always uses PRECOMPUTE_MODEL)
+            embedding_model: OpenAI embedding model name (unchanged)
             retrieval_iterations: Number of query refinement iterations (N in paper)
             retrieval_top_k: Memories to retrieve per iteration (T in paper, default 50)
             retrieval_max_distance: Maximum distance to keep retrieved memories
@@ -115,7 +123,22 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             skip_fact_extraction: If True, skip LLM-based fact extraction
             skip_summary_extraction: If True, skip LLM-based summary extraction
         """
-        super().__init__(llm_provider=llm_provider, **kwargs)
+        # Create a fixed precompute LLM provider if any provider was requested
+        if llm_provider is not None:
+            from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+
+            precompute_provider = LLMProviderAdapter(
+                model_name=PRECOMPUTE_MODEL,
+                temperature=0,
+            )
+            super().__init__(llm_provider=precompute_provider, **kwargs)
+            logger.debug(
+                f"StructuralMemoryStrategy using fixed precompute model: "
+                f"{PRECOMPUTE_MODEL}"
+            )
+        else:
+            super().__init__(llm_provider=None, **kwargs)
+
         self.embedding_model = embedding_model
         self.retrieval_iterations = retrieval_iterations
         self.retrieval_top_k = retrieval_top_k
@@ -1370,11 +1393,11 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             lines = [f"{title}:", f"Summary: {summary}"]
             if triples:
                 lines.append("Knowledge Triples:")
-                for t in triples[:8]:
+                for t in triples:
                     lines.append(f"- {t}")
             if facts:
                 lines.append("Atomic Facts:")
-                for f in facts[:10]:
+                for f in facts:
                     lines.append(f"- {f}")
             if chunks and self.include_chunks:
                 lines.append("Chunks:")
@@ -1559,7 +1582,7 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             "",
             "Knowledge Triples:",
         ]
-        for t in node_triples[:10]:  # Limit to avoid huge context
+        for t in node_triples:
             content_parts.append(f"  - {t}")
 
         return LayerContext(
@@ -1766,11 +1789,11 @@ class SimpleStructuralMemoryStrategy(StructuralMemoryStrategy):
                 lines = [f"{title}:"]
                 if triples_list:
                     lines.append("Knowledge Triples:")
-                    for t in triples_list[:8]:
+                    for t in triples_list:
                         lines.append(f"- {t}")
                 if facts_list:
                     lines.append("Atomic Facts:")
-                    for f in facts_list[:10]:
+                    for f in facts_list:
                         lines.append(f"- {f}")
                 content_parts.append("\n".join(lines))
 

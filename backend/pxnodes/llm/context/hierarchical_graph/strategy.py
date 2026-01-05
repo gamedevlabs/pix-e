@@ -6,11 +6,12 @@ instead of vector similarity for context retrieval.
 
 This strategy:
 - Uses the 4-layer hierarchy (Domain, Category, Trace, Episode)
-- Performs BFS/DFS graph traversal for trace reconstruction
-- Aggregates player state (items, mechanics, narrative) along paths
-- Provides structured context for coherence evaluation
+- Enumerates all possible paths to/from target node
+- Provides pool of prior/future nodes with explicit path listings
+- Structured context for coherence evaluation
 """
 
+import logging
 from typing import Any, Optional
 
 from pxnodes.llm.context.base.registry import StrategyRegistry
@@ -22,17 +23,17 @@ from pxnodes.llm.context.base.types import (
     StrategyType,
 )
 from pxnodes.llm.context.hierarchical_graph.layers import (
-    PlayerState,
     build_category_layer,
     build_domain_layer,
     build_episode_layer,
     build_trace_layer,
 )
-from pxnodes.llm.context.hierarchical_graph.traversal import (
-    aggregate_player_state,
-    forward_bfs,
-    reverse_bfs,
+from pxnodes.llm.context.shared.graph_retrieval import (
+    get_backward_paths_to_node,
+    get_forward_paths_from_node,
 )
+
+logger = logging.getLogger(__name__)
 
 # Context template (no evaluation task - prompts add task-specific instructions).
 CONTEXT_TEMPLATE = """### HIERARCHICAL CONTEXT
@@ -43,7 +44,7 @@ CONTEXT_TEMPLATE = """### HIERARCHICAL CONTEXT
 **2. [L2 CATEGORY: CURRENT ARC]**
 {l2_content}
 
-**3. [L3 TRACE: PLAYER STATE]**
+**3. [L3 TRACE: PATH CONTEXT]**
 {l3_content}
 
 **4. [L4 EPISODE: TARGET NODE]**
@@ -55,13 +56,14 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
     """
     Hierarchical Graph strategy using deterministic graph traversal.
 
-    This is the user's adaptation of H-MEM that uses BFS/DFS graph
+    This is the user's adaptation of H-MEM that uses explicit graph
     traversal instead of vector similarity for context retrieval.
 
-    Key differences from H-MEM:
+    Key features:
     - Uses explicit graph structure instead of embeddings
+    - Enumerates ALL possible paths to/from target node
+    - Provides pool of prior/future nodes with explicit path listings
     - Deterministic retrieval ensures rigid game logic validation
-    - State aggregation tracks items, mechanics, narrative along paths
     """
 
     strategy_type = StrategyType.HIERARCHICAL_GRAPH
@@ -69,24 +71,18 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
     def __init__(
         self,
         llm_provider: Optional[LLMProvider] = None,
-        max_trace_depth: Optional[int] = None,
-        stop_at_checkpoint: bool = True,
-        lookahead_depth: int = 1,
+        max_path_length: int = 20,
         **kwargs: Any,
     ):
         """
         Initialize the Hierarchical Graph strategy.
 
         Args:
-            llm_provider: Optional LLM for summary generation
-            max_trace_depth: Max nodes to traverse backward (None = unlimited)
-            stop_at_checkpoint: Stop backward traversal at checkpoints
-            lookahead_depth: How many successor nodes to include
+            llm_provider: Optional LLM (not used by this strategy)
+            max_path_length: Maximum path length for path enumeration
         """
         super().__init__(llm_provider=llm_provider, **kwargs)
-        self.max_trace_depth = max_trace_depth
-        self.stop_at_checkpoint = stop_at_checkpoint
-        self.lookahead_depth = lookahead_depth
+        self.max_path_length = max_path_length
 
     def build_context(
         self,
@@ -99,7 +95,7 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         Steps:
         1. Retrieve L1 (Domain) from project config - FULL content
         2. Retrieve L2 (Category) from parent chart
-        3. Reconstruct L3 (Trace) via BFS - BOTH backward and forward paths
+        3. Reconstruct L3 (Trace) with ALL paths to/from target
         4. Retrieve L4 (Episode) from target node
 
         Args:
@@ -112,9 +108,13 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         # Build all 4 layers
         l1_domain = self._build_l1_domain(scope)
         l2_category = self._build_l2_category(scope)
-        l3_trace, player_state, backward_nodes, forward_nodes = self._build_l3_trace(
-            scope
-        )
+        (
+            l3_trace,
+            backward_nodes,
+            forward_nodes,
+            backward_paths,
+            forward_paths,
+        ) = self._build_l3_trace(scope)
         l4_episode = self._build_l4_episode(scope)
 
         # Build structured context string
@@ -133,11 +133,13 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
                 "target_node_name": scope.target_node.name,
                 "chart_id": str(scope.chart.id),
                 "chart_name": scope.chart.name,
-                "backward_path_length": len(backward_nodes),
-                "forward_path_length": len(forward_nodes),
-                "player_state": player_state.to_dict(),
-                "max_trace_depth": self.max_trace_depth,
-                "stop_at_checkpoint": self.stop_at_checkpoint,
+                "backward_node_count": len(backward_nodes),
+                "forward_node_count": len(forward_nodes),
+                "backward_path_count": len(backward_paths),
+                "forward_path_count": len(forward_paths),
+                "backward_paths": self._serialize_paths(backward_paths),
+                "forward_paths": self._serialize_paths(forward_paths),
+                "max_path_length": self.max_path_length,
                 "includes_target_description": True,
             },
         )
@@ -153,7 +155,7 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
         elif layer == 2:
             return self._build_l2_category(scope)
         elif layer == 3:
-            layer_ctx, _, _, _ = self._build_l3_trace(scope)
+            layer_ctx, _, _, _, _ = self._build_l3_trace(scope)
             return layer_ctx
         else:  # layer == 4
             return self._build_l4_episode(scope)
@@ -171,52 +173,83 @@ class HierarchicalGraphStrategy(BaseContextStrategy):
 
     def _build_l3_trace(
         self, scope: EvaluationScope
-    ) -> tuple[LayerContext, PlayerState, list, list]:
+    ) -> tuple[LayerContext, list, list, list, list]:
         """
-        Build L3 Trace layer via BFS traversal (backward AND forward).
+        Build L3 Trace layer with all paths to/from target.
+
+        Enumerates ALL possible paths and extracts unique nodes for the pool.
 
         For coherence checking, we need both:
-        - PREVIOUS nodes: To verify prerequisites, story continuity
-        - FUTURE nodes: To verify target properly sets up what comes next
+        - PRIOR nodes pool + paths: To verify prerequisites, story continuity
+        - FUTURE nodes pool + paths: To verify target properly sets up what comes next
 
         Returns:
-            Tuple of (LayerContext, PlayerState, backward_nodes, forward_nodes)
+            Tuple of (LayerContext, backward_nodes, forward_nodes,
+                      backward_paths, forward_paths)
         """
-        # Perform reverse BFS to get backward path (full path to start)
-        backward_nodes = reverse_bfs(
+        # Get all backward paths (paths leading to target)
+        backward_paths = get_backward_paths_to_node(
             scope.target_node,
             scope.chart,
-            max_depth=self.max_trace_depth,
-            stop_at_checkpoint=self.stop_at_checkpoint,
+            max_length=self.max_path_length,
+            max_paths=None,  # No limit on paths
         )
 
-        # Perform forward BFS to get forward path (full path to end)
-        # Use None for max_depth to get complete forward path
-        forward_nodes = forward_bfs(
+        # Get all forward paths (paths from target)
+        forward_paths = get_forward_paths_from_node(
             scope.target_node,
             scope.chart,
-            max_depth=None,  # Get complete forward path
+            max_length=self.max_path_length,
+            max_paths=None,  # No limit on paths
         )
 
-        if not backward_nodes and not forward_nodes:
-            from pxnodes.llm.context.shared.graph_retrieval import get_full_path
+        # Extract unique nodes from paths for the pool (excluding target)
+        backward_nodes = list(
+            {
+                node
+                for path in backward_paths
+                for node in path
+                if node != scope.target_node
+            }
+        )
+        forward_nodes = list(
+            {
+                node
+                for path in forward_paths
+                for node in path
+                if node != scope.target_node
+            }
+        )
 
-            graph_slice = get_full_path(scope.target_node, scope.chart)
-            backward_nodes = graph_slice.previous_nodes
-            forward_nodes = graph_slice.next_nodes
-
-        # Aggregate player state along backward path
-        player_state = aggregate_player_state(backward_nodes, self.llm_provider)
-
-        # Build layer context with BOTH backward and forward paths
+        # Build layer context with pools and paths
         layer = build_trace_layer(
-            backward_nodes,
-            player_state,
-            scope.target_node,
+            backward_nodes=backward_nodes,
+            target_node=scope.target_node,
             forward_nodes=forward_nodes,
+            backward_paths=backward_paths,
+            forward_paths=forward_paths,
         )
 
-        return layer, player_state, backward_nodes, forward_nodes
+        return layer, backward_nodes, forward_nodes, backward_paths, forward_paths
+
+    def _serialize_paths(self, paths: list[list[Any]]) -> list[list[dict]]:
+        """
+        Serialize paths to list of dicts for JSON storage in metadata.
+
+        Each node is serialized to {"name": ..., "id": ...} for use by agents.
+        """
+        serialized = []
+        for path in paths:
+            serialized_path = []
+            for node in path:
+                serialized_path.append(
+                    {
+                        "name": getattr(node, "name", "Unknown"),
+                        "id": str(getattr(node, "id", "")),
+                    }
+                )
+            serialized.append(serialized_path)
+        return serialized
 
     def _build_l4_episode(self, scope: EvaluationScope) -> LayerContext:
         """Build L4 Episode layer from target node."""

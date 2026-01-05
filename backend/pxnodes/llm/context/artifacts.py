@@ -2,13 +2,20 @@
 Artifact inventory for context strategies.
 
 Stores precomputed artifacts (facts, triples, summaries, etc.) with change hashes.
+
+IMPORTANT: All artifact generation (facts, triples, summaries) uses a fixed
+"precompute" model (gpt-4o-mini) to ensure consistent preprocessing across
+experiments. Only the coherence evaluation agents use the user-specified model.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Callable, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
+
+if TYPE_CHECKING:
+    from pxnodes.llm.context.llm_adapter import LLMProviderAdapter  # noqa: F401
 
 import logfire
 
@@ -36,6 +43,11 @@ from pxnodes.llm.context.structural_memory.triples import (
     parse_llm_triples,
 )
 from pxnodes.models import ContextArtifact, PxNode
+
+# Fixed model for all artifact precompute operations.
+# This ensures consistent preprocessing across experiments regardless of
+# which model is used for coherence evaluation.
+PRECOMPUTE_MODEL = "gpt-4o-mini"
 
 SCOPE_NODE = "node"
 SCOPE_CHART = "chart"
@@ -91,13 +103,98 @@ def compute_path_source_hash(
     return _hash_payload(payload)
 
 
+def get_cached_artifact(
+    scope_type: str,
+    scope_id: str,
+    artifact_type: str,
+    chart: Optional[Any] = None,
+    chart_id: Optional[str] = None,
+) -> Optional[Any]:
+    """
+    Retrieve cached artifact content from ContextArtifact table.
+
+    This is the canonical storage for artifacts populated by experiments
+    and precompute operations. Use this to check for cached artifacts
+    before generating new ones via LLM.
+
+    Args:
+        scope_type: One of SCOPE_NODE, SCOPE_CHART, SCOPE_PATH, etc.
+        scope_id: The ID within that scope (e.g., node UUID)
+        artifact_type: One of ARTIFACT_FACTS, ARTIFACT_TRIPLES, etc.
+        chart: Optional PxChart object to filter by
+        chart_id: Optional chart UUID string to filter by
+
+    Returns:
+        The artifact content if found, None otherwise.
+    """
+    try:
+        from uuid import UUID
+
+        query = ContextArtifact.objects.filter(
+            scope_type=scope_type,
+            scope_id=scope_id,
+            artifact_type=artifact_type,
+        )
+        if chart:
+            query = query.filter(chart=chart)
+        elif chart_id:
+            # Convert string to UUID for proper filtering
+            chart_uuid = UUID(chart_id) if isinstance(chart_id, str) else chart_id
+            query = query.filter(chart_id=chart_uuid)
+
+        artifact = query.first()
+        if artifact and artifact.content is not None:
+            logfire.debug(
+                "artifact_cache_hit",
+                scope_type=scope_type,
+                scope_id=scope_id,
+                artifact_type=artifact_type,
+            )
+            return artifact.content
+    except Exception as e:
+        logfire.warning(
+            "artifact_cache_lookup_failed",
+            scope_type=scope_type,
+            scope_id=scope_id,
+            artifact_type=artifact_type,
+            error=str(e),
+        )
+
+    return None
+
+
 class ArtifactInventory:
+    """
+    Inventory for managing context artifacts (facts, triples, summaries).
+
+    IMPORTANT: All artifact generation always uses gpt-4o-mini (PRECOMPUTE_MODEL)
+    regardless of the model passed to __init__. This ensures consistent
+    preprocessing across experiments - only coherence evaluation agents
+    use the user-specified model.
+    """
+
     def __init__(
         self,
         llm_provider: Optional[Any] = None,
         allow_llm_summaries: bool = True,
     ):
-        self.llm_provider = llm_provider
+        # Always use the fixed precompute model for artifact generation,
+        # ignoring whatever model was passed in. This ensures consistent
+        # preprocessing across experiments.
+        if llm_provider is not None:
+            from pxnodes.llm.context.llm_adapter import LLMProviderAdapter  # noqa: F811
+
+            # Create a new provider with the fixed precompute model
+            self.llm_provider: Optional[LLMProviderAdapter] = LLMProviderAdapter(
+                model_name=PRECOMPUTE_MODEL,
+                temperature=0,
+            )
+            logfire.debug(
+                "artifact_inventory.using_precompute_model",
+                precompute_model=PRECOMPUTE_MODEL,
+            )
+        else:
+            self.llm_provider = None
         self.allow_llm_summaries = allow_llm_summaries
 
     def get_or_build_node_artifacts(
@@ -145,13 +242,13 @@ class ArtifactInventory:
             contents = asyncio.run(run_parallel())
         except RuntimeError:
             contents = [
-                self._build_node_artifact(node, artifact_type)
+                self._build_node_artifact(node, artifact_type, chart)
                 for node, artifact_type, _ in to_build
             ]
 
         for (node, artifact_type, source_hash), content in zip(to_build, contents):
             if isinstance(content, Exception):
-                content = self._build_node_artifact(node, artifact_type)
+                content = self._build_node_artifact(node, artifact_type, chart)
             entry = self._upsert_artifact(
                 scope_type=SCOPE_NODE,
                 scope_id=str(node.id),
@@ -512,7 +609,9 @@ class ArtifactInventory:
             metadata=payload,
         )
 
-    def _build_node_artifact(self, node: PxNode, artifact_type: str) -> Any:
+    def _build_node_artifact(
+        self, node: PxNode, artifact_type: str, chart: Optional[Any] = None
+    ) -> Any:
         if artifact_type == ARTIFACT_RAW_TEXT:
             parts = [f"Node: {node.name}", node.description or ""]
             components = node.components.select_related("definition").all()
@@ -535,7 +634,9 @@ class ArtifactInventory:
                     node_id=str(node.id),
                     node_name=getattr(node, "name", ""),
                 ):
-                    summary = extract_summary(node, self.llm_provider)
+                    summary = extract_summary(
+                        node, self.llm_provider, chart=chart, force_regenerate=True
+                    )
                 if summary:
                     return summary.content
             return create_fallback_summary(node).content
@@ -548,7 +649,9 @@ class ArtifactInventory:
                 node_id=str(node.id),
                 node_name=getattr(node, "name", ""),
             ):
-                facts = extract_atomic_facts(node, self.llm_provider)
+                facts = extract_atomic_facts(
+                    node, self.llm_provider, chart=chart, force_regenerate=True
+                )
             return [
                 {"fact": fact.fact, "source_field": fact.source_field} for fact in facts
             ]
@@ -587,7 +690,12 @@ class ArtifactInventory:
                     node_id=node_id,
                     node_name=node_name,
                 ):
-                    summary = await extract_summary_async(node, self.llm_provider)
+                    summary = await extract_summary_async(
+                        node,
+                        self.llm_provider,
+                        force_regenerate=True,
+                        chart=chart,
+                    )
                     return summary.content if summary else ""
             return create_fallback_summary(node).content
 
@@ -603,7 +711,7 @@ class ArtifactInventory:
                     node,
                     self.llm_provider,
                     force_regenerate=True,
-                    chart_id=str(getattr(chart, "id", "")),
+                    chart=chart,
                 )
             return [
                 {"fact": fact.fact, "source_field": fact.source_field} for fact in facts
@@ -637,7 +745,7 @@ class ArtifactInventory:
             ]
 
         if artifact_type == ARTIFACT_RAW_TEXT:
-            return self._build_node_artifact(node, artifact_type)
+            return self._build_node_artifact(node, artifact_type, chart)
 
         return ""
 
