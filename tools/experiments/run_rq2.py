@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import sys
+import sys
 import time
 import uuid
 from dataclasses import dataclass
@@ -270,6 +271,7 @@ def _evaluate_nodes(
     target_node_ids,
     target_node_titles,
     node_parallelism: int,
+    dimensions: list[str] | None,
 ) -> list[dict[str, Any]]:
     import asyncio
 
@@ -317,6 +319,7 @@ def _evaluate_nodes(
                     project=project_context,
                     project_pillars=pillars,
                     game_concept=concept,
+                    dimensions=dimensions,
                 )
                 return result.model_dump()
 
@@ -412,6 +415,11 @@ def main() -> int:
         default=None,
         help="Comma-separated list of node titles to run (filters targets).",
     )
+    parser.add_argument(
+        "--dimensions",
+        default=None,
+        help="Comma-separated subset of dimensions to evaluate (agentic only).",
+    )
 
     args = parser.parse_args()
 
@@ -488,6 +496,21 @@ def main() -> int:
 
     strategies = [s.strip() for s in args.strategies.split(",") if s.strip()]
 
+    dimensions = None
+    if args.dimensions:
+        if args.execution_mode != "agentic":
+            raise SystemExit("--dimensions is only supported in agentic mode.")
+        dimensions = [d.strip() for d in args.dimensions.split(",") if d.strip()]
+        allowed = {
+            "backward_coherence",
+            "forward_coherence",
+            "global_fit",
+            "node_integrity",
+        }
+        invalid = [d for d in dimensions if d not in allowed]
+        if invalid:
+            raise SystemExit(f"Unknown dimensions: {', '.join(invalid)}")
+
     from pxnodes.llm.context.base.types import StrategyType
 
     strategy_types = []
@@ -514,6 +537,8 @@ def main() -> int:
         "targets": resolved_targets,
         "started_at": timestamp,
     }
+    if dimensions:
+        run_metadata["dimensions"] = dimensions
 
     strategy_summaries: list[StrategyRunSummary] = []
     node_results: list[dict[str, Any]] = []
@@ -604,6 +629,7 @@ def main() -> int:
                     target_node_ids=target_node_ids,
                     target_node_titles=target_node_titles,
                     node_parallelism=effective_parallelism,
+                    dimensions=dimensions,
                 )
                 eval_ms = int((time.time() - eval_start) * 1000)
 

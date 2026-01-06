@@ -77,6 +77,8 @@ def _stringify(value: Any) -> str:
 
 def _dimension_fields(dimensions: dict[str, Any], prefix: str) -> dict[str, str]:
     dim = dimensions.get(prefix, {}) if isinstance(dimensions, dict) else {}
+    if dim is None:
+        dim = {}
     return {
         f"{prefix}_score": _stringify(dim.get("score")),
         f"{prefix}_issues": _stringify(dim.get("issues")),
