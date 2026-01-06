@@ -1,5 +1,6 @@
 import argparse
 import csv
+import json
 import re
 import subprocess
 import sys
@@ -7,7 +8,7 @@ import time
 from pathlib import Path
 
 
-def _parse_csv(path: Path) -> list[dict[str, str]]:
+def _parse_csv(path: Path) -> tuple[list[dict[str, str]], list[str]]:
     with path.open("r", encoding="utf-8", newline="") as f:
         sample = f.read(2048)
         f.seek(0)
@@ -27,12 +28,11 @@ def _slug(value: str) -> str:
 
 def _write_chart_csv(
     output_dir: Path,
-    chart_id: str,
     rows: list[dict[str, str]],
     header: list[str],
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
-    out_path = output_dir / f"annotations_{chart_id}.csv"
+    out_path = output_dir / "annotations.csv"
     with out_path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=header)
         writer.writeheader()
@@ -41,9 +41,64 @@ def _write_chart_csv(
     return out_path
 
 
+def _merge_outputs(output_dir: Path, group_dirs: list[Path]) -> None:
+    by_node = []
+    by_strategy = []
+    summary = None
+
+    for group_dir in group_dirs:
+        by_node_path = group_dir / "by_node.json"
+        by_strategy_path = group_dir / "by_strategy.csv"
+        summary_path = group_dir / "summary.json"
+
+        if by_node_path.exists():
+            by_node.extend(json.loads(by_node_path.read_text(encoding="utf-8")))
+        if by_strategy_path.exists():
+            with by_strategy_path.open("r", encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                by_strategy.extend(list(reader))
+        if summary is None and summary_path.exists():
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    if summary is None:
+        raise SystemExit(f"No summary.json found in {group_dirs}")
+
+    summary["strategies"] = [
+        "simple_sm",
+        "structural_memory",
+        "hierarchical_graph",
+        "hmem",
+    ]
+    summary["dimensions_by_strategy"] = {
+        "simple_sm": ["global_fit", "node_integrity"],
+        "structural_memory": ["global_fit", "node_integrity"],
+        "hierarchical_graph": ["backward_coherence", "forward_coherence"],
+        "hmem": ["backward_coherence", "forward_coherence"],
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "by_node.json").write_text(
+        json.dumps(by_node, indent=2, ensure_ascii=True) + "\n",
+        encoding="utf-8",
+    )
+
+    if by_strategy:
+        with (output_dir / "by_strategy.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as f:
+            writer = csv.DictWriter(f, fieldnames=list(by_strategy[0].keys()))
+            writer.writeheader()
+            writer.writerows(by_strategy)
+
+    (output_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2, ensure_ascii=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run RQ2 for every chart in a combined annotations CSV."
+        description="Run selected subagents per strategy across charts."
     )
     parser.add_argument(
         "--combined-csv",
@@ -54,16 +109,12 @@ def main() -> int:
         default=None,
         help="Root directory for per-chart outputs.",
     )
-    parser.add_argument(
-        "--strategies",
-        default="full_context,structural_memory,simple_sm,hierarchical_graph",
-    )
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--embedding-model", default="text-embedding-3-small")
     parser.add_argument(
         "--execution-mode",
-        choices=["monolithic", "agentic"],
-        default="monolithic",
+        choices=["agentic"],
+        default="agentic",
     )
     parser.add_argument("--scope", choices=["global", "node", "all"], default="all")
     parser.add_argument(
@@ -73,20 +124,15 @@ def main() -> int:
         help="How many target nodes to evaluate in parallel per strategy.",
     )
     parser.add_argument(
+        "--skip-precompute",
+        action="store_true",
+        help="Skip cache reset and precompute (reuse existing cache).",
+    )
+    parser.add_argument(
         "--limit-targets",
         type=int,
         default=None,
         help="Limit evaluation to the first N target nodes per chart.",
-    )
-    parser.add_argument(
-        "--skip-precompute",
-        action="store_true",
-        help="Skip cache reset/precompute steps (reuse existing cache).",
-    )
-    parser.add_argument(
-        "--skip-reset",
-        action="store_true",
-        help="Skip cache reset but still run precompute if needed.",
     )
 
     args = parser.parse_args()
@@ -100,7 +146,7 @@ def main() -> int:
 
     output_root = Path(
         args.output_root
-        or f"docs/experiments/rq2_combined_{time.strftime('%Y%m%d_%H%M%S')}"
+        or f"docs/experiments/rq2_subagents_{time.strftime('%Y%m%d_%H%M%S')}"
     )
     output_root.mkdir(parents=True, exist_ok=True)
 
@@ -120,17 +166,18 @@ def main() -> int:
         chart_label = chart_names.get(chart_id) or chart_id
         chart_slug = _slug(chart_label)
         chart_dir = output_root / f"{chart_slug}_{chart_id[:8]}"
-        chart_csv = _write_chart_csv(chart_dir, chart_id, chart_rows, header)
+        chart_csv = _write_chart_csv(chart_dir, chart_rows, header)
 
-        cmd = [
+        group_a_dir = chart_dir / "sm_subset"
+        group_b_dir = chart_dir / "graph_hmem_subset"
+
+        base_cmd = [
             sys.executable,
             "tools/experiments/run_rq2.py",
             "--chart-id",
             chart_id,
             "--annotations",
             str(chart_csv),
-            "--strategies",
-            args.strategies,
             "--model",
             args.model,
             "--embedding-model",
@@ -139,20 +186,36 @@ def main() -> int:
             args.execution_mode,
             "--scope",
             args.scope,
-            "--output-dir",
-            str(chart_dir),
             "--node-parallelism",
             str(args.node_parallelism),
         ]
         if args.skip_precompute:
-            cmd.append("--skip-precompute")
+            base_cmd.append("--skip-precompute")
         if args.limit_targets is not None:
-            cmd += ["--limit-targets", str(args.limit_targets)]
-        if args.skip_reset:
-            cmd.append("--skip-reset")
+            base_cmd += ["--limit-targets", str(args.limit_targets)]
 
-        print(f"Running {chart_label} ({chart_id}) -> {chart_dir}")
-        subprocess.run(cmd, check=True)
+        cmd_a = base_cmd + [
+            "--strategies",
+            "simple_sm,structural_memory",
+            "--dimensions",
+            "global_fit,node_integrity",
+            "--output-dir",
+            str(group_a_dir),
+        ]
+        cmd_b = base_cmd + [
+            "--strategies",
+            "hierarchical_graph,hmem",
+            "--dimensions",
+            "backward_coherence,forward_coherence",
+            "--output-dir",
+            str(group_b_dir),
+        ]
+
+        print(f"Running {chart_label} ({chart_id})")
+        subprocess.run(cmd_a, check=True)
+        subprocess.run(cmd_b, check=True)
+
+        _merge_outputs(chart_dir, [group_a_dir, group_b_dir])
 
     print(f"All runs saved under {output_root}")
     return 0
