@@ -1,41 +1,49 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { useProjectHandler } from '~/composables/useProjectHandler'
 
 defineProps<{
   collapsed?: boolean
 }>()
 
-const projects = ref([
-  {
-    label: 'Project One',
+// use the project's composable
+const { projects, currentProject, switchProject, unselectProject } = useProjectHandler()
+
+// selected team/item derived from the currentProject state
+const selectedTeam = computed(() => {
+  const p = currentProject.value ?? projects.value[0]
+  if (!p) {
+    // safe fallback to avoid spreading undefined into v-bind
+    return {
+      label: 'No project',
+      avatar: {
+        src: `https://ui-avatars.com/api/?name=Project&background=random`,
+        alt: 'No project',
+      },
+    }
+  }
+
+  return {
+    label: p.name,
     avatar: {
-      src: 'https://github.com/nuxt.png',
-      alt: 'Project One',
+      // fallback avatar generator based on project name
+      src: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random`,
+      alt: p.name,
     },
-  },
-  {
-    label: 'Project 2',
-    avatar: {
-      src: 'https://github.com/nuxt-hub.png',
-      alt: 'Project 2',
-    },
-  },
-  {
-    label: 'Demo Project',
-    avatar: {
-      src: 'https://github.com/nuxtlabs.png',
-      alt: 'Demo Project',
-    },
-  },
-])
-const selectedTeam = ref(projects.value[0])
+  }
+})
 
 const items = computed<DropdownMenuItem[][]>(() => {
   return [
-    projects.value.map((team) => ({
-      ...team,
+    projects.value.map((proj) => ({
+      label: proj.name,
+      avatar: {
+        src: `https://ui-avatars.com/api/?name=${encodeURIComponent(proj.name)}&background=random`,
+        alt: proj.name,
+      },
       onSelect() {
-        selectedTeam.value = team
+        // switch project and navigate to its dashboard (don't prevent default so menu can close)
+        void switchProject(proj.id)
       },
     })),
     [
@@ -46,6 +54,11 @@ const items = computed<DropdownMenuItem[][]>(() => {
       {
         label: 'Manage projects',
         icon: 'i-lucide-cog',
+        onSelect() {
+          // unselect any project and go to landing/overview page
+          unselectProject()
+          void navigateTo('/')
+        },
       },
     ],
   ]
