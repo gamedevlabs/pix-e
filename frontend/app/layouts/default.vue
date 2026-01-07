@@ -25,7 +25,8 @@ const dropdownItems = computed(() => [
     {
       label: 'Logout',
       icon: 'i-lucide-log-out',
-      click: async () => {
+      onSelect: async (e: Event | undefined) => {
+        e?.preventDefault?.()
         await authentication.logout()
       },
     },
@@ -141,7 +142,7 @@ const groups = computed(() => [
         <slot />
       </div>
 
-      <!--PROJECT SELECTED-->
+      <!-- VISIBLE SIDEBAR -->
       <div v-else class="h-full min-h-0 overflow-hidden">
         <UDashboardGroup class="h-full">
           <UDashboardSidebar
