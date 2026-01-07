@@ -13,37 +13,46 @@ const authentication = useAuthentication()
 await authentication.checkAuthentication()
 
 const router = useRouter()
-const { switchProject } = useCurrentProject()
+const { switchProject, createProject, projects } = useProjectHandler()
 
 const username = computed(() => authentication.user.value?.username || 'Guest')
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
-// Project cards - actual projects
-const projectCards = ref<Card[]>([
-  {
-    id: 'demo-project',
-    label: 'Demo Project',
-    description:
-      'This is the standard project using the dev database. Please continue your work here.',
+// Project cards - dynamically generated from the project handler
+const projectCards = computed<Card[]>(() => {
+  // Copy and sort projects by updated_at descending (most recently edited first)
+  const list = (projects?.value ?? []).slice().sort((a, b) => {
+    const ta = new Date(a.updated_at).getTime()
+    const tb = new Date(b.updated_at).getTime()
+    return tb - ta
+  })
+
+  const mapped: Card[] = list.map((p) => ({
+    id: p.id,
+    label: p.name,
+    description: p.shortDescription || undefined,
     icon: 'i-lucide-folder-open',
     requiresAuth: true,
     isCreateCard: false,
     action: async () => {
-      await switchProject('demo')
+      await switchProject(p.id)
     },
-  },
-  {
+  }))
+
+  // Always append the 'Create New Project' card at the end
+  mapped.push({
     id: 'create-project',
     label: 'Create New Project',
     description: 'Create your new project here',
     requiresAuth: true,
     isCreateCard: true,
     action: async () => {
-      const { createProject } = useCurrentProject()
-      await createProject({ title: 'New Project' })
+      await createProject({ name: 'New Project' })
     },
-  },
-])
+  })
+
+  return mapped
+})
 
 // Standalone modules - modules that don't require a project
 const standaloneModules = ref<Card[]>([

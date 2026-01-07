@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-const { currentProjectTitle, isProjectSelected } = useCurrentProject()
+const { currentProjectTitle, isProjectSelected } = useProjectHandler()
 
 definePageMeta({
   middleware: 'authentication',

@@ -34,16 +34,16 @@ const dropdownItems = computed(() => [
 ])
 
 // PROJECT
-const { currentProjectId } = useCurrentProject()
-const projectQuery = currentProjectId.value ? `?id=${currentProjectId.value}` : ''
+const { currentProjectId, syncProjectFromUrl } = useProjectHandler()
+syncProjectFromUrl()
+const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProjectId.value}` : ''))
 
 // Handles sidebar visibility
 const showSidebar = computed(() => {
-
   const path = route.path || ''
   const name = route.name ? String(route.name) : ''
   const alwaysShowSidebar: string[] = ['dashboard']
-  const alwaysHideSidebar: string[] = [ 'login', '/movie-script-evaluator']
+  const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator']
 
   // Hide the root/index page explicitly and when the route has no name
   if (!name || path === '/') {
@@ -51,16 +51,12 @@ const showSidebar = computed(() => {
   }
 
   // If the current route is explicitly hidden, return false
-  if (
-      alwaysHideSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))
-  ) {
+  if (alwaysHideSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))) {
     return false
   }
 
   // If the current route is explicitly shown, return true
-  if (
-      alwaysShowSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))
-  ) {
+  if (alwaysShowSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))) {
     return true
   }
 
@@ -75,22 +71,22 @@ const showSidebar = computed(() => {
   return checks.hasCurrentProject && checks.userLoggedIn
 })
 
-const links = [
+const links = computed<NavigationMenuItem[][]>(() => [
   [
     {
       label: 'Dashboard',
       icon: 'i-lucide-house',
-      to: `/dashboard${projectQuery}`,
+      to: `/dashboard${projectQuery.value}`,
     },
     {
       label: 'Charts',
       icon: 'i-lucide-network',
       defaultOpen: true,
       children: [
-        { label: 'PxCharts', to: `/pxcharts${projectQuery}` },
-        { label: 'PxNodes', to: `/pxnodes${projectQuery}` },
-        { label: 'PxComponents', to: `/pxcomponents${projectQuery}` },
-        { label: 'PxComponentsDefinitions', to: `/pxcomponentdefinitions${projectQuery}` },
+        { label: 'PxCharts', to: `/pxcharts${projectQuery.value}` },
+        { label: 'PxNodes', to: `/pxnodes${projectQuery.value}` },
+        { label: 'PxComponents', to: `/pxcomponents${projectQuery.value}` },
+        { label: 'PxComponentsDefinitions', to: `/pxcomponentdefinitions${projectQuery.value}` },
       ],
     },
     {
@@ -98,11 +94,11 @@ const links = [
       icon: 'i-lucide-book-open',
       defaultOpen: true,
       children: [
-        { label: 'Dashboard', to: `/player-expectations${projectQuery}` },
-        { label: 'Sentiment Analysis', to: `/sentiments${projectQuery}` },
+        { label: 'Dashboard', to: `/player-expectations${projectQuery.value}` },
+        { label: 'Sentiment Analysis', to: `/sentiments${projectQuery.value}` },
       ],
     },
-    { label: 'Pillars', icon: 'i-lucide-landmark', to: `/pillars${projectQuery}` },
+    { label: 'Pillars', icon: 'i-lucide-landmark', to: `/pillars${projectQuery.value}` },
     { label: 'Movie Script Evaluator', icon: 'i-lucide-film', to: '/movie-script-evaluator' },
   ],
   [
@@ -113,13 +109,13 @@ const links = [
       target: '_blank',
     },
   ],
-] satisfies NavigationMenuItem[][]
+])
 
 const groups = computed(() => [
   {
     id: 'links',
     label: 'Go to',
-    items: links.flat(),
+    items: links.value.flat(),
   },
 ])
 </script>

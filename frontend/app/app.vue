@@ -7,8 +7,8 @@ await authentication.checkAuthentication()
 const route = useRoute()
 const router = useRouter()
 
-// Use the current project composable
-const { isProjectSelected } = useCurrentProject()
+// Use the project handler composable
+const { isProjectSelected } = useProjectHandler()
 
 // Pages that don't require a project to be selected
 const pagesWithoutProject = [
