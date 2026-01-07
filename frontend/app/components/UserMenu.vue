@@ -37,6 +37,9 @@ const user = ref({
   },
 })
 
+// Add authentication composable so logout can be called from the menu
+const authentication = useAuthentication()
+
 const items = computed<DropdownMenuItem[][]>(() => [
   [
     {
@@ -201,6 +204,10 @@ const items = computed<DropdownMenuItem[][]>(() => [
     {
       label: 'Log out',
       icon: 'i-lucide-log-out',
+      onSelect: async (e: Event | undefined) => {
+        e?.preventDefault?.()
+        await authentication.logout()
+      },
     },
   ],
 ])

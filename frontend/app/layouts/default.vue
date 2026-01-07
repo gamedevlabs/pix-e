@@ -37,13 +37,42 @@ const dropdownItems = computed(() => [
 const { currentProjectId } = useCurrentProject()
 const projectQuery = currentProjectId.value ? `?id=${currentProjectId.value}` : ''
 
-// For dev testing: compute whether a project is selected from the URL.
-// isProjectSelected should be false for the landing page (path == '/') and
-// true for any other path like '/dashboard'. This replaces the boolean
-// previously provided by useCurrentProject().
-const isProjectSelected = computed(() => {
-  const path = route?.path ?? ''
-  return !(path === '/' || path === '')
+// Handles sidebar visibility
+const showSidebar = computed(() => {
+
+  const path = route.path || ''
+  const name = route.name ? String(route.name) : ''
+  const alwaysShowSidebar: string[] = ['dashboard']
+  const alwaysHideSidebar: string[] = [ 'login', '/movie-script-evaluator']
+
+  // Hide the root/index page explicitly and when the route has no name
+  if (!name || path === '/') {
+    return false
+  }
+
+  // If the current route is explicitly hidden, return false
+  if (
+      alwaysHideSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))
+  ) {
+    return false
+  }
+
+  // If the current route is explicitly shown, return true
+  if (
+      alwaysShowSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))
+  ) {
+    return true
+  }
+
+  // Check rules
+  const checks = {
+    // A project is considered selected if either a currentProjectId exists OR an ?id= query param is present
+    hasCurrentProject: !!currentProjectId.value || !!route.query?.id,
+    userLoggedIn: authentication.isLoggedIn.value,
+  }
+
+  // Combined rules: requires both a selected project and a logged-in user
+  return checks.hasCurrentProject && checks.userLoggedIn
 })
 
 const links = [
@@ -138,7 +167,7 @@ const groups = computed(() => [
     <!-- Main content: take remaining height. Pages should not need to handle sizing --- it's done here -->
     <main class="flex-1 min-h-0">
       <!--  PROJECT OVERVIEW: make this area take remaining space and be scrollable -->
-      <div v-if="!isProjectSelected" class="h-full min-h-0 p-8 overflow-auto">
+      <div v-if="!showSidebar" class="h-full min-h-0 p-8 overflow-auto">
         <slot />
       </div>
 
