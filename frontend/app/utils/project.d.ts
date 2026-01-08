@@ -6,7 +6,7 @@ export interface Project {
   name: string
   shortDescription: string
   genre: string
-  targetPlatform: ProjectTargetPlatform | string
+  targetPlatform: ProjectTargetPlatform[] | ProjectTargetPlatform | string | string[]
   created_at: string
   updated_at: string
 }

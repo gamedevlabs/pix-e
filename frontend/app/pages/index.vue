@@ -13,7 +13,7 @@ const authentication = useAuthentication()
 await authentication.checkAuthentication()
 
 const router = useRouter()
-const { switchProject, createProject, projects } = useProjectHandler()
+const { switchProject, projects } = useProjectHandler()
 
 const username = computed(() => authentication.user.value?.username || 'Guest')
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
@@ -47,7 +47,7 @@ const projectCards = computed<Card[]>(() => {
     requiresAuth: true,
     isCreateCard: true,
     action: async () => {
-      await createProject({ name: 'New Project' })
+      await router.push('/create')
     },
   })
 
@@ -75,17 +75,12 @@ const handleCardClick = async (card: Card) => {
     return
   }
 
-  // Execute the card's action (e.g. switchProject)
+  // Execute the card's action (e.g. switchProject or route to create page)
   if (card.action) {
     await card.action()
   }
 
-  // If this is a project card (has isCreateCard defined), route to the dashboard.
-  // Standalone modules should handle their own routing inside their action.
-  if (Object.prototype.hasOwnProperty.call(card, 'isCreateCard')) {
-    // navigate to dashboard after switching/creating project
-    router.push('/dashboard')
-  }
+  // Let individual actions handle routing (switchProject already navigates to dashboard).
 }
 </script>
 

@@ -16,6 +16,7 @@ const pagesWithoutProject = [
   '/player-expectations',
   '/sentiments',
   '/pillars',
+  '/create',
 ]
 
 // Check if current page requires a project

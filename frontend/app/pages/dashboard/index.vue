@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-const { currentProjectTitle, isProjectSelected } = useProjectHandler()
+const { isProjectSelected, currentProject } = useProjectHandler()
 
 definePageMeta({
   middleware: 'authentication',
@@ -18,7 +18,7 @@ onMounted(() => {
     <SimpleContentWrapper>
       <!-- Hero Section -->
       <section class="text-center">
-        <h1 class="text-4xl font-bold mb-4">Welcome to {{ currentProjectTitle }} 🎉</h1>
+        <h1 class="text-4xl font-bold mb-4">{{ currentProject?.name || 'Project' }}</h1>
         <p class="text-gray-500 dark:text-gray-400 mb-6">Design games with research.</p>
       </section>
 

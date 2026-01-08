@@ -43,7 +43,7 @@ const showSidebar = computed(() => {
   const path = route.path || ''
   const name = route.name ? String(route.name) : ''
   const alwaysShowSidebar: string[] = ['dashboard']
-  const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator']
+  const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator', 'create']
 
   // Hide the root/index page explicitly and when the route has no name
   if (!name || path === '/') {
