@@ -42,7 +42,7 @@ const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProj
 const showSidebar = computed(() => {
   const path = route.path || ''
   const name = route.name ? String(route.name) : ''
-  const alwaysShowSidebar: string[] = ['dashboard']
+  const alwaysShowSidebar: string[] = ['dashboard', 'edit']
   const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator', 'create']
 
   // Hide the root/index page explicitly and when the route has no name
@@ -100,6 +100,7 @@ const links = computed<NavigationMenuItem[][]>(() => [
     },
     { label: 'Pillars', icon: 'i-lucide-landmark', to: `/pillars${projectQuery.value}` },
     { label: 'Movie Script Evaluator', icon: 'i-lucide-film', to: '/movie-script-evaluator' },
+    { label: 'Settings', icon: 'i-lucide-settings', to: `/edit${projectQuery.value}` },
   ],
   [
     {

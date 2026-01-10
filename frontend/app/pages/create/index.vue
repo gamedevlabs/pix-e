@@ -270,7 +270,11 @@ const platformOptions = platformConfigs
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
                   "
                 >
-                  <UIcon v-if="currentStep > step.number" name="i-heroicons-check" class="text-xl" />
+                  <UIcon
+                    v-if="currentStep > step.number"
+                    name="i-heroicons-check"
+                    class="text-xl"
+                  />
                   <span v-else>{{ step.number }}</span>
                 </div>
                 <div class="mt-2 text-center">
@@ -384,7 +388,9 @@ const platformOptions = platformConfigs
                   :highlight="false"
                 />
                 <template #hint>
-                  <p class="text-xs text-gray-500">Add one or more genres that describe your game.</p>
+                  <p class="text-xs text-gray-500">
+                    Add one or more genres that describe your game.
+                  </p>
                 </template>
 
                 <div class="mt-2">
@@ -464,7 +470,7 @@ const platformOptions = platformConfigs
                         icon="i-heroicons-pencil"
                         color="neutral"
                         variant="ghost"
-                        size="2xs"
+                        size="sm"
                         class="opacity-0 group-hover:opacity-100 transition-opacity"
                         @click="currentStep = 1"
                       />
@@ -483,7 +489,7 @@ const platformOptions = platformConfigs
                       icon="i-heroicons-pencil"
                       color="neutral"
                       variant="ghost"
-                      size="2xs"
+                      size="sm"
                       class="opacity-0 group-hover:opacity-100 transition-opacity"
                       @click="currentStep = 1"
                     />
@@ -507,7 +513,7 @@ const platformOptions = platformConfigs
                         icon="i-heroicons-pencil"
                         color="neutral"
                         variant="ghost"
-                        size="2xs"
+                        size="sm"
                         class="opacity-0 group-hover:opacity-100 transition-opacity"
                         @click="currentStep = 2"
                       />
@@ -534,7 +540,7 @@ const platformOptions = platformConfigs
                         icon="i-heroicons-pencil"
                         color="neutral"
                         variant="ghost"
-                        size="2xs"
+                        size="sm"
                         class="opacity-0 group-hover:opacity-100 transition-opacity"
                         @click="currentStep = 2"
                       />
