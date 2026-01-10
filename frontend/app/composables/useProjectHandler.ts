@@ -8,8 +8,8 @@ class ProjectApiEmulator {
     const now = new Date().toISOString()
     this.projects = [
       {
-        id: 'demo',
-        name: 'pix:e Devs',
+        id: 'pixe',
+        name: 'pix:e',
         shortDescription: 'This project contains all the old data from the other pix:e devs.',
         genre: 'Tool',
         targetPlatform: 'web',

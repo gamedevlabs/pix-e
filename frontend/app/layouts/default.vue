@@ -109,6 +109,12 @@ const links = computed<NavigationMenuItem[][]>(() => [
       to: 'https://github.com/gamedevlabs/pix-e/wiki',
       target: '_blank',
     },
+    {
+      label: 'Discord',
+      icon: 'i-lucide-message-circle',
+      to: 'https://discord.gg/7BhM3nTq',
+      target: '_blank',
+    },
   ],
 ])
 
@@ -185,9 +191,8 @@ const groups = computed(() => [
             </template>
 
             <template #default="{ collapsed }">
-              <!-- Make the sidebar content a full-height column so mt-auto pushes footer to the bottom of the sidebar viewport.
-                   Add bottom padding so the footer (and the collapsed button) don't overlap or get clipped by the scrolling area. -->
-              <div class="flex flex-col h-full relative pb-16">
+              <!-- Make the sidebar content a full-height column so mt-auto pushes footer to the bottom of the sidebar viewport. -->
+              <div class="flex flex-col h-full relative">
                 <UDashboardSearchButton
                   :collapsed="collapsed"
                   class="bg-transparent ring-default"
@@ -201,8 +206,8 @@ const groups = computed(() => [
                   popover
                 />
 
-                <!-- Bottom area: Wiki link. mt-auto ensures this area sits at the bottom of the sidebar -->
-                <div class="mt-auto w-full flex flex-col items-start px-2 pb-6">
+                <!-- Bottom area: Wiki & Discord links. mt-auto ensures this area sits at the bottom of the sidebar -->
+                <div class="mt-auto w-full flex flex-col items-start px-2">
                   <UNavigationMenu
                     :collapsed="collapsed"
                     :items="links[1]"
