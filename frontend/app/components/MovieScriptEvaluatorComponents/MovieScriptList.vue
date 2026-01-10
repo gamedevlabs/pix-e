@@ -35,7 +35,7 @@ function handleCheckboxChange(file: MovieScript) {
           @change="handleCheckboxChange(file)"
         />
         <button
-            v-if="file.id"
+          v-if="file.id"
           class="ml-2 text-red-500 hover:text-red-700"
           :title="'Are you sure to delete the file?'"
           @click="emit('delete', file.id)"

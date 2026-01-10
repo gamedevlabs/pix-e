@@ -52,10 +52,9 @@ function uploadFile(file: File, fileName: string) {
 }
 
 function deleteScriptFile(fileId: number) {
-  deleteScript(fileId)
-    .then(() => {
-      fetchScripts()
-    })
+  deleteScript(fileId).then(() => {
+    fetchScripts()
+  })
 }
 </script>
 
