@@ -1,7 +1,9 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
@@ -9,7 +11,7 @@ from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
 from moviescriptevaluator.models import AssetMetaData, MovieProject, MovieScript
 from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
-    UnrealEngineDataSerializer,
+    UnrealEngineDataSerializer, MovieScriptSerializer,
 )
 from pxcharts.permissions import IsOwner
 
@@ -53,6 +55,11 @@ class MovieScriptAssets(viewsets.ModelViewSet):
     serializer_class = UnrealEngineDataSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
+    def get_permissions(self):
+        if self.action == "create":
+            return [AllowAny()]
+        return super().get_permissions()
+
     def get_queryset(self):
         if self.action == "list":
             project_id = self.kwargs["project_pk"]
@@ -89,3 +96,33 @@ class MovieScriptAssets(viewsets.ModelViewSet):
             return Response(form.data, status=status.HTTP_200_OK)
 
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MovieScriptViewSet(viewsets.ModelViewSet):
+    serializer_class = MovieScriptSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return MovieScript.objects.filter(
+            project_id=self.kwargs["project_pk"]
+        )
+
+    def create(self, request, *args, **kwargs):
+        form = MovieScriptForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            return Response(form.data, status=status.HTTP_200_OK)
+
+        return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk=None, project_pk=None):
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, pk=None, project_pk=None):
+        script = self.get_object()
+        script.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

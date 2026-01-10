@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import SingleFileUpload from '~/components/MovieScriptEvaluatorComponents/SingleFileUpload.vue'
 import type { AssetListAnalysis } from '~/utils/movie-script-evaluator'
 
 const props = defineProps<{
   projectId: string
 }>()
 
-const { useAssets, useUploadFile, useAnalyzeMovieScript } = useMovieScriptEvaluator()
+const { useAssets, useAnalyzeMovieScript } = useMovieScriptEvaluator()
 const { items, fetchAll } = useAssets(props.projectId)
 const { user } = useAuthentication()
 const analysisResponse = ref<AssetListAnalysis | null>(null)
@@ -17,24 +16,6 @@ const toast = useToast()
 onMounted(() => {
   fetchAll()
 })
-
-function uploadFile(file: File) {
-  useUploadFile(props.projectId, file)
-    .then((_) =>
-      toast.add({
-        title: 'File Upload Successful',
-        description: 'File has been uploaded successfully',
-        color: 'success',
-      }),
-    )
-    .catch((_) =>
-      toast.add({
-        title: 'File Upload Failed',
-        description: 'File couldnt be uploaded, server error',
-        color: 'error',
-      }),
-    )
-}
 
 function anaylzeMovieScript() {
   toast.add({
@@ -84,12 +65,7 @@ function anaylzeMovieScript() {
 
     <div class="movie-script-evaluator-container mb-8" style="display: flex; flex-direction: row">
       <div class="mb-4">
-        <h2 class="text-xl font-semibold mb-2">Uploaded Movie Script</h2>
-        <SingleFileUpload
-          :max-file-size="2 * 1024 * 1024"
-          :accepted-file-types="['application/pdf', 'text/plain']"
-          @upload-file="uploadFile"
-        />
+        <UploadScript :project-id="projectId" />
         <div class="mt-4 flex">
           <UButton type="button" label="Analyze Script" @click="anaylzeMovieScript" />
           <UButton
