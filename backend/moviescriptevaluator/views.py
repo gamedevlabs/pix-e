@@ -1,9 +1,7 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
@@ -11,7 +9,8 @@ from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
 from moviescriptevaluator.models import AssetMetaData, MovieProject, MovieScript
 from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
-    UnrealEngineDataSerializer, MovieScriptSerializer,
+    MovieScriptSerializer,
+    UnrealEngineDataSerializer,
 )
 from pxcharts.permissions import IsOwner
 
@@ -97,14 +96,13 @@ class MovieScriptAssets(viewsets.ModelViewSet):
 
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class MovieScriptViewSet(viewsets.ModelViewSet):
     serializer_class = MovieScriptSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return MovieScript.objects.filter(
-            project_id=self.kwargs["project_pk"]
-        )
+        return MovieScript.objects.filter(project_id=self.kwargs["project_pk"])
 
     def create(self, request, *args, **kwargs):
         form = MovieScriptForm(request.POST, request.FILES)

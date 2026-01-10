@@ -14,6 +14,7 @@ class MovieProjectSerializer(serializers.ModelSerializer):
         model = MovieProject
         fields = "__all__"
 
+
 class MovieScriptSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieScript
