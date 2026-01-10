@@ -1,14 +1,20 @@
 ﻿<script setup lang="ts">
-import { reactive, ref, computed, watch, onUnmounted } from 'vue'
+import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 
-const { createProject, switchProject } = useProjectHandler()
+const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const router = useRouter()
+const route = useRoute()
+const toast = useToast()
 
 definePageMeta({
   middleware: 'authentication',
 })
+
+// Check if duplicating a project
+const duplicateId = computed(() => route.query.duplicate as string | undefined)
+const isDuplicating = ref(false)
 
 // Wizard state
 const currentStep = ref(1)
@@ -32,6 +38,64 @@ const previewUrl = ref<string | null>(null)
 // Avatar hover state and modal state
 const isAvatarHovered = ref(false)
 const isUploadModalOpen = ref(false)
+
+// Load project data for duplication
+const loadProjectForDuplication = async () => {
+  if (!duplicateId.value) return
+
+  isDuplicating.value = true
+  try {
+    const project = await fetchProjectById(duplicateId.value)
+    if (!project) {
+      toast.add({
+        title: 'Project Not Found',
+        description: 'Could not find the project to duplicate',
+        color: 'error',
+      })
+      router.push('/create')
+      return
+    }
+
+    // Pre-fill form with project data
+    form.name = `${project.name} (Copy)`
+    form.shortDescription = project.shortDescription
+    // Parse genre string into array
+    form.genre = project.genre
+      .split(',')
+      .map((g) => g.trim())
+      .filter(Boolean)
+    // Parse targetPlatform into array
+    form.targetPlatform = (
+      Array.isArray(project.targetPlatform) ? project.targetPlatform : [project.targetPlatform]
+    ) as ProjectTargetPlatform[]
+    form.icon = project.icon || null
+
+    // Set step to 3 (Review) for immediate review
+    currentStep.value = 3
+
+    toast.add({
+      title: 'Duplicating Project',
+      description: `Review and create a copy of "${project.name}"`,
+      color: 'primary',
+    })
+  } catch {
+    toast.add({
+      title: 'Error',
+      description: 'Failed to load project for duplication',
+      color: 'error',
+    })
+    router.push('/create')
+  } finally {
+    isDuplicating.value = false
+  }
+}
+
+// Load on mount if duplicating
+onMounted(() => {
+  if (duplicateId.value) {
+    loadProjectForDuplication()
+  }
+})
 
 watch(uploadedFile, (file, prev) => {
   // revoke previous object URL
@@ -97,8 +161,9 @@ const avatarText = computed(() => {
   const n = form.name?.trim()
   if (!n) return '?'
   const parts = n.split(/\s+/).filter(Boolean)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[1][0]).toUpperCase()
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0]?.slice(0, 2).toUpperCase() || '?'
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?'
 })
 
 // Methods

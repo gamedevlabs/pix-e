@@ -105,8 +105,7 @@ const getProjectMenuItems = (projectId: string): DropdownMenuItem[][] => [
       label: 'Duplicate',
       icon: 'i-lucide-copy',
       onSelect: () => {
-        console.log('Duplicate project:', projectId)
-        // TODO: Implement duplicate functionality
+        router.push(`/create?duplicate=${projectId}`)
       },
     },
   ],
