@@ -11,7 +11,8 @@ const props = defineProps<{
   maxDimensions?: { width: number; height: number }
 }>()
 
-const emit = defineEmits<{ (e: 'uploadFile', file: File): void }>()
+const emit = defineEmits<{ (e: 'uploadFile', file: File, fileName: string): void }>()
+const fileNameInputRef = ref<string>('')
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes'
@@ -69,7 +70,7 @@ const state = reactive<Partial<schema>>({
 })
 
 async function onSubmit(event: FormSubmitEvent<schema>) {
-  emit('uploadFile', event.data.file)
+  emit('uploadFile', event.data.file, fileNameInputRef.value)
 }
 </script>
 
@@ -85,6 +86,10 @@ async function onSubmit(event: FormSubmitEvent<schema>) {
         :accept="props.acceptedFileTypes.join(',')"
         class="min-h-48"
       />
+    </UFormField>
+
+    <UFormField name="fileName" label="File Name">
+      <UInput v-model="fileNameInputRef" placeholder="Enter file name" />
     </UFormField>
 
     <UButton type="submit" label="Submit" color="neutral" />

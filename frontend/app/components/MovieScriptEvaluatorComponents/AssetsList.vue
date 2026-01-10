@@ -28,20 +28,21 @@ const searchQuery = ref('')
 const filteredAssets = computed(() => {
   if (!searchQuery.value) return props.assets
   return props.assets.filter((asset: Asset) =>
-    asset.name?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    asset.name?.toLowerCase().includes(searchQuery.value.toLowerCase()),
   )
 })
 </script>
 
-
 <template>
   <div class="flex items-center space-x-4 mb-4">
     <h4>Total Number of Assets: {{ props.assets.length }}</h4>
-    <UInput
-      v-model="searchQuery"
-      placeholder="Search Assets by Name"
-      class="w-64"
-    />
+    <UInput v-model="searchQuery" placeholder="Search Assets by Name" class="w-64" />
   </div>
-  <UTable sticky :data="filteredAssets" :loading="props.loading" :columns="columns" class="flex-1" />
+  <UTable
+    sticky
+    :data="filteredAssets"
+    :loading="props.loading"
+    :columns="columns"
+    class="flex-1"
+  />
 </template>
