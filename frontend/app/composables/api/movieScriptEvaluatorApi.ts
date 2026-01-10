@@ -1,17 +1,17 @@
-import type { AssetListAnalysis } from '~/utils/movie-script-evaluator'
+import type { AssetListAnalysis, MovieScript } from '~/utils/movie-script-evaluator'
 
 export function useMovieScriptEvaluatorApi() {
   const config = useRuntimeConfig()
   const apiBase = `${config.public.apiBase}/movie-script-evaluator`
 
-  async function uploadFile(projectId: string, file: File) {
+  async function uploadFile(projectId: string, movieScriptFile: MovieScript) {
     try {
       const formData = new FormData()
-      formData.append('title', 'new movie script')
+      formData.append('title', movieScriptFile.title)
       formData.append('project', projectId)
-      formData.append('file', file)
+      formData.append('file', movieScriptFile.file)
 
-      return await $fetch(`${apiBase}/${projectId}/assets/upload-script/`, {
+      return await $fetch(`${apiBase}/projects/${projectId}/script/`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -26,7 +26,7 @@ export function useMovieScriptEvaluatorApi() {
   }
 
   async function analyzeMovieScript(projectId: string): Promise<AssetListAnalysis> {
-    return await $fetch(`${apiBase}/${projectId}/analyze`, {
+    return await $fetch(`${apiBase}/projects/${projectId}/analyze`, {
       method: 'GET',
       credentials: 'include',
       headers: {

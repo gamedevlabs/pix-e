@@ -46,10 +46,12 @@ Expected JSON Structure
      "can_use_assets": true,
      "assets_used": [
        {
-       "usage_reason": "<brief explanation of why this asset fits the scene>",
-         "asset_class": "<asset identifier>",
+         "usage_reason": "<brief explanation of why this asset fits the scene>",
          "asset_name": "<asset name>",
-         "asset_path": "<asset path>"
+       },
+       {
+         "usage_reason": "<brief explanation of why this asset fits the scene>",
+         "asset_name": "<asset name>",
        }
      ]
    },

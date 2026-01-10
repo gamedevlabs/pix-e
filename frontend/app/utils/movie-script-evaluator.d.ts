@@ -23,6 +23,15 @@ export interface MovieProject extends NamedEntity {
   updatedAt?: string
 }
 
+export interface MovieScript {
+  id?: number
+  title: string
+  file: File
+
+  created_at?: Date
+  updated_at?: Date
+}
+
 export interface AssetListAnalysis {
   scenes: SceneAnalysis[]
 }
