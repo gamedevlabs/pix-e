@@ -17,28 +17,45 @@ const selectedTeam = computed(() => {
     return {
       label: 'No project',
       avatar: {
-        src: `https://ui-avatars.com/api/?name=Project&background=random`,
+        text: 'P',
         alt: 'No project',
       },
     }
   }
 
+  // Helper function to generate initials from project name
+  const getInitials = (name: string) => {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+
   return {
     label: p.name,
     avatar: {
-      // fallback avatar generator based on project name
-      src: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random`,
+      // Use project icon if available, otherwise show initials
+      src: p.icon || undefined,
+      text: p.icon ? undefined : getInitials(p.name),
       alt: p.name,
     },
   }
 })
 
 const items = computed<DropdownMenuItem[][]>(() => {
+  // Helper function to generate initials from project name
+  const getInitials = (name: string) => {
+    const parts = name.split(/\s+/).filter(Boolean)
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+
   return [
     projects.value.map((proj) => ({
       label: proj.name,
       avatar: {
-        src: `https://ui-avatars.com/api/?name=${encodeURIComponent(proj.name)}&background=random`,
+        // Use project icon if available, otherwise show initials
+        src: proj.icon || undefined,
+        text: proj.icon ? undefined : getInitials(proj.name),
         alt: proj.name,
       },
       onSelect() {
@@ -50,6 +67,10 @@ const items = computed<DropdownMenuItem[][]>(() => {
       {
         label: 'New Project',
         icon: 'i-lucide-circle-plus',
+        onSelect() {
+          // Navigate to the create project page
+          void navigateTo('/create')
+        },
       },
       {
         label: 'Manage projects',

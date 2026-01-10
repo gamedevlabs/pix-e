@@ -15,6 +15,7 @@ class ProjectApiEmulator {
         targetPlatform: 'web',
         created_at: '2024-01-01T10:00:00.000Z',
         updated_at: now,
+        icon: null,
       },
       {
         id: 'alpha',
@@ -24,6 +25,7 @@ class ProjectApiEmulator {
         targetPlatform: 'desktop',
         created_at: '2024-06-15T08:30:00.000Z',
         updated_at: now,
+        icon: null,
       },
       {
         id: 'mobile-test',
@@ -33,6 +35,7 @@ class ProjectApiEmulator {
         targetPlatform: 'mobile',
         created_at: '2025-02-10T12:00:00.000Z',
         updated_at: now,
+        icon: null,
       },
     ]
   }
@@ -56,6 +59,8 @@ class ProjectApiEmulator {
       targetPlatform: (data.targetPlatform as Project['targetPlatform']) ?? 'web',
       created_at: (data.created_at as string) || now,
       updated_at: (data.updated_at as string) || now,
+      // carry through optional icon (data URL or URL)
+      icon: (data.icon as string | null) ?? null,
     }
     this.projects.push(newProject)
     return { ...newProject }
@@ -74,6 +79,7 @@ class ProjectApiEmulator {
       targetPlatform: (data.targetPlatform as Project['targetPlatform']) ?? existing.targetPlatform,
       created_at: existing.created_at,
       updated_at: new Date().toISOString(),
+      icon: (data.icon as string | null) ?? existing.icon ?? null,
     }
     this.projects[idx] = updated
     return { ...updated }
@@ -125,6 +131,7 @@ export const useProjectHandler = () => {
           targetPlatform: 'web',
           created_at: now,
           updated_at: now,
+          icon: null,
         }
       }
     } else {
@@ -141,13 +148,6 @@ export const useProjectHandler = () => {
   const createProject = async (data: Partial<Project>): Promise<Project> => {
     const created = await api.create(data)
     projects.value = await api.getAll()
-    // notify if toast available
-    try {
-      const toast = useToast()
-      toast.add({ title: 'Project created', description: created.name, color: 'success' })
-    } catch {
-      /* ignore in non-UI contexts */
-    }
     return created
   }
 

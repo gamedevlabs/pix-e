@@ -9,4 +9,6 @@ export interface Project {
   targetPlatform: ProjectTargetPlatform[] | ProjectTargetPlatform | string | string[]
   created_at: string
   updated_at: string
+  // Optional icon data URL (base64) or remote URL
+  icon?: string | null
 }

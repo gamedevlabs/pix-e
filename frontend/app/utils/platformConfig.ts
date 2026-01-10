@@ -13,6 +13,22 @@ export const platformConfigs: PlatformConfig[] = [
   { value: 'console', label: 'Console', icon: 'i-heroicons-puzzle-piece' },
 ]
 
+// Genre suggestions for project creation
+export const genreSuggestions = [
+  'Action',
+  'Adventure',
+  'RPG',
+  'Strategy',
+  'Simulation',
+  'Puzzle',
+  'Narrative',
+  'Horror',
+  'Platformer',
+  'Sports',
+] as const
+
+export type GenreSuggestion = (typeof genreSuggestions)[number]
+
 // Helper function to get platform config by value
 export function getPlatformConfig(value: ProjectTargetPlatform): PlatformConfig | undefined {
   return platformConfigs.find((config) => config.value === value)
