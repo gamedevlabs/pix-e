@@ -33,19 +33,41 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pxcharts',
   },
   {
-    label: 'Player Expectations',
+    label: 'Player Expectations (old)',
     icon: 'i-lucide-book-open',
-    to: '/player-expectations',
+    to: '/player-expectations-old/player-expectations',
     children: [
       {
         label: 'Dashboard',
         icon: 'i-lucide-book-open',
-        to: '/player-expectations',
+        to: '/player-expectations-old/player-expectations',
       },
       {
         label: 'Sentiment Analysis',
         icon: 'i-lucide-library-big',
-        to: '/sentiments',
+        to: '/player-expectations-old/sentiments',
+      },
+    ],
+  },
+    {
+    label: 'Player Expectations (new)',
+    icon: 'i-lucide-users',
+    to: '/player-expectations-new/dashboard',
+    children: [
+      {
+        label: 'Dashboard',
+        icon: 'i-lucide-layout-dashboard',
+        to: '/player-expectations-new/dashboard',
+      },
+      {
+        label: 'Dataset Explorer',
+        icon: 'i-lucide-telescope',
+        to: '/player-expectations-new/dataset-explorer',
+      },
+      {
+        label: 'Prior Findings',
+        icon: 'i-lucide-library-big',
+        to: '/player-expectations-new/prior-findings',
       },
     ],
   },

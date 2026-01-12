@@ -23,6 +23,7 @@ urlpatterns = [
     path("llm/", include("pillars.urls")),
     path("accounts/", include("accounts.urls")),
     path("", include("pxnodes.urls")),
+    path("api/player-expectations-new/", include("player_expectations_new.urls")),
     path("api/", include("pxcharts.urls")),
     path("", include("player_expectations.urls")),
     path("movie-script-evaluator", include("moviescriptevaluator.urls")),
