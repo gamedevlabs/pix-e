@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from django.contrib.auth.models import User
 
-from llm.cost_tracking import calculate_cost_eur
 from llm.types import AgentResult, ExecutionResult, LLMResponse
 
 from .models import Pillar, PillarLLMCall
@@ -51,8 +50,8 @@ def save_pillar_llm_call(
     # Get model name
     model_name = metadata.models_used[0].name if metadata.models_used else "unknown"
 
-    # Calculate cost
-    cost_eur = calculate_cost_eur(model_name, prompt_tokens, completion_tokens)
+    # Cost tracking disabled
+    cost_eur = 0
 
     # Create the record
     llm_call = PillarLLMCall.objects.create(
@@ -107,9 +106,7 @@ def save_agent_result_llm_call(
         The created PillarLLMCall instance
     """
     model_name = result.model_used or "unknown"
-    cost_eur = calculate_cost_eur(
-        model_name, result.prompt_tokens, result.completion_tokens
-    )
+    cost_eur = 0
 
     llm_call = PillarLLMCall.objects.create(
         user=user,
@@ -162,13 +159,8 @@ def save_execution_result_llm_calls(
     models_used = list(set(r.model_used for r in result.agent_results if r.model_used))
     model_name = models_used[0] if models_used else "unknown"
 
-    # Calculate total cost
-    total_cost = sum(
-        calculate_cost_eur(
-            r.model_used or "unknown", r.prompt_tokens, r.completion_tokens
-        )
-        for r in result.agent_results
-    )
+    # Cost tracking disabled
+    total_cost = 0
 
     # Create the aggregated parent record
     parent_call = PillarLLMCall.objects.create(

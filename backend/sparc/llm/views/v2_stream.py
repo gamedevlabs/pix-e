@@ -19,6 +19,8 @@ from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from game_concept.models import Project
+from game_concept.utils import get_current_game_concept, get_current_project
 from llm.config import get_config
 from llm.events import EventCollector
 from llm.logfire_config import get_logfire
@@ -30,6 +32,28 @@ from sparc.llm.workflows_v2 import SPARCRouterWorkflow
 from sparc.models import SPARCEvaluation
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_concept_meta(request: Request) -> dict[str, str]:
+    project = None
+    project_id = request.data.get("project_id")
+    if project_id:
+        project = Project.objects.filter(id=project_id).first()
+    elif request.user.is_authenticated:
+        project = get_current_project(request.user)
+    concept = get_current_game_concept(project) if project else None
+    concept_text = (concept.content or "") if concept else ""
+    preview = (
+        concept_text[:80] + "..."
+        if concept_text and len(concept_text) > 80
+        else concept_text
+    )
+    return {
+        "project_id": str(getattr(project, "id", "")) if project else "",
+        "project_name": getattr(project, "name", "") if project else "",
+        "concept_name": getattr(project, "name", "") if project else "",
+        "concept_preview": preview,
+    }
 
 
 class ProgressEventCollector(EventCollector):
@@ -162,6 +186,7 @@ class SPARCV2StreamView(APIView):
             )
 
             # Stream the evaluation with progress
+            concept_meta = _resolve_concept_meta(request)
             return StreamingHttpResponse(
                 self._stream_evaluation(
                     game_text,
@@ -173,6 +198,8 @@ class SPARCV2StreamView(APIView):
                     cast(User, request.user),
                     document_data,
                     temp_file_path,
+                    concept_meta,
+                    request.data.get("project_id"),
                 ),
                 content_type="text/event-stream",
             )
@@ -202,160 +229,172 @@ class SPARCV2StreamView(APIView):
         user: User,
         document_data: Optional[Dict[str, Any]] = None,
         temp_file_path: Optional[str] = None,
+        concept_meta: Optional[Dict[str, str]] = None,
+        project_id: Optional[int] = None,
     ) -> Generator[str, None, None]:
         """Stream evaluation progress and results."""
         logfire = get_logfire()
 
         # Create top-level span for the entire evaluation
         with logfire.span(
-            "sparc.v2.evaluate_stream",
-            model=model_id,
-            pillar_mode=pillar_mode,
-            game_text_length=len(game_text),
+            "sparc.evaluate.concept",
+            feature="sparc",
+            mode="router_v2",
+            **(concept_meta or {}),
         ):
-            config = get_config()
-            model_manager = ModelManager(config)
-            event_collector = ProgressEventCollector()
+            with logfire.span(
+                "sparc.evaluate.router_v2.agentic",
+                model=model_id,
+                pillar_mode=pillar_mode,
+                game_text_length=len(game_text),
+            ):
+                config = get_config()
+                model_manager = ModelManager(config)
+                event_collector = ProgressEventCollector()
 
-            workflow = SPARCRouterWorkflow(
-                model_manager=model_manager,
-                config=config,
-                event_collector=event_collector,
-                evaluation=evaluation,
-                user=user if user.is_authenticated else None,
-            )
-
-            from llm.types import LLMRequest
-
-            request_data: Dict[str, Any] = {
-                "game_text": game_text,
-                "context": context_text,
-                "pillar_mode": pillar_mode,
-            }
-            if context_strategy:
-                request_data["context_strategy"] = context_strategy
-
-            # Add document data if provided
-            if document_data:
-                request_data["document_file"] = document_data
-                logger.info(
-                    f"Document upload detected: {document_data['original_name']} "
-                    f"({document_data['file_type']})"
+                workflow = SPARCRouterWorkflow(
+                    model_manager=model_manager,
+                    config=config,
+                    event_collector=event_collector,
+                    evaluation=evaluation,
+                    user=user if user.is_authenticated else None,
                 )
-            else:
-                logger.info("No document uploaded for this evaluation")
 
-            request = LLMRequest(
-                feature="sparc",
-                operation="router_v2",
-                data=request_data,
-                model_id=model_id,
-                mode="agentic",
-            )
+                from llm.types import LLMRequest
 
-            # Debug: Log document file status
-            doc_status = "WITH DOCUMENT" if document_data else "NO DOCUMENT"
-            logger.info(f"[SPARC V2] Starting evaluation {doc_status}")
+                request_data: Dict[str, Any] = {
+                    "game_text": game_text,
+                    "context": context_text,
+                    "pillar_mode": pillar_mode,
+                }
+                if project_id:
+                    request_data["project_id"] = project_id
+                if context_strategy:
+                    request_data["context_strategy"] = context_strategy
 
-            # Send initial progress
-            yield self._format_sse(
-                "progress",
-                {"stage": "starting", "message": "Initializing evaluation..."},
-            )
-
-            # Run the workflow asynchronously and stream progress
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            try:
-                # Track progress
-                aspect_count = 0
-                total_aspects = 10
-
-                # Start the evaluation
-                task = loop.create_task(workflow.run(request, mode="full"))
-
-                # Poll for progress updates
-                while not task.done():
-                    # Check for new progress events
-                    events = event_collector.get_progress_events()
-                    for event in events:
-                        if event["type"] == "agent_finished":
-                            agent_name = event["agent"]
-
-                            if agent_name == "router":
-                                yield self._format_sse(
-                                    "progress",
-                                    {
-                                        "stage": "router_complete",
-                                        "message": "Content extraction complete",
-                                    },
-                                )
-                            elif agent_name == "synthesis":
-                                yield self._format_sse(
-                                    "progress",
-                                    {
-                                        "stage": "synthesis_complete",
-                                        "message": "Synthesis complete",
-                                    },
-                                )
-                            elif agent_name.endswith("_v2"):
-                                aspect_count += 1
-                                yield self._format_sse(
-                                    "progress",
-                                    {
-                                        "stage": "aspects_progress",
-                                        "message": f"Aspect evaluation: {aspect_count}/{total_aspects}",  # noqa: E501
-                                        "current": aspect_count,
-                                        "total": total_aspects,
-                                    },
-                                )
-
-                    # Small delay to avoid busy waiting
-                    loop.run_until_complete(asyncio.sleep(0.1))
-
-                # Get the result
-                result = task.result()
-
-                if not result.success:
-                    yield self._format_sse(
-                        "error",
-                        {
-                            "message": "Evaluation failed",
-                            "errors": [e.message for e in result.errors],
-                        },
+                # Add document data if provided
+                if document_data:
+                    request_data["document_file"] = document_data
+                    logger.info(
+                        f"Document upload detected: {document_data['original_name']} "
+                        f"({document_data['file_type']})"
                     )
-                    return
+                else:
+                    logger.info("No document uploaded for this evaluation")
 
-                # Update evaluation record
-                aggregated = result.aggregated_data
-                evaluation.execution_time_ms = aggregated.get(
-                    "execution_time_ms", 0
-                )  # noqa: E501
-                evaluation.total_tokens = aggregated.get("total_tokens", 0)
-                evaluation.estimated_cost_eur = aggregated.get(
-                    "estimated_cost_eur", 0
-                )  # noqa: E501
-                evaluation.save()
+                request = LLMRequest(
+                    feature="sparc",
+                    operation="router_v2",
+                    data=request_data,
+                    model_id=model_id,
+                    mode="agentic",
+                )
 
-                # Auto-save game concept
-                save_game_concept(user, game_text, evaluation)
+                # Debug: Log document file status
+                doc_status = "WITH DOCUMENT" if document_data else "NO DOCUMENT"
+                logger.info(f"[SPARC V2] Starting evaluation {doc_status}")
 
-                # Send final result
-                yield self._format_sse("complete", aggregated)
+                # Send initial progress
+                yield self._format_sse(
+                    "progress",
+                    {"stage": "starting", "message": "Initializing evaluation..."},
+                )
 
-            except Exception as e:
-                logger.exception(f"Error in SPARC V2 streaming evaluation: {e}")
-                yield self._format_sse("error", {"message": str(e)})
+                # Run the workflow asynchronously and stream progress
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
 
-            finally:
-                # Clean up temporary file after workflow execution completes
-                if temp_file_path and os.path.exists(temp_file_path):
-                    try:
-                        os.unlink(temp_file_path)
-                    except Exception as cleanup_error:
-                        logger.warning(f"Failed to clean up temp file: {cleanup_error}")
-                loop.close()
+                try:
+                    # Track progress
+                    aspect_count = 0
+                    total_aspects = 10
+
+                    # Start the evaluation
+                    task = loop.create_task(workflow.run(request, mode="full"))
+
+                    # Poll for progress updates
+                    while not task.done():
+                        # Check for new progress events
+                        events = event_collector.get_progress_events()
+                        for event in events:
+                            if event["type"] == "agent_finished":
+                                agent_name = event["agent"]
+
+                                if agent_name == "router":
+                                    yield self._format_sse(
+                                        "progress",
+                                        {
+                                            "stage": "router_complete",
+                                            "message": "Content extraction complete",
+                                        },
+                                    )
+                                elif agent_name == "synthesis":
+                                    yield self._format_sse(
+                                        "progress",
+                                        {
+                                            "stage": "synthesis_complete",
+                                            "message": "Synthesis complete",
+                                        },
+                                    )
+                                elif agent_name.endswith("_v2"):
+                                    aspect_count += 1
+                                    yield self._format_sse(
+                                        "progress",
+                                        {
+                                            "stage": "aspects_progress",
+                                            "message": f"Aspect evaluation: {aspect_count}/{total_aspects}",  # noqa: E501
+                                            "current": aspect_count,
+                                            "total": total_aspects,
+                                        },
+                                    )
+
+                        # Small delay to avoid busy waiting
+                        loop.run_until_complete(asyncio.sleep(0.1))
+
+                    # Get the result
+                    result = task.result()
+
+                    if not result.success:
+                        yield self._format_sse(
+                            "error",
+                            {
+                                "message": "Evaluation failed",
+                                "errors": [e.message for e in result.errors],
+                            },
+                        )
+                        return
+
+                    # Update evaluation record
+                    aggregated = result.aggregated_data
+                    evaluation.execution_time_ms = aggregated.get(
+                        "execution_time_ms", 0
+                    )  # noqa: E501
+                    evaluation.total_tokens = aggregated.get("total_tokens", 0)
+                    evaluation.estimated_cost_eur = aggregated.get(
+                        "estimated_cost_eur", 0
+                    )  # noqa: E501
+                    evaluation.save()
+
+                    # Auto-save game concept
+                    save_game_concept(user, game_text, evaluation)
+
+                    # Send final result
+                    yield self._format_sse("complete", aggregated)
+
+                except Exception as e:
+                    logger.exception(f"Error in SPARC V2 streaming evaluation: {e}")
+                    yield self._format_sse("error", {"message": str(e)})
+
+                finally:
+                    # Clean up temporary file after workflow execution completes
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        try:
+                            os.unlink(temp_file_path)
+                        except Exception as cleanup_error:
+                            logger.warning(
+                                f"Failed to clean up temp file: {cleanup_error}"
+                            )
+                    loop.close()
 
     def _format_sse(self, event_type: str, data: Dict[str, Any]) -> str:
         """Format data as Server-Sent Event."""

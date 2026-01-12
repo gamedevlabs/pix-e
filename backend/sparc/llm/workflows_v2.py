@@ -373,6 +373,7 @@ class SPARCRouterWorkflow:
         from sparc.llm.schemas.v2.pillar_context import PillarContextResponse
 
         pillar_mode = request_data.get("pillar_mode", "smart")
+        project_id = request_data.get("project_id")
 
         try:
             agent = PillarContextAgent()
@@ -447,7 +448,10 @@ class SPARCRouterWorkflow:
             # Fetch pillars asynchronously
             @sync_to_async
             def get_user_pillars(user_obj):
-                return list(Pillar.objects.filter(user=user_obj))
+                qs = Pillar.objects.filter(user=user_obj)
+                if project_id:
+                    qs = qs.filter(project_id=project_id)
+                return list(qs)
 
             pillars = await get_user_pillars(user)
             if not pillars:
@@ -820,10 +824,9 @@ class SPARCRouterWorkflow:
         pillar_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Build the final response."""
-        from sparc.llm.agents.v2.base import calculate_cost_eur
         from sparc.llm.schemas.v2.synthesis import AgentExecutionDetail
 
-        cost = calculate_cost_eur(model_id, total_tokens // 2, total_tokens // 2)
+        cost = 0
 
         # Build agent execution details
         agent_execution_details = [

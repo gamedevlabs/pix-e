@@ -162,13 +162,9 @@ class V2BaseAgent(BaseAgent):
         Returns:
             Created SPARCEvaluationResult instance
         """
-        # Calculate cost
+        # Cost tracking disabled
         model_name = result.model_used or ""
-        cost_eur = calculate_cost_eur(
-            model_name=model_name,
-            prompt_tokens=result.prompt_tokens,
-            completion_tokens=result.completion_tokens,
-        )
+        cost_eur = 0
 
         # Prepare result data
         result_data = result.data if result.success else None
