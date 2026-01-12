@@ -54,7 +54,7 @@ class BaseProvider(ABC):
         self,
         model_name: str,
         prompt: str,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> str:
@@ -76,7 +76,7 @@ class BaseProvider(ABC):
         model_name: str,
         prompt: str,
         response_schema: type,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
@@ -144,3 +144,28 @@ class GenerationResult:
         self.completion_tokens = completion_tokens
         self.total_tokens = prompt_tokens + completion_tokens
         self.metadata = metadata or {}
+
+
+class StructuredResult:
+    """Result from structured generation with token tracking."""
+
+    def __init__(
+        self,
+        data: Any,
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        model: str = "",
+        provider: str = "",
+    ):
+        self.data = data
+        self.prompt_tokens = prompt_tokens
+        self.completion_tokens = completion_tokens
+        self.total_tokens = prompt_tokens + completion_tokens
+        self.model = model
+        self.provider = provider
+
+    def model_dump(self) -> Dict[str, Any]:
+        """Pass through to underlying data's model_dump if available."""
+        if hasattr(self.data, "model_dump"):
+            return self.data.model_dump()
+        return self.data

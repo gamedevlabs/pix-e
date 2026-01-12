@@ -23,11 +23,22 @@ interface Pillar extends NamedEntity {
   name: string
   description: string
   llm_feedback: PillarFeedback | null
+  project?: number | null
 }
 
 type GameDesign = {
   game_id: number
   description: string
+}
+
+type GameConcept = {
+  id: number
+  user: string
+  project: number | null
+  content: string
+  is_current: boolean
+  created_at: string
+  updated_at: string
 }
 
 type PillarFeedback = {
@@ -61,4 +72,96 @@ type PillarsInContextFeedback = {
 type ContextInPillarsFeedback = {
   rating: number
   feedback: string
+}
+
+// --- Types for improved pillar with explanations ---
+
+type PillarChange = {
+  field: 'name' | 'description'
+  after: string
+  reasoning: string
+  issues_addressed: string[]
+}
+
+type ImprovedPillarResponse = {
+  name: string
+  description: string
+  changes: PillarChange[]
+  overall_summary: string
+  validation_issues_fixed: string[]
+}
+
+type FixPillarAPIResponse = {
+  pillar_id: number
+  original: {
+    name: string
+    description: string
+  }
+  improved: ImprovedPillarResponse
+  metadata: {
+    execution_time_ms: number
+    model_used: string | null
+  }
+}
+
+type StructuralIssue = {
+  title: string
+  description: string
+  severity: number
+}
+
+// --- Types for new agentic pillar evaluation ---
+
+type ConceptFitResponse = {
+  hasGaps: boolean
+  pillarFeedback: CompletenessAnswer[]
+  missingAspects: string[]
+}
+
+type ContradictionsResponse = {
+  hasContradictions: boolean
+  contradictions: ContradictionIssue[]
+}
+
+type ResolutionSuggestion = {
+  pillarOneId: number
+  pillarTwoId: number
+  pillarOneTitle: string
+  pillarTwoTitle: string
+  resolutionStrategy: string
+  suggestedChanges: string[]
+  alternativeApproach: string
+}
+
+type ContradictionResolutionResponse = {
+  resolutions: ResolutionSuggestion[]
+  overallRecommendation: string
+}
+
+type ExecutionMode = 'monolithic' | 'agentic'
+type PillarsContextStrategy = 'raw' | 'structural_memory' | 'hmem' | 'combined'
+
+type EvaluateAllMetadata = {
+  execution_time_ms: number
+  agents_run?: string[] // Only in agentic mode
+  all_succeeded?: boolean // Only in agentic mode
+  model_used?: string // Only in monolithic mode
+  total_tokens?: number // Only in monolithic mode
+}
+
+type OverallScore = {
+  score: number
+  feedback: string
+  strengths?: string[] // Only in agentic mode
+  areasForImprovement?: string[] // Only in agentic mode
+}
+
+type EvaluateAllResponse = {
+  execution_mode: ExecutionMode
+  concept_fit: ConceptFitResponse | null
+  contradictions: ContradictionsResponse | null
+  additions: PillarAdditionsFeedback | null
+  resolution: ContradictionResolutionResponse | null
+  overall?: OverallScore // Available in both modes (with synthesis in agentic)
+  metadata: EvaluateAllMetadata
 }

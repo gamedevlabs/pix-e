@@ -1,74 +1,226 @@
 ﻿import { usePillarsApi } from '@/composables/api/pillarsApi'
+import { useProject } from '@/composables/useProject'
+
+// Shared state - singleton pattern for cross-component reactivity
+const items = ref<Pillar[]>([])
+const loading = ref(false)
+const error = ref<unknown>(null)
+
+const featureFeedback = ref<ContextInPillarsFeedback>({
+  rating: 0,
+  feedback: '',
+})
+
+const additionalFeature = ref<string>('')
+
+// Evaluation state (supports both monolithic and agentic modes)
+const evaluationResult = ref<EvaluateAllResponse | null>(null)
+const isEvaluating = ref(false)
+const evaluationError = ref<string | null>(null)
+const executionMode = ref<ExecutionMode>('agentic')
+const contextStrategy = ref<PillarsContextStrategy>('raw')
 
 export function usePillars() {
-  const basics = useCrud<Pillar>('llm/pillars/')
-
+  const config = useRuntimeConfig()
   const pillarsApi = usePillarsApi()
-  const designIdea = ref<string>('')
-  const llmFeedback = ref<PillarsInContextFeedback>({
-    coverage: {
-      pillarFeedback: [],
-    },
-    contradictions: {
-      contradictions: [],
-    },
-    proposedAdditions: {
-      additions: [],
-    },
-  })
+  const { success, error: errorToast } = usePixeToast()
+  const API_URL = `${config.public.apiBase}/llm/pillars/`
+  const projectStore = useProject()
 
-  const featureFeedback = ref<ContextInPillarsFeedback>({
-    rating: 0,
-    feedback: '',
-  })
+  // Use shared game concept state
+  const {
+    designIdea,
+    isSavingConcept,
+    conceptHistory,
+    isLoadingHistory,
+    isRestoringConcept,
+    fetchGameConcept,
+    saveGameConcept,
+    fetchConceptHistory,
+    restoreConcept,
+  } = useGameConcept()
 
-  const additionalFeature = ref<string>('')
+  // Shared fetch function
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const data = await $fetch<Pillar[]>(API_URL, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
+      items.value = data || []
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function createItem(payload: Partial<Pillar>) {
+    try {
+      const result = await $fetch<Pillar>(API_URL, {
+        method: 'POST',
+        body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Item created successfully!')
+      await fetchAll()
+      return result
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+      return null
+    }
+  }
+
+  async function updateItem(id: number | string, payload: Partial<Pillar>) {
+    try {
+      await $fetch<Pillar>(`${API_URL}${id}/`, {
+        method: 'PATCH',
+        body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Item updated successfully!')
+      await fetchAll()
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    }
+  }
+
+  async function deleteItem(id: number | string) {
+    try {
+      await $fetch<null>(`${API_URL}${id}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Item deleted successfully!')
+      await fetchAll()
+    } catch (err) {
+      error.value = err
+      errorToast(err)
+    }
+  }
 
   async function updateDesignIdea() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
-  }
-
-  async function getPillarsInContextFeedback() {
-    llmFeedback.value = await pillarsApi.getPillarsInContextAPICall()
   }
 
   async function validatePillar(pillar: Pillar) {
     return await pillarsApi.validatePillarAPICall(pillar)
   }
 
-  async function fixPillarWithAI(pillar: Pillar) {
-    return await pillarsApi.fixPillarWithAIAPICall(pillar)
+  async function fixPillarWithAI(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
+    return await pillarsApi.fixPillarWithAIAPICall(pillar, validationIssues)
   }
 
-  async function getPillarContradictions() {
-    llmFeedback.value.contradictions = await pillarsApi.getPillarsContradictionsAPICall()
-  }
-
-  async function getPillarsCompleteness() {
-    llmFeedback.value.coverage = await pillarsApi.getPillarsCompletenessAPICall()
-  }
-
-  async function getPillarsAdditions() {
-    llmFeedback.value.proposedAdditions = await pillarsApi.getPillarsAdditionsAPICall()
+  async function acceptPillarFix(pillarId: number, name: string, description: string) {
+    return await pillarsApi.acceptPillarFixAPICall(pillarId, name, description)
   }
 
   async function getContextInPillarsFeedback() {
-    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
+    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(
+      additionalFeature.value,
+      contextStrategy.value,
+    )
+  }
+
+  // --- Evaluation methods (supports monolithic and agentic modes) ---
+
+  async function evaluateAll(mode?: ExecutionMode) {
+    isEvaluating.value = true
+    evaluationError.value = null
+    const modeToUse = mode ?? executionMode.value
+    try {
+      evaluationResult.value = await pillarsApi.evaluateAllAPICall(modeToUse, contextStrategy.value)
+    } catch (err) {
+      console.error('Error evaluating pillars:', err)
+      evaluationError.value = 'Failed to evaluate pillars. Please try again.'
+    } finally {
+      isEvaluating.value = false
+    }
+  }
+
+  function setExecutionMode(mode: ExecutionMode) {
+    executionMode.value = mode
+  }
+
+  function setContextStrategy(strategy: PillarsContextStrategy) {
+    contextStrategy.value = strategy
+  }
+  async function resolveContradictions(contradictions: ContradictionsResponse) {
+    return await pillarsApi.resolveContradictionsAPICall(contradictions, contextStrategy.value)
+  }
+
+  watch(
+    () => projectStore.activeProjectId,
+    async (nextId, previousId) => {
+      if (previousId !== null && nextId !== previousId) {
+        await fetchAll()
+        await fetchGameConcept()
+      }
+    },
+  )
+
+  async function acceptAddition(name: string, description: string) {
+    return await pillarsApi.acceptAdditionAPICall(name, description)
+  }
+
+  function clearEvaluation() {
+    evaluationResult.value = null
+    evaluationError.value = null
   }
 
   return {
-    ...basics,
+    // CRUD operations with shared state
+    items,
+    loading,
+    error,
+    fetchAll,
+    createItem,
+    updateItem,
+    deleteItem,
+    // Game concept
     designIdea,
-    llmFeedback,
+    isSavingConcept,
+    fetchGameConcept,
+    saveGameConcept,
+    // Game concept history
+    conceptHistory,
+    isLoadingHistory,
+    isRestoringConcept,
+    fetchConceptHistory,
+    restoreConcept,
+    // Pillar-specific state
     featureFeedback,
     additionalFeature,
+    // Pillar operations
     validatePillar,
     updateDesignIdea,
-    getPillarsInContextFeedback,
     fixPillarWithAI,
-    getPillarContradictions,
-    getPillarsCompleteness,
-    getPillarsAdditions,
+    acceptPillarFix,
     getContextInPillarsFeedback,
+    // Evaluation (monolithic + agentic)
+    evaluationResult,
+    isEvaluating,
+    evaluationError,
+    executionMode,
+    contextStrategy,
+    evaluateAll,
+    setExecutionMode,
+    setContextStrategy,
+    resolveContradictions,
+    acceptAddition,
+    clearEvaluation,
   }
 }

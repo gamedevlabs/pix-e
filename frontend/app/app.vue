@@ -5,6 +5,7 @@ const authentication = useAuthentication()
 await authentication.checkAuthentication()
 
 const llmStore = useLLM()
+const projectStore = useProject()
 
 const items = ref<NavigationMenuItem[]>([
   {
@@ -62,6 +63,11 @@ const items = ref<NavigationMenuItem[]>([
     to: '/pillars',
   },
   {
+    label: 'SPARC',
+    icon: 'i-lucide-sparkles',
+    to: '/sparc',
+  },
+  {
     label: 'Movie Script Evaluator',
     icon: 'i-lucide-film',
     to: '/movie-script-evaluator',
@@ -92,10 +98,45 @@ async function handleLogout() {
 }
 
 const isSidebarCollapsed = ref(false)
+const isCloneModalOpen = ref(false)
 
 function toggleSidebar() {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
+
+function formatProjectLabel(name: string) {
+  const trimmed = name.trim()
+  if (!trimmed) return 'Untitled Project'
+  const firstLine = trimmed.split('\n')[0] || trimmed
+  return firstLine.length > 50 ? `${firstLine.slice(0, 50)}...` : firstLine
+}
+const projectOptions = computed(() =>
+  projectStore.projects.map((project) => ({
+    label: formatProjectLabel(project.name),
+    value: project.id,
+  })),
+)
+const selectedProject = computed(
+  () =>
+    projectStore.projects.find((project) => project.id === projectStore.activeProjectId) || null,
+)
+const selectedProjectId = computed({
+  get: () => projectStore.activeProjectId ?? undefined,
+  set: (value) => {
+    if (value && value !== projectStore.activeProjectId) {
+      projectStore.switchProject(value)
+    }
+  },
+})
+watch(
+  () => authentication.isLoggedIn.value,
+  async (isLoggedIn) => {
+    if (isLoggedIn) {
+      await projectStore.fetchProjects()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -128,6 +169,23 @@ function toggleSidebar() {
           />
           <div v-else class="flex items-center gap-2">
             <!-- Put user info, settings, logout etc. here -->
+            <USelectMenu
+              v-model="selectedProjectId"
+              :items="projectOptions"
+              value-key="value"
+              placeholder="Select project"
+              class="w-60"
+              :loading="projectStore.isLoading || projectStore.isSwitching"
+              :disabled="projectOptions.length === 0"
+              searchable
+            />
+            <UButton
+              label="Clone"
+              color="primary"
+              variant="subtle"
+              :disabled="!selectedProjectId"
+              @click="isCloneModalOpen = true"
+            />
             <USelect
               v-model="llmStore.active_llm"
               :items="llmStore.llm_models"
@@ -169,6 +227,7 @@ function toggleSidebar() {
         </UMain>
       </UMain>
     </div>
+    <ProjectCloneModal v-model="isCloneModalOpen" :project="selectedProject" />
   </UApp>
 </template>
 

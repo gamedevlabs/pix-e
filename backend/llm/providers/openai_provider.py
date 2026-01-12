@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from openai import (
     APIError,
     APITimeoutError,
+    AsyncOpenAI,
     OpenAI,
 )
 from openai import RateLimitError as OpenAIRateLimitError
@@ -21,7 +22,7 @@ from llm.exceptions import (
     ProviderError,
     RateLimitError,
 )
-from llm.providers.base import BaseProvider
+from llm.providers.base import BaseProvider, StructuredResult
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 
@@ -42,6 +43,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4o",
         "gpt-4-turbo-2024-04-09",
         "gpt-4-turbo",
+        "gpt-5.2",
     }
 
     # Vision-capable models
@@ -50,6 +52,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4o-mini",
         "gpt-4-turbo",
         "gpt-4-vision-preview",
+        "gpt-5.2",
     }
 
     # Context window sizes
@@ -59,6 +62,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4-turbo": 128000,
         "gpt-4": 8192,
         "gpt-3.5-turbo": 16385,
+        "gpt-5.2": 400000,
     }
 
     def __init__(self, config: Dict[str, Any]):
@@ -84,6 +88,14 @@ class OpenAIProvider(BaseProvider):
             organization=config.get("organization"),
             timeout=config.get("timeout", 60),
             base_url=config.get("base_url"),  # Allow custom base URL
+        )
+
+        # Async client for parallel execution
+        self.async_client = AsyncOpenAI(
+            api_key=api_key,
+            organization=config.get("organization"),
+            timeout=config.get("timeout", 60),
+            base_url=config.get("base_url"),
         )
 
     @property
@@ -117,7 +129,7 @@ class OpenAIProvider(BaseProvider):
             for model in response.data:
                 model_id = model.id
                 # Only include GPT models
-                if model_id.startswith(("gpt-4", "gpt-3.5")):
+                if model_id.startswith(("gpt-5", "gpt-4", "gpt-3.5")):
                     models.append(
                         ModelDetails(
                             name=model_id,
@@ -164,7 +176,7 @@ class OpenAIProvider(BaseProvider):
         self,
         model_name: str,
         prompt: str,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> str:
@@ -220,7 +232,7 @@ class OpenAIProvider(BaseProvider):
         model_name: str,
         prompt: str,
         response_schema: type,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
@@ -268,24 +280,156 @@ class OpenAIProvider(BaseProvider):
             response = self.client.chat.completions.create(**params)
             content = response.choices[0].message.content or "{}"
 
+            # Strip markdown code blocks if present
+            content = self._strip_markdown_json(content)
+
+            # Extract token usage
+            usage = response.usage
+            prompt_tokens = usage.prompt_tokens if usage else 0
+            completion_tokens = usage.completion_tokens if usage else 0
+
             # Parse and validate
             try:
                 parsed_data = json.loads(content)
                 if hasattr(response_schema, "model_validate"):
                     # Pydantic v2
-                    return response_schema.model_validate(parsed_data)
+                    validated = response_schema.model_validate(parsed_data)
                 else:
                     # Pydantic v1 or plain dict
-                    return (
+                    validated = (
                         response_schema(**parsed_data)
                         if callable(response_schema)
                         else parsed_data
                     )
+
+                # Return with token tracking
+                return StructuredResult(
+                    data=validated,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=model_name,
+                    provider="openai",
+                )
             except (json.JSONDecodeError, ValidationError) as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to parse structured response from {model_name}: {str(e)}\n"
+                    f"Raw content (first 500 chars): {content[:500]}"
+                )
                 raise ProviderError(
                     provider="openai",
                     message=f"Failed to parse structured response: {str(e)}",
-                    context={"model": model_name},
+                    context={"model": model_name, "content_preview": content[:200]},
+                )
+
+        except OpenAIRateLimitError as e:
+            raise RateLimitError(
+                message=f"OpenAI rate limit exceeded: {str(e)}",
+                context={"provider": "openai", "model": model_name},
+            )
+        except APITimeoutError as e:
+            raise ProviderError(
+                provider="openai",
+                message=f"Request timed out: {str(e)}",
+                context={"model": model_name},
+            )
+        except APIError as e:
+            if "does not exist" in str(e).lower():
+                raise ModelUnavailableError(
+                    model=model_name, provider="openai", reason=str(e)
+                )
+            raise ProviderError(
+                provider="openai",
+                message=f"Structured generation failed: {str(e)}",
+                context={"model": model_name},
+            )
+
+    async def generate_structured_async(
+        self,
+        model_name: str,
+        prompt: str,
+        response_schema: type,
+        temperature: float = 0,
+        max_tokens: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Generate structured JSON output asynchronously for parallel execution."""
+        try:
+            messages = [{"role": "user", "content": prompt}]
+
+            params: Dict[str, Any] = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": temperature,
+            }
+
+            if max_tokens:
+                params["max_tokens"] = max_tokens
+
+            if "top_p" in kwargs:
+                params["top_p"] = kwargs["top_p"]
+            if "seed" in kwargs:
+                params["seed"] = kwargs["seed"]
+
+            if self._supports_json_schema(model_name):
+                schema = self._extract_json_schema(response_schema)
+                params["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "response",
+                        "strict": True,
+                        "schema": schema,
+                    },
+                }
+            else:
+                params["response_format"] = {"type": "json_object"}
+                messages[0]["content"] = self._build_json_prompt(
+                    prompt, response_schema
+                )
+
+            # Use async client
+            response = await self.async_client.chat.completions.create(**params)
+            content = response.choices[0].message.content or "{}"
+
+            usage = response.usage
+            prompt_tokens = usage.prompt_tokens if usage else 0
+            completion_tokens = usage.completion_tokens if usage else 0
+
+            # Strip markdown code blocks if present
+            content = self._strip_markdown_json(content)
+
+            try:
+                parsed_data = json.loads(content)
+                if hasattr(response_schema, "model_validate"):
+                    validated = response_schema.model_validate(parsed_data)
+                else:
+                    validated = (
+                        response_schema(**parsed_data)
+                        if callable(response_schema)
+                        else parsed_data
+                    )
+
+                return StructuredResult(
+                    data=validated,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=model_name,
+                    provider="openai",
+                )
+            except (json.JSONDecodeError, ValidationError) as e:
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Failed to parse structured response from {model_name}: {str(e)}\n"
+                    f"Raw content (first 500 chars): {content[:500]}"
+                )
+                raise ProviderError(
+                    provider="openai",
+                    message=f"Failed to parse structured response: {str(e)}",
+                    context={"model": model_name, "content_preview": content[:200]},
                 )
 
         except OpenAIRateLimitError as e:
@@ -361,7 +505,134 @@ class OpenAIProvider(BaseProvider):
         schema = copy.deepcopy(schema)
 
         # OpenAI requires additionalProperties=false at ALL levels for strict mode
-        return self._add_additional_properties(schema)
+        schema = self._add_additional_properties(schema)
+
+        # OpenAI strict mode requires all fields in properties to be in required
+        schema = self._ensure_required_fields(schema)
+
+        return schema
+
+    def _ensure_required_fields(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Ensure all fields in properties are in required for OpenAI strict mode.
+
+        OpenAI's strict JSON schema requires that if a field is in properties,
+        it must also be in required. This handles nested schemas recursively.
+        Also removes any fields from required that are not in properties.
+        """
+        if not isinstance(schema, dict):
+            return schema
+
+        # First, recursively process nested schemas BEFORE modifying this one
+        # This ensures we don't modify parent schemas based on incomplete
+        # child processing
+
+        # Handle arrays first
+        if schema.get("type") == "array":
+            if "items" in schema:
+                schema["items"] = self._ensure_required_fields(schema["items"])
+            return schema
+
+        # Handle additionalProperties when it's a schema (for Dict types)
+        # Process it recursively but don't add required to it if it has no properties
+        if "additionalProperties" in schema:
+            ap = schema["additionalProperties"]
+            # Only process if it's a schema object (not a boolean)
+            if isinstance(ap, dict):
+                schema["additionalProperties"] = self._ensure_required_fields(ap)
+
+        # For objects with additionalProperties but no properties, add empty properties
+        # This might be required for OpenAI strict mode validation
+        if (
+            schema.get("type") == "object"
+            and "additionalProperties" in schema
+            and "properties" not in schema
+        ):
+            schema["properties"] = {}
+
+        # Handle anyOf, oneOf, allOf
+        for key in ["anyOf", "oneOf", "allOf"]:
+            if key in schema:
+                schema[key] = [self._ensure_required_fields(s) for s in schema[key]]
+
+        # Handle $defs or definitions
+        for key in ["$defs", "definitions"]:
+            if key in schema:
+                for def_name, def_schema in schema[key].items():
+                    schema[key][def_name] = self._ensure_required_fields(def_schema)
+
+        # Now handle properties and required at THIS level
+        # Only process if this schema has properties
+        if "properties" in schema:
+            properties = schema["properties"]
+            # Ensure properties is a dict and not empty
+            if isinstance(properties, dict) and properties:
+                # For OpenAI strict mode, ALL properties must be in required
+                # Create required array with ONLY property names that exist
+                # Filter properties: only include those that have valid schemas
+                # OpenAI strict mode may reject properties with type="object"
+                # and only additionalProperties
+                valid_property_names = []
+                for prop_name, prop_schema in properties.items():
+                    if isinstance(prop_schema, dict):
+                        # If it's an object with only additionalProperties
+                        # (no properties), it might not be valid for strict mode
+                        # when in required. But let's include it anyway and see
+                        # if the recursive processing fixes it
+                        valid_property_names.append(prop_name)
+                    else:
+                        valid_property_names.append(prop_name)
+
+                # Start with existing required, filter to only include valid properties
+                existing_required = schema.get("required", [])
+                if existing_required:
+                    # Remove any required fields that don't exist in valid properties
+                    filtered_required = [
+                        r for r in existing_required if r in valid_property_names
+                    ]
+                    # Add any missing valid properties to required
+                    for prop_name in valid_property_names:
+                        if prop_name not in filtered_required:
+                            filtered_required.append(prop_name)
+                    required = filtered_required
+                else:
+                    # No existing required, so create new one with all valid properties
+                    required = list(valid_property_names)
+
+                # Set required array - ONLY if we have valid properties
+                if required and valid_property_names:
+                    schema["required"] = required
+                elif "required" in schema:
+                    # Remove required if no valid properties
+                    del schema["required"]
+
+                # Recursively process nested properties AFTER setting required
+                for prop_name, prop_schema in properties.items():
+                    processed_prop = self._ensure_required_fields(prop_schema)
+                    # If a property is type="object" with additionalProperties
+                    # but no properties, add empty properties for OpenAI strict
+                    # mode compatibility
+                    if (
+                        isinstance(processed_prop, dict)
+                        and processed_prop.get("type") == "object"
+                        and "additionalProperties" in processed_prop
+                        and "properties" not in processed_prop
+                    ):
+                        processed_prop["properties"] = {}
+                    schema["properties"][prop_name] = processed_prop
+            else:
+                # If properties is empty or not a dict, remove required
+                if "required" in schema:
+                    del schema["required"]
+        else:
+            # No properties in this schema, so remove required if it exists
+            # (unless this is a nested schema that shouldn't have required anyway)
+            if "required" in schema and schema.get("type") == "object":
+                # Only remove required if this is explicitly an object type
+                # (not a nested schema like additionalProperties value)
+                del schema["required"]
+
+        return schema
 
     def _add_additional_properties(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         """Recursively add additionalProperties=false to all objects in schema."""
@@ -399,6 +670,21 @@ class OpenAIProvider(BaseProvider):
                         )
 
         return schema
+
+    def _strip_markdown_json(self, content: str) -> str:
+        """Strip markdown code blocks from JSON content if present."""
+        content = content.strip()
+        # Remove markdown code blocks (```json ... ``` or ``` ... ```)
+        if content.startswith("```"):
+            # Find the first newline after ```
+            start_idx = content.find("\n")
+            if start_idx != -1:
+                content = content[start_idx + 1 :]
+            # Remove trailing ```
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+        return content
 
     def _build_json_prompt(self, prompt: str, response_schema: type) -> str:
         """Build a prompt with JSON schema instructions for non-strict models."""

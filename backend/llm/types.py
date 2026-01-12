@@ -91,7 +91,7 @@ class LLMRequest(BaseModel):
     Available operations can be discovered dynamically. Example:
         from backend.llm import list_operations
         ops = list_operations(feature="pillars")
-        # ['pillars.validate', 'pillars.improve', ...]
+        # ['pillars.validate', 'pillars.improve_explained', ...]
     """
 
     # Feature identification (accepts enums or strings)
@@ -177,6 +177,9 @@ class AgentInfo(BaseModel):
     name: str = Field(..., description="Agent name")
     execution_time_ms: int = Field(..., ge=0)
     model: str = Field(..., description="Model name used by this agent")
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
 
 
 class TokenUsage(BaseModel):
@@ -249,6 +252,9 @@ class ResponseMetadata(BaseModel):
 
     # Artifacts/provenance
     artifacts: Optional[List[ArtifactInfo]] = None
+
+    # Event timeline (agentic mode only)
+    events: Optional[List["StreamEvent"]] = None
 
 
 class ErrorInfo(BaseModel):
@@ -391,6 +397,9 @@ class AgentResult(BaseModel):
     error: Optional[ErrorInfo] = None
     execution_time_ms: int = Field(..., ge=0)
     model_used: Optional[str] = None
+    prompt_tokens: int = Field(default=0, ge=0)
+    completion_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
 
 
 class ExecutionResult(BaseModel):

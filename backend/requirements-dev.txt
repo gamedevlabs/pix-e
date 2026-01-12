@@ -21,3 +21,5 @@ pytest-mock==3.14.0
 pytest-cov==6.0.0
 httpx==0.28.1
 pandas==2.3.3
+opentelemetry-api==1.39.0
+opentelemetry-sdk==1.39.0

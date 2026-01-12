@@ -10,7 +10,7 @@ import pytest
 
 from llm.exceptions import InvalidRequestError
 from llm.types import LLMRequest
-from pillars.llm.handlers import ImprovePillarHandler
+from pillars.llm.handlers import ImprovePillarWithExplanationHandler
 
 
 class TestImprovePillarHandler:
@@ -18,9 +18,9 @@ class TestImprovePillarHandler:
 
     def test_handler_has_correct_metadata(self):
         """Test that handler has correct operation metadata."""
-        handler = ImprovePillarHandler(Mock())
+        handler = ImprovePillarWithExplanationHandler(Mock())
 
-        assert handler.operation_id == "pillars.improve"
+        assert handler.operation_id == "pillars.improve_explained"
         assert handler.version == "1.0.0"
         assert handler.description != ""
         assert handler.response_schema is not None
@@ -29,14 +29,14 @@ class TestImprovePillarHandler:
         self, mock_model_manager, sample_pillar_data
     ):
         """Test that handler accepts valid input data."""
-        handler = ImprovePillarHandler(mock_model_manager)
+        handler = ImprovePillarWithExplanationHandler(mock_model_manager)
 
         # Should not raise
         handler.validate_input(sample_pillar_data)
 
     def test_handler_validates_input_rejects_missing_name(self, mock_model_manager):
         """Test that handler rejects data missing 'name'."""
-        handler = ImprovePillarHandler(mock_model_manager)
+        handler = ImprovePillarWithExplanationHandler(mock_model_manager)
 
         with pytest.raises(InvalidRequestError) as exc_info:
             handler.validate_input({"description": "Test"})
@@ -47,7 +47,7 @@ class TestImprovePillarHandler:
         self, mock_model_manager
     ):
         """Test that handler rejects data missing 'description'."""
-        handler = ImprovePillarHandler(mock_model_manager)
+        handler = ImprovePillarWithExplanationHandler(mock_model_manager)
 
         with pytest.raises(InvalidRequestError) as exc_info:
             handler.validate_input({"name": "Test"})
@@ -56,7 +56,7 @@ class TestImprovePillarHandler:
 
     def test_handler_builds_prompt(self, mock_model_manager, sample_pillar_data):
         """Test that handler builds a prompt from data."""
-        handler = ImprovePillarHandler(mock_model_manager)
+        handler = ImprovePillarWithExplanationHandler(mock_model_manager)
 
         prompt = handler.build_prompt(sample_pillar_data)
 
@@ -70,7 +70,7 @@ class TestImprovePillarHandler:
         self, mock_model_manager, sample_pillar_data
     ):
         """Test that handler returns improved pillar."""
-        handler = ImprovePillarHandler(mock_model_manager)
+        handler = ImprovePillarWithExplanationHandler(mock_model_manager)
 
         # Mock the LLM response with improved pillar
         mock_result = Mock()

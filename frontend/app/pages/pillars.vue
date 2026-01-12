@@ -3,8 +3,6 @@ definePageMeta({
   middleware: 'authentication',
 })
 
-const config = useRuntimeConfig()
-
 const {
   items: pillars,
   fetchAll: pillarsFetchAll,
@@ -12,26 +10,14 @@ const {
   updateItem: updatePillar,
   deleteItem: deletePillar,
   additionalFeature,
-  designIdea,
-  llmFeedback,
   featureFeedback,
-  getPillarsInContextFeedback,
-  updateDesignIdea,
-  getPillarsCompleteness,
-  getPillarsAdditions,
-  getPillarContradictions,
   getContextInPillarsFeedback,
 } = usePillars()
 
-await pillarsFetchAll()
+const { fetchGameConcept } = useGameConcept()
 
-await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`, {
-  method: 'GET',
-  credentials: 'include',
-  headers: useRequestHeaders(['cookie']),
-}).then((data) => {
-  designIdea.value = data.data.value?.description ?? ''
-})
+await pillarsFetchAll()
+await fetchGameConcept()
 
 const selectedPillar = ref(-1)
 const newItem = ref<NamedEntity | null>(null)
@@ -84,113 +70,14 @@ async function dismissIssue(pillar: Pillar, index: number) {
         </div>
       </SimpleCardSection>
 
-      <!-- Overall LLM Feedback -->
+      <!-- Pillar Evaluation Panel (supports both Monolithic and Agentic modes) -->
       <div class="-m-10 mt-10 border-t border-neutral-800 p-6">
-        <h2 class="text-2xl font-bold">
-          LLM Feedback
-          <UButton
-            icon="i-lucide-refresh-cw"
-            label="Refresh All"
-            color="secondary"
-            variant="soft"
-            loading-auto
-            @click="getPillarsInContextFeedback"
-          />
-        </h2>
-
-        <div class="w-full p-4 gap-4">
-          <h2 class="text-2xl font-bold">
-            Coverage:
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="getPillarsCompleteness"
-            />
-          </h2>
-          <!-- Coverage Feedback -->
-          <div class="w-full p-4 gap-4">
-            <div
-              v-for="pillar in llmFeedback.coverage.pillarFeedback"
-              :key="pillar.name"
-              class="border-b mb-4 border-neutral-500 pb-4"
-            >
-              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
-              <p>{{ pillar.reasoning }}</p>
-            </div>
-          </div>
-          <!-- Contradictions Feedback -->
-          <h2 class="text-2xl font-bold">
-            Contradictions:
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="getPillarContradictions"
-            />
-          </h2>
-          <div class="w-full p-4 gap-4">
-            <div
-              v-for="contradiction in llmFeedback.contradictions.contradictions"
-              :key="contradiction.pillarOneId"
-              class="border-b mb-4 border-neutral-500 pb-4"
-            >
-              <h3 class="text-lg font-semibold">
-                {{ contradiction.pillarOneTitle + ' vs ' + contradiction.pillarTwoTitle }}
-              </h3>
-              <p>{{ contradiction.reason }}</p>
-            </div>
-          </div>
-
-          <!-- Additions Feedback -->
-          <h2 class="text-2xl font-bold">
-            Additions:
-
-            <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="getPillarsAdditions"
-            />
-          </h2>
-          <div class="w-full p-4 gap-4">
-            <div
-              v-for="pillar in llmFeedback.proposedAdditions.additions"
-              :key="pillar.name"
-              class="border-b mb-4 border-neutral-500 pb-4"
-            >
-              <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
-              <p>{{ pillar.description }}</p>
-            </div>
-          </div>
-        </div>
+        <PillarEvaluationPanel />
       </div>
     </div>
 
     <!-- Game Design Idea Section -->
-    <div
-      class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
-    >
-      <h2 class="text-2xl font-semibold mb-4">Core Design Idea:</h2>
-      <UTextarea
-        v-model="designIdea"
-        placeholder="Enter your game design idea here..."
-        variant="outline"
-        color="secondary"
-        size="xl"
-        :rows="25"
-        :max-rows="0"
-        autoresize
-        class="w-full"
-        @focusout="updateDesignIdea"
-      />
-
+    <GameConceptSidebar>
       <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Feature:</h2>
       <UTextarea
         v-model="additionalFeature"
@@ -218,6 +105,6 @@ async function dismissIssue(pillar: Pillar, index: number) {
       <p>
         {{ featureFeedback.feedback }}
       </p>
-    </div>
+    </GameConceptSidebar>
   </div>
 </template>

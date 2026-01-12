@@ -6,10 +6,13 @@ It routes requests to either operation handlers (monolithic mode) or
 agents (agentic mode).
 """
 
+import asyncio
 import time
 from typing import Any, Optional, cast
 
+from llm.agent_registry import get_workflow, has_workflow
 from llm.config import get_config
+from llm.events import EventCollector
 from llm.exceptions import (
     InvalidRequestError,
     OrchestratorError,
@@ -17,155 +20,143 @@ from llm.exceptions import (
     UnknownOperationError,
 )
 from llm.handler_registry import get_handler
+from llm.logfire_config import get_logfire
 from llm.providers import ModelManager
-from llm.types import (
-    LLMRequest,
-    LLMResponse,
-    ModelInfo,
-    ResponseMetadata,
-    WarningInfo,
-)
+from llm.response_builder import build_agent_response, build_handler_response
+from llm.types import LLMRequest, LLMResponse, WarningInfo
 
 
 class LLMOrchestrator:
     """
     Main orchestrator for LLM operations.
 
-    Supports two execution modes:
-    1. Handler Mode (monolithic): Direct execution via operation handlers
-    2. Agent Mode (agentic): Multi-agent orchestration (future)
-
-    The orchestrator:
-    - Routes requests to appropriate handlers/agents
-    - Manages model selection
-    - Tracks execution metadata
-    - Handles errors uniformly
+    Routes requests to handlers (monolithic) or agents (agentic),
+    manages model selection, and tracks execution metadata.
     """
 
-    def __init__(self, model_manager: Optional[ModelManager] = None):
-        """
-        Initialize the orchestrator.
-
-        Args:
-            model_manager: Optional ModelManager instance. If not provided,
-                          a new one will be created.
-        """
+    def __init__(self, model_manager: Optional[ModelManager] = None) -> None:
+        """Initialize orchestrator with optional ModelManager."""
         self.model_manager = model_manager or ModelManager()
         self.config = get_config()
 
     def execute(self, request: LLMRequest) -> LLMResponse:
-        """
-        Execute an LLM operation.
+        """Execute LLM operation in monolithic or agentic mode."""
+        logfire = get_logfire()
 
-        Routes the request to the appropriate execution path based on mode:
-        - "monolithic": Direct handler execution
-        - "agentic": Agent-based execution (future)
-        """
-        # Determine execution mode
-        mode = request.mode or self.config.default_execution_mode
+        # Create top-level span for orchestrator execution
+        with logfire.span(
+            "llm.orchestrate",
+            feature=request.feature,
+            operation=request.operation,
+            mode=request.mode or self.config.default_execution_mode,
+            model_id=request.model_id or "auto",
+        ):
+            # Determine execution mode
+            mode = request.mode or self.config.default_execution_mode
 
-        if mode == "monolithic":
-            return self._execute_handler_mode(request)
-        elif mode == "agentic":
-            return self._execute_agent_mode(request)
-        else:
-            raise InvalidRequestError(
-                message=f"Unknown execution mode: {mode}",
-                context={"mode": mode, "valid_modes": ["monolithic", "agentic"]},
-            )
+            if mode == "monolithic":
+                return self._execute_handler_mode(request)
+            elif mode == "agentic":
+                return self._execute_agent_mode(request)
+            else:
+                raise InvalidRequestError(
+                    message=f"Unknown execution mode: {mode}",
+                    context={"mode": mode, "valid_modes": ["monolithic", "agentic"]},
+                )
 
     def _execute_handler_mode(self, request: LLMRequest) -> LLMResponse:
-        """
-        Execute request using operation handlers (monolithic mode).
+        """Execute request using operation handlers (monolithic mode)."""
+        logfire = get_logfire()
 
-        This is the direct execution path for current pix:e features.
-        """
-        start_time = time.time()
+        with logfire.span(
+            "llm.handler_mode", operation_id=f"{request.feature}.{request.operation}"
+        ):
+            start_time = time.time()
+            operation_id = f"{request.feature}.{request.operation}"
 
-        # Build operation ID
-        operation_id = f"{request.feature}.{request.operation}"
-
-        # Get handler
-        try:
-            handler_class = get_handler(operation_id)
-        except UnknownOperationError:
-            raise
-
-        # Instantiate handler with model manager
-        handler = handler_class(self.model_manager)
-
-        # Determine model to use
-        model_name = self._select_model(request, handler)
-
-        # Execute handler
-        try:
-            result = handler.execute(
-                data=request.data,
-                model_name=model_name,
-                temperature=request.temperature or 0.7,
-                max_tokens=request.max_tokens,
-                **(request.provider_options or {}),
-            )
-
-            execution_time_ms = int((time.time() - start_time) * 1000)
-
-            # Build response
-            return self._build_response(
-                request=request,
-                result=result,
-                model_name=model_name,
-                mode="monolithic",
-                execution_time_ms=execution_time_ms,
-            )
-
-        except Exception as e:
-            # Re-raise orchestrator exceptions as-is
-            if isinstance(e, OrchestratorError):
+            try:
+                handler_class = get_handler(operation_id)
+            except UnknownOperationError:
                 raise
 
-            # Wrap other exceptions
-            raise ProviderError(
-                message=f"Handler execution failed: {str(e)}", provider="handler"
-            )
+            handler = handler_class(self.model_manager)
+            model_name = self._select_model(request, handler)
+
+            try:
+                result = handler.execute(
+                    data=request.data,
+                    model_name=model_name,
+                    temperature=request.temperature or 0,
+                    max_tokens=request.max_tokens,
+                    **(request.provider_options or {}),
+                )
+
+                execution_time_ms = int((time.time() - start_time) * 1000)
+                return build_handler_response(
+                    request=request,
+                    result=result,
+                    model_name=model_name,
+                    mode="monolithic",
+                    execution_time_ms=execution_time_ms,
+                    model_manager=self.model_manager,
+                )
+
+            except Exception as e:
+                if isinstance(e, OrchestratorError):
+                    raise
+                raise ProviderError(
+                    message=f"Handler execution failed: {str(e)}", provider="handler"
+                )
 
     def _execute_agent_mode(self, request: LLMRequest) -> LLMResponse:
-        """
-        Execute request using agent orchestration (agentic mode).
+        """Execute request using agent orchestration (agentic mode)."""
+        logfire = get_logfire()
 
-        For now, this is a placeholder that falls back to handler mode.
-        """
-        # TODO: Implement agent-based execution
-        # For now, fall back to handler mode with a warning
+        with logfire.span(
+            "llm.agent_mode", operation_id=f"{request.feature}.{request.operation}"
+        ):
+            operation_id = f"{request.feature}.{request.operation}"
 
-        # Execute via handlers
-        response = self._execute_handler_mode(request)
+            if not has_workflow(operation_id):
+                response = self._execute_handler_mode(request)
+                response.warnings = response.warnings or []
+                response.warnings.append(
+                    WarningInfo(
+                        code="AGENT_WORKFLOW_NOT_FOUND",
+                        message=(
+                            f"No agent workflow for {operation_id}, "
+                            "using handler mode"
+                        ),
+                        context={"operation_id": operation_id},
+                    )
+                )
+                return response
 
-        # Add warning about fallback
-        response.warnings = response.warnings or []
-        response.warnings.append(
-            WarningInfo(
-                code="AGENT_MODE_NOT_IMPLEMENTED",
-                message="Agent mode not yet implemented, falling back to handler mode",
-                context={"feature": request.feature, "operation": request.operation},
+            workflow_class = get_workflow(operation_id)
+            event_collector = EventCollector()
+            workflow = workflow_class(self.model_manager, self.config, event_collector)
+
+            try:
+                execution_result = asyncio.run(workflow.run(request))
+            except Exception as e:
+                raise OrchestratorError(
+                    message=f"Agent workflow execution failed: {str(e)}",
+                    code="AGENT_EXECUTION_FAILED",
+                    context={"operation_id": operation_id, "error": str(e)},
+                )
+
+            return build_agent_response(
+                request=request,
+                execution_result=execution_result,
+                event_collector=event_collector,
+                model_manager=self.model_manager,
             )
-        )
 
-        return response
-
-    def _select_model(self, request: LLMRequest, handler) -> str:
-        """
-        Select which model to use for the request.
-
-        Priority:
-        1. Explicit model_id in request
-        2. Automatic selection based on handler requirements
-        3. First available model (fallback)
-        """
-        # If user specified a model, use it directly
+    def _select_model(self, request: LLMRequest, handler: Any) -> str:
+        """Select model: explicit > auto-select > first available."""
         if request.model_id:
             return request.model_id
 
-        # Try automatic selection based on handler requirements
         if (
             hasattr(handler, "capability_requirements")
             and handler.capability_requirements
@@ -182,53 +173,14 @@ class LLMOrchestrator:
                 )
                 return model.name
             except Exception:
-                # Fall through to simple fallback
                 pass
 
-        # Simple fallback: use first available model
         models = self.model_manager.list_available_models()
         if models:
             return models[0].name
 
-        # No models available
         from llm.exceptions import ModelUnavailableError
 
         raise ModelUnavailableError(
             model="auto-select", provider="any", reason="No models available"
-        )
-
-    def _build_response(
-        self,
-        request: LLMRequest,
-        result: Any,
-        model_name: str,
-        mode: str,
-        execution_time_ms: int,
-    ) -> LLMResponse:
-        """
-        Build LLMResponse from handler result.
-        """
-        # Get model info
-        try:
-            model_details = self.model_manager._find_model_by_name(model_name)
-            model_info = ModelInfo(
-                name=model_details.name,
-                type=model_details.type,
-                provider=model_details.provider,
-            )
-        except Exception:
-            # Fallback if model lookup fails
-            model_info = ModelInfo(name=model_name, type="cloud", provider="unknown")
-
-        # Build metadata
-        metadata = ResponseMetadata(
-            execution_time_ms=execution_time_ms,
-            mode=mode,  # type: ignore
-            models_used=[model_info],
-        )
-
-        return LLMResponse(
-            success=True,
-            results=result.model_dump() if hasattr(result, "model_dump") else result,
-            metadata=metadata,
         )

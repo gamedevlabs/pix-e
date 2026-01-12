@@ -36,7 +36,8 @@ class HandlerRegistry:
     Manages handler registration and discovery.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize empty registry."""
         self._handlers: Dict[str, Type[BaseOperationHandler]] = {}
 
     def register(
