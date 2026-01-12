@@ -15,12 +15,11 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from backend.llm import LLMOrchestrator
-from backend.llm.cost_tracking import calculate_cost_eur
 from backend.llm.logfire_config import get_logfire
 from backend.llm.types import LLMRequest, LLMResponse
 from backend.llm.view_utils import get_model_id
 from game_concept.models import Project
-from game_concept.utils import get_current_project
+from game_concept.utils import get_current_game_concept, get_current_project
 
 # Import handlers and workflows to trigger auto-registration
 from sparc.llm import handlers, workflows  # noqa: F401
@@ -28,6 +27,28 @@ from sparc.models import SPARCEvaluation, SPARCEvaluationResult
 from sparc.serializers import SPARCEvaluationSerializer
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_concept_meta(request: Request) -> dict[str, str]:
+    project = None
+    project_id = request.data.get("project_id")
+    if project_id:
+        project = Project.objects.filter(id=project_id).first()
+    elif request.user.is_authenticated:
+        project = get_current_project(request.user)
+    concept = get_current_game_concept(project) if project else None
+    concept_text = (concept.content or "") if concept else ""
+    preview = (
+        concept_text[:80] + "..."
+        if concept_text and len(concept_text) > 80
+        else concept_text
+    )
+    return {
+        "project_id": str(getattr(project, "id", "")) if project else "",
+        "project_name": getattr(project, "name", "") if project else "",
+        "concept_name": getattr(project, "name", "") if project else "",
+        "concept_preview": preview,
+    }
 
 
 def save_sparc_evaluation(
@@ -49,13 +70,12 @@ def save_sparc_evaluation(
     metadata = response.metadata
     token_usage = metadata.token_usage if metadata.token_usage else None
 
-    # Get model name and calculate cost
+    # Get model name (cost tracking disabled)
     model_name = metadata.models_used[0].name if metadata.models_used else "unknown"
 
-    # Calculate cost based on actual token usage
     prompt_tokens = token_usage.prompt_tokens if token_usage else 0
     completion_tokens = token_usage.completion_tokens if token_usage else 0
-    cost_eur = calculate_cost_eur(model_name, prompt_tokens, completion_tokens)
+    cost_eur = 0
 
     # Create evaluation record
     evaluation = SPARCEvaluation.objects.create(
@@ -91,10 +111,7 @@ def save_sparc_evaluation(
                     aspect_data.get("score") if isinstance(aspect_data, dict) else None
                 )
 
-                # Calculate per-agent cost
-                agent_cost = calculate_cost_eur(
-                    agent.model, agent.prompt_tokens, agent.completion_tokens
-                )
+                agent_cost = 0
 
                 SPARCEvaluationResult.objects.create(
                     evaluation=evaluation,
@@ -163,6 +180,13 @@ def save_game_concept(
     if not project:
         project = Project.objects.create(user=user, name="Untitled Project")
 
+    current = project.game_concepts.filter(is_current=True).first()
+    if current and current.content == game_text:
+        if evaluation:
+            current.last_sparc_evaluation = evaluation
+            current.save(update_fields=["last_sparc_evaluation", "updated_at"])
+        return
+
     # Mark all existing concepts as not current
     project.game_concepts.filter(is_current=True).update(is_current=False)
 
@@ -214,87 +238,94 @@ class SPARCQuickScanView(APIView):
         logfire = get_logfire()
 
         context_strategy = request.data.get("context_strategy", "default")
+        concept_meta = _resolve_concept_meta(request)
         with logfire.span(
-            f"sparc.evaluate.quick_scan.{context_strategy}.agentic",
+            "sparc.evaluate.concept",
             feature="sparc",
-            strategy=context_strategy,
-            execution_mode="agentic",
-            model=request.data.get("model", "openai"),
-            game_text_length=len(request.data.get("game_text", "")),
+            mode="quick_scan",
+            **concept_meta,
         ):
-            try:
-                # Validate input
-                game_text = request.data.get("game_text")
-                if not game_text:
+            with logfire.span(
+                f"sparc.evaluate.quick_scan.{context_strategy}.agentic",
+                feature="sparc",
+                strategy=context_strategy,
+                execution_mode="agentic",
+                model=request.data.get("model", "openai"),
+                game_text_length=len(request.data.get("game_text", "")),
+            ):
+                try:
+                    # Validate input
+                    game_text = request.data.get("game_text")
+                    if not game_text:
+                        return JsonResponse(
+                            {"error": "Missing required field: 'game_text'"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    # Get model preference
+                    model_name = request.data.get("model", "openai")
+                    model_id = get_model_id(model_name)
+
+                    data = {"game_text": game_text}
+                    if request.data.get("context_strategy"):
+                        data["context_strategy"] = request.data.get("context_strategy")
+
+                    # Create orchestrator request for agentic execution
+                    llm_request = LLMRequest(
+                        feature="sparc",
+                        operation="quick_scan",
+                        data=data,
+                        model_id=model_id,
+                        mode="agentic",  # Use agentic mode for workflow execution
+                    )
+
+                    # Execute through orchestrator (will use agent workflow)
+                    response = self.orchestrator.execute(llm_request)
+
+                    if not response.success:
+                        error_messages = [err.message for err in response.errors]
+                        return JsonResponse(
+                            {"error": "Evaluation failed", "details": error_messages},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+
+                    # Log final results
+                    if response.success:
+                        logfire.info(
+                            "sparc.quick_scan.completed",
+                            readiness_score=response.results.get("readiness_score"),
+                            execution_time_ms=response.metadata.execution_time_ms,
+                            total_tokens=(
+                                response.metadata.token_usage.total_tokens
+                                if response.metadata.token_usage
+                                else 0
+                            ),
+                            num_agents=(
+                                len(response.metadata.agents_used)
+                                if response.metadata.agents_used
+                                else 0
+                            ),
+                        )
+
+                    # Save evaluation to database
+                    context = request.data.get("context", "")
+                    evaluation = save_sparc_evaluation(
+                        game_text, context, "quick_scan", response
+                    )
+
+                    # Auto-save game concept with linked evaluation
+                    if request.user.is_authenticated:
+                        user: User = request.user  # type: ignore[assignment]
+                        save_game_concept(user, game_text, evaluation)
+
+                    return JsonResponse(response.results, status=status.HTTP_200_OK)
+
+                except Exception as e:
+                    logfire.exception("sparc.quick_scan.error", error=str(e))
+                    logger.exception(f"Error in SPARC evaluation: {e}")
                     return JsonResponse(
-                        {"error": "Missing required field: 'game_text'"},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
-
-                # Get model preference
-                model_name = request.data.get("model", "openai")
-                model_id = get_model_id(model_name)
-
-                data = {"game_text": game_text}
-                if request.data.get("context_strategy"):
-                    data["context_strategy"] = request.data.get("context_strategy")
-
-                # Create orchestrator request for agentic execution
-                llm_request = LLMRequest(
-                    feature="sparc",
-                    operation="quick_scan",
-                    data=data,
-                    model_id=model_id,
-                    mode="agentic",  # Use agentic mode for workflow execution
-                )
-
-                # Execute through orchestrator (will use agent workflow)
-                response = self.orchestrator.execute(llm_request)
-
-                if not response.success:
-                    error_messages = [err.message for err in response.errors]
-                    return JsonResponse(
-                        {"error": "Evaluation failed", "details": error_messages},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-
-                # Log final results
-                if response.success:
-                    logfire.info(
-                        "sparc.quick_scan.completed",
-                        readiness_score=response.results.get("readiness_score"),
-                        execution_time_ms=response.metadata.execution_time_ms,
-                        total_tokens=(
-                            response.metadata.token_usage.total_tokens
-                            if response.metadata.token_usage
-                            else 0
-                        ),
-                        num_agents=(
-                            len(response.metadata.agents_used)
-                            if response.metadata.agents_used
-                            else 0
-                        ),
-                    )
-
-                # Save evaluation to database
-                context = request.data.get("context", "")
-                evaluation = save_sparc_evaluation(
-                    game_text, context, "quick_scan", response
-                )
-
-                # Auto-save game concept with linked evaluation
-                if request.user.is_authenticated:
-                    user: User = request.user  # type: ignore[assignment]
-                    save_game_concept(user, game_text, evaluation)
-
-                return JsonResponse(response.results, status=status.HTTP_200_OK)
-
-            except Exception as e:
-                logfire.exception("sparc.quick_scan.error", error=str(e))
-                logger.exception(f"Error in SPARC evaluation: {e}")
-                return JsonResponse(
-                    {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
 
 
 class SPARCMonolithicView(APIView):
@@ -330,76 +361,83 @@ class SPARCMonolithicView(APIView):
         """Execute monolithic evaluation with handler-based execution."""
         logfire = get_logfire()
 
+        concept_meta = _resolve_concept_meta(request)
         with logfire.span(
-            "sparc.evaluate.monolithic.default.monolithic",
+            "sparc.evaluate.concept",
             feature="sparc",
-            strategy="default",
-            execution_mode="monolithic",
-            model=request.data.get("model", "openai"),
-            game_text_length=len(request.data.get("game_text", "")),
+            mode="monolithic",
+            **concept_meta,
         ):
-            try:
-                # Validate input
-                game_text = request.data.get("game_text")
-                if not game_text:
+            with logfire.span(
+                "sparc.evaluate.monolithic.default.monolithic",
+                feature="sparc",
+                strategy="default",
+                execution_mode="monolithic",
+                model=request.data.get("model", "openai"),
+                game_text_length=len(request.data.get("game_text", "")),
+            ):
+                try:
+                    # Validate input
+                    game_text = request.data.get("game_text")
+                    if not game_text:
+                        return JsonResponse(
+                            {"error": "Missing required field: 'game_text'"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                    # Get model preference
+                    model_name = request.data.get("model", "openai")
+                    model_id = get_model_id(model_name)
+
+                    # Create orchestrator request for monolithic execution
+                    llm_request = LLMRequest(
+                        feature="sparc",
+                        operation="monolithic",
+                        data={"game_text": game_text},
+                        model_id=model_id,
+                    )
+
+                    # Execute through orchestrator (will use handler)
+                    response = self.orchestrator.execute(llm_request)
+
+                    if not response.success:
+                        error_messages = [err.message for err in response.errors]
+                        return JsonResponse(
+                            {"error": "Evaluation failed", "details": error_messages},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+
+                    # Log final results
+                    if response.success:
+                        logfire.info(
+                            "sparc.monolithic.completed",
+                            execution_time_ms=response.metadata.execution_time_ms,
+                            total_tokens=(
+                                response.metadata.token_usage.total_tokens
+                                if response.metadata.token_usage
+                                else 0
+                            ),
+                        )
+
+                    # Save evaluation to database
+                    context = request.data.get("context", "")
+                    evaluation = save_sparc_evaluation(
+                        game_text, context, "monolithic", response
+                    )
+
+                    # Auto-save game concept with linked evaluation
+                    if request.user.is_authenticated:
+                        user: User = request.user  # type: ignore[assignment]
+                        save_game_concept(user, game_text, evaluation)
+
+                    return JsonResponse(response.results, status=status.HTTP_200_OK)
+
+                except Exception as e:
+                    logfire.exception("sparc.monolithic.error", error=str(e))
+                    logger.exception(f"Error in SPARC evaluation: {e}")
                     return JsonResponse(
-                        {"error": "Missing required field: 'game_text'"},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
-
-                # Get model preference
-                model_name = request.data.get("model", "openai")
-                model_id = get_model_id(model_name)
-
-                # Create orchestrator request for monolithic execution
-                llm_request = LLMRequest(
-                    feature="sparc",
-                    operation="monolithic",
-                    data={"game_text": game_text},
-                    model_id=model_id,
-                )
-
-                # Execute through orchestrator (will use handler)
-                response = self.orchestrator.execute(llm_request)
-
-                if not response.success:
-                    error_messages = [err.message for err in response.errors]
-                    return JsonResponse(
-                        {"error": "Evaluation failed", "details": error_messages},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-
-                # Log final results
-                if response.success:
-                    logfire.info(
-                        "sparc.monolithic.completed",
-                        execution_time_ms=response.metadata.execution_time_ms,
-                        total_tokens=(
-                            response.metadata.token_usage.total_tokens
-                            if response.metadata.token_usage
-                            else 0
-                        ),
-                    )
-
-                # Save evaluation to database
-                context = request.data.get("context", "")
-                evaluation = save_sparc_evaluation(
-                    game_text, context, "monolithic", response
-                )
-
-                # Auto-save game concept with linked evaluation
-                if request.user.is_authenticated:
-                    user: User = request.user  # type: ignore[assignment]
-                    save_game_concept(user, game_text, evaluation)
-
-                return JsonResponse(response.results, status=status.HTTP_200_OK)
-
-            except Exception as e:
-                logfire.exception("sparc.monolithic.error", error=str(e))
-                logger.exception(f"Error in SPARC evaluation: {e}")
-                return JsonResponse(
-                    {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
 
 
 class SPARCEvaluationViewSet(viewsets.ReadOnlyModelViewSet):
