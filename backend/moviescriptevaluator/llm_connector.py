@@ -22,8 +22,7 @@ class MovieScriptLLMConnector:
                 feature="movie-script-evaluator",
                 operation="analyze",
                 data={
-                    "scene_description": str(content),
-                    "elements": asset_list.__str__(),
+                    "scene_description": str(content)
                 },
                 model_id="gemma3:4b",
                 mode="monolithic",

@@ -41,3 +41,14 @@ export interface SceneAnalysis {
   can_use_assets: boolean
   assets_used: string[]
 }
+
+export interface ScriptSceneAnalysis {
+  scene: str
+  asset_name: str
+  asset_type: str
+  fab_search_keyword: str
+  notes: str
+}
+export interface MovieScriptAnalysisResponse {
+  result: ScriptSceneAnalysis[]
+}

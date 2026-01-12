@@ -1,4 +1,4 @@
-import type { AssetListAnalysis, MovieScript } from '~/utils/movie-script-evaluator'
+import type { AssetListAnalysis, MovieScript, MovieScriptAnalysisResponse } from '~/utils/movie-script-evaluator'
 
 export function useMovieScriptEvaluatorApi() {
   const config = useRuntimeConfig()
@@ -25,7 +25,7 @@ export function useMovieScriptEvaluatorApi() {
     }
   }
 
-  async function analyzeMovieScript(projectId: string, script_id: number): Promise<AssetListAnalysis> {
+  async function analyzeMovieScript(projectId: string, script_id: number): Promise<MovieScriptAnalysisResponse> {
     try {
       return await $fetch(`${apiBase}/projects/${projectId}/analyze?script_id=${script_id}`, {
         method: 'GET',

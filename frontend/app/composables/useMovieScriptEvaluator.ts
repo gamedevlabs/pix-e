@@ -3,6 +3,7 @@ import type {
   AssetListAnalysis,
   MovieProject,
   MovieScript,
+  MovieScriptAnalysisResponse,
 } from '../utils/movie-script-evaluator.d.ts'
 import { useMovieScriptEvaluatorApi } from './api/movieScriptEvaluatorApi.js'
 
@@ -28,7 +29,7 @@ export function useMovieScriptEvaluator() {
     )
   }
 
-  async function useAnalyzeMovieScript(projectId: string, script_id: number): Promise<AssetListAnalysis> {
+  async function useAnalyzeMovieScript(projectId: string, script_id: number): Promise<MovieScriptAnalysisResponse> {
     return await movieScriptAPI.analyzeMovieScript(projectId, script_id)
   }
 

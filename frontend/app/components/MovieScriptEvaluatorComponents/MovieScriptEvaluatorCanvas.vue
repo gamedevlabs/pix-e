@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetListAnalysis } from '~/utils/movie-script-evaluator'
+import type { MovieScriptAnalysisResponse } from '~/utils/movie-script-evaluator'
 
 const props = defineProps<{
   projectId: string
@@ -8,8 +8,7 @@ const props = defineProps<{
 const { useAssets, useAnalyzeMovieScript } = useMovieScriptEvaluator()
 const { items, fetchAll } = useAssets(props.projectId)
 const { user } = useAuthentication()
-const analysisResponse = ref<AssetListAnalysis | null>(null)
-const result = ref<string[] | null>(null)
+const analysisResponse = ref<MovieScriptAnalysisResponse | null>(null)
 const showResults = ref(false)
 const toast = useToast()
 const selectedScriptId = ref<number | null>(null)
@@ -32,16 +31,6 @@ function anaylzeMovieScript() {
   useAnalyzeMovieScript(props.projectId, selectedScriptId.value!)
     .then((response) => {
       analysisResponse.value = response
-      result.value = []
-
-      for (const scene of response.scenes) {
-        if (scene.can_use_assets && scene.assets_used.length > 0) {
-          result.value?.push(`Scene ${scene.scene_id} can use the following assets:`)
-          scene.assets_used.forEach((asset) => {
-            result.value?.push(`${asset}`)
-          })
-        }
-      }
 
       toast.add({
         title: 'Action Successful',
@@ -74,25 +63,19 @@ function anaylzeMovieScript() {
         <div class="mt-4 flex">
           <UButton type="button" label="Analyze Script" @click="anaylzeMovieScript" />
           <UButton
-            v-if="result"
+            v-if="analysisResponse"
             class="ml-4"
-            :label="showResults ? 'Close the result' : 'See the result'"
+            :label="showResults ? 'Close the analysis' : 'See the analysis'"
             @click="showResults = !showResults"
           />
         </div>
 
-        <div v-if="showResults && result" class="mt-4">
+        <div v-if="showResults && analysisResponse" class="mt-4 mr-4">
           <h3 class="text-lg font-semibold mb-2">Analysis Result:</h3>
-          <p v-if="result.length === 0">No assets can be used from the uploaded script.</p>
-          <ul v-else>
-            <li v-for="(line, index) in result" :key="index">{{ line }}</li>
-          </ul>
-          <div class="mt-4 flex">
-            <UButton label="Save Results" />
-          </div>
+          <AnalysisResult :analysis-data="analysisResponse?.result" />
         </div>
       </div>
-      <div class="mb-4">
+      <div class="mb-4 ml-4">
         <h3>List of the Existing Assets</h3>
         <div style="max-height: 65vh; overflow-x: scroll; overflow-y: auto; white-space: nowrap">
           <div style="display: inline-block; vertical-align: top">
