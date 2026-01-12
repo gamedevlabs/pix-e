@@ -25,14 +25,18 @@ export function useMovieScriptEvaluatorApi() {
     }
   }
 
-  async function analyzeMovieScript(projectId: string): Promise<AssetListAnalysis> {
-    return await $fetch(`${apiBase}/projects/${projectId}/analyze`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+  async function analyzeMovieScript(projectId: string, script_id: number): Promise<AssetListAnalysis> {
+    try {
+      return await $fetch(`${apiBase}/projects/${projectId}/analyze?script_id=${script_id}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+    } catch (error) {
+      throw new Error((error as Error)?.message || 'Failed to analyze movie script')
+    }
   }
 
   return {

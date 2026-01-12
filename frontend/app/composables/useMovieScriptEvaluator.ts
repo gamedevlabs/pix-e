@@ -28,8 +28,8 @@ export function useMovieScriptEvaluator() {
     )
   }
 
-  async function useAnalyzeMovieScript(projectId: string): Promise<AssetListAnalysis> {
-    return await movieScriptAPI.analyzeMovieScript(projectId)
+  async function useAnalyzeMovieScript(projectId: string, script_id: number): Promise<AssetListAnalysis> {
+    return await movieScriptAPI.analyzeMovieScript(projectId, script_id)
   }
 
   return {

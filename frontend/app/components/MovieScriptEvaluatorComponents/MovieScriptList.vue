@@ -6,12 +6,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'delete', fileId: number): void
+  (e: 'delete' | 'select', fileId: number): void
 }>()
 
 function handleCheckboxChange(file: MovieScript) {
   // Handle checkbox change logic here
-  console.log(`Checkbox for file ${file.title} changed`)
+  if (file.id) {
+    emit('select', file.id)
+  }
 }
 </script>
 

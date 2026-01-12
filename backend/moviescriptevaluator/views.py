@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -43,7 +44,15 @@ class MovieProjectView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["GET"], url_path="analyze")
     def analyze_movie_script(self, request, pk):
-        script = MovieScript.objects.filter(project=pk).first()
+        script_id = request.query_params.get("script_id")
+
+        if not script_id:
+            return Response("Please select a script to analyze", status=status.HTTP_400_BAD_REQUEST)
+
+        script = MovieScript.objects.filter(project=pk, id=script_id).first()
+        if not script:
+            return Response("Script couldn't be found", status=status.HTTP_400_BAD_REQUEST)
+
         assets = AssetMetaData.objects.filter(project=pk)
 
         response = get_llm_connector().analyze_movie_script(script, list(assets))

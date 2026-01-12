@@ -7,6 +7,10 @@ const props = defineProps<{
   projectId: string
 }>()
 
+const emit = defineEmits<{
+  (e: 'select' , fileId: number): void
+}>()
+
 const { uploadMovieScript } = useMovieScriptEvaluator()
 const {
   items,
@@ -20,6 +24,10 @@ const toast = useToast()
 onMounted(() => {
   fetchScripts()
 })
+
+function selectFile(fileId: number) {
+  emit('select', fileId)
+}
 
 function uploadFile(file: File, fileName: string) {
   if (fileName.trim() === '') {
@@ -67,7 +75,7 @@ function deleteScriptFile(fileId: number) {
         @click="isListingMode = !isListingMode"
       />
 
-      <MovieScriptList v-if="isListingMode" :files="items" @delete="deleteScriptFile" />
+      <MovieScriptList v-if="isListingMode" :files="items" @delete="deleteScriptFile" @select="selectFile" />
     </div>
     <div>
       <UButton

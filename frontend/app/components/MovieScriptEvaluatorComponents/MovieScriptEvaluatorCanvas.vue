@@ -12,10 +12,15 @@ const analysisResponse = ref<AssetListAnalysis | null>(null)
 const result = ref<string[] | null>(null)
 const showResults = ref(false)
 const toast = useToast()
+const selectedScriptId = ref<number | null>(null)
 
 onMounted(() => {
   fetchAll()
 })
+
+function selectScriptToAnalyze(scriptId: number) {
+  selectedScriptId.value = scriptId
+}
 
 function anaylzeMovieScript() {
   toast.add({
@@ -24,7 +29,7 @@ function anaylzeMovieScript() {
     color: 'info',
   })
 
-  useAnalyzeMovieScript(props.projectId)
+  useAnalyzeMovieScript(props.projectId, selectedScriptId.value!)
     .then((response) => {
       analysisResponse.value = response
       result.value = []
@@ -44,10 +49,10 @@ function anaylzeMovieScript() {
         color: 'success',
       })
     })
-    .catch((_) =>
+    .catch(error =>
       toast.add({
         title: 'Action failed!',
-        description: 'Please try it again later',
+        description: error.message || 'Server error occurred during analysis, please try again later',
         color: 'error',
       }),
     )
@@ -65,7 +70,7 @@ function anaylzeMovieScript() {
 
     <div class="movie-script-evaluator-container mb-8" style="display: flex; flex-direction: row">
       <div class="mb-4">
-        <UploadScript :project-id="projectId" />
+        <UploadScript :project-id="projectId" @select="selectScriptToAnalyze" />
         <div class="mt-4 flex">
           <UButton type="button" label="Analyze Script" @click="anaylzeMovieScript" />
           <UButton
