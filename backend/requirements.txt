@@ -43,7 +43,7 @@ google_genai==1.12.1
 openai==1.82.0
 pydantic==2.11.10
 python-dotenv==1.1.1
-pytest==8.4.2
+pytest==9.0.2
 pytest-django==4.9.0
 pytest-mock==3.14.0
 pytest-cov==6.0.0
