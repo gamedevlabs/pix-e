@@ -11,7 +11,14 @@ import httpx
 from pydantic import ValidationError
 
 from llm.exceptions import ModelUnavailableError, ProviderError
-from llm.providers.base import BaseProvider
+from llm.providers.base import BaseProvider, StructuredResult
+from llm.providers.json_utils import (
+    format_json_prompt,
+    get_schema,
+    parse_and_validate_json,
+    schema_to_string,
+    strip_markdown_json,
+)
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 
@@ -204,21 +211,20 @@ class OllamaProvider(BaseProvider):
             response.raise_for_status()
 
             result = response.json()
-            json_response = result.get("response", "{}")
+            json_response = strip_markdown_json(result.get("response", "{}"))
+            prompt_tokens = result.get("prompt_eval_count", 0) or 0
+            completion_tokens = result.get("eval_count", 0) or 0
 
             # Parse and validate against Pydantic schema
             try:
-                parsed_data = json.loads(json_response)
-                if hasattr(response_schema, "model_validate"):
-                    # Pydantic v2
-                    return response_schema.model_validate(parsed_data)
-                else:
-                    # Pydantic v1 or plain dict
-                    return (
-                        response_schema(**parsed_data)
-                        if callable(response_schema)
-                        else parsed_data
-                    )
+                validated = parse_and_validate_json(json_response, response_schema)
+                return StructuredResult(
+                    data=validated,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=model_name,
+                    provider=self.provider_name,
+                )
             except (json.JSONDecodeError, ValidationError) as e:
                 msg = f"Failed to parse structured response: {str(e)}"
                 raise ProviderError(
@@ -296,41 +302,9 @@ class OllamaProvider(BaseProvider):
         )
 
     def _build_structured_prompt(self, prompt: str, response_schema: type) -> str:
-        """
-        Build a prompt for structured JSON.
-
-        Args:
-            prompt: Original prompt
-            response_schema: Pydantic model defining expected structure
-
-        Returns:
-            Enhanced prompt with JSON schema instructions
-        """
-        # Extract schema if it's a Pydantic model
-        schema_str = ""
-        if hasattr(response_schema, "model_json_schema"):
-            # Pydantic v2
-            schema = response_schema.model_json_schema()
-            schema_str = json.dumps(schema, indent=2)
-        elif hasattr(response_schema, "schema"):
-            # Pydantic v1
-            schema = response_schema.schema()
-            schema_str = json.dumps(schema, indent=2)
-
-        if schema_str:
-            return (
-                f"{prompt}\n\n"
-                "You must respond with valid JSON matching this schema:\n"
-                f"{schema_str}\n\n"
-                "Respond only with the JSON object, "
-                "no additional text or explanation."
-            )
-        else:
-            return (
-                f"{prompt}\n\n"
-                "Respond with valid JSON only, "
-                "no additional text or explanation."
-            )
+        schema = get_schema(response_schema)
+        schema_str = schema_to_string(schema)
+        return format_json_prompt(prompt, schema_str)
 
     def __del__(self):
         """Clean up HTTP client on deletion."""

@@ -5,7 +5,7 @@ This provider communicates with Google's Gemini API for cloud-based LLM access.
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, NoReturn, Optional
 
 from google import genai
 from google.genai.errors import APIError as GeminiAPIError
@@ -203,38 +203,7 @@ class GeminiProvider(BaseProvider):
             return response.text or ""
 
         except (ClientError, GeminiAPIError) as e:
-            error_str = str(e).lower()
-
-            if "quota" in error_str or "rate limit" in error_str:
-                # Try to extract retry delay from error message
-                retry_after = None
-                if "retry in" in error_str:
-                    # Extract seconds from "Please retry in 13.674307975s"
-                    match = re.search(r"retry in (\d+(?:\.\d+)?)", error_str)
-                    if match:
-                        retry_after = int(float(match.group(1)))
-
-                raise RateLimitError(
-                    message=f"Gemini rate limit exceeded: {str(e)}",
-                    retry_after_seconds=retry_after,
-                    context={"provider": "gemini", "model": model_name},
-                )
-            elif "not found" in error_str or "404" in error_str:
-                raise ModelUnavailableError(
-                    model=model_name, provider="gemini", reason=str(e)
-                )
-            elif "timeout" in error_str:
-                raise ProviderError(
-                    provider="gemini",
-                    message=f"Request timed out: {str(e)}",
-                    context={"model": model_name},
-                )
-            else:
-                raise ProviderError(
-                    provider="gemini",
-                    message=f"Generation failed: {str(e)}",
-                    context={"model": model_name},
-                )
+            self._handle_api_error(e, model_name, "Generation failed")
 
     def generate_structured(
         self,
@@ -298,38 +267,7 @@ class GeminiProvider(BaseProvider):
                 context={"model": model_name},
             )
         except (ClientError, GeminiAPIError) as e:
-            error_str = str(e).lower()
-
-            if "quota" in error_str or "rate limit" in error_str:
-                # Try to extract retry delay from error message
-                retry_after = None
-                if "retry in" in error_str:
-                    # Extract seconds from "Please retry in 13.674307975s"
-                    match = re.search(r"retry in (\d+(?:\.\d+)?)", error_str)
-                    if match:
-                        retry_after = int(float(match.group(1)))
-
-                raise RateLimitError(
-                    message=f"Gemini rate limit exceeded: {str(e)}",
-                    retry_after_seconds=retry_after,
-                    context={"provider": "gemini", "model": model_name},
-                )
-            elif "not found" in error_str or "404" in error_str:
-                raise ModelUnavailableError(
-                    model=model_name, provider="gemini", reason=str(e)
-                )
-            elif "timeout" in error_str:
-                raise ProviderError(
-                    provider="gemini",
-                    message=f"Request timed out: {str(e)}",
-                    context={"model": model_name},
-                )
-            else:
-                raise ProviderError(
-                    provider="gemini",
-                    message=f"Structured generation failed: {str(e)}",
-                    context={"model": model_name},
-                )
+            self._handle_api_error(e, model_name, "Structured generation failed")
 
     def _get_model_capabilities(self, model_name: str) -> ModelCapabilities:
         """Determine capabilities for a Gemini model."""
@@ -374,4 +312,38 @@ class GeminiProvider(BaseProvider):
             multimodal=has_vision,
             function_calling=has_function_calling,
             min_context_window=context_window,
+        )
+
+    def _parse_retry_after(self, error_str: str) -> Optional[int]:
+        if "retry in" not in error_str:
+            return None
+        match = re.search(r"retry in (\d+(?:\.\d+)?)", error_str)
+        if not match:
+            return None
+        return int(float(match.group(1)))
+
+    def _handle_api_error(
+        self, error: Exception, model_name: str, failure_message: str
+    ) -> NoReturn:
+        error_str = str(error).lower()
+        if "quota" in error_str or "rate limit" in error_str:
+            raise RateLimitError(
+                message=f"Gemini rate limit exceeded: {str(error)}",
+                retry_after_seconds=self._parse_retry_after(error_str),
+                context={"provider": "gemini", "model": model_name},
+            )
+        if "not found" in error_str or "404" in error_str:
+            raise ModelUnavailableError(
+                model=model_name, provider="gemini", reason=str(error)
+            )
+        if "timeout" in error_str:
+            raise ProviderError(
+                provider="gemini",
+                message=f"Request timed out: {str(error)}",
+                context={"model": model_name},
+            )
+        raise ProviderError(
+            provider="gemini",
+            message=f"{failure_message}: {str(error)}",
+            context={"model": model_name},
         )

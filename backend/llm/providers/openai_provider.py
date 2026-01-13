@@ -23,6 +23,12 @@ from llm.exceptions import (
     RateLimitError,
 )
 from llm.providers.base import BaseProvider, StructuredResult
+from llm.providers.json_utils import (
+    format_json_prompt,
+    parse_and_validate_json,
+    schema_to_string,
+    strip_markdown_json,
+)
 from llm.types import ModelCapabilities, ModelDetails, ProviderType
 
 
@@ -281,7 +287,7 @@ class OpenAIProvider(BaseProvider):
             content = response.choices[0].message.content or "{}"
 
             # Strip markdown code blocks if present
-            content = self._strip_markdown_json(content)
+            content = strip_markdown_json(content)
 
             # Extract token usage
             usage = response.usage
@@ -290,19 +296,7 @@ class OpenAIProvider(BaseProvider):
 
             # Parse and validate
             try:
-                parsed_data = json.loads(content)
-                if hasattr(response_schema, "model_validate"):
-                    # Pydantic v2
-                    validated = response_schema.model_validate(parsed_data)
-                else:
-                    # Pydantic v1 or plain dict
-                    validated = (
-                        response_schema(**parsed_data)
-                        if callable(response_schema)
-                        else parsed_data
-                    )
-
-                # Return with token tracking
+                validated = parse_and_validate_json(content, response_schema)
                 return StructuredResult(
                     data=validated,
                     prompt_tokens=prompt_tokens,
@@ -398,19 +392,10 @@ class OpenAIProvider(BaseProvider):
             completion_tokens = usage.completion_tokens if usage else 0
 
             # Strip markdown code blocks if present
-            content = self._strip_markdown_json(content)
+            content = strip_markdown_json(content)
 
             try:
-                parsed_data = json.loads(content)
-                if hasattr(response_schema, "model_validate"):
-                    validated = response_schema.model_validate(parsed_data)
-                else:
-                    validated = (
-                        response_schema(**parsed_data)
-                        if callable(response_schema)
-                        else parsed_data
-                    )
-
+                validated = parse_and_validate_json(content, response_schema)
                 return StructuredResult(
                     data=validated,
                     prompt_tokens=prompt_tokens,
@@ -671,29 +656,8 @@ class OpenAIProvider(BaseProvider):
 
         return schema
 
-    def _strip_markdown_json(self, content: str) -> str:
-        """Strip markdown code blocks from JSON content if present."""
-        content = content.strip()
-        # Remove markdown code blocks (```json ... ``` or ``` ... ```)
-        if content.startswith("```"):
-            # Find the first newline after ```
-            start_idx = content.find("\n")
-            if start_idx != -1:
-                content = content[start_idx + 1 :]
-            # Remove trailing ```
-            if content.endswith("```"):
-                content = content[:-3]
-            content = content.strip()
-        return content
-
     def _build_json_prompt(self, prompt: str, response_schema: type) -> str:
         """Build a prompt with JSON schema instructions for non-strict models."""
         schema = self._extract_json_schema(response_schema)
-        schema_str = json.dumps(schema, indent=2)
-
-        return f"""{prompt}
-
-        You must respond with valid JSON matching this schema:
-        {schema_str}
-
-        Respond only with the JSON object, no additional text."""
+        schema_str = schema_to_string(schema)
+        return format_json_prompt(prompt, schema_str)
