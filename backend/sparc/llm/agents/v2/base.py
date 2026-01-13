@@ -9,27 +9,9 @@ from typing import Any, Dict, Optional
 from asgiref.sync import sync_to_async
 
 from llm.agent_runtime import BaseAgent
+from llm.cost_tracking import calculate_cost_eur
 from llm.types import AgentResult
 from sparc.models import SPARCEvaluation, SPARCEvaluationResult
-
-# Model costs per 1M tokens in EUR
-MODEL_COSTS = {
-    "gemini-2.0-flash-exp": {"input": 0.0, "output": 0.0},  # Free
-    "gpt-4o-mini": {"input": 0.135, "output": 0.540},  # $0.150/$0.600
-    "gpt-4o": {"input": 2.25, "output": 9.00},  # $2.50/$10.00
-}
-
-
-def calculate_cost_eur(
-    model_name: str, prompt_tokens: int = 0, completion_tokens: int = 0
-) -> float:
-    """
-    Calculate cost in EUR based on actual token usage and model pricing.
-    """
-    costs = MODEL_COSTS.get(model_name, {"input": 0.0, "output": 0.0})
-    input_cost = (prompt_tokens / 1_000_000) * costs["input"]
-    output_cost = (completion_tokens / 1_000_000) * costs["output"]
-    return round(input_cost + output_cost, 8)
 
 
 class V2BaseAgent(BaseAgent):
@@ -162,9 +144,12 @@ class V2BaseAgent(BaseAgent):
         Returns:
             Created SPARCEvaluationResult instance
         """
-        # Cost tracking disabled
         model_name = result.model_used or ""
-        cost_eur = 0
+        cost_eur = calculate_cost_eur(
+            model_name,
+            result.prompt_tokens,
+            result.completion_tokens,
+        )
 
         # Prepare result data
         result_data = result.data if result.success else None

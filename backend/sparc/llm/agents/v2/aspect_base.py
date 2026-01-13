@@ -26,6 +26,31 @@ class AspectAgentV2(V2BaseAgent):
     # Subclasses must define these
     prompt_template: str = ""
     default_suggestions: List[str] = []
+    document_instructions = """**EVALUATION WITH DESIGN DOCUMENT CONTEXT**
+
+When evaluating this aspect, consider:
+- The game concept content provided above
+- Any design document context (if provided in the DESIGN DOCUMENT CONTEXT section)
+- Design pillars (if provided in the DESIGN PILLARS section)
+
+**IMPORTANT**: If design document context is provided, consider how it
+relates to or differs from the game concept. Your evaluation should reflect
+information from BOTH sources when available. If the document provides
+additional details, constraints, or different information not mentioned in
+the game concept, incorporate them into your evaluation and mention this
+in your reasoning."""
+    not_provided_prompt_template = (
+        "You are evaluating the {aspect_name} aspect of a game concept.\n\n"
+        "The router did not find any content related to {aspect_name} in the "
+        "game concept.\n\n"
+        "Your response should be:\n"
+        '- status: "not_provided"\n'
+        "- reasoning: Explain that this aspect was not addressed in the game\n"
+        "  concept\n"
+        "- suggestions: Provide 2-3 suggestions for what the creator should define\n"
+        "  for this aspect\n\n"
+        "Return a JSON response with these fields."
+    )
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         """
@@ -54,21 +79,17 @@ class AspectAgentV2(V2BaseAgent):
             # Return prompt for not_provided case
             return self._build_not_provided_prompt()
 
-        # Join sections for context
         aspect_text = "\n\n".join(extracted_sections)
-
-        # Build pillar section if available
         pillar_section = self._build_pillar_section(data)
-
         document_section = self._build_document_section(data)
-        if document_section:
-            pillar_section = pillar_section + "\n" + document_section
+        context_section = self._build_context_section(
+            aspect_text, pillar_section, document_section
+        )
 
         # Format the base prompt
         formatted_prompt = self.prompt_template.format(
             aspect_name=self.aspect_name,
-            aspect_text=aspect_text,
-            pillar_section=pillar_section,
+            context_section=context_section,
         )
 
         # Inject shared evaluation instructions if document context is present
@@ -96,62 +117,25 @@ class AspectAgentV2(V2BaseAgent):
         Returns:
             Prompt with document context instructions injected
         """
-        # Check if ASSESSMENT section exists
-        if "## ASSESSMENT" not in prompt:
-            # If no ASSESSMENT section, add instructions before RESPONSE
-            if "## RESPONSE" in prompt:
-                instructions = self._get_document_context_instructions()
-                return prompt.replace("## RESPONSE", instructions + "\n\n## RESPONSE")
-            return prompt
-
-        # Find the ASSESSMENT section and inject instructions at the end of it
         assessment_marker = "## ASSESSMENT"
-        assessment_idx = prompt.find(assessment_marker)
+        if assessment_marker not in prompt:
+            return self._inject_before_section(
+                prompt, "## RESPONSE", self.document_instructions
+            )
 
-        if assessment_idx == -1:
-            return prompt
-
-        # Find the end of ASSESSMENT section (next ## section or end of string)
-        # Start searching after the ASSESSMENT marker
-        search_start = assessment_idx + len(assessment_marker)
-        next_section_idx = len(prompt)
-
-        # Look for the next section marker
-        for marker in ["## RESPONSE", "## EVALUATION CRITERIA", "## INSTRUCTIONS"]:
-            idx = prompt.find(marker, search_start)
-            if idx != -1 and idx < next_section_idx:
-                next_section_idx = idx
-
-        # Insert instructions right before the next section
-        instructions = self._get_document_context_instructions()
+        search_start = prompt.find(assessment_marker) + len(assessment_marker)
+        next_section_idx = self._find_next_section_index(
+            prompt,
+            search_start,
+            ["## RESPONSE", "## EVALUATION CRITERIA", "## INSTRUCTIONS"],
+        )
         return (
             prompt[:next_section_idx].rstrip()
             + "\n\n"
-            + instructions
+            + self.document_instructions
             + "\n\n"
             + prompt[next_section_idx:]
         )
-
-    def _get_document_context_instructions(self) -> str:
-        """
-        Get shared instructions for evaluating with document context.
-
-        Returns:
-            Instructions string to inject into prompts
-        """
-        return """**EVALUATION WITH DESIGN DOCUMENT CONTEXT**
-
-When evaluating this aspect, consider:
-- The game concept content provided above
-- Any design document context (if provided in the DESIGN DOCUMENT CONTEXT section)
-- Design pillars (if provided in the DESIGN PILLARS section)
-
-**IMPORTANT**: If design document context is provided, consider how it
-relates to or differs from the game concept. Your evaluation should reflect
-information from BOTH sources when available. If the document provides
-additional details, constraints, or different information not mentioned in
-the game concept, incorporate them into your evaluation and mention this
-in your reasoning."""
 
     def _build_pillar_section(self, data: Dict[str, Any]) -> str:
         """
@@ -166,35 +150,25 @@ in your reasoning."""
         Returns:
             Formatted pillar section or empty string if no pillars
         """
-        pillar_context = data.get("pillar_context")
-        if not pillar_context:
-            return ""
-
-        # Check if pillars are available
-        if not pillar_context.get("pillars_available", False):
-            return ""
-
-        # Get pillars_text (already smartly assigned for this aspect if in smart mode)
-        pillars_text = pillar_context.get("pillars_text", "")
-
-        # Fallback to all_pillars_text for backward compatibility
-        if not pillars_text:
-            pillars_text = pillar_context.get("all_pillars_text", "")
-
+        pillars_text = self._get_pillars_text(data)
         if not pillars_text:
             return ""
 
-        return f"""
-## DESIGN PILLARS
-
-The game has the following established design pillars:
-
-{pillars_text}
-
-**IMPORTANT**: Ensure your evaluation aligns with these design pillars.
-Do not suggest changes that would contradict the established pillars.
-Consider how this aspect supports or relates to the pillars.
-"""
+        return self._format_section(
+            "DESIGN PILLARS",
+            [
+                "The game has the following established design pillars:",
+                "",
+                pillars_text,
+                "",
+                (
+                    "**IMPORTANT**: Ensure your evaluation aligns with these design "
+                    "pillars."
+                ),
+                "Do not suggest changes that would contradict the established pillars.",
+                "Consider how this aspect supports or relates to the pillars.",
+            ],
+        )
 
     def _build_document_section(self, data: Dict[str, Any]) -> str:
         """
@@ -213,12 +187,11 @@ Consider how this aspect supports or relates to the pillars.
         if not document_sections and not document_insights:
             return ""
 
-        parts = ["## DESIGN DOCUMENT CONTEXT", ""]
-        parts.append(
+        parts = [
             "The following information was extracted from an uploaded design document "
-            "that may contain additional or different details about this aspect."
-        )
-        parts.append("")
+            "that may contain additional or different details about this aspect.",
+            "",
+        ]
 
         if document_sections:
             parts.append("**Relevant sections from the design document:**")
@@ -243,22 +216,13 @@ Consider how this aspect supports or relates to the pillars.
             "the two sources in your reasoning."
         )
 
-        return "\n".join(parts)
+        return self._format_section("DESIGN DOCUMENT CONTEXT", parts)
 
     def _build_not_provided_prompt(self) -> str:
         """Build prompt for when no content was extracted."""
-        return f"""You are evaluating the {self.aspect_name} aspect of a game concept.
-
-The router did not find any content related to {self.aspect_name} in the game concept.
-
-Your response should be:
-- status: "not_provided"
-- reasoning: Explain that this aspect was not addressed in the game
-  concept
-- suggestions: Provide 2-3 suggestions for what the creator should define
-  for this aspect
-
-Return a JSON response with these fields."""
+        return self.not_provided_prompt_template.format(
+            aspect_name=self.aspect_name.replace("_", " ")
+        )
 
     def should_skip_llm(self, data: Dict[str, Any]) -> bool:
         """
@@ -294,3 +258,41 @@ Return a JSON response with these fields."""
         return [
             f"Define the {self.aspect_name.replace('_', ' ')} for your game concept.",
         ]
+
+    def _build_context_section(
+        self, aspect_text: str, pillar_section: str, document_section: str
+    ) -> str:
+        parts = [aspect_text]
+        if pillar_section:
+            parts.append(pillar_section.strip())
+        if document_section:
+            parts.append(document_section.strip())
+        return "\n\n".join(part for part in parts if part)
+
+    def _get_pillars_text(self, data: Dict[str, Any]) -> str:
+        pillar_context = data.get("pillar_context")
+        if not pillar_context or not pillar_context.get("pillars_available", False):
+            return ""
+
+        pillars_text = pillar_context.get("pillars_text", "")
+        if not pillars_text:
+            pillars_text = pillar_context.get("all_pillars_text", "")
+        return pillars_text or ""
+
+    def _format_section(self, title: str, lines: List[str]) -> str:
+        return "\n".join([f"## {title}", ""] + lines).strip()
+
+    def _find_next_section_index(
+        self, prompt: str, start: int, markers: List[str]
+    ) -> int:
+        next_idx = len(prompt)
+        for marker in markers:
+            idx = prompt.find(marker, start)
+            if idx != -1 and idx < next_idx:
+                next_idx = idx
+        return next_idx
+
+    def _inject_before_section(self, prompt: str, marker: str, text: str) -> str:
+        if marker not in prompt:
+            return prompt
+        return prompt.replace(marker, text + "\n\n" + marker, 1)

@@ -8,52 +8,32 @@ import asyncio
 import json
 import logging
 import os
-import tempfile
 import time
 from typing import Any, Dict, Generator, List, Optional, cast
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from game_concept.models import Project
-from game_concept.utils import get_current_game_concept, get_current_project
-from llm.config import get_config
 from llm.events import EventCollector
 from llm.logfire_config import get_logfire
-from llm.providers.manager import ModelManager
 from llm.types import AgentOutputEvent, AgentStartedEvent
-from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
-from sparc.llm.views.v2 import VALID_PILLAR_MODES, get_model_id, save_game_concept
-from sparc.llm.workflows_v2 import SPARCRouterWorkflow
+from sparc.llm.views.v2 import save_game_concept
+from sparc.llm.views.v2_utils import (
+    VALID_PILLAR_MODES,
+    build_request_data,
+    create_evaluation,
+    get_model_id,
+    resolve_concept_meta,
+    run_router_workflow,
+    save_uploaded_document,
+    update_evaluation_totals,
+)
 from sparc.models import SPARCEvaluation
 
 logger = logging.getLogger(__name__)
-
-
-def _resolve_concept_meta(request: Request) -> dict[str, str]:
-    project = None
-    project_id = request.data.get("project_id")
-    if project_id:
-        project = Project.objects.filter(id=project_id).first()
-    elif request.user.is_authenticated:
-        project = get_current_project(request.user)
-    concept = get_current_game_concept(project) if project else None
-    concept_text = (concept.content or "") if concept else ""
-    preview = (
-        concept_text[:80] + "..."
-        if concept_text and len(concept_text) > 80
-        else concept_text
-    )
-    return {
-        "project_id": str(getattr(project, "id", "")) if project else "",
-        "project_name": getattr(project, "name", "") if project else "",
-        "concept_name": getattr(project, "name", "") if project else "",
-        "concept_preview": preview,
-    }
 
 
 class ProgressEventCollector(EventCollector):
@@ -130,63 +110,38 @@ class SPARCV2StreamView(APIView):
 
             # Handle optional document upload
             uploaded_file = request.FILES.get("document")
-            logger.info(f"[UPLOAD CHECK] uploaded_file: {uploaded_file}")
+            logger.info("[UPLOAD CHECK] uploaded_file: %s", uploaded_file)
             if uploaded_file:
-                logger.info(f"[UPLOAD] Processing file: {uploaded_file.name}")
+                logger.info("[UPLOAD] Processing file: %s", uploaded_file.name)
                 try:
-                    # Validate file type
-                    file_type = validate_file_type(
-                        uploaded_file.name, settings.ALLOWED_DOCUMENT_TYPES
+                    document_data, temp_file_path = save_uploaded_document(
+                        uploaded_file
                     )
-
-                    # Validate file size
-                    validate_file_size(
-                        uploaded_file.size, settings.DOCUMENT_MAX_SIZE_MB
-                    )
-
-                    # Save to temporary file
-                    with tempfile.NamedTemporaryFile(
-                        delete=False, suffix=f".{file_type}", dir=tempfile.gettempdir()
-                    ) as tmp_file:
-                        for chunk in uploaded_file.chunks():
-                            tmp_file.write(chunk)
-                        temp_file_path = tmp_file.name
-
-                    document_data = {
-                        "file_path": temp_file_path,
-                        "file_type": file_type,
-                        "original_name": uploaded_file.name,
-                    }
-
                 except ValueError as e:
-                    logger.error(f"File validation failed: {e}")
+                    logger.error("File validation failed: %s", e)
                     return StreamingHttpResponse(
                         self._error_stream(f"File validation failed: {str(e)}"),
                         content_type="text/event-stream",
                         status=400,
                     )
                 except Exception as e:
-                    logger.error(f"File upload failed: {e}", exc_info=True)
+                    logger.error("File upload failed: %s", e, exc_info=True)
                     return StreamingHttpResponse(
                         self._error_stream(f"File upload failed: {str(e)}"),
                         content_type="text/event-stream",
                         status=500,
                     )
 
-            # Create evaluation record
-            evaluation = SPARCEvaluation.objects.create(
+            evaluation = create_evaluation(
                 game_text=game_text,
-                context=context_text,
+                context_text=context_text,
                 mode="router_v2",
                 pillar_mode=pillar_mode,
                 model_id=model_id,
-                execution_time_ms=0,
-                total_tokens=0,
-                estimated_cost_eur=0,
             )
 
             # Stream the evaluation with progress
-            concept_meta = _resolve_concept_meta(request)
+            concept_meta = resolve_concept_meta(request)
             return StreamingHttpResponse(
                 self._stream_evaluation(
                     game_text,
@@ -248,47 +203,23 @@ class SPARCV2StreamView(APIView):
                 pillar_mode=pillar_mode,
                 game_text_length=len(game_text),
             ):
-                config = get_config()
-                model_manager = ModelManager(config)
                 event_collector = ProgressEventCollector()
-
-                workflow = SPARCRouterWorkflow(
-                    model_manager=model_manager,
-                    config=config,
-                    event_collector=event_collector,
-                    evaluation=evaluation,
-                    user=user if user.is_authenticated else None,
+                request_data = build_request_data(
+                    game_text=game_text,
+                    context_text=context_text,
+                    pillar_mode=pillar_mode,
+                    project_id=project_id,
+                    context_strategy=context_strategy,
+                    document_data=document_data,
                 )
-
-                from llm.types import LLMRequest
-
-                request_data: Dict[str, Any] = {
-                    "game_text": game_text,
-                    "context": context_text,
-                    "pillar_mode": pillar_mode,
-                }
-                if project_id:
-                    request_data["project_id"] = project_id
-                if context_strategy:
-                    request_data["context_strategy"] = context_strategy
-
-                # Add document data if provided
                 if document_data:
-                    request_data["document_file"] = document_data
                     logger.info(
-                        f"Document upload detected: {document_data['original_name']} "
-                        f"({document_data['file_type']})"
+                        "Document upload detected: %s (%s)",
+                        document_data["original_name"],
+                        document_data["file_type"],
                     )
                 else:
                     logger.info("No document uploaded for this evaluation")
-
-                request = LLMRequest(
-                    feature="sparc",
-                    operation="router_v2",
-                    data=request_data,
-                    model_id=model_id,
-                    mode="agentic",
-                )
 
                 # Debug: Log document file status
                 doc_status = "WITH DOCUMENT" if document_data else "NO DOCUMENT"
@@ -310,7 +241,17 @@ class SPARCV2StreamView(APIView):
                     total_aspects = 10
 
                     # Start the evaluation
-                    task = loop.create_task(workflow.run(request, mode="full"))
+                    task = loop.create_task(
+                        asyncio.to_thread(
+                            run_router_workflow,
+                            request_data=request_data,
+                            model_id=model_id,
+                            evaluation=evaluation,
+                            user=user if user.is_authenticated else None,
+                            mode="full",
+                            event_collector=event_collector,
+                        )
+                    )
 
                     # Poll for progress updates
                     while not task.done():
@@ -364,16 +305,8 @@ class SPARCV2StreamView(APIView):
                         )
                         return
 
-                    # Update evaluation record
                     aggregated = result.aggregated_data
-                    evaluation.execution_time_ms = aggregated.get(
-                        "execution_time_ms", 0
-                    )  # noqa: E501
-                    evaluation.total_tokens = aggregated.get("total_tokens", 0)
-                    evaluation.estimated_cost_eur = aggregated.get(
-                        "estimated_cost_eur", 0
-                    )  # noqa: E501
-                    evaluation.save()
+                    update_evaluation_totals(evaluation, aggregated)
 
                     # Auto-save game concept
                     save_game_concept(user, game_text, evaluation)

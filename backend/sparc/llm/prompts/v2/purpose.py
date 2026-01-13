@@ -6,8 +6,7 @@ PURPOSE_PROMPT = """You are a game design expert evaluating the PURPOSE definiti
 
 ## ASPECT-RELEVANT CONTENT
 
-{aspect_text}
-{pillar_section}
+{context_section}
 ## EVALUATION CRITERIA
 
 A well-defined purpose should:

@@ -6,8 +6,7 @@ UNIQUE_FEATURES_PROMPT = """You are a game design expert evaluating UNIQUE FEATU
 
 ## ASPECT-RELEVANT CONTENT
 
-{aspect_text}
-{pillar_section}
+{context_section}
 ## EVALUATION CRITERIA
 
 Well-defined unique features should:

@@ -37,6 +37,8 @@ from sparc.llm.schemas.v2.router import RouterResponse
 from sparc.llm.schemas.v2.synthesis import SPARCV2Response
 from sparc.models import SPARCEvaluation
 
+logger = logging.getLogger(__name__)
+
 # Map aspect names to agent classes
 ASPECT_AGENTS: Dict[str, Type[AspectAgentV2]] = {
     "player_experience": PlayerExperienceAgentV2,
@@ -103,150 +105,35 @@ class SPARCRouterWorkflow:
         if self.event_collector:
             self.event_collector.add_run_started()
 
-        # Determine target aspects
-        if mode == "full" or target_aspects is None:
-            target_aspects = list(ASPECT_AGENTS.keys())
-
-        # Build base context
-        context = {
-            "model_manager": self.model_manager,
-            "data": request.data,
-        }
-        if hasattr(request, "model_id") and request.model_id:
-            context["model_id"] = request.model_id
+        target_aspects = self._resolve_target_aspects(mode, target_aspects)
+        context = self._build_context(request)
 
         errors: List[ErrorInfo] = []
         agent_results: List[AgentResult] = []
 
-        # Resolve context strategy (default to router)
         strategy_name = request.data.get("context_strategy")
         if not strategy_name:
             strategy_name = ContextStrategyType.ROUTER.value
-        try:
-            context_strategy = get_context_strategy(
-                strategy_name,
-                model_manager=self.model_manager,
-                model_id=context.get("model_id"),
-            )
-        except ValueError as e:
-            errors.append(
-                ErrorInfo(
-                    code="CONTEXT_STRATEGY_UNSUPPORTED",
-                    message=str(e),
-                    severity="error",
-                    context={"context_strategy": strategy_name},
-                )
-            )
+        context_strategy = self._resolve_context_strategy(request.data, context, errors)
+        if not context_strategy:
             return self._build_error_result(errors, agent_results, start_time)
 
-        # Step 1: Run router, pillar context, and document context in parallel
-        router_task = None
-        if context_strategy.requires_router:
-            router_task = self._run_router(context, target_aspects)
-        pillar_task = self._run_pillar_context(context, request.data)
-
-        # Document task is optional
-        document_file = request.data.get("document_file")
-
-        if document_file:
-            document_task = self._run_document_context(
-                context, document_file, target_aspects
-            )
-            tasks = [pillar_task, document_task]
-            if router_task:
-                tasks.insert(0, router_task)
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            if router_task:
-                router_result, pillar_result, document_result = results
-            else:
-                pillar_result, document_result = results
-                router_result = None
-        else:
-            tasks = [pillar_task]
-            if router_task:
-                tasks.insert(0, router_task)
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            if router_task:
-                router_result, pillar_result = results
-            else:
-                pillar_result = results[0]
-                router_result = None
-            document_result = None
-
-        # Handle router result
-        router_response = None
-        if context_strategy.requires_router:
-            if isinstance(router_result, Exception):
-                errors.append(
-                    ErrorInfo(
-                        code="ROUTER_EXCEPTION",
-                        message=str(router_result),
-                        severity="error",
-                    )
-                )
-                return self._build_error_result(errors, agent_results, start_time)
-
-            assert isinstance(router_result, AgentResult)
-            agent_results.append(router_result)
-
-            if not router_result.success:
-                if router_result.error:
-                    errors.append(router_result.error)
-                return self._build_error_result(errors, agent_results, start_time)
-
-            if not router_result.data:
-                return self._build_error_result(errors, agent_results, start_time)
-
-            router_response = RouterResponse(**router_result.data)
-
-        # Handle pillar context result
-        pillar_context = None
-        if isinstance(pillar_result, Exception):
-            logger = logging.getLogger(__name__)
-            logger.error(
-                f"Pillar context task raised exception: "
-                f"{type(pillar_result).__name__}: {pillar_result}",
-                exc_info=True,
-            )
-        else:
-            # At this point, pillar_result is guaranteed to be AgentResult
-            assert isinstance(pillar_result, AgentResult)
-            # Always add to agent_results for tracking
-            agent_results.append(pillar_result)
-            # Use pillar context if we have valid data
-            # (even if success=False, data might be usable)
-            if pillar_result.data and isinstance(pillar_result.data, dict):
-                pillar_context = pillar_result.data
-
-        # Handle document context result
-        document_context = None
-        if document_result is not None:
-            if isinstance(document_result, Exception):
-
-                logger = logging.getLogger(__name__)
-                logger.error(
-                    f"Document context task raised exception: "
-                    f"{type(document_result).__name__}: {document_result}",
-                    exc_info=True,
-                )
-            else:
-                # At this point, document_result is guaranteed to be AgentResult
-                assert isinstance(document_result, AgentResult)
-                agent_results.append(document_result)
-                # Use document context if we have valid data
-                if document_result.success and document_result.data:
-                    try:
-                        document_context = DocumentContextResponse(
-                            **document_result.data
-                        )
-                    except Exception as e:
-
-                        logger = logging.getLogger(__name__)
-                        logger.error(
-                            f"Failed to parse document context response: {e}",
-                            exc_info=True,
-                        )
+        (
+            router_response,
+            pillar_context,
+            document_context,
+            preprocessing_results,
+            preprocessing_errors,
+        ) = await self._run_preprocessing(
+            context=context,
+            request_data=request.data,
+            target_aspects=target_aspects,
+            context_strategy=context_strategy,
+        )
+        agent_results.extend(preprocessing_results)
+        errors.extend(preprocessing_errors)
+        if errors:
+            return self._build_error_result(errors, agent_results, start_time)
 
         # Build aspect contexts from the selected strategy
         try:
@@ -323,6 +210,195 @@ class SPARCRouterWorkflow:
             warnings=[],
         )
 
+    def _resolve_target_aspects(
+        self, mode: str, target_aspects: Optional[List[str]]
+    ) -> List[str]:
+        if mode == "full" or target_aspects is None:
+            return list(ASPECT_AGENTS.keys())
+        return target_aspects
+
+    def _build_context(self, request: LLMRequest) -> Dict[str, Any]:
+        context = {
+            "model_manager": self.model_manager,
+            "data": request.data,
+        }
+        if hasattr(request, "model_id") and request.model_id:
+            context["model_id"] = request.model_id
+        return context
+
+    def _resolve_context_strategy(
+        self,
+        request_data: Dict[str, Any],
+        context: Dict[str, Any],
+        errors: List[ErrorInfo],
+    ):
+        strategy_name = request_data.get("context_strategy")
+        if not strategy_name:
+            strategy_name = ContextStrategyType.ROUTER.value
+        try:
+            return get_context_strategy(
+                strategy_name,
+                model_manager=self.model_manager,
+                model_id=context.get("model_id"),
+            )
+        except ValueError as e:
+            errors.append(
+                ErrorInfo(
+                    code="CONTEXT_STRATEGY_UNSUPPORTED",
+                    message=str(e),
+                    severity="error",
+                    context={"context_strategy": strategy_name},
+                )
+            )
+            return None
+
+    async def _run_preprocessing(
+        self,
+        *,
+        context: Dict[str, Any],
+        request_data: Dict[str, Any],
+        target_aspects: List[str],
+        context_strategy: Any,
+    ) -> tuple[
+        Optional[RouterResponse],
+        Optional[Dict[str, Any]],
+        Optional[DocumentContextResponse],
+        List[AgentResult],
+        List[ErrorInfo],
+    ]:
+        errors: List[ErrorInfo] = []
+        agent_results: List[AgentResult] = []
+
+        router_task = None
+        if context_strategy.requires_router:
+            router_task = self._run_router(context, target_aspects)
+        pillar_task = self._run_pillar_context(context, request_data)
+
+        document_file = request_data.get("document_file")
+        tasks = [pillar_task]
+        if router_task:
+            tasks.insert(0, router_task)
+        if document_file:
+            tasks.append(
+                self._run_document_context(context, document_file, target_aspects)
+            )
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        router_result = None
+        pillar_result = None
+        document_result = None
+
+        if router_task:
+            router_result = results[0]
+            pillar_result = results[1]
+            if document_file:
+                document_result = results[2]
+        else:
+            pillar_result = results[0]
+            if document_file:
+                document_result = results[1]
+
+        router_response = self._parse_router_result(
+            router_result, agent_results, errors
+        )
+        if context_strategy.requires_router and not router_response:
+            if not any(error.code.startswith("ROUTER") for error in errors):
+                errors.append(
+                    ErrorInfo(
+                        code="ROUTER_MISSING",
+                        message="Router response is required but missing",
+                        severity="error",
+                    )
+                )
+        pillar_context = self._parse_pillar_result(pillar_result, agent_results)
+        document_context = self._parse_document_result(document_result, agent_results)
+
+        return (
+            router_response,
+            pillar_context,
+            document_context,
+            agent_results,
+            errors,
+        )
+
+    def _parse_router_result(
+        self,
+        router_result: Any,
+        agent_results: List[AgentResult],
+        errors: List[ErrorInfo],
+    ) -> Optional[RouterResponse]:
+        if router_result is None:
+            return None
+        if isinstance(router_result, Exception):
+            errors.append(
+                ErrorInfo(
+                    code="ROUTER_EXCEPTION",
+                    message=str(router_result),
+                    severity="error",
+                )
+            )
+            return None
+        assert isinstance(router_result, AgentResult)
+        agent_results.append(router_result)
+        if not router_result.success:
+            if router_result.error:
+                errors.append(router_result.error)
+            return None
+        if not router_result.data:
+            errors.append(
+                ErrorInfo(
+                    code="ROUTER_EMPTY",
+                    message="Router returned no data",
+                    severity="error",
+                )
+            )
+            return None
+        return RouterResponse(**router_result.data)
+
+    def _parse_pillar_result(
+        self, pillar_result: Any, agent_results: List[AgentResult]
+    ) -> Optional[Dict[str, Any]]:
+        if isinstance(pillar_result, Exception):
+            logger.error(
+                "Pillar context task raised exception: %s: %s",
+                type(pillar_result).__name__,
+                pillar_result,
+                exc_info=True,
+            )
+            return None
+        assert isinstance(pillar_result, AgentResult)
+        agent_results.append(pillar_result)
+        if pillar_result.data and isinstance(pillar_result.data, dict):
+            return pillar_result.data
+        return None
+
+    def _parse_document_result(
+        self, document_result: Any, agent_results: List[AgentResult]
+    ) -> Optional[DocumentContextResponse]:
+        if document_result is None:
+            return None
+        if isinstance(document_result, Exception):
+            logger = logging.getLogger(__name__)
+            logger.error(
+                "Document context task raised exception: %s: %s",
+                type(document_result).__name__,
+                document_result,
+                exc_info=True,
+            )
+            return None
+        assert isinstance(document_result, AgentResult)
+        agent_results.append(document_result)
+        if document_result.success and document_result.data:
+            try:
+                return DocumentContextResponse(**document_result.data)
+            except Exception as e:
+                logger.error(
+                    "Failed to parse document context response: %s",
+                    e,
+                    exc_info=True,
+                )
+        return None
+
     async def _run_router(
         self, context: Dict[str, Any], target_aspects: List[str]
     ) -> AgentResult:
@@ -378,59 +454,17 @@ class SPARCRouterWorkflow:
         try:
             agent = PillarContextAgent()
         except Exception as e:
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to create agent: {e}", exc_info=True)
+            logger.error("Failed to create agent: %s", e, exc_info=True)
             raise
 
         try:
-
-            def build_empty_response(mode: str) -> Dict[str, Any]:
-                normalized = mode if mode in {"all", "smart", "none"} else "smart"
-                return PillarContextResponse(
-                    mode=normalized,
-                    pillars_available=False,
-                    all_pillars_text="",
-                    smart_assignments={},
-                    pillars_count=0,
-                ).model_dump()
-
-            def build_result(data: Dict[str, Any]) -> AgentResult:
-                return AgentResult(
-                    agent_name="pillar_context",
-                    success=True,
-                    data=data,
-                    model_used=None,
-                    execution_time_ms=0,
-                    prompt_tokens=0,
-                    completion_tokens=0,
-                    total_tokens=0,
-                )
-
-            async def persist_result(
-                input_payload: Dict[str, Any], agent_result: AgentResult
-            ) -> None:
-                if not self.evaluation:
-                    return
-
-                try:
-                    await agent._save_result_async(
-                        evaluation=self.evaluation,
-                        input_data=input_payload,
-                        result=agent_result,
-                    )
-                except Exception as e:
-
-                    logger = logging.getLogger(__name__)
-                    logger.error(
-                        f"Failed to persist pillar result: {e}",
-                        exc_info=True,
-                    )
-                    raise
-
             if pillar_mode == "none":
-                result = build_result(build_empty_response("none"))
-                await persist_result({"pillar_mode": pillar_mode}, result)
+                result = self._build_pillar_result(
+                    self._build_empty_pillar_response("none", PillarContextResponse)
+                )
+                await self._persist_agent_result(
+                    agent, {"pillar_mode": pillar_mode}, result, "pillar result"
+                )
                 return result
 
             # Resolve user either from explicit workflow user or evaluation
@@ -439,9 +473,16 @@ class SPARCRouterWorkflow:
                 user = self.evaluation.user
 
             if not user or not getattr(user, "is_authenticated", False):
-                result = build_result(build_empty_response(pillar_mode))
-                await persist_result(
-                    {"pillar_mode": pillar_mode, "has_user": False}, result
+                result = self._build_pillar_result(
+                    self._build_empty_pillar_response(
+                        pillar_mode, PillarContextResponse
+                    )
+                )
+                await self._persist_agent_result(
+                    agent,
+                    {"pillar_mode": pillar_mode, "has_user": False},
+                    result,
+                    "pillar result",
                 )
                 return result
 
@@ -455,9 +496,16 @@ class SPARCRouterWorkflow:
 
             pillars = await get_user_pillars(user)
             if not pillars:
-                result = build_result(build_empty_response(pillar_mode))
-                await persist_result(
-                    {"pillar_mode": pillar_mode, "pillars_available": False}, result
+                result = self._build_pillar_result(
+                    self._build_empty_pillar_response(
+                        pillar_mode, PillarContextResponse
+                    )
+                )
+                await self._persist_agent_result(
+                    agent,
+                    {"pillar_mode": pillar_mode, "pillars_available": False},
+                    result,
+                    "pillar result",
                 )
                 return result
 
@@ -471,9 +519,12 @@ class SPARCRouterWorkflow:
                     smart_assignments={},
                     pillars_count=len(pillars),
                 ).model_dump()
-                result = build_result(response)
-                await persist_result(
-                    {"pillar_mode": pillar_mode, "pillars_text": pillars_text}, result
+                result = self._build_pillar_result(response)
+                await self._persist_agent_result(
+                    agent,
+                    {"pillar_mode": pillar_mode, "pillars_text": pillars_text},
+                    result,
+                    "pillar result",
                 )
                 return result
 
@@ -507,13 +558,13 @@ class SPARCRouterWorkflow:
             if self.event_collector:
                 self.event_collector.add_agent_finished(agent.name)
 
-            await persist_result(agent_context["data"], result)
+            await self._persist_agent_result(
+                agent, agent_context["data"], result, "pillar result"
+            )
 
             return result
         except Exception as e:
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"Exception in _run_pillar_context: {e}", exc_info=True)
+            logger.error("Exception in _run_pillar_context: %s", e, exc_info=True)
             raise
 
     async def _run_document_context(
@@ -534,8 +585,6 @@ class SPARCRouterWorkflow:
         Returns:
             AgentResult with document extractions
         """
-        logger = logging.getLogger(__name__)
-
         try:
             agent = DocumentContextAgent()
 
@@ -566,7 +615,8 @@ class SPARCRouterWorkflow:
                     )
                 except Exception as e:
                     logger.error(
-                        f"Failed to save document context result: {e}",
+                        "Failed to save document context result: %s",
+                        e,
                         exc_info=True,
                     )
 
@@ -576,10 +626,7 @@ class SPARCRouterWorkflow:
             return result
 
         except Exception as e:
-            logger.error(
-                f"Exception in _run_document_context: {e}",
-                exc_info=True,
-            )
+            logger.error("Exception in _run_document_context: %s", e, exc_info=True)
             # Return error result instead of raising
             error_result = AgentResult(
                 agent_name="document_context",
@@ -610,7 +657,8 @@ class SPARCRouterWorkflow:
                     pass
                 except Exception as save_error:
                     logger.error(
-                        f"Failed to save error result: {save_error}",
+                        "Failed to save error result: %s",
+                        save_error,
                         exc_info=True,
                     )
 
@@ -636,15 +684,9 @@ class SPARCRouterWorkflow:
 
             sections = aspect_contexts.get_sections(aspect_name)
 
-            # Get document extraction for this aspect
-            document_sections = []
-            document_insights = []
-            if document_context:
-                for doc_extraction in document_context.extractions:
-                    if doc_extraction.aspect_name == aspect_name:
-                        document_sections = doc_extraction.extracted_sections
-                        document_insights = doc_extraction.key_insights
-                        break
+            document_sections, document_insights = (
+                self._get_document_context_for_aspect(document_context, aspect_name)
+            )
 
             tasks.append(
                 self._run_single_aspect(
@@ -711,41 +753,11 @@ class SPARCRouterWorkflow:
                 agent_data["document_insights"] = document_insights
 
             # Extract only relevant pillars for this aspect (if available)
-            if pillar_context and isinstance(pillar_context, dict):
-                mode = pillar_context.get("mode", "all")
-                all_pillars_text = pillar_context.get("all_pillars_text", "")
-                pillars_available = pillar_context.get("pillars_available", False)
-
-                if pillars_available and all_pillars_text:
-                    relevant_pillars_text = ""
-
-                    if mode == "smart":
-                        # Extract only pillars assigned to this aspect
-                        smart_assignments = pillar_context.get("smart_assignments", {})
-                        relevant_pillar_ids = smart_assignments.get(aspect_name, [])
-
-                        if relevant_pillar_ids:
-                            # Extract only relevant pillar lines
-                            pillar_lines = all_pillars_text.split("\n")
-                            relevant_pillars = []
-                            for line in pillar_lines:
-                                for pillar_id in relevant_pillar_ids:
-                                    if line.startswith(f"[ID: {pillar_id}]"):
-                                        relevant_pillars.append(line)
-                                        break
-                            relevant_pillars_text = "\n".join(relevant_pillars)
-                    elif mode == "all":
-                        # Use all pillars
-                        relevant_pillars_text = all_pillars_text
-
-                    # Only add pillar context if we have relevant pillars
-                    if relevant_pillars_text:
-                        agent_data["pillar_context"] = {
-                            "mode": mode,
-                            "pillars_available": True,
-                            "pillars_text": relevant_pillars_text,
-                            "pillars_count": len(relevant_pillars_text.split("\n")),
-                        }
+            pillar_context_payload = self._build_pillar_context_for_aspect(
+                pillar_context, aspect_name
+            )
+            if pillar_context_payload:
+                agent_data["pillar_context"] = pillar_context_payload
 
             # Check if we should skip LLM call
             if len(sections) == 0:
@@ -881,6 +893,100 @@ class SPARCRouterWorkflow:
             errors=errors,
             warnings=[],
         )
+
+    def _build_empty_pillar_response(
+        self, mode: str, response_schema: Type[Any]
+    ) -> Dict[str, Any]:
+        normalized = mode if mode in {"all", "smart", "none"} else "smart"
+        return response_schema(
+            mode=normalized,
+            pillars_available=False,
+            all_pillars_text="",
+            smart_assignments={},
+            pillars_count=0,
+        ).model_dump()
+
+    def _build_pillar_result(self, data: Dict[str, Any]) -> AgentResult:
+        return AgentResult(
+            agent_name="pillar_context",
+            success=True,
+            data=data,
+            model_used=None,
+            execution_time_ms=0,
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+        )
+
+    async def _persist_agent_result(
+        self,
+        agent: Any,
+        input_payload: Dict[str, Any],
+        agent_result: AgentResult,
+        label: str,
+    ) -> None:
+        if not self.evaluation:
+            return
+        try:
+            await agent._save_result_async(
+                evaluation=self.evaluation,
+                input_data=input_payload,
+                result=agent_result,
+            )
+        except Exception as e:
+            logger.error("Failed to persist %s: %s", label, e, exc_info=True)
+            raise
+
+    def _build_pillar_context_for_aspect(
+        self, pillar_context: Optional[Dict[str, Any]], aspect_name: str
+    ) -> Optional[Dict[str, Any]]:
+        if not pillar_context or not isinstance(pillar_context, dict):
+            return None
+
+        mode = pillar_context.get("mode", "all")
+        all_pillars_text = pillar_context.get("all_pillars_text", "")
+        pillars_available = pillar_context.get("pillars_available", False)
+        if not (pillars_available and all_pillars_text):
+            return None
+
+        if mode == "smart":
+            smart_assignments = pillar_context.get("smart_assignments", {})
+            relevant_pillar_ids = smart_assignments.get(aspect_name, [])
+            if not relevant_pillar_ids:
+                return None
+            relevant_pillars = [
+                line
+                for line in all_pillars_text.split("\n")
+                for pillar_id in relevant_pillar_ids
+                if line.startswith(f"[ID: {pillar_id}]")
+            ]
+            relevant_pillars_text = "\n".join(dict.fromkeys(relevant_pillars))
+        elif mode == "all":
+            relevant_pillars_text = all_pillars_text
+        else:
+            return None
+
+        if not relevant_pillars_text:
+            return None
+
+        return {
+            "mode": mode,
+            "pillars_available": True,
+            "pillars_text": relevant_pillars_text,
+            "pillars_count": len(relevant_pillars_text.split("\n")),
+        }
+
+    def _get_document_context_for_aspect(
+        self,
+        document_context: Optional[DocumentContextResponse],
+        aspect_name: str,
+    ) -> tuple[List[str], List[str]]:
+        if not document_context:
+            return [], []
+        for doc_extraction in document_context.extractions:
+            if doc_extraction.aspect_name == aspect_name:
+                return doc_extraction.extracted_sections, doc_extraction.key_insights
+        return [], []
 
 
 # Register workflow
