@@ -19,11 +19,11 @@ from llm.view_utils import get_model_id
 
 # Import handlers to trigger auto-registration
 from pillars.llm import handlers  # noqa: F401
-from pillars.llm.context import build_pillars_context
 
 from .models import Pillar
 from .serializers import PillarSerializer
 from .utils import (
+    format_pillars_text,
     save_agent_result_llm_call,
     save_execution_result_llm_calls,
     save_pillar_llm_call,
@@ -254,29 +254,24 @@ class LLMFeedbackView(ViewSet):
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
             logfire = get_logfire()
-            context_strategy = request.data.get("context_strategy", "raw")
+            pillars_text = format_pillars_text(pillars)
+            context_text = game_concept.content
+
             with logfire.span(
-                f"pillars.evaluate.overall.{context_strategy}.monolithic",
+                "pillars.evaluate.overall.raw.monolithic",
                 feature="pillars",
-                strategy=context_strategy,
+                strategy="raw",
                 execution_mode="monolithic",
                 pillars_count=len(pillars),
             ):
-                context_payload = build_pillars_context(
-                    pillars,
-                    game_concept,
-                    context_strategy,
-                    model_id,
-                    operation="evaluate_all",
-                )
+                pass
 
             completeness_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_completeness",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=model_id,
             )
@@ -284,9 +279,8 @@ class LLMFeedbackView(ViewSet):
                 feature="pillars",
                 operation="evaluate_contradictions",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=model_id,
             )
@@ -294,9 +288,8 @@ class LLMFeedbackView(ViewSet):
                 feature="pillars",
                 operation="suggest_additions",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=model_id,
             )
@@ -310,19 +303,16 @@ class LLMFeedbackView(ViewSet):
                 user=user,
                 operation="evaluate_completeness",
                 response=completeness_response,
-                context_strategy=context_payload.strategy.value,
             )
             save_pillar_llm_call(
                 user=user,
                 operation="evaluate_contradictions",
                 response=contradictions_response,
-                context_strategy=context_payload.strategy.value,
             )
             save_pillar_llm_call(
                 user=user,
                 operation="suggest_additions",
                 response=additions_response,
-                context_strategy=context_payload.strategy.value,
             )
 
             combined_result = {
@@ -348,21 +338,15 @@ class LLMFeedbackView(ViewSet):
                 return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
-            context_payload = build_pillars_context(
-                pillars,
-                game_concept,
-                request.data.get("context_strategy"),
-                get_model_id(model),
-                operation="evaluate_completeness",
-            )
+            pillars_text = format_pillars_text(pillars)
+            context_text = game_concept.content
 
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_completeness",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=get_model_id(model),
             )
@@ -374,7 +358,6 @@ class LLMFeedbackView(ViewSet):
                 user=user,
                 operation="evaluate_completeness",
                 response=response,
-                context_strategy=context_payload.strategy.value,
             )
 
             return JsonResponse(response.results, status=200)
@@ -394,21 +377,15 @@ class LLMFeedbackView(ViewSet):
                 return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
-            context_payload = build_pillars_context(
-                pillars,
-                game_concept,
-                request.data.get("context_strategy"),
-                get_model_id(model),
-                operation="evaluate_contradictions",
-            )
+            pillars_text = format_pillars_text(pillars)
+            context_text = game_concept.content
 
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_contradictions",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=get_model_id(model),
             )
@@ -420,7 +397,6 @@ class LLMFeedbackView(ViewSet):
                 user=user,
                 operation="evaluate_contradictions",
                 response=response,
-                context_strategy=context_payload.strategy.value,
             )
 
             return JsonResponse(response.results, status=200)
@@ -440,21 +416,15 @@ class LLMFeedbackView(ViewSet):
                 return JsonResponse({"error": "No game concept found"}, status=404)
 
             model = request.data.get("model", "gemini")
-            context_payload = build_pillars_context(
-                pillars,
-                game_concept,
-                request.data.get("context_strategy"),
-                get_model_id(model),
-                operation="suggest_additions",
-            )
+            pillars_text = format_pillars_text(pillars)
+            context_text = game_concept.content
 
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="suggest_additions",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=get_model_id(model),
             )
@@ -466,7 +436,6 @@ class LLMFeedbackView(ViewSet):
                 user=user,
                 operation="suggest_additions",
                 response=response,
-                context_strategy=context_payload.strategy.value,
             )
 
             return JsonResponse(response.results, status=200)
@@ -488,27 +457,14 @@ class LLMFeedbackView(ViewSet):
             model = request.data.get("model", "gemini")
 
             model_id = get_model_id(model)
-
-            class _ConceptStub:
-                content = context_text
-
-            # Cast to GameConcept since _ConceptStub has compatible interface
-            concept_stub = _ConceptStub()
-            context_payload = build_pillars_context(
-                pillars,
-                cast(GameConcept, concept_stub),
-                request.data.get("context_strategy"),
-                model_id,
-                operation="evaluate_context",
-            )
+            pillars_text = format_pillars_text(pillars)
 
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_context",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                 },
                 model_id=model_id,
             )
@@ -520,7 +476,6 @@ class LLMFeedbackView(ViewSet):
                 user=user,
                 operation="evaluate_context",
                 response=response,
-                context_strategy=context_payload.strategy.value,
             )
 
             return JsonResponse(response.results, status=200)
@@ -560,13 +515,8 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
-            context_payload = build_pillars_context(
-                pillars,
-                game_concept,
-                request.data.get("context_strategy"),
-                model_id,
-                operation="evaluate_all",
-            )
+            pillars_text = format_pillars_text(pillars)
+            context_text = game_concept.content
             execution_mode = request.data.get("execution_mode", "agentic")
 
             # Validate execution mode
@@ -577,9 +527,8 @@ class LLMFeedbackView(ViewSet):
                 )
 
             input_data = {
-                "pillars_text": context_payload.pillars_text,
-                "context": context_payload.context_text,
-                "context_strategy": context_payload.strategy.value,
+                "pillars_text": pillars_text,
+                "context": context_text,
             }
 
             logfire = get_logfire()
@@ -594,9 +543,9 @@ class LLMFeedbackView(ViewSet):
                 )
 
                 with logfire.span(
-                    f"pillars.evaluate.all.{context_payload.strategy.value}.monolithic",
+                    "pillars.evaluate.all.raw.monolithic",
                     feature="pillars",
-                    strategy=context_payload.strategy.value,
+                    strategy="raw",
                     execution_mode="monolithic",
                 ):
                     response = self.orchestrator.execute(llm_request)
@@ -606,7 +555,6 @@ class LLMFeedbackView(ViewSet):
                     user=user,
                     operation="evaluate_comprehensive",
                     response=response,
-                    context_strategy=context_payload.strategy.value,
                 )
 
                 # Transform monolithic response to match agentic format
@@ -685,13 +633,10 @@ class LLMFeedbackView(ViewSet):
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    span_name = (
-                        f"pillars.evaluate.all.{context_payload.strategy.value}.agentic"
-                    )
                     with logfire.span(
-                        span_name,
+                        "pillars.evaluate.all.raw.agentic",
                         feature="pillars",
-                        strategy=context_payload.strategy.value,
+                        strategy="raw",
                         execution_mode="agentic",
                     ):
                         result = loop.run_until_complete(workflow.run(llm_request))
@@ -703,7 +648,6 @@ class LLMFeedbackView(ViewSet):
                     user=user,
                     result=result,
                     input_data=input_data,
-                    context_strategy=context_payload.strategy.value,
                 )
 
                 # Build response
@@ -778,22 +722,16 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
-            context_payload = build_pillars_context(
-                pillars,
-                game_concept,
-                request.data.get("context_strategy"),
-                model_id,
-                operation="resolve_contradictions",
-            )
+            pillars_text = format_pillars_text(pillars)
+            context_text = game_concept.content
 
             # Use the contradiction resolution handler
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="resolve_contradictions",
                 data={
-                    "pillars_text": context_payload.pillars_text,
-                    "context": context_payload.context_text,
-                    "context_strategy": context_payload.strategy.value,
+                    "pillars_text": pillars_text,
+                    "context": context_text,
                     "contradictions_feedback": contradictions_data,
                 },
                 model_id=model_id,
@@ -827,9 +765,8 @@ class LLMFeedbackView(ViewSet):
 
             # Save LLM call
             input_data = {
-                "pillars_text": context_payload.pillars_text,
-                "context": context_payload.context_text,
-                "context_strategy": context_payload.strategy.value,
+                "pillars_text": pillars_text,
+                "context": context_text,
                 "contradictions_feedback": contradictions_data,
             }
             save_agent_result_llm_call(
@@ -837,7 +774,6 @@ class LLMFeedbackView(ViewSet):
                 operation="resolve_contradictions",
                 result=result,
                 input_data=input_data,
-                context_strategy=context_payload.strategy.value,
             )
 
             return JsonResponse(result.data, status=200)
