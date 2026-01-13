@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import type { MovieScriptAnalysisResponse } from '~/utils/movie-script-evaluator'
+import type { MovieScriptAnalysisResponse, ScriptSceneAnalysis } from '~/utils/movie-script-evaluator'
+import AnalysisResult from './AnalysisResult.vue'
 
 const props = defineProps<{
   projectId: string
 }>()
 
-const { useAssets, useAnalyzeMovieScript } = useMovieScriptEvaluator()
+const { useAssets, useAnalyzeMovieScript, useScriptSceneAssetAnalysis } = useMovieScriptEvaluator()
 const { items, fetchAll } = useAssets(props.projectId)
+const {items: analysisItems, createItem: createAnalysisItem, deleteItem: deleteAnalysisItem, updateItem: updateAnalysisItem, fetchAll: fetchAllAnalysisItems } = useScriptSceneAssetAnalysis(props.projectId)
 const { user } = useAuthentication()
 const analysisResponse = ref<MovieScriptAnalysisResponse | null>(null)
 const showResults = ref(false)
@@ -15,10 +17,29 @@ const selectedScriptId = ref<number | null>(null)
 
 onMounted(() => {
   fetchAll()
+  fetchAndFormatAnalysisResults()
 })
+
+function fetchAndFormatAnalysisResults() {
+  fetchAllAnalysisItems()
+    .then(_ => {
+      if (analysisItems.value.length > 0) {
+        analysisResponse.value = {
+          result: analysisItems.value
+        }
+      }
+    })
+}
 
 function selectScriptToAnalyze(scriptId: number) {
   selectedScriptId.value = scriptId
+}
+
+function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
+  Promise.all(item.map(i => createAnalysisItem(i)))
+    .then(() => {
+      fetchAndFormatAnalysisResults()
+    })
 }
 
 function anaylzeMovieScript() {
@@ -71,8 +92,8 @@ function anaylzeMovieScript() {
         </div>
 
         <div v-if="showResults && analysisResponse" class="mt-4 mr-4">
-          <h3 class="text-lg font-semibold mb-2">Analysis Result:</h3>
-          <AnalysisResult :analysis-data="analysisResponse?.result" />
+            <h3 class="text-lg font-semibold mb-2">Analysis Result:</h3>  
+            <AnalysisResult :analysis-data="analysisResponse?.result" @save-all="saveAnalysisItems"  @update="updateAnalysisItem" @delete="deleteAnalysisItem" @create="createAnalysisItem"/>
         </div>
       </div>
       <div class="mb-4 ml-4">

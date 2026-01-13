@@ -1,6 +1,6 @@
 import type {
+  ScriptSceneAnalysis,
   Asset,
-  AssetListAnalysis,
   MovieProject,
   MovieScript,
   MovieScriptAnalysisResponse,
@@ -33,11 +33,18 @@ export function useMovieScriptEvaluator() {
     return await movieScriptAPI.analyzeMovieScript(projectId, script_id)
   }
 
+  function useScriptSceneAssetAnalysis(projectId: string) {
+    return useCrudWithAuthentication<ScriptSceneAnalysis>(
+      'movie-script-evaluator/projects/' + projectId + '/script-scene-analysis/',
+    )
+  }
+
   return {
     ...movieScriptProjects,
     uploadMovieScript,
     useAssets,
     useAnalyzeMovieScript,
     useMovieScript,
+    useScriptSceneAssetAnalysis
   }
 }

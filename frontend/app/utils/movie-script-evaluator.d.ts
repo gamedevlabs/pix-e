@@ -43,11 +43,17 @@ export interface SceneAnalysis {
 }
 
 export interface ScriptSceneAnalysis {
+  id?: number
+  project?: string
+
   scene: str
   asset_name: str
   asset_type: str
   fab_search_keyword: str
   notes: str
+
+  created_at?: Date
+  updated_at?: Date
 }
 export interface MovieScriptAnalysisResponse {
   result: ScriptSceneAnalysis[]

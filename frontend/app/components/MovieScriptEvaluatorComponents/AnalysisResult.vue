@@ -4,7 +4,6 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import type { ScriptSceneAnalysis } from '~/utils/movie-script-evaluator'
 import type { TableRow } from '@nuxt/ui';
 
-
 /**
  * Table columns
  */
@@ -18,6 +17,13 @@ const columns: ColumnDef<ScriptSceneAnalysis>[] = [
 
 const props = defineProps<{
   analysisData?: ScriptSceneAnalysis[]
+}>()
+
+const emit = defineEmits<{
+  (e: 'save-all', items: ScriptSceneAnalysis[]): void
+  (e: 'create', item: ScriptSceneAnalysis): void
+  (e: 'update', id: number, item: ScriptSceneAnalysis): void
+  (e: 'delete', id: number): void
 }>()
 
 /**
@@ -48,6 +54,12 @@ function saveItem() {
     items.value[editingIndex.value] = { ...form }
   }
 
+  if (form.id !== undefined && form.id !== null) {
+    emit('update', form.id, form)
+  } else {
+    emit('create',form)
+  }
+
   resetForm()
 }
 
@@ -63,6 +75,10 @@ function editItem(index: number) {
  * Delete row
  */
 function deleteItem(index: number) {
+  if (items.value[index] && items.value[index].id !== undefined && items.value[index].id !== null) {
+    emit('delete', items.value[index].id)
+  }
+
   items.value.splice(index, 1)
 
   if (editingIndex.value === index) {
@@ -86,6 +102,16 @@ function select(item: TableRow<ScriptSceneAnalysis>) {
     const index = item.index;
     editItem(index);
 }
+
+function saveChanges() {
+  // Here you would typically send the `items` data to your backend API
+  emit('save-all', items.value)
+}
+
+function isAllItemsHaveId() {
+  return items.value.every(item => item.id !== undefined && item.id !== null);
+}
+
 </script>
 
 <template>
@@ -93,7 +119,7 @@ function select(item: TableRow<ScriptSceneAnalysis>) {
     <template #header>
       <h2 class="text-lg font-semibold">Scene Analysis</h2>
     </template>
-
+    
     <!-- Add / Edit Form -->
     <div class="grid grid-cols-5 gap-2 mb-4">
       <UInput v-model="form.scene" placeholder="Scene" />
@@ -107,6 +133,8 @@ function select(item: TableRow<ScriptSceneAnalysis>) {
       <UButton color="primary" @click="saveItem">
         {{ editingIndex !== null ? 'Update' : 'Add' }}
       </UButton>
+
+      <UButton v-if="!isAllItemsHaveId()" color="success" label="Save Results" @click="saveChanges"/>
 
       <UButton
         v-if="editingIndex !== null"

@@ -5,12 +5,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
+from moviescriptevaluator.llm.schemas import ScriptSceneAnalysis
 from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
-from moviescriptevaluator.models import AssetMetaData, MovieProject, MovieScript
+from moviescriptevaluator.models import AssetMetaData, MovieProject, MovieScript, ScriptSceneAnalysisResult
 from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
     MovieScriptSerializer,
-    UnrealEngineDataSerializer,
+    UnrealEngineDataSerializer, ScriptSceneAnalysisSerializer,
 )
 from pxcharts.permissions import IsOwner
 
@@ -126,6 +127,38 @@ class MovieScriptViewSet(viewsets.ModelViewSet):
 
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, pk=None, project_pk=None):
+        script = self.get_object()
+        script.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ScriptSceneAnalysisViewSet(viewsets.ModelViewSet):
+    serializer_class = ScriptSceneAnalysisSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ScriptSceneAnalysisResult.objects.filter(project=self.kwargs["project_pk"])
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, pk=None, project_pk=None):
