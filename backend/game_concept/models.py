@@ -53,7 +53,7 @@ class GameConcept(models.Model):
     is_current = models.BooleanField(
         default=True, help_text="Whether this is the project's current game concept"
     )
-    last_sparc_evaluation = models.ForeignKey(  # type: ignore
+    last_sparc_evaluation = models.ForeignKey(
         "sparc.SPARCEvaluation",
         on_delete=models.SET_NULL,
         null=True,
