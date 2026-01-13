@@ -1,1 +1,0 @@
-"""pillars management command package."""

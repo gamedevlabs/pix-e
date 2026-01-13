@@ -1,9 +1,4 @@
-"""
-Agent Runtime for Agentic Execution
-
-Provides BaseAgent class for individual agent execution.
-Supports both synchronous (execute) and asynchronous (run) execution.
-"""
+"""Agent runtime helpers for agent execution."""
 
 import time
 from abc import ABC, abstractmethod
@@ -19,19 +14,7 @@ from llm.types import AgentResult, CapabilityRequirements, ErrorInfo
 
 
 class BaseAgent(ABC):
-    """
-    Base class for individual agents.
-
-    Each agent represents a specialized task that:
-    1. Builds a prompt from input data
-    2. Calls an LLM via ModelManager
-    3. Returns validated results
-
-    Subclasses must implement:
-    - name: Agent identifier
-    - response_schema: Pydantic model for response validation
-    - build_prompt(): Construct the LLM prompt
-    """
+    """Base class for individual agents."""
 
     name: str = ""
     response_schema: Type[BaseModel]  # Pydantic model for response
@@ -53,24 +36,22 @@ class BaseAgent(ABC):
 
     @abstractmethod
     def build_prompt(self, data: Dict[str, Any]) -> str:
-        """
-        Build the LLM prompt from input data.
-
-        Args:
-            data: Operation-specific input data
-        """
+        """Build the LLM prompt from input data."""
         pass
 
     def validate_input(self, data: Dict[str, Any]) -> None:
-        """
-        Validate input data before execution.
-
-        Override this method to add custom validation logic.
-
-        Args:
-            data: Operation-specific input data
-        """
+        """Validate input data before execution."""
         pass
+
+    def _prepare_execution(
+        self, context: Dict[str, Any]
+    ) -> tuple[ModelManager, Dict[str, Any], str, str]:
+        model_manager: ModelManager = context["model_manager"]
+        data: Dict[str, Any] = context.get("data", {})
+        self.validate_input(data)
+        prompt = self.build_prompt(data)
+        model_name = self._select_model(model_manager, context)
+        return model_manager, data, prompt, model_name
 
     def _select_model(
         self, model_manager: ModelManager, context: Dict[str, Any]
@@ -96,6 +77,37 @@ class BaseAgent(ABC):
                     context={"capability_requirements": self.capability_requirements},
                 )
             return models[0].name
+
+    def _extract_structured_result(self, result: Any) -> tuple[Any, int, int, int]:
+        if isinstance(result, StructuredResult):
+            return (
+                result.data,
+                result.prompt_tokens,
+                result.completion_tokens,
+                result.total_tokens,
+            )
+        return result, 0, 0, 0
+
+    def _serialize_result(self, result: Any) -> Any:
+        return result.model_dump() if hasattr(result, "model_dump") else result
+
+    def _build_success_result(
+        self, model_name: str, execution_time_ms: int, result: Any
+    ) -> AgentResult:
+        actual_result, prompt_tokens, completion_tokens, total_tokens = (
+            self._extract_structured_result(result)
+        )
+        return AgentResult(
+            agent_name=self.name,
+            success=True,
+            data=self._serialize_result(actual_result),
+            model_used=model_name,
+            execution_time_ms=execution_time_ms,
+            error=None,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+        )
 
     def _build_error_result(
         self, error: Exception, execution_time_ms: int
@@ -136,22 +148,11 @@ class BaseAgent(ABC):
         )
 
     def execute(self, context: Dict[str, Any]) -> AgentResult:
-        """
-        Execute the agent synchronously.
-
-        Args:
-            context: Execution context with keys:
-                - model_manager: ModelManager instance
-                - data: Operation input data
-        """
+        """Execute the agent synchronously."""
         start_time = time.time()
-        model_manager: ModelManager = context["model_manager"]
-        data: Dict[str, Any] = context.get("data", {})
 
         try:
-            self.validate_input(data)
-            prompt = self.build_prompt(data)
-            model_name = self._select_model(model_manager, context)
+            model_manager, _, prompt, model_name = self._prepare_execution(context)
 
             # Create a custom span with agent name to wrap the LLM call
             logfire = get_logfire()
@@ -167,56 +168,19 @@ class BaseAgent(ABC):
                     temperature=self.temperature,
                 )
 
-            # Extract token usage if result is StructuredResult
-            prompt_tokens = 0
-            completion_tokens = 0
-            total_tokens = 0
-            actual_result = result
-
-            if isinstance(result, StructuredResult):
-                prompt_tokens = result.prompt_tokens
-                completion_tokens = result.completion_tokens
-                total_tokens = result.total_tokens
-                actual_result = result.data
-
             execution_time_ms = int((time.time() - start_time) * 1000)
-            return AgentResult(
-                agent_name=self.name,
-                success=True,
-                data=(
-                    actual_result.model_dump()
-                    if hasattr(actual_result, "model_dump")
-                    else actual_result
-                ),
-                model_used=model_name,
-                execution_time_ms=execution_time_ms,
-                error=None,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=total_tokens,
-            )
+            return self._build_success_result(model_name, execution_time_ms, result)
 
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             return self._build_error_result(e, execution_time_ms)
 
     async def run(self, context: Dict[str, Any]) -> AgentResult:
-        """
-        Execute the agent asynchronously using native async providers.
-
-        Uses async LLM provider methods for true parallel execution.
-
-        Args:
-            context: Execution context (same as execute())
-        """
+        """Execute the agent asynchronously using native async providers."""
         start_time = time.time()
-        model_manager: ModelManager = context["model_manager"]
-        data: Dict[str, Any] = context.get("data", {})
 
         try:
-            self.validate_input(data)
-            prompt = self.build_prompt(data)
-            model_name = self._select_model(model_manager, context)
+            model_manager, _, prompt, model_name = self._prepare_execution(context)
 
             # Create a custom span with agent name to wrap the LLM call
             logfire = get_logfire()
@@ -233,34 +197,8 @@ class BaseAgent(ABC):
                     temperature=self.temperature,
                 )
 
-            # Extract token usage if result is StructuredResult
-            prompt_tokens = 0
-            completion_tokens = 0
-            total_tokens = 0
-            actual_result = result
-
-            if isinstance(result, StructuredResult):
-                prompt_tokens = result.prompt_tokens
-                completion_tokens = result.completion_tokens
-                total_tokens = result.total_tokens
-                actual_result = result.data
-
             execution_time_ms = int((time.time() - start_time) * 1000)
-            return AgentResult(
-                agent_name=self.name,
-                success=True,
-                data=(
-                    actual_result.model_dump()
-                    if hasattr(actual_result, "model_dump")
-                    else actual_result
-                ),
-                model_used=model_name,
-                execution_time_ms=execution_time_ms,
-                error=None,
-                prompt_tokens=prompt_tokens,
-                completion_tokens=completion_tokens,
-                total_tokens=total_tokens,
-            )
+            return self._build_success_result(model_name, execution_time_ms, result)
 
         except Exception as e:
             import logging
@@ -276,11 +214,9 @@ class BaseAgent(ABC):
             return self._build_error_result(e, execution_time_ms)
 
     def __str__(self) -> str:
-        """String representation."""
         return f"{self.__class__.__name__}(name={self.name})"
 
     def __repr__(self) -> str:
-        """Detailed representation."""
         return (
             f"{self.__class__.__name__}("
             f"name={self.name}, "

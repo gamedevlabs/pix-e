@@ -45,6 +45,16 @@ async function acceptImprovement() {
   }
 }
 
+const hasNameChange = computed(() => {
+  if (!fixResponse.value) return false
+  return props.originalPillar.name !== fixResponse.value.improved.name
+})
+
+const hasDescriptionChange = computed(() => {
+  if (!fixResponse.value) return false
+  return props.originalPillar.description !== fixResponse.value.improved.description
+})
+
 // Keep original pillar
 function keepOriginal() {
   emit('close', props.originalPillar)
@@ -104,26 +114,55 @@ function keepOriginal() {
         <div class="flex justify-center gap-8">
           <div class="w-72">
             <h3 class="text-lg font-semibold text-center mb-2">Original Pillar</h3>
-            <NamedEntityCard
-              :named-entity="originalPillar"
-              :is-being-edited="false"
-              :show-edit="false"
-              :show-delete="false"
-              variant="compact"
-            />
+            <UCard class="min-h-35" variant="subtle">
+              <template #header>
+                <span
+                  class="font-medium"
+                  :class="{
+                    'bg-error-50 dark:bg-error-900/20 px-1 rounded text-error-600 dark:text-error-400':
+                      hasNameChange,
+                  }"
+                >
+                  {{ originalPillar.name }}
+                </span>
+              </template>
+              <p
+                class="text-sm"
+                :class="
+                  hasDescriptionChange
+                    ? 'bg-error-50 dark:bg-error-900/20 px-1 rounded text-error-600 dark:text-error-400'
+                    : 'text-gray-600 dark:text-gray-300'
+                "
+              >
+                {{ originalPillar.description }}
+              </p>
+            </UCard>
           </div>
           <div class="w-72">
             <h3 class="text-lg font-semibold text-center mb-2">AI Generated Pillar</h3>
-            <NamedEntityCard
-              :named-entity="{
-                name: fixResponse.improved.name,
-                description: fixResponse.improved.description,
-              }"
-              :is-being-edited="false"
-              :show-edit="false"
-              :show-delete="false"
-              variant="compact"
-            />
+            <UCard class="min-h-35" variant="subtle">
+              <template #header>
+                <span
+                  class="font-medium"
+                  :class="{
+                    'bg-success-50 dark:bg-success-900/20 px-1 rounded text-success-600 dark:text-success-400':
+                      hasNameChange,
+                  }"
+                >
+                  {{ fixResponse.improved.name }}
+                </span>
+              </template>
+              <p
+                class="text-sm"
+                :class="
+                  hasDescriptionChange
+                    ? 'bg-success-50 dark:bg-success-900/20 px-1 rounded text-success-600 dark:text-success-400'
+                    : 'text-gray-600 dark:text-gray-300'
+                "
+              >
+                {{ fixResponse.improved.description }}
+              </p>
+            </UCard>
           </div>
         </div>
 

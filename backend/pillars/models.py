@@ -72,7 +72,6 @@ class PillarLLMCall(models.Model):
     # Operation info
     operation = models.CharField(max_length=30, choices=OPERATION_CHOICES)
     model_id = models.CharField(max_length=100)
-    context_strategy = models.CharField(max_length=50, default="raw")
 
     # Execution metrics
     execution_time_ms = models.IntegerField()
