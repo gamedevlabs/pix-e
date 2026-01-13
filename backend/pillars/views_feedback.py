@@ -11,6 +11,7 @@ from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
+from pillars.llm import handlers, workflows  # noqa: F401
 from pillars.models import Pillar
 from pillars.serializers import PillarSerializer
 from pillars.utils import (
@@ -18,7 +19,6 @@ from pillars.utils import (
     save_execution_result_llm_calls,
     save_pillar_llm_call,
 )
-from pillars.llm import handlers, workflows  # noqa: F401
 
 from .view_utils import (
     build_context_payload,

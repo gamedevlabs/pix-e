@@ -7,8 +7,7 @@ GOALS, CHALLENGES & REWARDS.
 
 ## ASPECT-RELEVANT CONTENT
 
-{aspect_text}
-{pillar_section}
+{context_section}
 ## EVALUATION CRITERIA
 
 A well-defined goals/challenges/rewards structure should:

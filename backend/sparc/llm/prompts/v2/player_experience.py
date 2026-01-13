@@ -7,8 +7,7 @@ PLAYER EXPERIENCE definition.
 
 ## ASPECT-RELEVANT CONTENT
 
-{aspect_text}
-{pillar_section}
+{context_section}
 ## EVALUATION CRITERIA
 
 A well-defined player experience should:
