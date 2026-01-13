@@ -14,7 +14,7 @@
     "format-check": "prettier . --check"
   },
   "dependencies": {
-    "@dagrejs/dagre": "^1.1.5",
+    "@dagrejs/dagre": "^1.1.8",
     "@nuxt/content": "^3.4.0",
     "@nuxt/eslint": "^1.4.0",
     "@nuxt/fonts": "^0.11.4",
