@@ -88,10 +88,7 @@ export function useSparcV2() {
     progressTotal.value = 0
 
     try {
-      const result = await sparcApi.runMonolithicAPICall(
-        gameConcept.value,
-        context.value,
-      )
+      const result = await sparcApi.runMonolithicAPICall(gameConcept.value, context.value)
       monolithicResult.value = result
       progressMessage.value = 'Evaluation complete!'
       toast.success('Monolithic evaluation complete!')

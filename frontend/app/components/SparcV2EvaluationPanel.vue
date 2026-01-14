@@ -143,7 +143,10 @@ function clearFile() {
           </div>
 
           <!-- Metadata -->
-          <div v-if="v2Result && !isMonolithic" class="flex items-center gap-4 text-sm text-neutral-400">
+          <div
+            v-if="v2Result && !isMonolithic"
+            class="flex items-center gap-4 text-sm text-neutral-400"
+          >
             <span>
               <UIcon name="i-heroicons-clock" class="mr-1" />
               {{ formatDuration(v2Result.execution_time_ms) }}
@@ -285,7 +288,10 @@ function clearFile() {
         <div class="flex items-center justify-between gap-2 text-sm mb-2">
           <div class="flex items-center gap-2 text-neutral-400">
             <UIcon name="i-heroicons-arrow-path" class="animate-spin" />
-            {{ progressMessage || (isMonolithic ? 'Running monolithic evaluation...' : 'Running evaluation...') }}
+            {{
+              progressMessage ||
+              (isMonolithic ? 'Running monolithic evaluation...' : 'Running evaluation...')
+            }}
           </div>
           <span v-if="!isMonolithic && progressCurrent > 0" class="text-neutral-500 text-xs">
             {{ progressCurrent }}/{{ progressTotal }}
@@ -388,9 +394,11 @@ function clearFile() {
         {{ isMonolithic ? 'No monolithic results yet' : 'No evaluation results yet' }}
       </p>
       <p class="text-sm mt-1">
-        {{ isMonolithic
-          ? 'Enter a game concept and run a monolithic evaluation to start'
-          : 'Enter a game concept and click "Run Full Evaluation" to start' }}
+        {{
+          isMonolithic
+            ? 'Enter a game concept and run a monolithic evaluation to start'
+            : 'Enter a game concept and click "Run Full Evaluation" to start'
+        }}
       </p>
     </div>
   </div>
