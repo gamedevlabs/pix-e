@@ -36,7 +36,11 @@ function selectScriptToAnalyze(scriptId: number) {
 }
 
 function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
-  Promise.all(item.map(i => createAnalysisItem(i)))
+  Promise.all(item.map(i => {
+    i.project = props.projectId
+    createAnalysisItem(i)
+  }
+  ))
     .then(() => {
       fetchAndFormatAnalysisResults()
     })
