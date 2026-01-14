@@ -7,6 +7,7 @@ const {
   isLoadingMonolithic,
   runQuickScan,
   runMonolithic,
+  loadEvaluations,
 } = useSparc()
 
 const selectedTab = ref<'quick_scan' | 'monolithic'>('quick_scan')
@@ -42,6 +43,10 @@ function handleMonolithic() {
   runMonolithic()
   selectedTab.value = 'monolithic'
 }
+
+onMounted(async () => {
+  await loadEvaluations()
+})
 </script>
 
 <template>

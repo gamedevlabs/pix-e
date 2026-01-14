@@ -4,15 +4,10 @@ definePageMeta({
 })
 
 const { fetchGameConcept } = useGameConcept()
-const { loadEvaluations, context } = useSparc()
+const { context } = useSparc()
 
 await fetchGameConcept()
-await loadEvaluations()
 
-const tabs = [
-  { label: 'SPARC V2', slot: 'v2', icon: 'i-heroicons-sparkles' },
-  { label: 'Legacy', slot: 'legacy', icon: 'i-heroicons-clock' },
-]
 </script>
 
 <template>
@@ -21,19 +16,9 @@ const tabs = [
     <div class="flex-1 min-w-0 p-10">
       <h1 class="text-3xl font-bold mb-6">SPARC Evaluation</h1>
 
-      <UTabs :items="tabs" class="w-full">
-        <template #v2>
-          <div class="pt-6">
-            <SparcV2EvaluationPanel />
-          </div>
-        </template>
-
-        <template #legacy>
-          <div class="pt-6">
-            <SparcLegacyPanel />
-          </div>
-        </template>
-      </UTabs>
+      <div class="pt-6">
+        <SparcV2EvaluationPanel />
+      </div>
     </div>
 
     <!-- Game Concept Sidebar -->

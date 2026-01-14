@@ -30,8 +30,6 @@ from sparc.llm.agents.v2 import (
 )
 from sparc.llm.agents.v2.aspect_base import AspectAgentV2
 from sparc.llm.agents.v2.document_context import DocumentContextAgent
-from sparc.llm.context import get_context_strategy
-from sparc.llm.context.types import AspectContextResult, ContextStrategyType
 from sparc.llm.schemas.v2.document_context import DocumentContextResponse
 from sparc.llm.schemas.v2.router import RouterResponse
 from sparc.llm.schemas.v2.synthesis import SPARCV2Response
@@ -111,13 +109,6 @@ class SPARCRouterWorkflow:
         errors: List[ErrorInfo] = []
         agent_results: List[AgentResult] = []
 
-        strategy_name = request.data.get("context_strategy")
-        if not strategy_name:
-            strategy_name = ContextStrategyType.ROUTER.value
-        context_strategy = self._resolve_context_strategy(request.data, context, errors)
-        if not context_strategy:
-            return self._build_error_result(errors, agent_results, start_time)
-
         (
             router_response,
             pillar_context,
@@ -128,30 +119,25 @@ class SPARCRouterWorkflow:
             context=context,
             request_data=request.data,
             target_aspects=target_aspects,
-            context_strategy=context_strategy,
         )
         agent_results.extend(preprocessing_results)
         errors.extend(preprocessing_errors)
         if errors:
             return self._build_error_result(errors, agent_results, start_time)
 
-        # Build aspect contexts from the selected strategy
-        try:
-            aspect_contexts = await context_strategy.build_aspect_contexts(
-                request.data,
-                target_aspects,
-                router_response=router_response,
-            )
-        except Exception as e:
+        if not router_response:
             errors.append(
                 ErrorInfo(
-                    code="CONTEXT_STRATEGY_ERROR",
-                    message=str(e),
+                    code="ROUTER_MISSING",
+                    message="Router response is required for v2 evaluation",
                     severity="error",
-                    context={"context_strategy": strategy_name},
                 )
             )
             return self._build_error_result(errors, agent_results, start_time)
+
+        aspect_contexts = self._build_aspect_contexts_from_router(
+            router_response, target_aspects
+        )
 
         # Step 2: Run aspect agents in parallel
         aspect_results = await self._run_aspect_agents(
@@ -226,39 +212,12 @@ class SPARCRouterWorkflow:
             context["model_id"] = request.model_id
         return context
 
-    def _resolve_context_strategy(
-        self,
-        request_data: Dict[str, Any],
-        context: Dict[str, Any],
-        errors: List[ErrorInfo],
-    ):
-        strategy_name = request_data.get("context_strategy")
-        if not strategy_name:
-            strategy_name = ContextStrategyType.ROUTER.value
-        try:
-            return get_context_strategy(
-                strategy_name,
-                model_manager=self.model_manager,
-                model_id=context.get("model_id"),
-            )
-        except ValueError as e:
-            errors.append(
-                ErrorInfo(
-                    code="CONTEXT_STRATEGY_UNSUPPORTED",
-                    message=str(e),
-                    severity="error",
-                    context={"context_strategy": strategy_name},
-                )
-            )
-            return None
-
     async def _run_preprocessing(
         self,
         *,
         context: Dict[str, Any],
         request_data: Dict[str, Any],
         target_aspects: List[str],
-        context_strategy: Any,
     ) -> tuple[
         Optional[RouterResponse],
         Optional[Dict[str, Any]],
@@ -269,9 +228,7 @@ class SPARCRouterWorkflow:
         errors: List[ErrorInfo] = []
         agent_results: List[AgentResult] = []
 
-        router_task = None
-        if context_strategy.requires_router:
-            router_task = self._run_router(context, target_aspects)
+        router_task = self._run_router(context, target_aspects)
         pillar_task = self._run_pillar_context(context, request_data)
 
         document_file = request_data.get("document_file")
@@ -301,15 +258,6 @@ class SPARCRouterWorkflow:
         router_response = self._parse_router_result(
             router_result, agent_results, errors
         )
-        if context_strategy.requires_router and not router_response:
-            if not any(error.code.startswith("ROUTER") for error in errors):
-                errors.append(
-                    ErrorInfo(
-                        code="ROUTER_MISSING",
-                        message="Router response is required but missing",
-                        severity="error",
-                    )
-                )
         pillar_context = self._parse_pillar_result(pillar_result, agent_results)
         document_context = self._parse_document_result(document_result, agent_results)
 
@@ -354,6 +302,15 @@ class SPARCRouterWorkflow:
             )
             return None
         return RouterResponse(**router_result.data)
+
+    def _build_aspect_contexts_from_router(
+        self, router_response: RouterResponse, target_aspects: List[str]
+    ) -> Dict[str, List[str]]:
+        mapping: Dict[str, List[str]] = {aspect: [] for aspect in target_aspects}
+        for extraction in router_response.extractions:
+            if extraction.aspect_name in mapping:
+                mapping[extraction.aspect_name] = extraction.extracted_sections
+        return mapping
 
     def _parse_pillar_result(
         self, pillar_result: Any, agent_results: List[AgentResult]
@@ -485,6 +442,13 @@ class SPARCRouterWorkflow:
                     "pillar result",
                 )
                 return result
+
+            # Resolve project if not explicitly provided
+            if not project_id:
+                from game_concept.utils import get_current_project
+
+                project = get_current_project(user)
+                project_id = project.id if project else None
 
             # Fetch pillars asynchronously
             @sync_to_async
@@ -667,7 +631,7 @@ class SPARCRouterWorkflow:
     async def _run_aspect_agents(
         self,
         context: Dict[str, Any],
-        aspect_contexts: AspectContextResult,
+        aspect_contexts: Dict[str, List[str]],
         target_aspects: List[str],
         pillar_context: Optional[Dict[str, Any]] = None,
         document_context: Optional[DocumentContextResponse] = None,
@@ -682,7 +646,7 @@ class SPARCRouterWorkflow:
             if not agent_class:
                 continue
 
-            sections = aspect_contexts.get_sections(aspect_name)
+            sections = aspect_contexts.get(aspect_name, [])
 
             document_sections, document_insights = (
                 self._get_document_context_for_aspect(document_context, aspect_name)

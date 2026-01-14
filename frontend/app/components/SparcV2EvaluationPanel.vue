@@ -7,6 +7,7 @@ const {
   progressMessage,
   progressCurrent,
   progressTotal,
+  evaluationMode,
   pillarMode,
   contextStrategy,
   uploadedDocument,
@@ -16,7 +17,21 @@ const {
   wellDefinedCount,
   needsWorkCount,
   notProvidedCount,
+  monolithicResult,
 } = useSparcV2()
+
+const evaluationModeOptions = [
+  {
+    value: 'agentic',
+    label: 'Agentic',
+    description: 'Multi-agent evaluation with per-aspect breakdown',
+  },
+  {
+    value: 'monolithic',
+    label: 'Monolithic',
+    description: 'Single-pass evaluation for quick synthesis',
+  },
+]
 
 const pillarModeOptions = [
   {
@@ -33,21 +48,6 @@ const contextStrategyOptions = [
     value: 'router',
     label: 'Router',
     description: 'Router extracts aspect-specific context (default)',
-  },
-  {
-    value: 'structural_memory',
-    label: 'Structural Memory',
-    description: 'Chunks + facts + triples + summaries with iterative retrieval',
-  },
-  {
-    value: 'hmem',
-    label: 'H-MEM',
-    description: 'Hierarchical routing with layered summaries',
-  },
-  {
-    value: 'combined',
-    label: 'Combined',
-    description: 'H-MEM routing plus structural memory retrieval',
   },
   {
     value: 'full_text',
@@ -97,6 +97,8 @@ function handleFileChange(event: Event) {
   uploadedDocument.value = file
 }
 
+const isMonolithic = computed(() => evaluationMode.value === 'monolithic')
+
 function clearFile() {
   uploadedDocument.value = null
   fileError.value = ''
@@ -124,7 +126,7 @@ function clearFile() {
             />
 
             <!-- Status counts -->
-            <div v-if="v2Result" class="flex items-center gap-3 text-sm">
+            <div v-if="v2Result && !isMonolithic" class="flex items-center gap-3 text-sm">
               <span class="text-green-400">
                 <UIcon name="i-heroicons-check-circle" class="mr-1" />
                 {{ wellDefinedCount }} defined
@@ -141,7 +143,7 @@ function clearFile() {
           </div>
 
           <!-- Metadata -->
-          <div v-if="v2Result" class="flex items-center gap-4 text-sm text-neutral-400">
+          <div v-if="v2Result && !isMonolithic" class="flex items-center gap-4 text-sm text-neutral-400">
             <span>
               <UIcon name="i-heroicons-clock" class="mr-1" />
               {{ formatDuration(v2Result.execution_time_ms) }}
@@ -161,8 +163,24 @@ function clearFile() {
           </div>
         </div>
 
-        <!-- Pillar Mode Selector -->
+        <!-- Evaluation Mode Selector -->
         <div class="flex items-center gap-3">
+          <label class="text-sm text-neutral-400 font-medium">Evaluation Mode:</label>
+          <USelect
+            v-model="evaluationMode"
+            :items="evaluationModeOptions"
+            value-key="value"
+            label-key="label"
+            :disabled="isEvaluating"
+            size="sm"
+          />
+          <span class="text-xs text-neutral-500">
+            {{ evaluationModeOptions.find((o) => o.value === evaluationMode)?.description }}
+          </span>
+        </div>
+
+        <!-- Pillar Mode Selector -->
+        <div v-if="!isMonolithic" class="flex items-center gap-3">
           <label class="text-sm text-neutral-400 font-medium">Pillar Mode:</label>
           <USelect
             v-model="pillarMode"
@@ -177,7 +195,7 @@ function clearFile() {
           </span>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div v-if="!isMonolithic" class="flex items-center gap-3">
           <label class="text-sm text-neutral-400 font-medium">Context Strategy:</label>
           <USelect
             v-model="contextStrategy"
@@ -193,7 +211,7 @@ function clearFile() {
         </div>
 
         <!-- Document Upload -->
-        <div class="space-y-2">
+        <div v-if="!isMonolithic" class="space-y-2">
           <label class="text-sm text-neutral-400 font-medium flex items-center gap-2">
             <UIcon name="i-heroicons-document-text" />
             Design Document (Optional)
@@ -246,7 +264,7 @@ function clearFile() {
 
       <!-- Agent Execution Details (Collapsible) -->
       <UAccordion
-        v-if="v2Result?.agent_execution_details"
+        v-if="v2Result?.agent_execution_details && !isMonolithic"
         :items="[
           {
             label: 'Agent Execution Details',
@@ -267,17 +285,19 @@ function clearFile() {
         <div class="flex items-center justify-between gap-2 text-sm mb-2">
           <div class="flex items-center gap-2 text-neutral-400">
             <UIcon name="i-heroicons-arrow-path" class="animate-spin" />
-            {{ progressMessage || 'Running evaluation...' }}
+            {{ progressMessage || (isMonolithic ? 'Running monolithic evaluation...' : 'Running evaluation...') }}
           </div>
-          <span v-if="progressCurrent > 0" class="text-neutral-500 text-xs">
+          <span v-if="!isMonolithic && progressCurrent > 0" class="text-neutral-500 text-xs">
             {{ progressCurrent }}/{{ progressTotal }}
           </span>
         </div>
         <UProgress
+          v-if="!isMonolithic"
           :value="progressCurrent"
           :max="progressTotal"
           :color="progressCurrent === progressTotal ? 'success' : 'primary'"
         />
+        <UProgress v-else animation="carousel" />
       </div>
 
       <!-- Error state -->
@@ -292,7 +312,7 @@ function clearFile() {
     </UCard>
 
     <!-- Results -->
-    <template v-if="v2Result">
+    <template v-if="!isMonolithic && v2Result">
       <!-- Synthesis -->
       <SparcV2SynthesisCard v-if="v2Result.synthesis" :synthesis="v2Result.synthesis" />
 
@@ -307,11 +327,71 @@ function clearFile() {
       </div>
     </template>
 
+    <template v-else-if="isMonolithic && monolithicResult">
+      <UCard>
+        <template #header>
+          <h2 class="text-xl font-bold">Overall Assessment</h2>
+        </template>
+        <p>{{ monolithicResult.overall_assessment }}</p>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <h2 class="text-xl font-bold">Readiness Verdict</h2>
+        </template>
+        <p>{{ monolithicResult.readiness_verdict }}</p>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <h2 class="text-xl font-bold">Aspects Evaluated</h2>
+        </template>
+        <div class="grid grid-cols-2 gap-4">
+          <div
+            v-for="aspect in monolithicResult.aspects_evaluated"
+            :key="aspect.aspect_name"
+            class="p-3 bg-neutral-800/50 rounded-lg"
+          >
+            <h4 class="font-semibold mb-1">{{ aspect.aspect_name }}</h4>
+            <p class="text-sm text-neutral-300">{{ aspect.assessment }}</p>
+          </div>
+        </div>
+      </UCard>
+
+      <UCard v-if="monolithicResult.missing_aspects.length > 0" class="border-red-900">
+        <template #header>
+          <h3 class="text-lg font-bold text-red-500">Missing Aspects</h3>
+        </template>
+        <ul class="list-disc list-inside space-y-1">
+          <li v-for="aspect in monolithicResult.missing_aspects" :key="aspect">
+            {{ aspect }}
+          </li>
+        </ul>
+      </UCard>
+
+      <UCard class="border-blue-900">
+        <template #header>
+          <h3 class="text-lg font-bold text-blue-500">Suggestions</h3>
+        </template>
+        <ul class="list-disc list-inside space-y-1">
+          <li v-for="suggestion in monolithicResult.suggestions" :key="suggestion">
+            {{ suggestion }}
+          </li>
+        </ul>
+      </UCard>
+    </template>
+
     <!-- Empty state -->
     <div v-else-if="!isEvaluating" class="text-center py-12 text-neutral-500">
       <UIcon name="i-heroicons-document-magnifying-glass" class="w-12 h-12 mx-auto mb-4" />
-      <p class="text-lg">No evaluation results yet</p>
-      <p class="text-sm mt-1">Enter a game concept and click "Run Full Evaluation" to start</p>
+      <p class="text-lg">
+        {{ isMonolithic ? 'No monolithic results yet' : 'No evaluation results yet' }}
+      </p>
+      <p class="text-sm mt-1">
+        {{ isMonolithic
+          ? 'Enter a game concept and run a monolithic evaluation to start'
+          : 'Enter a game concept and click "Run Full Evaluation" to start' }}
+      </p>
     </div>
   </div>
 </template>

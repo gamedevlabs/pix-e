@@ -7,29 +7,6 @@ const overlay = useOverlay()
 
 const acceptingSuggestion = ref<number | null>(null)
 
-const contextStrategyOptions = [
-  {
-    value: 'raw',
-    label: 'Raw',
-    description: 'Full concept and pillars (baseline)',
-  },
-  {
-    value: 'structural_memory',
-    label: 'Structural Memory',
-    description: 'Facts + triples + summaries for pillars and concept',
-  },
-  {
-    value: 'hmem',
-    label: 'H-MEM',
-    description: 'Hierarchical summaries with trace and episode layers',
-  },
-  {
-    value: 'combined',
-    label: 'Combined',
-    description: 'H-MEM routing plus structural memory evidence',
-  },
-]
-
 async function handleAcceptAddition(suggestion: PillarDTO) {
   acceptingSuggestion.value = suggestion.pillarId
   try {
@@ -126,23 +103,6 @@ function openResolutionModal() {
           @click="pillars.evaluateAll()"
         />
       </div>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <label class="text-sm text-neutral-400 font-medium">Context Strategy:</label>
-      <USelect
-        v-model="pillars.contextStrategy.value"
-        :items="contextStrategyOptions"
-        value-key="value"
-        label-key="label"
-        :disabled="pillars.isEvaluating.value"
-        size="sm"
-      />
-      <span class="text-xs text-neutral-500">
-        {{
-          contextStrategyOptions.find((o) => o.value === pillars.contextStrategy.value)?.description
-        }}
-      </span>
     </div>
 
     <!-- Error State -->
