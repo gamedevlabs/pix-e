@@ -33,6 +33,9 @@ type AgentExecutionDetail = {
   success: boolean
 }
 
+// Evaluation mode for SPARC V2
+type SparcV2EvaluationMode = 'agentic' | 'monolithic'
+
 // Pillar mode type
 type PillarMode = 'all' | 'smart' | 'none'
 

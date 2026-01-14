@@ -139,8 +139,6 @@ type ContradictionResolutionResponse = {
 }
 
 type ExecutionMode = 'monolithic' | 'agentic'
-type PillarsContextStrategy = 'raw' | 'structural_memory' | 'hmem' | 'combined'
-
 type EvaluateAllMetadata = {
   execution_time_ms: number
   agents_run?: string[] // Only in agentic mode

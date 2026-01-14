@@ -1,3 +1,4 @@
+import { useSparcApi } from '@/composables/api/sparcApi'
 import { useSparcV2Api, type ProgressEvent } from '~/composables/api/sparcV2Api'
 
 // Shared state for SPARC V2
@@ -8,12 +9,15 @@ const reEvaluatingAspect = ref<string | null>(null)
 const progressMessage = ref<string | null>(null)
 const progressCurrent = ref<number>(0)
 const progressTotal = ref<number>(10)
+const evaluationMode = ref<SparcV2EvaluationMode>('agentic')
 const pillarMode = ref<PillarMode>('smart')
 const contextStrategy = ref<SparcContextStrategy>('router')
 const uploadedDocument = ref<File | null>(null)
+const monolithicResult = ref<SPARCMonolithicResponse | null>(null)
 
 export function useSparcV2() {
   const api = useSparcV2Api()
+  const sparcApi = useSparcApi()
   const { gameConcept, context } = useSparc()
   const toast = usePixeToast()
   const toastDirect = useToast()
@@ -28,13 +32,18 @@ export function useSparcV2() {
       return
     }
 
-    isEvaluating.value = true
-    evaluationError.value = null
-    progressMessage.value = 'Initializing evaluation...'
-    progressCurrent.value = 0
-    progressTotal.value = 10
-
     try {
+      if (evaluationMode.value === 'monolithic') {
+        await runMonolithicEvaluation()
+        return
+      }
+
+      isEvaluating.value = true
+      evaluationError.value = null
+      progressMessage.value = 'Initializing evaluation...'
+      progressCurrent.value = 0
+      progressTotal.value = 10
+
       await api.runV2EvaluateStreamAPICall(
         gameConcept.value,
         context.value,
@@ -63,6 +72,29 @@ export function useSparcV2() {
         },
         uploadedDocument.value, // Pass the uploaded document
       )
+    } catch (error) {
+      evaluationError.value = error instanceof Error ? error.message : 'Evaluation failed'
+      toast.error('Evaluation failed: ' + evaluationError.value)
+    } finally {
+      isEvaluating.value = false
+    }
+  }
+
+  async function runMonolithicEvaluation() {
+    isEvaluating.value = true
+    evaluationError.value = null
+    progressMessage.value = 'Running monolithic evaluation...'
+    progressCurrent.value = 0
+    progressTotal.value = 0
+
+    try {
+      const result = await sparcApi.runMonolithicAPICall(
+        gameConcept.value,
+        context.value,
+      )
+      monolithicResult.value = result
+      progressMessage.value = 'Evaluation complete!'
+      toast.success('Monolithic evaluation complete!')
     } catch (error) {
       evaluationError.value = error instanceof Error ? error.message : 'Evaluation failed'
       toast.error('Evaluation failed: ' + evaluationError.value)
@@ -161,9 +193,11 @@ export function useSparcV2() {
     progressMessage,
     progressCurrent,
     progressTotal,
+    evaluationMode,
     pillarMode,
     contextStrategy,
     uploadedDocument,
+    monolithicResult,
 
     // Actions
     runV2Evaluation,
