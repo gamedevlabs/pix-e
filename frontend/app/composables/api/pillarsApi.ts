@@ -89,9 +89,7 @@
 
   // --- New agentic evaluation endpoints ---
 
-  async function evaluateAllAPICall(
-    executionMode: ExecutionMode = 'agentic',
-  ) {
+  async function evaluateAllAPICall(executionMode: ExecutionMode = 'agentic') {
     return await $fetch<EvaluateAllResponse>(
       `${config.public.apiBase}/llm/feedback/evaluate-all/`,
       {
@@ -108,9 +106,7 @@
     )
   }
 
-  async function resolveContradictionsAPICall(
-    contradictions: ContradictionsResponse,
-  ) {
+  async function resolveContradictionsAPICall(contradictions: ContradictionsResponse) {
     return await $fetch<ContradictionResolutionResponse>(
       `${config.public.apiBase}/llm/feedback/resolve-contradictions/`,
       {

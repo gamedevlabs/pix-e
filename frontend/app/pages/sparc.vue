@@ -7,7 +7,6 @@ const { fetchGameConcept } = useGameConcept()
 const { context } = useSparc()
 
 await fetchGameConcept()
-
 </script>
 
 <template>

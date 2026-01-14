@@ -128,9 +128,7 @@ export function usePillars() {
   }
 
   async function getContextInPillarsFeedback() {
-    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(
-      additionalFeature.value,
-    )
+    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
   }
 
   // --- Evaluation methods (supports monolithic and agentic modes) ---
