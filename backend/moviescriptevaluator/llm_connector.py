@@ -21,9 +21,7 @@ class MovieScriptLLMConnector:
             request = LLMRequest(
                 feature="movie-script-evaluator",
                 operation="analyze",
-                data={
-                    "scene_description": str(content)
-                },
+                data={"scene_description": str(content)},
                 model_id="gemma3:4b",
                 mode="monolithic",
                 model_preference="local",

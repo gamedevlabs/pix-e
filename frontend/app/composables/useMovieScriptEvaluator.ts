@@ -29,7 +29,10 @@ export function useMovieScriptEvaluator() {
     )
   }
 
-  async function useAnalyzeMovieScript(projectId: string, script_id: number): Promise<MovieScriptAnalysisResponse> {
+  async function useAnalyzeMovieScript(
+    projectId: string,
+    script_id: number,
+  ): Promise<MovieScriptAnalysisResponse> {
     return await movieScriptAPI.analyzeMovieScript(projectId, script_id)
   }
 
@@ -45,6 +48,6 @@ export function useMovieScriptEvaluator() {
     useAssets,
     useAnalyzeMovieScript,
     useMovieScript,
-    useScriptSceneAssetAnalysis
+    useScriptSceneAssetAnalysis,
   }
 }

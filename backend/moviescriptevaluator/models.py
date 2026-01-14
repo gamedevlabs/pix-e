@@ -62,7 +62,11 @@ class AssetMetaData(models.Model):
 class RequiredAssets(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     asset = models.ForeignKey(
-        AssetMetaData, on_delete=models.CASCADE, related_name="required_assets", null=True, blank=True
+        AssetMetaData,
+        on_delete=models.CASCADE,
+        related_name="required_assets",
+        null=True,
+        blank=True,
     )
     project = models.ForeignKey(
         MovieProject, on_delete=models.CASCADE, related_name="required_assets"
@@ -73,6 +77,7 @@ class RequiredAssets(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
 
 class ScriptSceneAnalysisResult(models.Model):
     project = models.ForeignKey(
@@ -87,4 +92,3 @@ class ScriptSceneAnalysisResult(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-

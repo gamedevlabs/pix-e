@@ -5,9 +5,11 @@ import uuid
 from django.conf import settings
 from django.db import migrations, models
 
+
 def wipe_assetmetadata(apps, schema_editor):
     AssetMetadata = apps.get_model("moviescriptevaluator", "AssetMetadata")
     AssetMetadata.objects.all().delete()
+
 
 class Migration(migrations.Migration):
 
@@ -17,7 +19,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(wipe_assetmetadata, reverse_code=migrations.RunPython.noop),
+        migrations.RunPython(
+            wipe_assetmetadata, reverse_code=migrations.RunPython.noop
+        ),
         migrations.CreateModel(
             name="MovieScript",
             fields=[

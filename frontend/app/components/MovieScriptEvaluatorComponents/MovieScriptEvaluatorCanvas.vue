@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { MovieScriptAnalysisResponse, ScriptSceneAnalysis } from '~/utils/movie-script-evaluator'
+import type {
+  MovieScriptAnalysisResponse,
+  ScriptSceneAnalysis,
+} from '~/utils/movie-script-evaluator'
 import AnalysisResult from './AnalysisResult.vue'
 
 const props = defineProps<{
@@ -8,7 +11,13 @@ const props = defineProps<{
 
 const { useAssets, useAnalyzeMovieScript, useScriptSceneAssetAnalysis } = useMovieScriptEvaluator()
 const { items, fetchAll } = useAssets(props.projectId)
-const {items: analysisItems, createItem: createAnalysisItem, deleteItem: deleteAnalysisItem, updateItem: updateAnalysisItem, fetchAll: fetchAllAnalysisItems } = useScriptSceneAssetAnalysis(props.projectId)
+const {
+  items: analysisItems,
+  createItem: createAnalysisItem,
+  deleteItem: deleteAnalysisItem,
+  updateItem: updateAnalysisItem,
+  fetchAll: fetchAllAnalysisItems,
+} = useScriptSceneAssetAnalysis(props.projectId)
 const { user } = useAuthentication()
 const analysisResponse = ref<MovieScriptAnalysisResponse | null>(null)
 const showResults = ref(false)
@@ -21,14 +30,13 @@ onMounted(() => {
 })
 
 function fetchAndFormatAnalysisResults() {
-  fetchAllAnalysisItems()
-    .then(_ => {
-      if (analysisItems.value.length > 0) {
-        analysisResponse.value = {
-          result: analysisItems.value
-        }
+  fetchAllAnalysisItems().then((_) => {
+    if (analysisItems.value.length > 0) {
+      analysisResponse.value = {
+        result: analysisItems.value,
       }
-    })
+    }
+  })
 }
 
 function selectScriptToAnalyze(scriptId: number) {
@@ -36,14 +44,14 @@ function selectScriptToAnalyze(scriptId: number) {
 }
 
 function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
-  Promise.all(item.map(i => {
-    i.project = props.projectId
-    createAnalysisItem(i)
-  }
-  ))
-    .then(() => {
-      fetchAndFormatAnalysisResults()
-    })
+  Promise.all(
+    item.map((i) => {
+      i.project = props.projectId
+      createAnalysisItem(i)
+    }),
+  ).then(() => {
+    fetchAndFormatAnalysisResults()
+  })
 }
 
 function anaylzeMovieScript() {
@@ -63,10 +71,11 @@ function anaylzeMovieScript() {
         color: 'success',
       })
     })
-    .catch(error =>
+    .catch((error) =>
       toast.add({
         title: 'Action failed!',
-        description: error.message || 'Server error occurred during analysis, please try again later',
+        description:
+          error.message || 'Server error occurred during analysis, please try again later',
         color: 'error',
       }),
     )
@@ -96,8 +105,14 @@ function anaylzeMovieScript() {
         </div>
 
         <div v-if="showResults && analysisResponse" class="mt-4 mr-4">
-            <h3 class="text-lg font-semibold mb-2">Analysis Result:</h3>  
-            <AnalysisResult :analysis-data="analysisResponse?.result" @save-all="saveAnalysisItems"  @update="updateAnalysisItem" @delete="deleteAnalysisItem" @create="createAnalysisItem"/>
+          <h3 class="text-lg font-semibold mb-2">Analysis Result:</h3>
+          <AnalysisResult
+            :analysis-data="analysisResponse?.result"
+            @save-all="saveAnalysisItems"
+            @update="updateAnalysisItem"
+            @delete="deleteAnalysisItem"
+            @create="createAnalysisItem"
+          />
         </div>
       </div>
       <div class="mb-4 ml-4">

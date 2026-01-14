@@ -8,7 +8,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'select' , fileId: number): void
+  (e: 'select', fileId: number): void
 }>()
 
 const { uploadMovieScript } = useMovieScriptEvaluator()
@@ -75,7 +75,12 @@ function deleteScriptFile(fileId: number) {
         @click="isListingMode = !isListingMode"
       />
 
-      <MovieScriptList v-if="isListingMode" :files="items" @delete="deleteScriptFile" @select="selectFile" />
+      <MovieScriptList
+        v-if="isListingMode"
+        :files="items"
+        @delete="deleteScriptFile"
+        @select="selectFile"
+      />
     </div>
     <div>
       <UButton

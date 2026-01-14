@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { ScriptSceneAnalysis } from '~/utils/movie-script-evaluator'
-import type { TableRow } from '@nuxt/ui';
+import type { TableRow } from '@nuxt/ui'
 
 /**
  * Table columns
@@ -12,7 +12,7 @@ const columns: ColumnDef<ScriptSceneAnalysis>[] = [
   { accessorKey: 'asset_name', header: 'Asset Name' },
   { accessorKey: 'asset_type', header: 'Asset Type' },
   { accessorKey: 'fab_search_keyword', header: 'FAB Keyword' },
-  { accessorKey: 'notes', header: 'Notes' }
+  { accessorKey: 'notes', header: 'Notes' },
 ]
 
 const props = defineProps<{
@@ -29,16 +29,14 @@ const emit = defineEmits<{
 /**
  * Local state (would come from backend)
  */
-const items = ref<ScriptSceneAnalysis[]>([
-  ...(props.analysisData || []),
-])
+const items = ref<ScriptSceneAnalysis[]>([...(props.analysisData || [])])
 
 const emptyForm = (): ScriptSceneAnalysis => ({
   scene: '',
   asset_name: '',
   asset_type: '',
   fab_search_keyword: '',
-  notes: ''
+  notes: '',
 })
 
 const form = reactive<ScriptSceneAnalysis>(emptyForm())
@@ -57,7 +55,7 @@ function saveItem() {
   if (form.id !== undefined && form.id !== null) {
     emit('update', form.id, form)
   } else {
-    emit('create',form)
+    emit('create', form)
   }
 
   resetForm()
@@ -99,8 +97,8 @@ function resetForm() {
 }
 
 function select(item: TableRow<ScriptSceneAnalysis>) {
-    const index = item.index;
-    editItem(index);
+  const index = item.index
+  editItem(index)
 }
 
 function saveChanges() {
@@ -109,9 +107,8 @@ function saveChanges() {
 }
 
 function isAllItemsHaveId() {
-  return items.value.every(item => item.id !== undefined && item.id !== null);
+  return items.value.every((item) => item.id !== undefined && item.id !== null)
 }
-
 </script>
 
 <template>
@@ -119,7 +116,7 @@ function isAllItemsHaveId() {
     <template #header>
       <h2 class="text-lg font-semibold">Scene Analysis</h2>
     </template>
-    
+
     <!-- Add / Edit Form -->
     <div class="grid grid-cols-5 gap-2 mb-4">
       <UInput v-model="form.scene" placeholder="Scene" />
@@ -134,7 +131,12 @@ function isAllItemsHaveId() {
         {{ editingIndex !== null ? 'Update' : 'Add' }}
       </UButton>
 
-      <UButton v-if="!isAllItemsHaveId()" color="success" label="Save Results" @click="saveChanges"/>
+      <UButton
+        v-if="!isAllItemsHaveId()"
+        color="success"
+        label="Save Results"
+        @click="saveChanges"
+      />
 
       <UButton
         v-if="editingIndex !== null"
@@ -145,12 +147,7 @@ function isAllItemsHaveId() {
         Delete
       </UButton>
 
-      <UButton
-        v-if="editingIndex !== null"
-        color="info"
-        variant="soft"
-        @click="cancelEdit"
-      >
+      <UButton v-if="editingIndex !== null" color="info" variant="soft" @click="cancelEdit">
         Cancel
       </UButton>
     </div>
@@ -159,4 +156,3 @@ function isAllItemsHaveId() {
     <UTable :columns="columns" :data="items" @select="select" />
   </UCard>
 </template>
-

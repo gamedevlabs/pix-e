@@ -1,6 +1,11 @@
 from rest_framework import serializers
 
-from moviescriptevaluator.models import AssetMetaData, MovieProject, MovieScript, ScriptSceneAnalysisResult
+from moviescriptevaluator.models import (
+    AssetMetaData,
+    MovieProject,
+    MovieScript,
+    ScriptSceneAnalysisResult,
+)
 
 
 class UnrealEngineDataSerializer(serializers.ModelSerializer):
@@ -19,6 +24,7 @@ class MovieScriptSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieScript
         fields = "__all__"
+
 
 class ScriptSceneAnalysisSerializer(serializers.ModelSerializer):
     class Meta:

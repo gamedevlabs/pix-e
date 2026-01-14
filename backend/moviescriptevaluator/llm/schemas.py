@@ -17,12 +17,14 @@ class SceneBasedAnalysis(BaseModel):
 class AssetListAnalysis(BaseModel):
     scenes: list[SceneBasedAnalysis]
 
+
 class ScriptSceneAnalysis(BaseModel):
     scene: str
     asset_name: str
     asset_type: str
     fab_search_keyword: str
     notes: str
+
 
 class MovieScriptAnalysis(BaseModel):
     result: list[ScriptSceneAnalysis]
