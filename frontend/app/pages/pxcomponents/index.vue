@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
 })
 
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()

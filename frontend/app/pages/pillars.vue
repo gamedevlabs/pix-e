@@ -1,7 +1,17 @@
 ﻿<script setup lang="ts">
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Design Pillars',
+    icon: 'i-lucide-landmark',
+  },
 })
+// ============================================================================
 
 const config = useRuntimeConfig()
 

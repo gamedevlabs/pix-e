@@ -1,16 +1,19 @@
 ﻿<script setup lang="ts">
-const { isProjectSelected, currentProject } = useProjectHandler()
-
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Dashboard',
+    icon: 'i-lucide-house',
+  },
 })
+// ============================================================================
 
-// Redirect to home if no project is selected
-onMounted(() => {
-  if (!isProjectSelected.value) {
-    navigateTo('/')
-  }
-})
+const { currentProject } = useProjectHandler()
 </script>
 
 <template>

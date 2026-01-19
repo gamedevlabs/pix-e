@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: ['authentication', 'project-context'],
+})
+
 // Main data state
 const allSentiments = ref([])
 const loading = ref(false)

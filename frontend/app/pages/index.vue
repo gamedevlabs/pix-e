@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
+definePageMeta({
+  pageConfig: {
+    type: 'public',
+    showSidebar: false,
+    title: 'Projects',
+  },
+})
+// ============================================================================
+
 interface Card {
   id: string
   label: string
@@ -17,6 +29,37 @@ const authentication = useAuthentication()
 await authentication.checkAuthentication()
 
 const router = useRouter()
+const route = useRoute()
+const toast = useToast()
+
+// Handle error notifications from middleware redirects
+onMounted(() => {
+  const error = route.query.error as string | undefined
+  const projectId = route.query.projectId as string | undefined
+  const message = route.query.message as string | undefined
+
+  if (error === 'no-project') {
+    toast.add({
+      title: 'No Project Selected',
+      description: message || 'Please select a project to use this module',
+      color: 'warning',
+      icon: 'i-lucide-alert-circle',
+    })
+    // Clean up URL
+    router.replace({ query: {} })
+  } else if (error === 'project-not-found') {
+    toast.add({
+      title: 'Project Not Found',
+      description: `Project "${projectId}" does not exist`,
+      color: 'error',
+      icon: 'i-lucide-alert-triangle',
+      timeout: 5000,
+    })
+    // Clean up URL
+    router.replace({ query: {} })
+  }
+})
+
 const { switchProject, projects, deleteProject } = useProjectHandler()
 
 const username = computed(() => authentication.user.value?.username || 'Guest')
@@ -176,7 +219,7 @@ const handleCardClick = async (card: Card, event?: MouseEvent) => {
       <h2 class="text-3xl font-bold mb-6">Projects</h2>
 
       <!-- Project Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-6">
         <div v-for="project in projectCards" :key="project.id" class="relative">
           <!-- Login Overlay for auth-required projects -->
           <div

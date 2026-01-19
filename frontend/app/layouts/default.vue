@@ -40,6 +40,30 @@ const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProj
 
 // Handles sidebar visibility
 const showSidebar = computed(() => {
+  // Check if page has custom config
+  const pageConfig = route.meta.pageConfig as PageConfig | undefined
+
+  // If page explicitly sets showSidebar, use that
+  if (pageConfig?.showSidebar !== undefined) {
+    return pageConfig.showSidebar
+  }
+
+  // Otherwise, determine based on page type
+  if (pageConfig?.type === 'public') {
+    return false
+  }
+
+  if (pageConfig?.type === 'standalone') {
+    return false
+  }
+
+  if (pageConfig?.type === 'project-required') {
+    // For project-required pages, show sidebar if user is logged in and has a project
+    const hasCurrentProject = !!currentProjectId.value || !!route.query?.id
+    return authentication.isLoggedIn.value && hasCurrentProject
+  }
+
+  // Fallback to old logic for pages without config (backwards compatibility)
   const path = route.path || ''
   const name = route.name ? String(route.name) : ''
   const alwaysShowSidebar: string[] = ['dashboard', 'edit']
