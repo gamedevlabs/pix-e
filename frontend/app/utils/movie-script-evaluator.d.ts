@@ -46,11 +46,11 @@ export interface ScriptSceneAnalysis {
   id?: number
   project?: string
 
-  scene: str
-  asset_name: str
-  asset_type: str
-  fab_search_keyword: str
-  notes: str
+  scene: string
+  asset_name: string
+  asset_type: string
+  fab_search_keyword: string
+  notes: string
 
   created_at?: Date
   updated_at?: Date

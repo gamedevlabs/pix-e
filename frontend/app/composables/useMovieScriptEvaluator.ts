@@ -37,9 +37,20 @@ export function useMovieScriptEvaluator() {
   }
 
   function useScriptSceneAssetAnalysis(projectId: string) {
-    return useCrudWithAuthentication<ScriptSceneAnalysis>(
+    const createAll = async (
+      items: ScriptSceneAnalysis[],
+    ): Promise<ScriptSceneAnalysis[]> => {
+      return await movieScriptAPI.createScriptSceneAnalysisBulk(projectId, items)
+    }
+
+    const crud = useCrudWithAuthentication<ScriptSceneAnalysis>(
       'movie-script-evaluator/projects/' + projectId + '/script-scene-analysis/',
     )
+
+    return {
+      createAll,
+      ...crud
+    }
   }
 
   return {

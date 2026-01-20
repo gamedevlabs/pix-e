@@ -154,8 +154,12 @@ class ScriptSceneAnalysisViewSet(viewsets.ModelViewSet):
         )
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
+
+        existing_items =ScriptSceneAnalysisResult.objects.filter(project=self.kwargs["project_pk"])
+        existing_items.delete()
+
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

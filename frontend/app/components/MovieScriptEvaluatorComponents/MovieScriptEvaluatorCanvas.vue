@@ -13,9 +13,7 @@ const { useAssets, useAnalyzeMovieScript, useScriptSceneAssetAnalysis } = useMov
 const { items, fetchAll } = useAssets(props.projectId)
 const {
   items: analysisItems,
-  createItem: createAnalysisItem,
-  deleteItem: deleteAnalysisItem,
-  updateItem: updateAnalysisItem,
+  createAll: createAnalysisAllItems,
   fetchAll: fetchAllAnalysisItems,
 } = useScriptSceneAssetAnalysis(props.projectId)
 const { user } = useAuthentication()
@@ -44,12 +42,18 @@ function selectScriptToAnalyze(scriptId: number) {
 }
 
 function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
-  Promise.all(
-    item.map((i) => {
-      i.project = props.projectId
-      createAnalysisItem(i)
-    }),
-  ).then(() => {
+  const itemsTobeSent = item.map(i => {
+    i.project = props.projectId
+    return i;
+  })
+
+  createAnalysisAllItems(itemsTobeSent).then(() => {
+    toast.add({
+      title: 'Action Successful',
+      description: 'All actions on items have been saved',
+      color: 'success',
+    })
+
     fetchAndFormatAnalysisResults()
   })
 }
@@ -63,7 +67,11 @@ function anaylzeMovieScript() {
 
   useAnalyzeMovieScript(props.projectId, selectedScriptId.value!)
     .then((response) => {
-      analysisResponse.value = response
+      analysisResponse.value = {
+        result: [...(analysisResponse.value?.result || []), ...response.result],
+      }
+
+      showResults.value = false
 
       toast.add({
         title: 'Action Successful',
@@ -109,9 +117,7 @@ function anaylzeMovieScript() {
           <AnalysisResult
             :analysis-data="analysisResponse?.result"
             @save-all="saveAnalysisItems"
-            @update="updateAnalysisItem"
-            @delete="deleteAnalysisItem"
-            @create="createAnalysisItem"
+            @load-items="fetchAndFormatAnalysisResults"
           />
         </div>
       </div>

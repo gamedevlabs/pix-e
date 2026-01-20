@@ -19,11 +19,11 @@ const props = defineProps<{
   analysisData?: ScriptSceneAnalysis[]
 }>()
 
+const isAnyItemChanged = ref(false)
+
 const emit = defineEmits<{
   (e: 'save-all', items: ScriptSceneAnalysis[]): void
-  (e: 'create', item: ScriptSceneAnalysis): void
-  (e: 'update', id: number, item: ScriptSceneAnalysis): void
-  (e: 'delete', id: number): void
+  (e: 'load-items'): void
 }>()
 
 /**
@@ -52,11 +52,7 @@ function saveItem() {
     items.value[editingIndex.value] = { ...form }
   }
 
-  if (form.id !== undefined && form.id !== null) {
-    emit('update', form.id, form)
-  } else {
-    emit('create', form)
-  }
+  isAnyItemChanged.value = true
 
   resetForm()
 }
@@ -73,15 +69,13 @@ function editItem(index: number) {
  * Delete row
  */
 function deleteItem(index: number) {
-  if (items.value[index] && items.value[index].id !== undefined && items.value[index].id !== null) {
-    emit('delete', items.value[index].id)
-  }
-
   items.value.splice(index, 1)
 
   if (editingIndex.value === index) {
     resetForm()
   }
+
+  isAnyItemChanged.value = true
 }
 
 /**
@@ -104,6 +98,16 @@ function select(item: TableRow<ScriptSceneAnalysis>) {
 function saveChanges() {
   // Here you would typically send the `items` data to your backend API
   emit('save-all', items.value)
+  emit('load-items')
+  isAnyItemChanged.value = false
+}
+
+function discardChanges() {
+  const filteredProps = props.analysisData?.filter(item => item.id !== undefined && item.id !== null)
+  items.value = [...(filteredProps || [])]
+  isAnyItemChanged.value = false
+  resetForm()
+  emit('load-items')
 }
 
 function isAllItemsHaveId() {
@@ -132,13 +136,6 @@ function isAllItemsHaveId() {
       </UButton>
 
       <UButton
-        v-if="!isAllItemsHaveId()"
-        color="success"
-        label="Save Results"
-        @click="saveChanges"
-      />
-
-      <UButton
         v-if="editingIndex !== null"
         color="error"
         variant="soft"
@@ -154,5 +151,21 @@ function isAllItemsHaveId() {
 
     <!-- Table -->
     <UTable :columns="columns" :data="items" @select="select" />
+    <div class="flex gap-2 mt-6 align-right justify-end">
+
+      <UButton
+      v-if="!isAllItemsHaveId() || isAnyItemChanged"
+      color="success"
+      label="Save Results"
+      @click="saveChanges"
+      />
+      
+      <UButton
+      v-if="!isAllItemsHaveId() || isAnyItemChanged"
+      color="error"
+      label="Discard Changes"
+      @click="discardChanges"
+      />
+    </div>
   </UCard>
 </template>
