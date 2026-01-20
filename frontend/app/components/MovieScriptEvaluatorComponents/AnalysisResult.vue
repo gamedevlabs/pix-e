@@ -103,7 +103,9 @@ function saveChanges() {
 }
 
 function discardChanges() {
-  const filteredProps = props.analysisData?.filter(item => item.id !== undefined && item.id !== null)
+  const filteredProps = props.analysisData?.filter(
+    (item) => item.id !== undefined && item.id !== null,
+  )
   items.value = [...(filteredProps || [])]
   isAnyItemChanged.value = false
   resetForm()
@@ -152,19 +154,18 @@ function isAllItemsHaveId() {
     <!-- Table -->
     <UTable :columns="columns" :data="items" @select="select" />
     <div class="flex gap-2 mt-6 align-right justify-end">
+      <UButton
+        v-if="!isAllItemsHaveId() || isAnyItemChanged"
+        color="success"
+        label="Save Results"
+        @click="saveChanges"
+      />
 
       <UButton
-      v-if="!isAllItemsHaveId() || isAnyItemChanged"
-      color="success"
-      label="Save Results"
-      @click="saveChanges"
-      />
-      
-      <UButton
-      v-if="!isAllItemsHaveId() || isAnyItemChanged"
-      color="error"
-      label="Discard Changes"
-      @click="discardChanges"
+        v-if="!isAllItemsHaveId() || isAnyItemChanged"
+        color="error"
+        label="Discard Changes"
+        @click="discardChanges"
       />
     </div>
   </UCard>

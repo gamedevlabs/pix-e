@@ -51,17 +51,14 @@ export function useMovieScriptEvaluatorApi() {
     items: ScriptSceneAnalysis[],
   ): Promise<ScriptSceneAnalysis[]> {
     try {
-      return await $fetch(
-        `${apiBase}/projects/${projectId}/script-scene-analysis/`,
-        {
-          method: 'POST',
-          body: items,
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-        },
-      )
+      return await $fetch(`${apiBase}/projects/${projectId}/script-scene-analysis/`, {
+        method: 'POST',
+        body: items,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
     } catch (error) {
       throw new Error((error as Error)?.message || 'Failed to create script scene analysis items')
     }

@@ -42,9 +42,9 @@ function selectScriptToAnalyze(scriptId: number) {
 }
 
 function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
-  const itemsTobeSent = item.map(i => {
+  const itemsTobeSent = item.map((i) => {
     i.project = props.projectId
-    return i;
+    return i
   })
 
   createAnalysisAllItems(itemsTobeSent).then(() => {

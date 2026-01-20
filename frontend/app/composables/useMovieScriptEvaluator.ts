@@ -37,9 +37,7 @@ export function useMovieScriptEvaluator() {
   }
 
   function useScriptSceneAssetAnalysis(projectId: string) {
-    const createAll = async (
-      items: ScriptSceneAnalysis[],
-    ): Promise<ScriptSceneAnalysis[]> => {
+    const createAll = async (items: ScriptSceneAnalysis[]): Promise<ScriptSceneAnalysis[]> => {
       return await movieScriptAPI.createScriptSceneAnalysisBulk(projectId, items)
     }
 
@@ -49,7 +47,7 @@ export function useMovieScriptEvaluator() {
 
     return {
       createAll,
-      ...crud
+      ...crud,
     }
   }
 
