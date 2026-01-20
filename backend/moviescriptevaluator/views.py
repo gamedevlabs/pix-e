@@ -157,7 +157,9 @@ class ScriptSceneAnalysisViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
-        existing_items =ScriptSceneAnalysisResult.objects.filter(project=self.kwargs["project_pk"])
+        existing_items = ScriptSceneAnalysisResult.objects.filter(
+            project=self.kwargs["project_pk"]
+        )
         existing_items.delete()
 
         serializer.save()

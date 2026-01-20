@@ -29,4 +29,12 @@ class MovieScriptSerializer(serializers.ModelSerializer):
 class ScriptSceneAnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScriptSceneAnalysisResult
-        fields = ["id", "project", "scene", "asset_name", "asset_type", "fab_search_keyword", "notes" ]
+        fields = [
+            "id",
+            "project",
+            "scene",
+            "asset_name",
+            "asset_type",
+            "fab_search_keyword",
+            "notes",
+        ]
