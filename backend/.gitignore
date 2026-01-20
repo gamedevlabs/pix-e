@@ -139,4 +139,4 @@ GitHub.sublime-settings
 
 
 # File upload directory
-./moviescriptevaluator/files/*
+/moviescriptevaluator/files/*
