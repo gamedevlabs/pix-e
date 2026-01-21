@@ -1,45 +1,70 @@
 <script setup lang="ts">
+import type { MovieProject } from '~/utils/movie-script-evaluator'
+
 definePageMeta({
   middleware: 'authentication',
 })
 
-const { items, fetchAll } = useMovieScriptEvaluator()
 const { user } = useAuthentication()
+
+// Im not sure, if its a good approach
+const {
+  items: movieScriptProjects,
+  fetchAll,
+  createItem: createMovieScriptProject,
+} = useMovieScriptEvaluator()
 
 onMounted(() => {
   fetchAll()
 })
-</script>
 
+const newItem = ref<MovieProject | null>(null)
+
+function addItem() {
+  newItem.value = { id: -1, name: '', description: '' }
+}
+
+async function createItem(newEntityDraft: Partial<MovieProject>) {
+  await createMovieScriptProject(newEntityDraft)
+  newItem.value = null
+}
+
+async function navigateToDetails(projectId: number) {
+  await navigateTo(`/movie-script-evaluator/${projectId}`)
+}
+</script>
 <template>
   <div class="p-8">
     <h1 class="text-2xl font-bold mb-6">Movie Script Evaluator</h1>
-    <div class="mb-4">
-      <p>Welcome, {{ user?.username }}!</p>
-      <p>Your user id is {{ user?.id }}</p>
-    </div>
-
-    <div class="movie-script-evaluator-container mb-8" style="display: flex; flex-direction: row">
-      <div class="mb-4">
-        <h2 class="text-xl font-semibold mb-2">Uploaded Movie Script</h2>
-      </div>
-      <div class="mb-4">
-        <h3>List of the Existing Assets</h3>
-        <div style="max-height: 65vh; overflow-x: scroll; overflow-y: auto; white-space: nowrap">
-          <div style="display: inline-block; vertical-align: top">
-            <AssetsList :assets="items" />
-          </div>
+    <p>Welcome, {{ user?.username }}!</p>
+    <p>This is the Movie Script Evaluator home page.</p>
+    <SimpleContentWrapper>
+      <template #header>Projects</template>
+      <SimpleCardSection use-add-button @add-clicked="addItem">
+        <div v-for="project in movieScriptProjects" :key="project.id" class="mb-4">
+          <NamedEntityCard
+            :named-entity="project"
+            :visualization-style="'detailed'"
+            show-edit
+            show-delete
+          >
+            <UButton style="margin-top: 25%" @click="navigateToDetails(project.id)"
+              >See Details</UButton
+            >
+          </NamedEntityCard>
         </div>
-      </div>
-    </div>
-
-    <!-- Add your movie script evaluator components and logic here -->
+        <div v-if="newItem">
+          <NamedEntityCard
+            :named-entity="newItem"
+            :is-being-edited="true"
+            @edit="newItem = null"
+            @update="createItem"
+            @delete="newItem = null"
+          />
+        </div>
+      </SimpleCardSection>
+    </SimpleContentWrapper>
   </div>
 </template>
 
-<style scoped>
-.mb-4 {
-  width: 50%;
-  max-height: 50%;
-}
-</style>
+<style scoped></style>

@@ -26,5 +26,5 @@ urlpatterns = [
     path("api/", include("pxcharts.urls")),
     path("api/", include("pximportexport.urls")),
     path("", include("player_expectations.urls")),
-    path("movie-script-evaluator", include("moviescriptevaluator.urls")),
+    path("movie-script-evaluator/", include("moviescriptevaluator.urls")),
 ]
