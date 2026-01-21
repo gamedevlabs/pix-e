@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'
+import type { PageConfig } from '~/types/page-config'
 
 // ROUTING
 const route = useRoute()
@@ -103,23 +104,42 @@ const links = computed<NavigationMenuItem[][]>(() => [
       to: `/dashboard${projectQuery.value}`,
     },
     {
-      label: 'Charts',
-      icon: 'i-lucide-network',
-      defaultOpen: true,
+      label: 'Player Experience',
+      icon: 'i-lucide-settings',
       children: [
-        { label: 'PxCharts', to: `/pxcharts${projectQuery.value}` },
-        { label: 'PxNodes', to: `/pxnodes${projectQuery.value}` },
-        { label: 'PxComponents', to: `/pxcomponents${projectQuery.value}` },
-        { label: 'PxComponentsDefinitions', to: `/pxcomponentdefinitions${projectQuery.value}` },
+        {
+          label: 'Overview',
+          icon: 'i-lucide-chart-no-axes-gantt',
+          to: `/player-experience${projectQuery.value}`,
+        },
+        { label: 'Charts', icon: 'i-lucide-chart-network', to: `/pxcharts${projectQuery.value}` },
+        { label: 'Nodes', icon: 'i-lucide-hexagon', to: `/pxnodes${projectQuery.value}` },
+        {
+          label: 'Components',
+          icon: 'i-lucide-component',
+          to: `/pxcomponents${projectQuery.value}`,
+        },
+        {
+          label: 'Components Definitions',
+          icon: 'i-lucide-library-big',
+          to: `/pxcomponentdefinitions${projectQuery.value}`,
+        },
       ],
     },
     {
       label: 'Player Expectations',
       icon: 'i-lucide-book-open',
-      defaultOpen: true,
       children: [
-        { label: 'Dashboard', to: `/player-expectations${projectQuery.value}` },
-        { label: 'Sentiment Analysis', to: `/sentiments${projectQuery.value}` },
+        {
+          label: 'Overview',
+          icon: 'i-lucide-chart-no-axes-gantt',
+          to: `/player-expectations${projectQuery.value}`,
+        },
+        {
+          label: 'Sentiment Analysis',
+          icon: 'i-lucide-library-big',
+          to: `/sentiments${projectQuery.value}`,
+        },
       ],
     },
     { label: 'Pillars', icon: 'i-lucide-landmark', to: `/pillars${projectQuery.value}` },
@@ -211,16 +231,18 @@ const groups = computed(() => [
             style="margin-top: 52px"
           >
             <template #header="{ collapsed }">
-              <ProjectSelector :collapsed="collapsed" />
+              <UDashboardSearchButton
+                :collapsed="collapsed"
+                class="w-full bg-transparent ring-default"
+              />
             </template>
 
             <template #default="{ collapsed }">
-              <!-- Make the sidebar content a full-height column so mt-auto pushes footer to the bottom of the sidebar viewport. -->
               <div class="flex flex-col h-full relative">
-                <UDashboardSearchButton
-                  :collapsed="collapsed"
-                  class="bg-transparent ring-default"
-                />
+                <USeparator class="my-2" />
+                <div class="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-2 mx-2 mb-2">
+                  <ProjectSelector :collapsed="collapsed" />
+                </div>
 
                 <UNavigationMenu
                   :collapsed="collapsed"
@@ -230,7 +252,6 @@ const groups = computed(() => [
                   popover
                 />
 
-                <!-- Bottom area: Wiki & Discord links. mt-auto ensures this area sits at the bottom of the sidebar -->
                 <div class="mt-auto w-full flex flex-col items-start px-2">
                   <UNavigationMenu
                     :collapsed="collapsed"
@@ -244,7 +265,6 @@ const groups = computed(() => [
             </template>
 
             <template #footer="{ collapsed }">
-              <!-- Footer in normal flow; include the collapsed-state button here so it's part of the sidebar and won't fall outside the sidebar viewport. -->
               <div>
                 <UserMenu :collapsed="collapsed" />
               </div>
