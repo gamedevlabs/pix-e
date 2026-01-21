@@ -42,74 +42,46 @@ The provided movie script: %s
 """
 
 AnalyzeSceneWithAssetListPrompt = """
-You are an expert content analyst and scene planner.
+Role
+You are a virtual production assistant specialized in Unreal Engine film production.
 
-You will be given:
+Task
+You are given:
 
-A movie script, divided into scenes (each scene has a scene number and description).
+A textual description of assets needed for a scene (e.g., environment, props, characters, vehicles, lighting, VFX).
 
-A list of available assets.
+A list of all existing Unreal Engine assets, including names and optional metadata.
 
-Your task is to:
+Analyze the required assets and match them to available assets based on relevance, function, and semantic similarity.
 
-Analyze each scene in the script and identify its visual and contextual requirements.
+Output Requirements
 
-Compare those requirements against the provided asset list.
+List recommended assets strictly from the provided asset list. Do not invent assets.
 
-Determine whether existing assets can be used for each scene.
+Each recommendation must include:
 
-If assets can be used, map the most appropriate asset(s) to the corresponding scene(s).
+scene name
 
-If assets can be used, explain why.
+asset_id (exact from list)
 
-If no suitable asset exists for a scene, explicitly indicate that no asset is available.
+asset_name (exact from list)
 
-Rules & Constraints
+asset_class_name (exact from list)
 
-Only use assets from the provided asset list.
+short justification for selection
 
-Do not invent or assume missing assets.
+Constraints
 
-One scene may use multiple assets.
+Prefer assets matching style, scale, and intended use.
 
-One asset may be reused across multiple scenes if relevant.
+If multiple fit, rank by relevance.
+
+Be concise and production-focused.
 
 Output Format
+Return a structured list or JSON suitable for production
 
-Return the response only in valid JSON.
-
-Do not include explanations, comments, or extra text outside the JSON.
-
-Expected JSON Structure
-
-{
- "scenes": [
-   {
-     "scene_id": "<scene number or identifier>",
-     "can_use_assets": true,
-     "assets_used": [
-       {
-         "usage_reason": "<brief explanation of why this asset fits the scene>",
-         "asset_name": "<asset name>",
-       },
-       {
-         "usage_reason": "<brief explanation of why this asset fits the scene>",
-         "asset_name": "<asset name>",
-       }
-     ]
-   },
-   {
-     "scene_id": "<scene number or identifier>",
-     "can_use_assets": false,
-     "assets_used": []
-   }
- ]
-}
-
-
-Ensure the JSON is syntactically correct and complete.
-
-The provided movie script: %s
+The needed items: %s
 
 The assets we have in the system: %s
 """

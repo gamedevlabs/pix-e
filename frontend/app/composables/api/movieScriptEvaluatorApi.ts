@@ -64,7 +64,22 @@ export function useMovieScriptEvaluatorApi() {
     }
   }
 
+  async function getRecommendations(projectId: string) {
+    try {
+      return await $fetch(`${apiBase}/projects/${projectId}/recommendations/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+    } catch(error) {
+      throw new Error((error as Error)?.message || 'Failed to get recommendations')
+    }
+  }
+
   return {
+    getRecommendations,
     createScriptSceneAnalysisBulk,
     uploadFile,
     analyzeMovieScript,

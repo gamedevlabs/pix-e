@@ -62,9 +62,21 @@ class MovieProjectView(viewsets.ModelViewSet):
                 "Script couldn't be found", status=status.HTTP_400_BAD_REQUEST
             )
 
-        assets = AssetMetaData.objects.filter(project=pk)
+        response = get_llm_connector().analyze_movie_script(script)
+        return Response(response, status=status.HTTP_200_OK)
 
-        response = get_llm_connector().analyze_movie_script(script, list(assets))
+    @action(detail=True, methods=["GET"], url_path="recommendations")
+    def get_recommendations(self, request, pk):
+        needed_items = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
+        items_from_ue = list(AssetMetaData.objects.filter(project=pk)[:50])
+
+        if not needed_items:
+            return Response("Please analyze the uploaded script first", status=status.HTTP_400_BAD_REQUEST)
+
+        if not items_from_ue:
+            return Response("Please create assets or connect Unreal Engine via the plugin", status=status.HTTP_400_BAD_REQUEST)
+
+        response = get_llm_connector().create_recommendations(needed_items, items_from_ue)
         return Response(response, status=status.HTTP_200_OK)
 
 

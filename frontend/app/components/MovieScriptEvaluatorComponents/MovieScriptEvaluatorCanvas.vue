@@ -15,7 +15,9 @@ const {
   items: analysisItems,
   createAll: createAnalysisAllItems,
   fetchAll: fetchAllAnalysisItems,
+  getRecommendations,
 } = useScriptSceneAssetAnalysis(props.projectId)
+
 const { user } = useAuthentication()
 const analysisResponse = ref<MovieScriptAnalysisResponse | null>(null)
 const showResults = ref(false)
@@ -110,6 +112,7 @@ function anaylzeMovieScript() {
             :label="showResults ? 'Close the analysis' : 'See the analysis'"
             @click="showResults = !showResults"
           />
+          <UButton type="button" label="Get Recommendations" class="ml-4" @click="getRecommendations()" />
         </div>
 
         <div v-if="showResults && analysisResponse" class="mt-4 mr-4">

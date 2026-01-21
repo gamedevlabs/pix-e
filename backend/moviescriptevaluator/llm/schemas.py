@@ -28,3 +28,14 @@ class ScriptSceneAnalysis(BaseModel):
 
 class MovieScriptAnalysis(BaseModel):
     result: list[ScriptSceneAnalysis]
+
+class RecommendationResultItem(BaseModel):
+    scene: str
+    asset_id: str
+    asset_name: str
+    asset_class_name: str
+    purpose: str
+    description: str
+
+class RecommendationResult(BaseModel):
+    result: list[RecommendationResultItem]

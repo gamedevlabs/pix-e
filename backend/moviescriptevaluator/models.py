@@ -92,3 +92,8 @@ class ScriptSceneAnalysisResult(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Scene: {scene}, Asset Name: {asset_name}, Type: {asset_type}, Key Words: {fab_search_keyword}, Notes: {notes}".format(
+                scene=self.scene, asset_name=self.asset_name, asset_type=self.asset_type, fab_search_keyword=self.fab_search_keyword, notes=self.notes
+        )
