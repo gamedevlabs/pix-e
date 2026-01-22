@@ -2,6 +2,8 @@
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
 // ============================================================================
+// ============================================================================
+import type { MovieProject } from '~/utils/movie-script-evaluator'
 definePageMeta({
   middleware: ['authentication'],
   pageConfig: {
@@ -11,8 +13,6 @@ definePageMeta({
     icon: 'i-lucide-film',
   },
 })
-// ============================================================================
-import type { MovieProject } from '~/utils/movie-script-evaluator'
 
 const { user } = useAuthentication()
 
