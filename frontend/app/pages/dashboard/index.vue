@@ -32,8 +32,38 @@ const getProjectInitials = (name: string) => {
   return (parts[0][0] + parts[1][0]).toUpperCase()
 }
 
+const currentWorkflowStep = ref(1) // Currently on Research step
+
+// Navigate to specific module with project context
+const navigateToModule = (route: string) => {
+  const projectQuery = currentProjectId.value ? `?id=${currentProjectId.value}` : ''
+  navigateTo(`${route}${projectQuery}`)
+}
+
+// MOCK DATA FOR DASHBOARD CARDS
+const mock_historyData = computed(() => [
+  {
+    title: 'Set new Project Icon',
+    timestamp: '10 min ago',
+    icon: 'i-lucide-folder-open',
+    type: 'edit' as const,
+  },
+  {
+    title: 'Created New Pillar "testPillar1"',
+    timestamp: '2 hours ago',
+    icon: 'i-lucide-plus',
+    type: 'create' as const,
+  },
+  {
+    title: 'Adjusted PX Chart "Main Story Arc"',
+    timestamp: 'Yesterday',
+    icon: 'i-lucide-trash',
+    type: 'delete' as const,
+  },
+])
+
 // Example workflow data - will be replaced with real data later
-const workflowSteps = computed(() => {
+const mock_workflowSteps = computed(() => {
   // Track completion status
   const hasProject = !!currentProject.value
   const hasCharts = pxCharts.value.length > 0
@@ -68,14 +98,6 @@ const workflowSteps = computed(() => {
     },
   ]
 })
-
-const currentWorkflowStep = ref(1) // Currently on Research step
-
-// Navigate to specific module with project context
-const navigateToModule = (route: string) => {
-  const projectQuery = currentProjectId.value ? `?id=${currentProjectId.value}` : ''
-  navigateTo(`${route}${projectQuery}`)
-}
 </script>
 
 <template>
@@ -152,61 +174,7 @@ const navigateToModule = (route: string) => {
         </div>
 
         <!-- AI Insights Card (Spans 1 column, 1 row) -->
-        <UCard class="hover:shadow-lg transition-shadow">
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-sparkles" class="text-primary" />
-              <h3 class="text-lg font-semibold">AI Insights & Suggestions</h3>
-            </div>
-          </template>
-
-          <div class="space-y-3">
-            <div
-              class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
-            >
-              <div class="flex gap-2 items-start">
-                <UIcon name="i-lucide-info" class="text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p class="text-sm font-medium">Missing PX Nodes</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    You have combat expectations defined but no associated PX nodes yet.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
-            >
-              <div class="flex gap-2 items-start">
-                <UIcon
-                  name="i-lucide-alert-triangle"
-                  class="text-yellow-600 mt-0.5 flex-shrink-0"
-                />
-                <div>
-                  <p class="text-sm font-medium">Pacing Diagram Gap</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Your pacing diagram lacks content around mid-game; consider adding events.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
-            >
-              <div class="flex gap-2 items-start">
-                <UIcon name="i-lucide-check-circle" class="text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p class="text-sm font-medium">Good Alignment</p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    Your design pillars align well with player expectations.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </UCard>
+        <AiInsightsCard />
 
         <!-- PX Charts Overview -->
         <UCard
@@ -312,7 +280,7 @@ const navigateToModule = (route: string) => {
 
           <UStepper
             v-model="currentWorkflowStep"
-            :items="workflowSteps"
+            :items="mock_workflowSteps"
             orientation="vertical"
             color="primary"
             size="md"
@@ -359,38 +327,7 @@ const navigateToModule = (route: string) => {
         </UCard>
 
         <!-- Recent Activity Card -->
-        <UCard class="hover:shadow-lg transition-shadow">
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-clock" class="text-primary" />
-              <h3 class="text-lg font-semibold">Recent Activity</h3>
-            </div>
-          </template>
-
-          <div class="space-y-2">
-            <div class="flex gap-2 items-center text-sm">
-              <UIcon name="i-lucide-edit" class="text-primary flex-shrink-0" />
-              <div class="flex-1 min-w-0">
-                <p class="font-medium truncate">Updated PX Node</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">10 min ago</p>
-              </div>
-            </div>
-            <div class="flex gap-2 items-center text-sm">
-              <UIcon name="i-lucide-plus" class="text-success flex-shrink-0" />
-              <div class="flex-1 min-w-0">
-                <p class="font-medium truncate">Added Design Pillar</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">2 hours ago</p>
-              </div>
-            </div>
-            <div class="flex gap-2 items-center text-sm">
-              <UIcon name="i-lucide-trash" class="text-error flex-shrink-0" />
-              <div class="flex-1 min-w-0">
-                <p class="font-medium truncate">Removed expectation</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Yesterday</p>
-              </div>
-            </div>
-          </div>
-        </UCard>
+        <HistoryCard :items="mock_historyData" title="Recent Activity" />
 
         <!-- Workflow Progress - Horizontal (Spans 2 columns) -->
         <UCard
@@ -406,7 +343,7 @@ const navigateToModule = (route: string) => {
 
           <UStepper
             v-model="currentWorkflowStep"
-            :items="workflowSteps"
+            :items="mock_workflowSteps"
             orientation="horizontal"
             color="primary"
             size="md"
