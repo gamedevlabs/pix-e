@@ -2,12 +2,15 @@
 import { useVueFlow, MarkerType } from '@vue-flow/core'
 import { v4 } from 'uuid'
 import merge from 'lodash.merge'
+import { usePathsApi } from './api/pathsApi'
+const { calculate_path } = usePathsApi()
 
 export function usePxChartsCanvasApi(chartId: string) {
   const nodes = ref<Node[]>([])
   const edges = ref<Edge[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const path = ref<string[]>([])
 
   const { error: pxChartError, fetchById: fetchPxChart } = usePxCharts()
   const {
@@ -293,11 +296,47 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
   }
 
+  async function calculatePathFromSelection(selected: string[]) {
+    path.value = await calculate_path(nodes.value, edges.value, selected)
+  }
+
+  async function resetPath() {
+    // reset style of nodes in path
+    for (const node of nodes.value) {
+        if (path.value.includes(node.id)) {
+            node.style = undefined
+        }
+    }
+    // reset path itself
+    path.value = [];
+  }
+
+  async function highlightPath() {
+
+    const pathStyle = {
+        color: 'var(--ui-primary)',
+        border: '3px solid var(--ui-primary)',
+        borderRadius: '10px',
+        boxShadow: '0 0 10px var(--ui-primary)'
+    }
+    
+    if (path.value.length) {
+        // alert(path.value)
+        // set style of nodes in calculated path
+        for (const node of nodes.value) {
+            if (path.value.includes(node.id)) {
+                node.style = pathStyle
+            }
+        }
+    }
+  }
+
   return {
     nodes,
     edges,
     loading,
     error,
+    path,
     pxChartError,
     loadGraph,
     addContainer,
@@ -309,5 +348,8 @@ export function usePxChartsCanvasApi(chartId: string) {
     addEdge,
     applyDefaultEdgeChanges,
     deleteEdge,
+    calculatePathFromSelection,
+    resetPath,
+    highlightPath,
   }
 }
