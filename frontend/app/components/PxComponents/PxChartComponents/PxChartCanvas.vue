@@ -7,20 +7,26 @@ import {
   type Connection,
   type EdgeChange,
   type NodeChange,
+  type NodeSelectionChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
-const { screenToFlowCoordinate } = useVueFlow()
+const { screenToFlowCoordinate, getSelectedNodes } = useVueFlow()
 
 const chartId = props.chartId
+
+const { fetchAll: fetchPxDefinitions } = usePxComponentDefinitions()
+
+const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(props.chartId)
 
 const {
   nodes,
   edges,
   error,
+  path,
   pxChartError,
   loadGraph,
   addContainer,
@@ -32,6 +38,9 @@ const {
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
+  calculatePathFromSelection,
+  resetPath,
+  highlightPath,
 } = usePxChartsCanvasApi(chartId)
 
 const edgeTypes = {
@@ -40,6 +49,8 @@ const edgeTypes = {
 
 onMounted(() => {
   loadGraph()
+  fetchPxDefinitions()
+  fetchPxChartContainers()
 })
 
 async function onNodeDragStop(event: NodeDragEvent) {
@@ -98,6 +109,7 @@ async function onNodesChange(changes: NodeChange[]) {
         break
       case 'select':
         defaultChanges.push(change)
+        await onSelectionChange(change)
         break
     }
   }
@@ -131,9 +143,45 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
   await addContainer(pos.x, pos.y)
 }
+
+const nodesInPath = computed(() => {
+    const containersInPath: string[] = []
+    const containerIdsInPath: string[] = []
+    path.value.forEach((containerId) => {
+        const container = pxChartContainers.value.find((container) => container.id === containerId)
+        // TODO: what if undefined?
+        if (container && container.content) {
+            containersInPath.push(container.content)
+            containerIdsInPath.push(container.id)
+        }
+    })
+
+    return containersInPath
+})
+
+async function onSelectionChange(change: NodeSelectionChange) {
+  // do something when selected nodes/edges changed
+  const previouslySelected = getSelectedNodes.value
+  if (
+    previouslySelected.length == 1 &&
+    previouslySelected[0] &&
+    previouslySelected[0].id != change.id &&
+    change.selected
+  ) {
+    const ids = [previouslySelected[0].id, change.id]
+    await calculatePathFromSelection(ids)
+    await highlightPath()
+  } else {
+    await resetPath()
+  }
+}
+
 </script>
 
 <template>
+  <PxDiagrams
+    :nodes-in-path="nodesInPath" 
+  />
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
