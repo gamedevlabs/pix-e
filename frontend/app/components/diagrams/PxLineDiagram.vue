@@ -39,6 +39,28 @@ function getNodeFromName(name: string) {
     return pxNodes.value.find((node) => node.name === name)
 }
 
+function initColorIterator() {
+  let idx = 0;
+
+  const colors = [
+    '#06b6d4',
+    '#164e63',
+    '#93c5fd',
+    '#1e3a8a',
+    '#d1d5db',
+    '#1f2937'
+  ]
+
+  const colorIterator = {
+    next() {
+      const result = { value: colors[idx % colors.length], done: false };
+      idx++;
+      return result;
+    },
+  };
+  return colorIterator;
+}
+
 const data = computed(() => {
   const labels : string[] = []
 
@@ -54,6 +76,7 @@ const data = computed(() => {
   })
 
   const datasets = []
+  const colors = initColorIterator()
 
   selectedDefinitionIds.value.forEach((def) => {
     const values: number[] = []
@@ -70,7 +93,7 @@ const data = computed(() => {
         label: getNameFromDefinitionId(def),
         data: values,
         fill: true,
-        borderColor: '#06b6d4'
+        borderColor: colors.next().value
     })
   })
 
