@@ -41,7 +41,6 @@ function getNodeFromName(name: string) {
 
 const data = computed(() => {
   const labels : string[] = []
-  const values : number[] = []
 
   let relevantNodes = props.nodesInPath
     .map((name) => getNodeFromName(name))
@@ -51,28 +50,36 @@ const data = computed(() => {
   // console.log(`Nodes: [${relevantNodes.toString()}]`)
   
   relevantNodes.forEach((node) => {
-    const value = pxComponents.value
-        .find((c) => c.definition === selectedDefinitionId.value && c.node === node.id)?.value
-    if (typeof value === 'number') {
-        values.push(value)
-    } else {
-        values.push(NaN)
-    }
     labels.push(node.name)
   })
+
+  const datasets = []
+
+  selectedDefinitionIds.value.forEach((def) => {
+    const values: number[] = []
+    relevantNodes.forEach((node) => {
+        const yValue = pxComponents.value
+            .find((c) => c.definition === def && c.node === node.id)?.value
+        if (typeof yValue === 'number') {
+            values.push(yValue)
+        } else {
+            values.push(NaN)
+        }
+    })
+    datasets.push({
+        label: getNameFromDefinitionId(def),
+        data: values,
+        fill: true,
+        borderColor: '#06b6d4'
+    })
+  })
+
   //console.log(`Labels: [${labels.toString()}]`)
   
   return {
-    labels: labels,
-    datasets: [
-      {
-        label: getNameFromDefinitionId(selectedDefinitionId.value),
-        data: values,
-        fill: true,
-        borderColor: '#06b6d4',
-      },
-    ],
-  }
+        labels: labels,
+        datasets: datasets
+    }
 })
 
 const chartOptions = {
@@ -108,14 +115,12 @@ const componentDefinitionNames = computed(() => {
     return pxComponentDefinitions.value.map((def) => def.name)
 })
 
-const selectedDefinitionId = ref('')
+const selectedDefinitionIds: Ref<string[], string[]> = ref([])
 
-async function handleDefinitionSelection(value: string) {
-  const defId = pxComponentDefinitions.value
-    .find((def) => def.name === value)?.id
-  if (defId) {
-    selectedDefinitionId.value = defId
-  }
+async function handleDefinitionSelection(selection: string[]) {
+  selectedDefinitionIds.value = pxComponentDefinitions.value
+    .filter((def) => selection.includes(def.name))
+    .map((def) => def.id)
 }
 
 function emitDelete() {
@@ -131,6 +136,7 @@ function emitDelete() {
       <USelect
         v-if="componentDefinitionNames.length"
         placeholder="Select Component Definition"
+        multiple
         :v-model="undefined" 
         :items="componentDefinitionNames"
         :ui="{ content: 'min-w-fit' }"
@@ -146,7 +152,7 @@ function emitDelete() {
     </template>
     <div class="chart-container">
       <Line v-if="data && data.datasets[0]?.data.some((v) => !!v)" :data="data" :options="chartOptions"/>
-      <p v-else>No data to display.<br/>ID of selected definition: {{ selectedDefinitionId }}<br/>Nodes: {{ pxNodes.toString() }}<br/>Data Labels: {{ data.labels.toString() }}<br/>Values: {{ data.datasets[0]?.data }}<br/>Path: {{ props.nodesInPath.toString() }}</p>
+      <p v-else>No data to display.<br/>ID of selected definitions: {{ selectedDefinitionIds }}<br/>Nodes: {{ pxNodes.toString() }}<br/>Data Labels: {{ data.labels.toString() }}<br/>Values: {{ data.datasets[0]?.data }}<br/>Path: {{ props.nodesInPath.toString() }}</p>
     </div>
   </UCard>
 </template>
