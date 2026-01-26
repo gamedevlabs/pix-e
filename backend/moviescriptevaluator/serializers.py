@@ -5,6 +5,7 @@ from moviescriptevaluator.models import (
     MovieProject,
     MovieScript,
     ScriptSceneAnalysisResult,
+    RequiredAssets
 )
 
 
@@ -38,3 +39,8 @@ class ScriptSceneAnalysisSerializer(serializers.ModelSerializer):
             "fab_search_keyword",
             "notes",
         ]
+
+class RequiredAssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequiredAssets
+        fields = "__all__"

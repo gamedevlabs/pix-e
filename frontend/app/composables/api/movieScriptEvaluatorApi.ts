@@ -73,7 +73,7 @@ export function useMovieScriptEvaluatorApi() {
           'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
       })
-    } catch(error) {
+    } catch (error) {
       throw new Error((error as Error)?.message || 'Failed to get recommendations')
     }
   }

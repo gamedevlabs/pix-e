@@ -58,3 +58,14 @@ export interface ScriptSceneAnalysis {
 export interface MovieScriptAnalysisResponse {
   result: ScriptSceneAnalysis[]
 }
+
+export interface RequiredAsset {
+  id: string
+  asset: string
+  project: string
+  name: string
+  purpose: string
+  description: string
+  create_at?: Date
+  updated_at?: Date
+}

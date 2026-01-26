@@ -4,6 +4,7 @@ import type {
   MovieProject,
   MovieScript,
   MovieScriptAnalysisResponse,
+  RequiredAsset,
 } from '../utils/movie-script-evaluator.d.ts'
 import { useMovieScriptEvaluatorApi } from './api/movieScriptEvaluatorApi.js'
 
@@ -56,8 +57,15 @@ export function useMovieScriptEvaluator() {
     }
   }
 
+  function useRequiredAssets(projectId: string) {
+    return useCrudWithAuthentication<RequiredAsset>(
+      'movie-script-evaluator/projects/' + projectId + '/required-assets/',
+    )
+  }
+
   return {
     ...movieScriptProjects,
+    useRequiredAssets,
     uploadMovieScript,
     useAssets,
     useAnalyzeMovieScript,

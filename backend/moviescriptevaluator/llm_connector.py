@@ -3,6 +3,7 @@ from typing import Any
 # Import handlers to trigger auto-registration
 from backend.moviescriptevaluator.llm import handlers  # noqa: F401
 from llm import LLMOrchestrator, LLMRequest
+from moviescriptevaluator.llm.schemas import RecommendationResult
 from moviescriptevaluator.models import AssetMetaData, MovieScript, ScriptSceneAnalysisResult
 
 
@@ -33,7 +34,7 @@ class MovieScriptLLMConnector:
             response = self.orchestrator.execute(request)
             return response.results
 
-    def create_recommendations(self, items_needed: list[ScriptSceneAnalysisResult], asset_list: list[AssetMetaData]) -> dict[str, Any]:
+    def create_recommendations(self, items_needed: list[ScriptSceneAnalysisResult], asset_list: list[AssetMetaData]) -> RecommendationResult:
         request = LLMRequest(
             feature="movie-script-evaluator",
             operation="create_recommendations",
@@ -47,4 +48,4 @@ class MovieScriptLLMConnector:
         )
 
         response = self.orchestrator.execute(request)
-        return response.results
+        return RecommendationResult(**response.results)

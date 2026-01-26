@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -5,18 +6,19 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
+from moviescriptevaluator.llm.schemas import RecommendationResult
 from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
 from moviescriptevaluator.models import (
     AssetMetaData,
     MovieProject,
     MovieScript,
-    ScriptSceneAnalysisResult,
+    ScriptSceneAnalysisResult, RequiredAssets,
 )
 from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
     MovieScriptSerializer,
     ScriptSceneAnalysisSerializer,
-    UnrealEngineDataSerializer,
+    UnrealEngineDataSerializer, RequiredAssetSerializer,
 )
 from pxcharts.permissions import IsOwner
 
@@ -67,16 +69,61 @@ class MovieProjectView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["GET"], url_path="recommendations")
     def get_recommendations(self, request, pk):
+        page_size = 45
+        page_number = 1
+
         needed_items = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
-        items_from_ue = list(AssetMetaData.objects.filter(project=pk)[:50])
+        items_from_ue_db = AssetMetaData.objects.filter(project=pk).order_by("created_at")
+        paginator = Paginator(items_from_ue_db, page_size)
 
         if not needed_items:
             return Response("Please analyze the uploaded script first", status=status.HTTP_400_BAD_REQUEST)
 
-        if not items_from_ue:
-            return Response("Please create assets or connect Unreal Engine via the plugin", status=status.HTTP_400_BAD_REQUEST)
+        response: RecommendationResult = RecommendationResult(result=[])
 
-        response = get_llm_connector().create_recommendations(needed_items, items_from_ue)
+        while True:
+            page = paginator.get_page(page_number)
+            items_from_ue = list(page.object_list)
+            try:
+                r = get_llm_connector().create_recommendations(needed_items, items_from_ue)
+                response.result += r.result
+            except:
+                print("error")
+
+            if page.has_next():
+                page_number = page.next_page_number()
+            else:
+                break
+
+        # Remove the duplicates
+        unique_assets = []
+        seen_names = set()
+
+        for item in response.result:
+            if item.asset_name not in seen_names:
+                unique_assets.append(item)
+                seen_names.add(item.asset_name)
+
+        response.result = unique_assets
+
+        # Delete all the previous recommendations
+        RequiredAssets.objects.filter(project=pk).delete()
+
+        for item in response.result:
+            try:
+                asset_in_db = AssetMetaData.objects.filter(project=pk, name=item.asset_name).first()
+                project = MovieProject.objects.get(pk=pk)
+
+                RequiredAssets.objects.create(
+                    asset=asset_in_db,
+                    project=project,
+                    name=item.asset_name,
+                    purpose=item.purpose,
+                    description=item.description,
+                )
+            except AssetMetaData.DoesNotExist:
+                continue
+
         return Response(response, status=status.HTTP_200_OK)
 
 
@@ -191,3 +238,12 @@ class ScriptSceneAnalysisViewSet(viewsets.ModelViewSet):
         script = self.get_object()
         script.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class RequiredAssetViewSet(viewsets.ModelViewSet):
+    serializer_class = RequiredAssetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return RequiredAssets.objects.filter(
+            project=self.kwargs["project_pk"]
+        )
