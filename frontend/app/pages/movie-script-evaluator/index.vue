@@ -24,6 +24,8 @@ const {
   items: movieScriptProjects,
   fetchAll,
   createItem: createMovieScriptProject,
+  updateItem: updateMovieScriptProject,
+  deleteItem: deleteMovieScriptProject,
 } = useMovieScriptEvaluator()
 
 onMounted(() => {
@@ -31,6 +33,7 @@ onMounted(() => {
 })
 
 const newItem = ref<MovieProject | null>(null)
+const itemIsBeingEdited = ref(false)
 
 function addItem() {
   newItem.value = { id: -1, name: '', description: '' }
@@ -39,6 +42,21 @@ function addItem() {
 async function createItem(newEntityDraft: Partial<MovieProject>) {
   await createMovieScriptProject(newEntityDraft)
   newItem.value = null
+}
+
+async function deleteItem(projectId: number) {
+  await deleteMovieScriptProject(projectId)
+}
+
+async function updateItem(projectId: number, updatedEntity: Partial<NamedEntity>) {
+  await updateMovieScriptProject(projectId, updatedEntity)
+
+  itemIsBeingEdited.value = false
+}
+
+function editItem() {
+  // Logic to set the item in edit mode can be implemented here if needed
+  itemIsBeingEdited.value = true
 }
 
 async function navigateToDetails(projectId: number) {
@@ -59,6 +77,10 @@ async function navigateToDetails(projectId: number) {
             :visualization-style="'detailed'"
             show-edit
             show-delete
+            :is-being-edited="itemIsBeingEdited"
+            @edit="editItem"
+            @delete="deleteItem(project.id)"
+            @update="updateItem(project.id, $event)"
           >
             <UButton style="margin-top: 25%" @click="navigateToDetails(project.id)"
               >See Details</UButton
