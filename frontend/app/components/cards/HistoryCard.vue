@@ -46,14 +46,7 @@ const getTypeColor = (type?: string) => {
 </script>
 
 <template>
-  <UCard class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-    <template #header>
-      <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-clock" class="text-gray-600 dark:text-gray-400" />
-        <h3 class="font-semibold text-gray-900 dark:text-gray-100">{{ title }}</h3>
-      </div>
-    </template>
-
+  <DashboardCard :title="title" icon="i-lucide-clock">
     <div class="space-y-2">
       <div v-for="(item, index) in items" :key="index" class="flex gap-2 items-center text-sm">
         <UIcon :name="item.icon" :class="getTypeColor(item.type)" class="shrink-0" />
@@ -63,5 +56,5 @@ const getTypeColor = (type?: string) => {
         </div>
       </div>
     </div>
-  </UCard>
+  </DashboardCard>
 </template>

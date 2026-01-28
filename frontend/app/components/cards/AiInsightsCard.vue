@@ -55,14 +55,7 @@ const getInsightConfig = (type: Insight['type']) => {
 </script>
 
 <template>
-  <UCard class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-    <template #header>
-      <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-sparkles" class="text-gray-600 dark:text-gray-400" />
-        <h3 class="font-semibold text-gray-900 dark:text-gray-100">AI Insights & Suggestions</h3>
-      </div>
-    </template>
-
+  <DashboardCard title="AI Insights & Suggestions" icon="i-lucide-sparkles">
     <div class="space-y-3">
       <div
         v-for="(insight, index) in insights"
@@ -88,5 +81,5 @@ const getInsightConfig = (type: Insight['type']) => {
         </div>
       </div>
     </div>
-  </UCard>
+  </DashboardCard>
 </template>

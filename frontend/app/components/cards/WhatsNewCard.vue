@@ -26,13 +26,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <UCard class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-    <template #header>
-      <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-sparkles" class="text-gray-600 dark:text-gray-400" />
-        <h3 class="font-semibold text-gray-900 dark:text-gray-100">What's New</h3>
-      </div>
-    </template>
+  <DashboardCard title="What's New" icon="i-lucide-sparkles">
     <div class="space-y-3 text-sm">
       <div v-for="(update, index) in updates" :key="index" class="flex gap-2">
         <UIcon :name="update.icon || 'i-lucide-circle-dot'" class="text-primary shrink-0 mt-0.5" />
@@ -42,5 +36,5 @@ withDefaults(defineProps<Props>(), {
         </div>
       </div>
     </div>
-  </UCard>
+  </DashboardCard>
 </template>
