@@ -1,4 +1,18 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Sentiment Analysis',
+    icon: 'i-lucide-library-big',
+    navGroup: 'main',
+    navParent: 'player-expectations',
+    navOrder: 1,
+    showInNav: true,
+  },
+})
+
 // Main data state
 const allSentiments = ref([])
 const loading = ref(false)

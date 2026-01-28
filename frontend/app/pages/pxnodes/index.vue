@@ -1,6 +1,16 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Nodes',
+    icon: 'i-lucide-hexagon',
+    navGroup: 'main',
+    navParent: 'player-experience',
+    navOrder: 2,
+    showInNav: true,
+  },
 })
 
 const {

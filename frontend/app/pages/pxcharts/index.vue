@@ -1,7 +1,21 @@
 ﻿<script setup lang="ts">
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'PxCharts',
+    icon: 'i-lucide-chart-network',
+    navGroup: 'main',
+    navParent: 'player-experience',
+    navOrder: 1,
+    showInNav: true,
+  },
 })
+// ============================================================================
 
 const {
   items: pxCharts,

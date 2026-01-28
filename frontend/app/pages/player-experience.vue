@@ -1,14 +1,27 @@
 <script setup lang="ts">
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
+// ============================================================================
+
 import * as z from 'zod'
 // import type { FormSubmitEvent } from '@nuxt/ui'
 import { usePxExport } from '~/composables/usePxExport'
+definePageMeta({
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Player Experience',
+    icon: 'i-lucide-chart-no-axes-gantt',
+    navGroup: 'main',
+    navOrder: 2,
+    showInNav: true,
+  },
+})
 
 const { exportPxData, importPxData } = usePxExport()
 const { downloadJson } = useDownloadJson()
-
-definePageMeta({
-  middleware: 'authentication',
-})
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 const ACCEPTED_FILE_FORMATS = ['application/json']
