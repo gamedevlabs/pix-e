@@ -13,7 +13,10 @@ definePageMeta({
     type: 'project-required',
     showSidebar: true,
     title: 'Player Experience',
-    icon: 'i-lucide-book-open',
+    icon: 'i-lucide-chart-no-axes-gantt',
+    navGroup: 'main',
+    navOrder: 2,
+    showInNav: true,
   },
 })
 

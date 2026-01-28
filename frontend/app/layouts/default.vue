@@ -5,6 +5,7 @@ import type { PageConfig } from '~/types/page-config'
 
 // ROUTING
 const route = useRoute()
+const router = useRouter()
 
 const open = ref(false)
 
@@ -96,57 +97,77 @@ const showSidebar = computed(() => {
   return checks.hasCurrentProject && checks.userLoggedIn
 })
 
-const links = computed<NavigationMenuItem[][]>(() => [
-  [
-    {
-      label: 'Dashboard',
-      icon: 'i-lucide-house',
-      to: `/dashboard${projectQuery.value}`,
-    },
-    {
-      label: 'Player Experience',
-      icon: 'i-lucide-settings',
-      children: [
-        {
-          label: 'Overview',
-          icon: 'i-lucide-chart-no-axes-gantt',
-          to: `/player-experience${projectQuery.value}`,
-        },
-        { label: 'Charts', icon: 'i-lucide-chart-network', to: `/pxcharts${projectQuery.value}` },
-        { label: 'Nodes', icon: 'i-lucide-hexagon', to: `/pxnodes${projectQuery.value}` },
-        {
-          label: 'Components',
-          icon: 'i-lucide-component',
-          to: `/pxcomponents${projectQuery.value}`,
-        },
-        {
-          label: 'Components Definitions',
-          icon: 'i-lucide-library-big',
-          to: `/pxcomponentdefinitions${projectQuery.value}`,
-        },
-      ],
-    },
-    {
-      label: 'Player Expectations',
-      icon: 'i-lucide-book-open',
-      children: [
-        {
-          label: 'Overview',
-          icon: 'i-lucide-chart-no-axes-gantt',
-          to: `/player-expectations${projectQuery.value}`,
-        },
-        {
-          label: 'Sentiment Analysis',
-          icon: 'i-lucide-library-big',
-          to: `/sentiments${projectQuery.value}`,
-        },
-      ],
-    },
-    { label: 'Pillars', icon: 'i-lucide-landmark', to: `/pillars${projectQuery.value}` },
-    { label: 'Movie Script Evaluator', icon: 'i-lucide-film', to: '/movie-script-evaluator' },
-    { label: 'Settings', icon: 'i-lucide-settings', to: `/edit${projectQuery.value}` },
-  ],
-  [
+// Dynamically build navigation from page metadata
+const links = computed<NavigationMenuItem[][]>(() => {
+  const routes = router.getRoutes()
+
+  // Filter routes that should appear in navigation
+  const navRoutes = routes.filter((route) => {
+    const pageConfig = route.meta.pageConfig as PageConfig | undefined
+    return pageConfig?.showInNav !== false && pageConfig?.title && pageConfig?.icon
+  })
+
+  // Sort by navOrder
+  const sortedRoutes = navRoutes.sort((a, b) => {
+    const aConfig = a.meta.pageConfig as PageConfig
+    const bConfig = b.meta.pageConfig as PageConfig
+    return (aConfig.navOrder || 999) - (bConfig.navOrder || 999)
+  })
+
+  // Group routes by parent
+  const routesByParent = new Map<string, typeof sortedRoutes>()
+  const topLevelRoutes: typeof sortedRoutes = []
+
+  sortedRoutes.forEach((route) => {
+    const pageConfig = route.meta.pageConfig as PageConfig
+    if (pageConfig.navParent) {
+      const existing = routesByParent.get(pageConfig.navParent) || []
+      routesByParent.set(pageConfig.navParent, [...existing, route])
+    } else {
+      topLevelRoutes.push(route)
+    }
+  })
+
+  // Build navigation items
+  const navItems: NavigationMenuItem[] = topLevelRoutes.map((route) => {
+    const pageConfig = route.meta.pageConfig as PageConfig
+    const routePath = route.path
+
+    // Check if this route has children
+    const childRoutes = routesByParent.get(routePath.replace(/^\//, ''))
+
+    // Determine if route needs project query
+    const needsProjectQuery = pageConfig.type === 'project-required'
+    const to = needsProjectQuery ? `${routePath}${projectQuery.value}` : routePath
+
+    const navItem: NavigationMenuItem = {
+      label: pageConfig.title!,
+      icon: pageConfig.icon!,
+      to,
+    }
+
+    // Add children if they exist
+    if (childRoutes && childRoutes.length > 0) {
+      navItem.children = childRoutes.map((childRoute) => {
+        const childConfig = childRoute.meta.pageConfig as PageConfig
+        const childNeedsProjectQuery = childConfig.type === 'project-required'
+        const childTo = childNeedsProjectQuery
+          ? `${childRoute.path}${projectQuery.value}`
+          : childRoute.path
+
+        return {
+          label: childConfig.title!,
+          icon: childConfig.icon!,
+          to: childTo,
+        }
+      })
+    }
+
+    return navItem
+  })
+
+  // External links section
+  const externalLinks: NavigationMenuItem[] = [
     {
       label: 'Wiki',
       icon: 'i-lucide-book-text',
@@ -159,8 +180,10 @@ const links = computed<NavigationMenuItem[][]>(() => [
       to: 'https://discord.gg/7BhM3nTq',
       target: '_blank',
     },
-  ],
-])
+  ]
+
+  return [navItems, externalLinks]
+})
 
 const groups = computed(() => [
   {

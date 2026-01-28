@@ -10,6 +10,15 @@ const toast = useToast()
 
 definePageMeta({
   middleware: 'authentication',
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Settings',
+    icon: 'i-lucide-settings',
+    navGroup: 'main',
+    navOrder: 6,
+    showInNav: true,
+  },
 })
 
 // Sync project from URL

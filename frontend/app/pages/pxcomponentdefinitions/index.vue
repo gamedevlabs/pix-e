@@ -1,6 +1,16 @@
 <script setup lang="ts">
 definePageMeta({
   middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Component Definitions',
+    icon: 'i-lucide-library-big',
+    navGroup: 'main',
+    navParent: 'player-experience',
+    navOrder: 4,
+    showInNav: true,
+  },
 })
 
 const {

@@ -9,6 +9,9 @@ definePageMeta({
     showSidebar: true,
     title: 'Design Pillars',
     icon: 'i-lucide-landmark',
+    navGroup: 'main',
+    navOrder: 4,
+    showInNav: true,
   },
 })
 // ============================================================================

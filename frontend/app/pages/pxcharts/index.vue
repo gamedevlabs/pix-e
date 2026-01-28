@@ -8,7 +8,11 @@ definePageMeta({
     type: 'project-required',
     showSidebar: true,
     title: 'PxCharts',
-    icon: 'i-lucide-network',
+    icon: 'i-lucide-chart-network',
+    navGroup: 'main',
+    navParent: 'player-experience',
+    navOrder: 1,
+    showInNav: true,
   },
 })
 // ============================================================================

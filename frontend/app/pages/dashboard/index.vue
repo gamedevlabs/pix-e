@@ -9,6 +9,9 @@ definePageMeta({
     showSidebar: true,
     title: 'Dashboard',
     icon: 'i-lucide-house',
+    navGroup: 'main',
+    navOrder: 1,
+    showInNav: true,
   },
 })
 // ============================================================================
@@ -111,7 +114,7 @@ const mock_workflowSteps = computed(() => {
             <UButton
               icon="i-lucide-settings"
               size="sm"
-              color="gray"
+              color="neutral"
               variant="ghost"
               label="Settings"
               @click="navigateToModule('/edit')"

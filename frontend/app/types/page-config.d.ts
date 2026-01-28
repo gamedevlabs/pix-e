@@ -26,6 +26,29 @@ export interface PageConfig {
    * Icon for navigation (optional)
    */
   icon?: string
+
+  /**
+   * Navigation group for sidebar organization
+   * Pages with the same group will be grouped together
+   */
+  navGroup?: string
+
+  /**
+   * Parent navigation item for nested menus
+   * e.g., 'player-experience' for nested items under Player Experience
+   */
+  navParent?: string
+
+  /**
+   * Order within navigation group (lower numbers appear first)
+   */
+  navOrder?: number
+
+  /**
+   * Whether to show this page in navigation
+   * @default true
+   */
+  showInNav?: boolean
 }
 
 declare module '#app' {
