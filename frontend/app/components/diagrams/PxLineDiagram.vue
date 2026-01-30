@@ -61,8 +61,14 @@ function initColorIterator() {
   return colorIterator;
 }
 
+interface NodeData {
+    name: string;
+    [key: string]: string | number | boolean | undefined;
+}
+
 const data = computed(() => {
   const labels : string[] = []
+  const data: NodeData[] = []
 
   let relevantNodes = props.nodesInPath
     .map((name) => getNodeFromName(name))
@@ -71,48 +77,48 @@ const data = computed(() => {
     relevantNodes = pxNodes.value
   // console.log(`Nodes: [${relevantNodes.toString()}]`)
 
+  // build and add NodeData object for each node
+  let sumX: number = 0
   relevantNodes.forEach((node) => {
+    // add node name
+    const nodeData: NodeData = {
+        name: node.name
+    }
     labels.push(node.name)
+
+    // add optional x value
+    if (selectedDefinitionsX.value) {
+        const xComp = pxComponents.value
+            .find((c) => c.definition === selectedDefinitionsX.value && c.node === node.id)?.value
+        if (typeof xComp === 'number') {
+            sumX += xComp
+        } else {
+            sumX += 1
+            // TODO: warning about invalid component type or missing component value
+        }
+        nodeData.x = sumX;
+    }
+
+    // add values for Y-axis components
+    pxComponents.value
+        .filter((c) => selectedDefinitionsY.value.includes(c.definition) && c.node === node.id)
+        .forEach((c) => { nodeData[c.definition] = c.value })
+
+
+    data.push(nodeData)
   })
 
   const datasets = []
   const colors = initColorIterator()
 
   selectedDefinitionsY.value.forEach((def) => {
-    const valuesWithX : object[] = []
-    const valuesWithoutX : number[] = []
-    const values : object[] = []
-    let sumX: number = 0
-    relevantNodes.forEach((node) => {
-        const yValue = pxComponents.value
-            .find((c) => c.definition === def && c.node === node.id)?.value
-        const xValue = pxComponents.value
-            .find((c) => c.definition === selectedDefinitionsX.value && c.node === node.id)?.value
-        if (typeof xValue === 'number') {
-            sumX += xValue
-            if (typeof yValue === 'number') {
-                valuesWithX.push({x: sumX, y: yValue})
-                values.push({x: sumX, y: yValue})
-            } else {
-                valuesWithX.push({x: sumX, y: null})
-                values.push({x: sumX, y: null})
-            }
-        } else {
-            if (typeof yValue === 'number') {
-                valuesWithoutX.push(yValue)
-                values.push({x: node.name, y: yValue})
-            } else {
-                valuesWithoutX.push(NaN)
-                values.push({x: node.name, y: NaN})
-            }
-        }
-        
-    })
-    // valuesWithX.forEach((pair) => alert(pair.toString()))
     datasets.push({
         label: getNameFromDefinitionId(def),
-        //data: selectedDefinitionsX.value ? valuesWithX : valuesWithoutX,
-        data: values,
+        data: data,
+        parsing: {
+            xAxisKey: selectedDefinitionsX.value ? 'x' : undefined,
+            yAxisKey: def,
+        },
         stepped: selectedDefinitionsX.value ? 'after' : false,
         fill: true,
         borderColor: colors.next().value
@@ -120,12 +126,7 @@ const data = computed(() => {
   })
   //console.log(`Labels: [${labels.toString()}]`)
   
-  return selectedDefinitionsX.value  ? 
-    {
-        datasets: datasets
-    } 
-    : 
-    {
+  return {
         labels: labels,
         datasets: datasets
     }
