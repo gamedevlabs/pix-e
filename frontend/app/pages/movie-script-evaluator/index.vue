@@ -1,8 +1,20 @@
 <script setup lang="ts">
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
+// ============================================================================
 import type { MovieProject } from '~/utils/movie-script-evaluator'
-
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication'],
+  pageConfig: {
+    type: 'standalone',
+    showSidebar: false,
+    title: 'Movie Script Evaluator',
+    icon: 'i-lucide-film',
+    navGroup: 'main',
+    navOrder: 5,
+    showInNav: true,
+  },
 })
 
 const { user } = useAuthentication()

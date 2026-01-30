@@ -1,4 +1,21 @@
 <script setup lang="ts">
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
+definePageMeta({
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Player Expectations',
+    icon: 'i-lucide-book-open',
+    navGroup: 'main',
+    navOrder: 3,
+    showInNav: true,
+  },
+})
+// ============================================================================
+
 const {
   aspectChartData,
   sentimentChartData,

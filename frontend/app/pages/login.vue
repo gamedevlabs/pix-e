@@ -1,6 +1,18 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
 
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
+definePageMeta({
+  pageConfig: {
+    type: 'public',
+    showSidebar: false,
+    title: 'Login',
+  },
+})
+// ============================================================================
+
 const state = reactive({
   username: '',
   password: '',

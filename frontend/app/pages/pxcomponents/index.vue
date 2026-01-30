@@ -1,6 +1,16 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'Components',
+    icon: 'i-lucide-component',
+    navGroup: 'main',
+    navParent: 'player-experience',
+    navOrder: 3,
+    showInNav: true,
+  },
 })
 
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
