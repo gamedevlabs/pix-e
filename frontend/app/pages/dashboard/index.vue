@@ -31,11 +31,13 @@ onMounted(() => {
 const getProjectInitials = (name: string) => {
   if (!name) return 'P'
   const parts = name.split(/\s+/).filter(Boolean)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[1][0]).toUpperCase()
+  if (parts.length === 0) return 'P'
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
+  const first = parts[0]?.[0]
+  const second = parts[1]?.[0]
+  if (!first || !second) return parts[0]!.slice(0, 2).toUpperCase()
+  return (first + second).toUpperCase()
 }
-
-const currentWorkflowStep = ref(1) // Currently on Research step
 
 // Navigate to specific module with project context
 const navigateToModule = (route: string) => {
@@ -64,43 +66,6 @@ const mock_historyData = computed(() => [
     type: 'delete' as const,
   },
 ])
-
-// Example workflow data - will be replaced with real data later
-const mock_workflowSteps = computed(() => {
-  // Track completion status
-  const hasProject = !!currentProject.value
-  const hasCharts = pxCharts.value.length > 0
-  const hasExpectations = false // TODO: Add real check when player expectations data is available
-  const hasPillars = pillars.value.length > 0
-
-  return [
-    {
-      title: 'Create Project',
-      description: 'Set up your game project',
-      icon: hasProject ? 'i-lucide-check-circle' : 'i-lucide-folder-plus',
-    },
-    {
-      title: 'Create first PX Chart',
-      description: 'Build your experience model',
-      icon: hasCharts ? 'i-lucide-check-circle' : 'i-lucide-network',
-    },
-    {
-      title: 'Analyze Player Expectations',
-      description: 'Define player expectations',
-      icon: hasExpectations ? 'i-lucide-check-circle' : 'i-lucide-users',
-    },
-    {
-      title: 'Create Pillars',
-      description: 'Define design pillars',
-      icon: hasPillars ? 'i-lucide-check-circle' : 'i-lucide-landmark',
-    },
-    {
-      title: 'Continue Development',
-      description: 'Build and refine your game',
-      icon: 'i-lucide-rocket',
-    },
-  ]
-})
 </script>
 
 <template>
@@ -269,27 +234,8 @@ const mock_workflowSteps = computed(() => {
           </div>
         </UCard>
 
-        <!-- Workflow Progress - Vertical (Spans 1 column, 2 rows) -->
-        <UCard
-          class="row-span-2 hover:shadow-lg transition-shadow cursor-pointer hover:border-primary"
-          @click="navigateToModule('/dashboard')"
-        >
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-workflow" class="text-primary" />
-              <h3 class="text-lg font-semibold">Workflow Progress</h3>
-            </div>
-          </template>
-
-          <UStepper
-            v-model="currentWorkflowStep"
-            :items="mock_workflowSteps"
-            orientation="vertical"
-            color="primary"
-            size="md"
-            class="w-full"
-          />
-        </UCard>
+        <!-- Workflow Progress - Vertical -->
+        <WorkflowCard orientation="vertical" />
 
         <!-- Design Pillars Card -->
         <UCard
@@ -333,26 +279,7 @@ const mock_workflowSteps = computed(() => {
         <HistoryCard :items="mock_historyData" title="Recent Activity" />
 
         <!-- Workflow Progress - Horizontal (Spans 2 columns) -->
-        <UCard
-          class="col-span-2 hover:shadow-lg transition-shadow cursor-pointer hover:border-primary"
-          @click="navigateToModule('/dashboard')"
-        >
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-workflow" class="text-primary" />
-              <h3 class="text-lg font-semibold">Workflow Progress</h3>
-            </div>
-          </template>
-
-          <UStepper
-            v-model="currentWorkflowStep"
-            :items="mock_workflowSteps"
-            orientation="horizontal"
-            color="primary"
-            size="md"
-            class="w-full"
-          />
-        </UCard>
+        <WorkflowCard orientation="horizontal" />
       </UPageGrid>
 
       <div>
