@@ -70,7 +70,7 @@ const data = computed(() => {
   if (!relevantNodes.length)
     relevantNodes = pxNodes.value
   // console.log(`Nodes: [${relevantNodes.toString()}]`)
-  
+
   relevantNodes.forEach((node) => {
     labels.push(node.name)
   })
@@ -78,34 +78,60 @@ const data = computed(() => {
   const datasets = []
   const colors = initColorIterator()
 
-  selectedDefinitionIds.value.forEach((def) => {
-    const values: number[] = []
+  selectedDefinitionsY.value.forEach((def) => {
+    const valuesWithX : object[] = []
+    const valuesWithoutX : number[] = []
+    const values : object[] = []
+    let sumX: number = 0
     relevantNodes.forEach((node) => {
         const yValue = pxComponents.value
             .find((c) => c.definition === def && c.node === node.id)?.value
-        if (typeof yValue === 'number') {
-            values.push(yValue)
+        const xValue = pxComponents.value
+            .find((c) => c.definition === selectedDefinitionsX.value && c.node === node.id)?.value
+        if (typeof xValue === 'number') {
+            sumX += xValue
+            if (typeof yValue === 'number') {
+                valuesWithX.push({x: sumX, y: yValue})
+                values.push({x: sumX, y: yValue})
+            } else {
+                valuesWithX.push({x: sumX, y: null})
+                values.push({x: sumX, y: null})
+            }
         } else {
-            values.push(NaN)
+            if (typeof yValue === 'number') {
+                valuesWithoutX.push(yValue)
+                values.push({x: node.name, y: yValue})
+            } else {
+                valuesWithoutX.push(NaN)
+                values.push({x: node.name, y: NaN})
+            }
         }
+        
     })
+    // valuesWithX.forEach((pair) => alert(pair.toString()))
     datasets.push({
         label: getNameFromDefinitionId(def),
+        //data: selectedDefinitionsX.value ? valuesWithX : valuesWithoutX,
         data: values,
+        stepped: selectedDefinitionsX.value ? 'after' : false,
         fill: true,
         borderColor: colors.next().value
     })
   })
-
   //console.log(`Labels: [${labels.toString()}]`)
   
-  return {
+  return selectedDefinitionsX.value  ? 
+    {
+        datasets: datasets
+    } 
+    : 
+    {
         labels: labels,
         datasets: datasets
     }
 })
 
-const chartOptions = {
+const chartOptions = ref({
   responsive: true,
   maintainAspectRatio: false,
   scales: {
@@ -118,7 +144,8 @@ const chartOptions = {
       },
       border: {
         color: 'rgb(128, 128, 128)',
-      }
+      },
+      type: 'category',
     },
     y: {
       ticks: {
@@ -132,16 +159,28 @@ const chartOptions = {
       }
     },
   },
-}
+})
 
 const componentDefinitionNames = computed(() => {
     return pxComponentDefinitions.value.map((def) => def.name)
 })
 
-const selectedDefinitionIds: Ref<string[], string[]> = ref([])
+const selectedDefinitionsX: Ref<string, string> = ref("")
+const selectedDefinitionsY: Ref<string[], string[]> = ref([])
 
-async function handleDefinitionSelection(selection: string[]) {
-  selectedDefinitionIds.value = pxComponentDefinitions.value
+async function handleDefinitionSelectionX(selection: string) {
+  const foundId = pxComponentDefinitions.value
+    .find((def) => selection === def.name)?.id
+  if (foundId) {
+    selectedDefinitionsX.value = foundId
+    chartOptions.value.scales.x.type = 'linear'
+  } else {
+    chartOptions.value.scales.x.type = 'category'
+  }
+}
+
+async function handleDefinitionSelectionY(selection: string[]) {
+  selectedDefinitionsY.value = pxComponentDefinitions.value
     .filter((def) => selection.includes(def.name))
     .map((def) => def.id)
 }
@@ -156,15 +195,30 @@ function emitDelete() {
   
   <UCard>
     <template #header>
-      <USelect
-        v-if="componentDefinitionNames.length"
-        placeholder="Select Component Definition"
-        multiple
-        :v-model="undefined" 
-        :items="componentDefinitionNames"
-        :ui="{ content: 'min-w-fit' }"
-        @update:model-value="handleDefinitionSelection"
-      />
+      <UFieldGroup>
+        <UBadge color="neutral" variant="outline" size="lg" label="X" />
+        <USelect
+            v-if="componentDefinitionNames.length"
+            placeholder="Select x-axis"
+            :v-model="undefined" 
+            :items="componentDefinitionNames"
+            :ui="{ content: 'min-w-fit' }"
+            @update:model-value="handleDefinitionSelectionX"
+        />
+      </UFieldGroup>
+      <UFieldGroup>
+        <UBadge color="neutral" variant="outline" size="lg" label="Y" />
+        <USelect
+            v-if="componentDefinitionNames.length"
+            placeholder="Select y-axis"
+            label="Y"
+            multiple
+            :v-model="undefined" 
+            :items="componentDefinitionNames"
+            :ui="{ content: 'min-w-fit' }"
+            @update:model-value="handleDefinitionSelectionY"
+        />
+      </UFieldGroup>
       <UButton
             aria-label="Delete"
             icon="i-lucide-trash-2"
@@ -175,7 +229,7 @@ function emitDelete() {
     </template>
     <div class="chart-container">
       <Line v-if="data && data.datasets[0]?.data.some((v) => !!v)" :data="data" :options="chartOptions"/>
-      <p v-else>No data to display.<br/>ID of selected definitions: {{ selectedDefinitionIds }}<br/>Nodes: {{ pxNodes.toString() }}<br/>Data Labels: {{ data.labels.toString() }}<br/>Values: {{ data.datasets[0]?.data }}<br/>Path: {{ props.nodesInPath.toString() }}</p>
+      <p v-else>No data to display.<br/>ID of selected definition: {{ selectedDefinitionsY }}<br/>Nodes: {{ pxNodes.toString() }}<br/>Data Labels: {{ data.labels?.toString() }}<br/>Values: {{ data.datasets[0]?.data }}<br/>Path: {{ props.nodesInPath.toString() }}</p>
     </div>
   </UCard>
 </template>
