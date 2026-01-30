@@ -11,7 +11,8 @@ interface Props {
   title?: string
 }
 
-const _props = withDefaults(defineProps<Props>(), {
+// TODO: Connect mock data to real backend (history)
+const _mockHistoryEntries = withDefaults(defineProps<Props>(), {
   title: 'Recent Activity',
   items: () => [
     {
