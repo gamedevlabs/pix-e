@@ -10,6 +10,7 @@ export type Substep = {
   started_at?: string | null
   finished_at?: string | null
   timeSpentSeconds?: number
+  route?: string
 }
 
 export type WorkflowStep = {
@@ -22,7 +23,7 @@ export type WorkflowStep = {
   finished_at?: string | null
   timeSpentSeconds?: number
   substeps: Substep[]
-  route?: string // Add route property for navigation
+  route?: string
 }
 
 export type ProjectWorkflow = {
@@ -46,7 +47,7 @@ class WorkflowApiEmulator {
       projectId: 'pixe',
       started_at: now,
       finished_at: null,
-      currentStepIndex: 1, // Set to second step (Setup your first Graph)
+      currentStepIndex: 1,
       steps: _mockWorkflowSteps(),
     }
   }
@@ -67,13 +68,19 @@ const api = new WorkflowApiEmulator()
 // TODO: Connect mock data to real backend (workflow-layer)
 function _mockWorkflowSteps(): WorkflowStep[] {
   const now = new Date().toISOString()
-  const mkSub = (id: string, name: string, status: StepStatus = 'pending'): Substep => ({
+  const mkSub = (
+    id: string,
+    name: string,
+    status: StepStatus = 'pending',
+    route?: string,
+  ): Substep => ({
     id,
     name,
     status,
     started_at: status === 'active' ? now : null,
     finished_at: null,
     timeSpentSeconds: 0,
+    route,
   })
 
   return [
@@ -87,9 +94,9 @@ function _mockWorkflowSteps(): WorkflowStep[] {
       finished_at: now,
       timeSpentSeconds: 0,
       substeps: [
-        mkSub('s1-1', 'Project Information', 'complete'),
-        mkSub('s1-2', 'Project Details', 'complete'),
-        mkSub('s1-3', 'Review', 'complete'),
+        mkSub('s1-1', 'Project Information', 'complete', '/create'),
+        mkSub('s1-2', 'Project Details', 'complete', '/create'),
+        mkSub('s1-3', 'Review', 'complete', '/create'),
       ],
       route: '/create',
     },
@@ -103,10 +110,20 @@ function _mockWorkflowSteps(): WorkflowStep[] {
       finished_at: null,
       timeSpentSeconds: 0,
       substeps: [
-        mkSub('s2-1', 'Create your first Chart!', 'active'),
-        mkSub('s2-2', 'Setup a new Node and Add it to the graph'),
-        mkSub('s2-3', 'Create some Component Definitions and add them to a node'),
-        mkSub('s2-4', 'Setup an second node, add it to the graph and connect the two nodes'),
+        mkSub('s2-1', 'Create your first Chart!', 'complete', '/pxcharts'),
+        mkSub('s2-2', 'Setup a new Node and Add it to the graph', 'complete', '/pxnodes'),
+        mkSub(
+          's2-3',
+          'Create some Component Definitions and add them to a node',
+          'active',
+          '/pxcomponentdefinitions',
+        ),
+        mkSub(
+          's2-4',
+          'Setup an second node, add it to the graph and connect the two nodes',
+          'pending',
+          '/pxnodes',
+        ),
       ],
       route: '/pxcharts',
     },
@@ -119,7 +136,10 @@ function _mockWorkflowSteps(): WorkflowStep[] {
       started_at: null,
       finished_at: null,
       timeSpentSeconds: 0,
-      substeps: [mkSub('s3-1', 'Add some data to the expectations table')],
+      substeps: [
+        mkSub('s3-1', 'Add some data to the expectations table', 'pending', '/player-expectations'),
+        mkSub('s3-2', 'Check out the Sentiment Analysis', 'pending', '/sentiments'),
+      ],
       route: '/player-expectations',
     },
     {
@@ -132,9 +152,9 @@ function _mockWorkflowSteps(): WorkflowStep[] {
       finished_at: null,
       timeSpentSeconds: 0,
       substeps: [
-        mkSub('s4-1', 'Create a new pillar'),
-        mkSub('s4-2', 'Generate some LLM feedback for your pillar'),
-        mkSub('s4-3', 'Checkout LLM Coverage, Contradictions and Additions'),
+        mkSub('s4-1', 'Create a new pillar', 'pending', '/pillars'),
+        mkSub('s4-2', 'Generate some LLM feedback for your pillar', 'pending', '/pillars'),
+        mkSub('s4-3', 'Checkout LLM Coverage, Contradictions and Additions', 'pending', '/pillars'),
       ],
       route: '/pillars',
     },
@@ -198,6 +218,17 @@ export const useProjectWorkflow = () => {
       }
     }
     return total === 0 ? 0 : Math.round((completed / total) * 100)
+  })
+
+  const getCurrentStepProgress = computed(() => {
+    if (!workflow.value) return 0
+    const currentStep = workflow.value.steps[workflow.value.currentStepIndex]
+    if (!currentStep || currentStep.substeps.length === 0) return 0
+
+    const totalSubsteps = currentStep.substeps.length
+    const completedSubsteps = currentStep.substeps.filter((ss) => ss.status === 'complete').length
+
+    return Math.round((completedSubsteps / totalSubsteps) * 100)
   })
 
   const setCurrentStepIndex = async (index: number) => {
@@ -302,6 +333,7 @@ export const useProjectWorkflow = () => {
     getSteps,
     getCurrentStep,
     getProgress,
+    getCurrentStepProgress,
     setCurrentStepIndex,
     advanceStep,
     retreatStep,

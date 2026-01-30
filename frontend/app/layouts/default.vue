@@ -15,6 +15,11 @@ const authentication = useAuthentication()
 // HEADER
 const llmStore = useLLM()
 
+// PROJECT
+const { currentProjectId, syncProjectFromUrl } = useProjectHandler()
+syncProjectFromUrl()
+const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProjectId.value}` : ''))
+
 const dropdownItems = computed(() => [
   [
     {
@@ -34,11 +39,6 @@ const dropdownItems = computed(() => [
     },
   ],
 ])
-
-// PROJECT
-const { currentProjectId, syncProjectFromUrl } = useProjectHandler()
-syncProjectFromUrl()
-const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProjectId.value}` : ''))
 
 // Handles sidebar visibility
 const showSidebar = computed(() => {
@@ -276,6 +276,9 @@ const groups = computed(() => [
                 />
 
                 <div class="mt-auto w-full flex flex-col items-start px-2">
+                  <!-- Workflow Slideover Component -->
+                  <WorkflowSlideover :collapsed="collapsed" />
+
                   <UNavigationMenu
                     :collapsed="collapsed"
                     :items="links[1]"
