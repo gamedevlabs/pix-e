@@ -9,6 +9,7 @@ interface Props {
   insights?: Insight[]
 }
 
+// TODO: Connect mock data to real backend (ai-insights)
 const _props = withDefaults(defineProps<Props>(), {
   insights: () => [
     {

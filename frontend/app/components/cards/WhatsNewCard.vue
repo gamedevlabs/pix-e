@@ -6,18 +6,19 @@ interface Update {
 }
 
 interface Props {
-  updates?: Update[]
+  mockUpdates?: Update[]
 }
 
-withDefaults(defineProps<Props>(), {
-  updates: () => [
+// TODO: Connect mock data to real backend (whats-new)
+const _mockUpdates = withDefaults(defineProps<Props>(), {
+  mockUpdates: () => [
     {
-      title: 'Dashboard Update',
-      description: 'New visual improvements',
+      title: 'Project Layer',
+      description: 'Manage different projects separately',
       icon: 'i-lucide-zap',
     },
     {
-      title: 'Enhanced UI',
+      title: 'Enhanced UX',
       description: 'Better user experience',
       icon: 'i-lucide-palette',
     },
@@ -28,7 +29,7 @@ withDefaults(defineProps<Props>(), {
 <template>
   <DashboardCard title="What's New" icon="i-lucide-sparkles">
     <div class="space-y-3 text-sm">
-      <div v-for="(update, index) in updates" :key="index" class="flex gap-2">
+      <div v-for="(update, index) in mockUpdates" :key="index" class="flex gap-2">
         <UIcon :name="update.icon || 'i-lucide-circle-dot'" class="text-primary shrink-0 mt-0.5" />
         <div>
           <p class="font-medium text-gray-900 dark:text-gray-100">{{ update.title }}</p>

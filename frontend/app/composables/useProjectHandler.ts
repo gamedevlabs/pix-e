@@ -1,6 +1,6 @@
 ﻿import type { Project } from '~/utils/project'
 
-// Temporary in-memory API emulator for projects
+// TODO: Connect mock data to real backend (project-layer)
 class ProjectApiEmulator {
   private projects: Project[] = []
 
