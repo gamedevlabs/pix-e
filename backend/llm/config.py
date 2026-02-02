@@ -414,6 +414,10 @@ class Config:
 # This is loaded once and can be overridden
 _default_config: Optional[Config] = None
 
+def get_model_id(model_name: str) -> str:
+    """Map frontend model names to actual model IDs using orchestrator config."""
+    config = get_config()
+    return config.resolve_model_alias(model_name)
 
 def get_config() -> Config:
     """
