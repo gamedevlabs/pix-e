@@ -5,7 +5,6 @@
 // ============================================================================
 import type { MovieProject } from '~/utils/movie-script-evaluator'
 definePageMeta({
-  middleware: ['authentication'],
   pageConfig: {
     type: 'standalone',
     showSidebar: false,
