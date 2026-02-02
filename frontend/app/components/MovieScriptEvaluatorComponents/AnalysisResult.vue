@@ -13,6 +13,24 @@ const columns: ColumnDef<ScriptSceneAnalysis>[] = [
   { accessorKey: 'asset_type', header: 'Asset Type' },
   { accessorKey: 'fab_search_keyword', header: 'FAB Keyword' },
   { accessorKey: 'notes', header: 'Notes' },
+  {
+    accessorKey: 'asset_coverage',
+    header: 'Asset Coverage',
+    cell: ({ row }) => {
+      const asset_coverage = row.getValue('asset_coverage') as string
+      const colorMap = {
+        FOUND: 'text-success',
+        NOT_FOUND: 'text-error',
+        NOT_ANALYZED: 'text-gray',
+      }
+  
+      return h(
+        'span',
+        { class: `font-semibold capitalize ${colorMap[asset_coverage as keyof typeof colorMap]}` },
+        asset_coverage
+      )
+    },
+  },
 ]
 
 const props = defineProps<{
@@ -37,6 +55,7 @@ const emptyForm = (): ScriptSceneAnalysis => ({
   asset_type: '',
   fab_search_keyword: '',
   notes: '',
+  asset_coverage: 'NOT_ANALYZED',
 })
 
 const form = reactive<ScriptSceneAnalysis>(emptyForm())
@@ -153,6 +172,7 @@ function isAllItemsHaveId() {
 
     <!-- Table -->
     <UTable :columns="columns" :data="items" @select="select" />
+
     <div class="flex gap-2 mt-6 align-right justify-end">
       <UButton
         v-if="!isAllItemsHaveId() || isAnyItemChanged"
