@@ -8,7 +8,7 @@ defineProps<Props>()
 </script>
 
 <template>
-  <DashboardCard title="Quick Stats" icon="i-lucide-bar-chart-3">
+  <DashboardCard title="Quick Stats" icon="i-lucide-bar-chart-3" :login-required="true">
     <div class="space-y-4">
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-600 dark:text-gray-400">Total Projects</span>

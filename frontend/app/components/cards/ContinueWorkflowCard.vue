@@ -30,7 +30,7 @@ onMounted(async () => {
   }
 })
 
-const isEmpty = computed(() => !isLoggedIn.value || !hasWorkflow.value || !activeProjectId.value)
+const isEmpty = computed(() => !hasWorkflow.value || !activeProjectId.value)
 
 const projectName = computed(() => {
   if (mostRecentProject.value) {
@@ -104,15 +104,15 @@ function openProject() {
     navigateTo('/dashboard')
   }
 }
-
-function goToLogin() {
-  navigateTo('/login')
-}
 </script>
 
 <template>
-  <DashboardCard v-if="!isEmpty" title="Continue where you left off" icon="i-lucide-play-circle">
-    <div class="space-y-4">
+  <DashboardCard
+    title="Continue where you left off"
+    icon="i-lucide-play-circle"
+    :login-required="true"
+  >
+    <div v-if="!isEmpty" class="space-y-4">
       <!-- Project Info -->
       <div class="space-y-2">
         <div class="font-semibold text-base text-gray-900 dark:text-gray-100">
@@ -150,22 +150,10 @@ function goToLogin() {
         />
       </div>
     </div>
-  </DashboardCard>
 
-  <!-- Empty state when not logged in -->
-  <DashboardCard v-else title="Continue where you left off" icon="i-lucide-play-circle">
-    <div class="text-center py-6 space-y-3">
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-        {{ isLoggedIn ? 'No active workflow found' : 'Login to continue your workflow' }}
-      </div>
-      <UButton
-        v-if="!isLoggedIn"
-        label="Login"
-        icon="i-lucide-log-in"
-        color="primary"
-        size="sm"
-        @click="goToLogin"
-      />
+    <!-- Empty state when no workflow found -->
+    <div v-else class="text-center py-6 space-y-3">
+      <div class="text-sm text-gray-500 dark:text-gray-400">No active workflow found</div>
     </div>
   </DashboardCard>
 </template>
