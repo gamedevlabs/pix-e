@@ -211,28 +211,6 @@ const projectStats = computed(() => ({
       return updated > weekAgo
     }).length || 0,
 }))
-
-// History items for landing page
-const landingPageHistory = computed(() => [
-  {
-    title: 'Opened Project "Epic Adventure"',
-    timestamp: '10 min ago',
-    icon: 'i-lucide-folder-open',
-    type: 'edit' as const,
-  },
-  {
-    title: 'Created New Project',
-    timestamp: '2 hours ago',
-    icon: 'i-lucide-plus',
-    type: 'create' as const,
-  },
-  {
-    title: 'Deleted Old Draft',
-    timestamp: 'Yesterday',
-    icon: 'i-lucide-trash',
-    type: 'delete' as const,
-  },
-])
 </script>
 
 <template>
@@ -372,7 +350,7 @@ const landingPageHistory = computed(() => [
         <!-- Right Side Panel - Recent Activity & Help -->
         <aside class="hidden xl:block space-y-4">
           <WhatsNewCard />
-          <HistoryCard :items="landingPageHistory" title="Recent Activity" />
+          <ContinueWorkflowCard />
           <NeedHelpCard />
         </aside>
       </div>
