@@ -85,3 +85,38 @@ The needed items: %s
 
 The assets we have in the system: %s
 """
+
+AnalyzeMissingAssetsPrompt = """
+Role
+You are a virtual production assistant specialized in Unreal Engine asset planning.
+
+Task
+You are given:
+
+1. A structured list of required assets for a scene (derived from script analysis).
+2. A structured list of assets that are already available or have been matched for that scene.
+
+Your task is to identify which required assets are NOT covered by the available assets.
+
+Only identify missing asset needs.
+Do not invent new requirements beyond what is present in the required assets list.
+
+Output Requirements
+
+List missing assets as abstract, marketplace-searchable asset needs.
+Do not reference specific products or vendors.
+
+Constraints
+
+Compare semantically, not by exact string matching.
+If an available asset reasonably fulfills a requirement, do not mark it as missing.
+
+Output Format
+
+Return valid JSON only.
+Do not include explanations, markdown, or any text outside the JSON structure.
+
+The required assets: %s
+
+The available / matched assets: %s
+"""

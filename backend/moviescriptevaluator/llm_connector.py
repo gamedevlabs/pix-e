@@ -3,8 +3,8 @@ from typing import Any
 # Import handlers to trigger auto-registration
 from backend.moviescriptevaluator.llm import handlers  # noqa: F401
 from llm import LLMOrchestrator, LLMRequest
-from moviescriptevaluator.llm.schemas import RecommendationResult
-from moviescriptevaluator.models import AssetMetaData, MovieScript, ScriptSceneAnalysisResult
+from moviescriptevaluator.llm.schemas import RecommendationResult, RecommendationResultItem, MovieScriptAnalysis
+from moviescriptevaluator.models import AssetMetaData, MovieScript, ScriptSceneAnalysisResult, RequiredAssets
 
 
 class MovieScriptLLMConnector:
@@ -49,3 +49,19 @@ class MovieScriptLLMConnector:
 
         response = self.orchestrator.execute(request)
         return RecommendationResult(**response.results)
+
+    def analyze_missing_items(self, items_needed: list[ScriptSceneAnalysisResult], recommended_items: list[RequiredAssets]) -> MovieScriptAnalysis:
+        request = LLMRequest(
+            feature="movie-script-evaluator",
+            operation="missing_assets",
+            data={"items_needed": items_needed, "recommended_items": recommended_items},
+            model_id="gemma3:4b",
+            mode="monolithic",
+            model_preference="local",
+            temperature=None,
+            max_tokens=None,
+            provider_options=None,
+        )
+
+        response = self.orchestrator.execute(request)
+        return MovieScriptAnalysis(**response.results)

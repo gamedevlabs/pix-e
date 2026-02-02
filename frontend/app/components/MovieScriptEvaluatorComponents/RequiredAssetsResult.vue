@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 const columns: ColumnDef<RequiredAsset>[] = [
   { accessorKey: 'name', header: 'Asset Name' },
   { accessorKey: 'purpose', header: 'Asset Type' },
-  { accessorKey: 'description', header: 'Description' }
+  { accessorKey: 'description', header: 'Description' },
 ]
 
 const props = defineProps<{

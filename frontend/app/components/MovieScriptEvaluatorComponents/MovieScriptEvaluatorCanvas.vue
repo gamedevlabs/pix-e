@@ -17,6 +17,7 @@ const {
   createAll: createAnalysisAllItems,
   fetchAll: fetchAllAnalysisItems,
   getRecommendations,
+  evaluateMissingItems,
 } = useScriptSceneAssetAnalysis(props.projectId)
 
 const { items: requiredAssetsItems, fetchAll: fetchAllRequiredAssetsItems } = useRequiredAssets(
@@ -113,6 +114,23 @@ function anaylzeMovieScript() {
       }),
     )
 }
+
+function triggerEvaluateMissingItems() {
+  toast.add({
+    title: 'Action Has Been Triggered',
+    description: 'Whenever the result is ready, you can view it. This may take a while.',
+    color: 'info',
+  })
+  evaluateMissingItems().then(() => {
+    toast.add({
+      title: 'Action Successful',
+      description: 'Evaluation of missing items has been completed',
+      color: 'success',
+    })
+
+    fetchAllAnalysisItems()
+  })
+}
 </script>
 
 <template>
@@ -140,6 +158,13 @@ function anaylzeMovieScript() {
             :label="showRecommendations ? 'Close Recommendations' : 'Show Recommendations'"
             :color="showRecommendations ? 'warning' : 'success'"
             @click="showRecommendations = !showRecommendations"
+          />
+        </div>
+        <div class="mt-2 flex gap-2">
+          <UButton
+            type="button"
+            label="Evaluate Missing Items"
+            @click="triggerEvaluateMissingItems"
           />
         </div>
 

@@ -78,7 +78,22 @@ export function useMovieScriptEvaluatorApi() {
     }
   }
 
+  async function evaluateMissingItems(projectId: string) {
+    try {
+      return await $fetch(`${apiBase}/projects/${projectId}/missing-items/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+    } catch (error) {
+      throw new Error((error as Error)?.message || 'Failed to evaluate missing items')
+    }
+  }
+
   return {
+    evaluateMissingItems,
     getRecommendations,
     createScriptSceneAnalysisBulk,
     uploadFile,

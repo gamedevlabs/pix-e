@@ -6,13 +6,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from moviescriptevaluator.forms import MovieScriptForm
-from moviescriptevaluator.llm.schemas import RecommendationResult
+from moviescriptevaluator.llm.schemas import RecommendationResult, MovieScriptAnalysis
 from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
 from moviescriptevaluator.models import (
     AssetMetaData,
     MovieProject,
     MovieScript,
-    ScriptSceneAnalysisResult, RequiredAssets,
+    ScriptSceneAnalysisResult, RequiredAssets, AssetUsagePurpose,
 )
 from moviescriptevaluator.serializers import (
     MovieProjectSerializer,
@@ -82,19 +82,10 @@ class MovieProjectView(viewsets.ModelViewSet):
         response = get_llm_connector().analyze_movie_script(script)
         return Response(response, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["GET"], url_path="recommendations")
-    def get_recommendations(self, request, pk):
-        page_size = 45
-        page_number = 1
-
-        needed_items = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
-        items_from_ue_db = AssetMetaData.objects.filter(project=pk).order_by("created_at")
-        paginator = Paginator(items_from_ue_db, page_size)
-
-        if not needed_items:
-            return Response("Please analyze the uploaded script first", status=status.HTTP_400_BAD_REQUEST)
-
+    @staticmethod
+    def generate_items(paginator, needed_items) -> RecommendationResult:
         response: RecommendationResult = RecommendationResult(result=[])
+        page_number = 1
 
         while True:
             page = paginator.get_page(page_number)
@@ -109,6 +100,20 @@ class MovieProjectView(viewsets.ModelViewSet):
                 page_number = page.next_page_number()
             else:
                 break
+        return response
+
+    @action(detail=True, methods=["GET"], url_path="recommendations")
+    def get_recommendations(self, request, pk):
+        page_size = 45
+
+        needed_items = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
+        items_from_ue_db = AssetMetaData.objects.filter(project=pk).order_by("created_at")
+        paginator = Paginator(items_from_ue_db, page_size)
+
+        if not needed_items:
+            return Response("Please analyze the uploaded script first", status=status.HTTP_400_BAD_REQUEST)
+
+        response: RecommendationResult = MovieProjectView.generate_items(paginator, needed_items)
 
         # Remove the duplicates
         unique_assets = []
@@ -124,10 +129,17 @@ class MovieProjectView(viewsets.ModelViewSet):
         # Delete all the previous recommendations
         RequiredAssets.objects.filter(project=pk).delete()
 
+        # for measuring some metrics
+        hallucinated_items = 0
+
         for item in response.result:
             try:
                 asset_in_db = AssetMetaData.objects.filter(project=pk, name=item.asset_name).first()
                 project = MovieProject.objects.get(pk=pk)
+
+                if asset_in_db is None or project is None:
+                    hallucinated_items += 1
+                    continue
 
                 RequiredAssets.objects.create(
                     asset=asset_in_db,
@@ -138,9 +150,35 @@ class MovieProjectView(viewsets.ModelViewSet):
                 )
             except AssetMetaData.DoesNotExist:
                 continue
+        if len(response.result) != 0:
+            print("number of hallucinated items: %s, percentage of hallucinated items: %s" % (hallucinated_items, hallucinated_items / len(response.result)))
+        self.evaluate_missing_items(pk)
 
         return Response(response, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=["GET"], url_path="missing-items")
+    def missing_items(self, request, pk):
+        self.evaluate_missing_items(pk)
+        return Response(status=status.HTTP_200_OK)
+
+    def evaluate_missing_items(self, pk):
+        items_needed = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
+        recommended_items = list(RequiredAssets.objects.filter(project=pk))
+
+        response: MovieScriptAnalysis = get_llm_connector().analyze_missing_items(items_needed, recommended_items)
+
+        for item in response.result:
+            item_in_db = ScriptSceneAnalysisResult.objects.filter(project=pk, asset_name=item.asset_name).first()
+            item_in_db.asset_coverage = AssetUsagePurpose.NOT_FOUND
+            item_in_db.save(update_fields=["asset_coverage"])
+
+        # fetch the query again to get the updated items as well
+        items_needed = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
+
+        for item in items_needed:
+            if item.asset_coverage != AssetUsagePurpose.NOT_FOUND:
+                item.asset_coverage = AssetUsagePurpose.FOUND
+                item.save(update_fields=["asset_coverage"])
 
 class MovieScriptAssets(viewsets.ModelViewSet):
     serializer_class = UnrealEngineDataSerializer

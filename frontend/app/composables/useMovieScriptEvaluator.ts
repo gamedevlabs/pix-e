@@ -46,11 +46,16 @@ export function useMovieScriptEvaluator() {
       return await movieScriptAPI.getRecommendations(projectId)
     }
 
+    const evaluateMissingItems = async () => {
+      return await movieScriptAPI.evaluateMissingItems(projectId)
+    }
+
     const crud = useCrudWithAuthentication<ScriptSceneAnalysis>(
       'movie-script-evaluator/projects/' + projectId + '/script-scene-analysis/',
     )
 
     return {
+      evaluateMissingItems,
       createAll,
       getRecommendations,
       ...crud,

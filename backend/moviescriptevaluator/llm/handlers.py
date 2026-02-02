@@ -1,7 +1,8 @@
 from typing import Any, Dict
 
 from llm import BaseOperationHandler, InvalidRequestError
-from moviescriptevaluator.llm.prompts import AnalyzeScenePrompt, AnalyzeSceneWithAssetListPrompt
+from moviescriptevaluator.llm.prompts import AnalyzeScenePrompt, AnalyzeSceneWithAssetListPrompt, \
+    AnalyzeMissingAssetsPrompt
 from moviescriptevaluator.llm.schemas import MovieScriptAnalysis, RecommendationResult
 
 
@@ -31,3 +32,15 @@ class CreateRecommendation(BaseOperationHandler):
         if "items_needed" not in data and "asset_list" not in data:
             raise InvalidRequestError("Required items or assets missing")
 
+class MissingAssetsAnalysis(BaseOperationHandler):
+    operation_id = "movie-script-evaluator.missing_assets"
+    version = "1.0.0"
+    description = "Derive missing assets using asset list"
+    response_schema = MovieScriptAnalysis
+
+    def build_prompt(self, data: Dict[str, Any]) -> str:
+        return AnalyzeMissingAssetsPrompt % (data["items_needed"] , data["recommended_items"])
+
+    def validate_input(self, data: Dict[str, Any]) -> None:
+        if "items_needed" not in data and "recommended_items" not in data:
+            raise InvalidRequestError("Required items or assets missing")
