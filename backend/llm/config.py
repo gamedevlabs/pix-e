@@ -75,6 +75,7 @@ class Config:
         default_factory=lambda: {
             "gemini": "gemini-2.0-flash-exp",
             "openai": "gpt-4o-mini",
+            "ollama": "deepseek-r1:8b"
         }
     )
 
@@ -229,7 +230,7 @@ class Config:
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             model_aliases=get_setting(
                 "model_aliases",
-                {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini"},
+                {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini", "ollama": "deepseek-r1:8b"},
                 dict,
             ),
             # Storage

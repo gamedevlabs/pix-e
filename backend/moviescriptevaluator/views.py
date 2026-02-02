@@ -5,6 +5,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from llm import get_model_id
 from moviescriptevaluator.forms import MovieScriptForm
 from moviescriptevaluator.llm.schemas import RecommendationResult, MovieScriptAnalysis
 from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
@@ -24,11 +25,15 @@ from pxcharts.permissions import IsOwner
 
 _movie_script_llm_connector: MovieScriptLLMConnector | None = None
 
+def set_model(model_name: str):
+    llm_connector = get_llm_connector()
+    model_id = get_model_id(model_name)
+    llm_connector.set_model_id(model_id)
 
 def get_llm_connector() -> MovieScriptLLMConnector:
     global _movie_script_llm_connector
     if _movie_script_llm_connector is None:
-        _movie_script_llm_connector = MovieScriptLLMConnector()
+        _movie_script_llm_connector = MovieScriptLLMConnector("gemma3:4b")
     return _movie_script_llm_connector
 
 
@@ -67,6 +72,9 @@ class MovieProjectView(viewsets.ModelViewSet):
     @action(detail=True, methods=["GET"], url_path="analyze")
     def analyze_movie_script(self, request, pk):
         script_id = request.query_params.get("script_id")
+        model_name = request.query_params.get("llm")
+
+        set_model(model_name)
 
         if not script_id:
             return Response(
@@ -104,6 +112,9 @@ class MovieProjectView(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["GET"], url_path="recommendations")
     def get_recommendations(self, request, pk):
+        model_name = request.query_params.get("llm")
+        set_model(model_name)
+
         page_size = 45
 
         needed_items = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
@@ -152,12 +163,21 @@ class MovieProjectView(viewsets.ModelViewSet):
                 continue
         if len(response.result) != 0:
             print("number of hallucinated items: %s, percentage of hallucinated items: %s" % (hallucinated_items, hallucinated_items / len(response.result)))
-        self.evaluate_missing_items(pk)
+
+        try:
+            self.evaluate_missing_items(pk)
+        except Exception as e:
+            print(e)
+            print("Missing items are not created")
+
 
         return Response(response, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["GET"], url_path="missing-items")
     def missing_items(self, request, pk):
+        model_name = request.query_params.get("llm")
+        set_model(model_name)
+
         self.evaluate_missing_items(pk)
         return Response(status=status.HTTP_200_OK)
 

@@ -6,6 +6,7 @@ import type {
 
 export function useMovieScriptEvaluatorApi() {
   const config = useRuntimeConfig()
+  const llm = useLLM()
   const apiBase = `${config.public.apiBase}/movie-script-evaluator`
 
   async function uploadFile(projectId: string, movieScriptFile: MovieScript) {
@@ -34,7 +35,7 @@ export function useMovieScriptEvaluatorApi() {
     script_id: number,
   ): Promise<MovieScriptAnalysisResponse> {
     try {
-      return await $fetch(`${apiBase}/projects/${projectId}/analyze?script_id=${script_id}`, {
+      return await $fetch(`${apiBase}/projects/${projectId}/analyze?script_id=${script_id}&llm=${llm.active_llm}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -66,7 +67,7 @@ export function useMovieScriptEvaluatorApi() {
 
   async function getRecommendations(projectId: string) {
     try {
-      return await $fetch(`${apiBase}/projects/${projectId}/recommendations/`, {
+      return await $fetch(`${apiBase}/projects/${projectId}/recommendations/?llm=${llm.active_llm}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -80,7 +81,7 @@ export function useMovieScriptEvaluatorApi() {
 
   async function evaluateMissingItems(projectId: string) {
     try {
-      return await $fetch(`${apiBase}/projects/${projectId}/missing-items/`, {
+      return await $fetch(`${apiBase}/projects/${projectId}/missing-items/?llm=${llm.active_llm}`, {
         method: 'GET',
         credentials: 'include',
         headers: {

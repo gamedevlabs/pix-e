@@ -60,6 +60,9 @@ function triggerGetRecommendations() {
       description: 'Recommendations have been generated',
       color: 'success',
     })
+
+    fetchAllRequiredAssetsItems()
+    fetchAndFormatAnalysisResults()
   })
 }
 
@@ -127,8 +130,8 @@ function triggerEvaluateMissingItems() {
       description: 'Evaluation of missing items has been completed',
       color: 'success',
     })
-
-    fetchAllAnalysisItems()
+    
+    fetchAndFormatAnalysisResults()
   })
 }
 </script>

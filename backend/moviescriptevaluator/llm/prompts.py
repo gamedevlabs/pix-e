@@ -114,7 +114,6 @@ If an available asset reasonably fulfills a requirement, do not mark it as missi
 Output Format
 
 Return valid JSON only.
-Do not include explanations, markdown, or any text outside the JSON structure.
 
 The required assets: %s
 

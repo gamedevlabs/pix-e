@@ -9,9 +9,14 @@ from moviescriptevaluator.models import AssetMetaData, MovieScript, ScriptSceneA
 
 class MovieScriptLLMConnector:
     orchestrator: LLMOrchestrator
+    model_id: str
 
-    def __init__(self):
+    def __init__(self, model_id: str):
         self.orchestrator = LLMOrchestrator()
+        self.model_id = model_id
+
+    def set_model_id(self, model_id: str):
+        self.model_id = model_id
 
     def analyze_movie_script(
         self, movie_script: MovieScript
@@ -23,12 +28,7 @@ class MovieScriptLLMConnector:
                 feature="movie-script-evaluator",
                 operation="analyze",
                 data={"scene_description": str(content)},
-                model_id="gemma3:4b",
-                mode="monolithic",
-                model_preference="local",
-                temperature=None,
-                max_tokens=None,
-                provider_options=None,
+                model_id=self.model_id,
             )
 
             response = self.orchestrator.execute(request)
@@ -39,12 +39,7 @@ class MovieScriptLLMConnector:
             feature="movie-script-evaluator",
             operation="create_recommendations",
             data={"items_needed": items_needed, "asset_list": asset_list},
-            model_id="gemma3:4b",
-            mode="monolithic",
-            model_preference="local",
-            temperature=None,
-            max_tokens=None,
-            provider_options=None,
+            model_id=self.model_id,
         )
 
         response = self.orchestrator.execute(request)
@@ -55,12 +50,7 @@ class MovieScriptLLMConnector:
             feature="movie-script-evaluator",
             operation="missing_assets",
             data={"items_needed": items_needed, "recommended_items": recommended_items},
-            model_id="gemma3:4b",
-            mode="monolithic",
-            model_preference="local",
-            temperature=None,
-            max_tokens=None,
-            provider_options=None,
+            model_id=self.model_id,
         )
 
         response = self.orchestrator.execute(request)
