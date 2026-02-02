@@ -97,6 +97,11 @@ const formatRelativeTime = (dateString: string): string => {
 
 // Project cards - dynamically generated from the project handler
 const projectCards = computed<Card[]>(() => {
+  // If not logged in, return empty array - don't create cards at all
+  if (!isLoggedIn.value) {
+    return []
+  }
+
   // Copy and sort projects by updated_at descending (most recently edited first)
   const list = (projects?.value ?? []).slice().sort((a, b) => {
     const ta = new Date(a.updated_at).getTime()
@@ -240,31 +245,52 @@ const projectStats = computed(() => ({
         </aside>
 
         <!-- Center - Project Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="project in projectCards" :key="project.id" class="relative">
-            <!-- Login Overlay for auth-required projects -->
-            <div
-              v-if="project.requiresAuth && !isLoggedIn"
-              class="absolute inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center"
-            >
-              <UButton
-                label="Login"
-                icon="i-lucide-log-in"
-                color="primary"
-                size="lg"
-                @click="router.push('/login')"
+        <div v-if="!isLoggedIn" class="col-span-1">
+          <!-- Login Required Overlay -->
+          <UCard class="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800">
+            <div class="text-center py-16 space-y-6">
+              <UIcon
+                name="i-lucide-lock"
+                class="text-gray-400 dark:text-gray-500 text-6xl mx-auto"
               />
+              <div class="space-y-2">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Login Required</h3>
+                <p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                  Please log in to view and manage your projects. Create an account to get started
+                  with pix:e.
+                </p>
+              </div>
+              <div class="flex gap-3 justify-center">
+                <UButton
+                  label="Login"
+                  icon="i-lucide-log-in"
+                  color="primary"
+                  size="lg"
+                  @click="router.push('/login')"
+                />
+                <UButton
+                  label="Register"
+                  icon="i-lucide-user-plus"
+                  color="neutral"
+                  variant="outline"
+                  size="lg"
+                  @click="router.push('/login')"
+                />
+              </div>
             </div>
+          </UCard>
+        </div>
 
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="project in projectCards" :key="project.id" class="relative">
             <!-- Create New Project Card (centered icon style) -->
             <UCard
               v-if="project.isCreateCard"
               class="hover:shadow-2xl hover:scale-[1.025] transition-all cursor-pointer h-full flex items-center justify-center min-h-50 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-primary bg-white dark:bg-gray-900"
-              :class="{ 'opacity-75': project.requiresAuth && !isLoggedIn }"
               role="button"
               tabindex="0"
-              @click="!(project.requiresAuth && !isLoggedIn) && handleCardClick(project)"
-              @keydown.enter="!(project.requiresAuth && !isLoggedIn) && handleCardClick(project)"
+              @click="handleCardClick(project)"
+              @keydown.enter="handleCardClick(project)"
             >
               <div
                 class="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
@@ -275,15 +301,9 @@ const projectStats = computed(() => ({
             </UCard>
 
             <!-- Regular Project Card with Context Menu -->
-            <UContextMenu
-              v-else
-              :items="getProjectMenuItems(project.id)"
-              :disabled="project.requiresAuth && !isLoggedIn"
-              class="h-full"
-            >
+            <UContextMenu v-else :items="getProjectMenuItems(project.id)" class="h-full">
               <UCard
                 class="hover:shadow-2xl hover:scale-[1.025] transition-all cursor-pointer h-full bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:from-primary-50 hover:to-white dark:hover:from-primary-950/30 dark:hover:to-gray-900"
-                :class="{ 'opacity-75': project.requiresAuth && !isLoggedIn }"
                 :ui="{
                   footer: 'py-2 px-6 border-t-0',
                   root: 'h-full flex flex-col',
@@ -291,8 +311,8 @@ const projectStats = computed(() => ({
                 }"
                 role="button"
                 tabindex="0"
-                @click="!(project.requiresAuth && !isLoggedIn) && handleCardClick(project, $event)"
-                @keydown.enter="!(project.requiresAuth && !isLoggedIn) && handleCardClick(project)"
+                @click="handleCardClick(project, $event)"
+                @keydown.enter="handleCardClick(project)"
               >
                 <template #header>
                   <div class="flex items-center justify-between gap-3">
