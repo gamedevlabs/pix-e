@@ -10,7 +10,7 @@ definePageMeta({
     title: 'Player Expectations',
     icon: 'i-lucide-book-open',
     navGroup: 'main',
-    navOrder: 3,
+    navOrder: 4,
     showInNav: true,
   },
 })
