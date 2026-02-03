@@ -26,7 +26,7 @@
     "@vue-flow/core": "^1.45.0",
     "@vue-flow/node-resizer": "^1.5.0",
     "chart.js": "^4.5.1",
-    "esbuild": "^0.25.11",
+    "esbuild": "^0.27.2",
     "eslint": "^9.38.0",
     "lodash.merge": "^4.6.2",
     "nuxt": "^4.2.0",
