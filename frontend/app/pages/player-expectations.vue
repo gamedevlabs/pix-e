@@ -7,7 +7,7 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'Dashboard (legacy)',
+    title: 'Player Expectations',
     icon: 'i-lucide-book-open',
     navGroup: 'main',
     navParent: 'player-expectations-landing',
