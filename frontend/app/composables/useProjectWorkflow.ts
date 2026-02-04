@@ -1,177 +1,14 @@
 ﻿import { ref, computed, readonly } from '#imports'
-
-// Simple workflow types local to composable
-export type StepStatus = 'pending' | 'active' | 'complete'
-export type Substep = {
-  id: string
-  name: string
-  description?: string
-  status: StepStatus
-  started_at?: string | null
-  finished_at?: string | null
-  timeSpentSeconds?: number
-  route?: string
-}
-
-export type WorkflowStep = {
-  id: string
-  name: string
-  description?: string
-  orderIndex: number
-  status: StepStatus
-  started_at?: string | null
-  finished_at?: string | null
-  timeSpentSeconds?: number
-  substeps: Substep[]
-  route?: string
-}
-
-export type ProjectWorkflow = {
-  id: string
-  projectId: string
-  started_at?: string | null
-  finished_at?: string | null
-  currentStepIndex: number
-  steps: WorkflowStep[]
-}
+import {
+  WorkflowApiEmulator,
+  getMockWorkflowSteps,
+  type StepStatus,
+  type WorkflowStep,
+  type ProjectWorkflow,
+} from '~/mock_data/mock_workflow'
 
 // In-memory emulator for a single workflow per project
-class WorkflowApiEmulator {
-  private workflows: Record<string, ProjectWorkflow> = {}
-
-  constructor() {
-    const now = new Date().toISOString()
-    // seed example workflow for project "pixe"
-    this.workflows['pixe'] = {
-      id: 'wf-pixe-1',
-      projectId: 'pixe',
-      started_at: now,
-      finished_at: null,
-      currentStepIndex: 1,
-      steps: _mockWorkflowSteps(),
-    }
-  }
-
-  async getByProjectId(projectId: string): Promise<ProjectWorkflow | null> {
-    const w = this.workflows[projectId]
-    return w ? JSON.parse(JSON.stringify(w)) : null
-  }
-
-  async save(projectId: string, workflow: ProjectWorkflow): Promise<ProjectWorkflow> {
-    this.workflows[projectId] = JSON.parse(JSON.stringify(workflow))
-    return JSON.parse(JSON.stringify(this.workflows[projectId]))
-  }
-}
-
 const api = new WorkflowApiEmulator()
-
-// TODO: Connect mock data to real backend (workflow-layer)
-function _mockWorkflowSteps(): WorkflowStep[] {
-  const now = new Date().toISOString()
-  const mkSub = (
-    id: string,
-    name: string,
-    status: StepStatus = 'pending',
-    route?: string,
-  ): Substep => ({
-    id,
-    name,
-    status,
-    started_at: status === 'active' ? now : null,
-    finished_at: null,
-    timeSpentSeconds: 0,
-    route,
-  })
-
-  return [
-    {
-      id: 's-1',
-      name: 'Create Project',
-      description: 'Set up your own project',
-      orderIndex: 0,
-      status: 'complete',
-      started_at: now,
-      finished_at: now,
-      timeSpentSeconds: 0,
-      substeps: [
-        mkSub('s1-1', 'Project Information', 'complete', '/create'),
-        mkSub('s1-2', 'Project Details', 'complete', '/create'),
-        mkSub('s1-3', 'Review', 'complete', '/create'),
-      ],
-      route: '/create',
-    },
-    {
-      id: 's-2',
-      name: 'Game Design Pillars',
-      description: 'This is the foundation of your game design',
-      orderIndex: 1,
-      status: 'active',
-      started_at: null,
-      finished_at: null,
-      timeSpentSeconds: 0,
-      substeps: [
-        mkSub('s2-1', 'Create a new pillar', 'complete', '/pillars'),
-        mkSub('s2-2', 'Generate some LLM feedback for your pillar', 'complete', '/pillars'),
-        mkSub('s2-3', 'Checkout LLM Coverage, Contradictions and Additions', 'active', '/pillars'),
-      ],
-      route: '/pillars',
-    },
-    {
-      id: 's-3',
-      name: 'Player Experience',
-      description: 'Build your first pxChart!',
-      orderIndex: 2,
-      status: 'pending',
-      started_at: now,
-      finished_at: null,
-      timeSpentSeconds: 0,
-      substeps: [
-        mkSub('s3-1', 'Create your first Chart!', 'pending', '/pxcharts'),
-        mkSub('s3-2', 'Setup a new Node and Add it to the graph', 'pending', '/pxnodes'),
-        mkSub(
-          's3-3',
-          'Create some Component Definitions and add them to a node',
-          'pending',
-          '/pxcomponentdefinitions',
-        ),
-        mkSub(
-          's3-4',
-          'Setup an second node, add it to the graph and connect the two nodes',
-          'pending',
-          '/pxnodes',
-        ),
-      ],
-      route: '/pxcharts',
-    },
-    {
-      id: 's-4',
-      name: 'Player Expectations',
-      description: 'What does your target group want?',
-      orderIndex: 3,
-      status: 'pending',
-      started_at: null,
-      finished_at: null,
-      timeSpentSeconds: 0,
-      substeps: [
-        mkSub('s4-1', 'Add some data to the expectations table', 'pending', '/player-expectations'),
-        mkSub('s4-2', 'Check out the Sentiment Analysis', 'pending', '/sentiments'),
-      ],
-      route: '/player-expectations',
-    },
-    {
-      id: 's-5',
-      name: 'Finished',
-      description: 'Well done!',
-      orderIndex: 4,
-      status: 'pending',
-      started_at: null,
-      finished_at: null,
-      timeSpentSeconds: 0,
-      substeps: [],
-      route: '/dashboard',
-    },
-  ]
-}
 
 export const useProjectWorkflow = () => {
   const workflow = ref<ProjectWorkflow | null>(null)
@@ -191,7 +28,7 @@ export const useProjectWorkflow = () => {
         started_at: now,
         finished_at: null,
         currentStepIndex: 0,
-        steps: _mockWorkflowSteps(),
+        steps: getMockWorkflowSteps(),
       }
       await api.save(projectId, workflow.value)
     }
@@ -232,37 +69,44 @@ export const useProjectWorkflow = () => {
   })
 
   const setCurrentStepIndex = async (index: number) => {
-    if (!workflow.value) return
-    if (index < 0 || index >= workflow.value.steps.length) return
-    workflow.value.currentStepIndex = index
+    const w = workflow.value
+    if (!w) return
+    if (index < 0 || index >= w.steps.length) return
+    w.currentStepIndex = index
     // update statuses: mark the active step; keep completed steps complete
-    for (let i = 0; i < workflow.value.steps.length; i++) {
-      if (workflow.value.steps[i].status === 'complete') continue
-      workflow.value.steps[i].status = i === index ? 'active' : 'pending'
+    for (let i = 0; i < w.steps.length; i++) {
+      const s = w.steps[i]
+      if (!s) continue
+      if (s.status === 'complete') continue
+      s.status = i === index ? 'active' : 'pending'
     }
-    await api.save(workflow.value.projectId, workflow.value)
+    await api.save(w.projectId, w)
   }
 
   const advanceStep = async () => {
-    if (!workflow.value) return
-    const next = Math.min(workflow.value.currentStepIndex + 1, workflow.value.steps.length - 1)
+    const w = workflow.value
+    if (!w) return
+    const next = Math.min(w.currentStepIndex + 1, w.steps.length - 1)
     await setCurrentStepIndex(next)
   }
 
   const retreatStep = async () => {
-    if (!workflow.value) return
-    const prev = Math.max(workflow.value.currentStepIndex - 1, 0)
+    const w = workflow.value
+    if (!w) return
+    const prev = Math.max(w.currentStepIndex - 1, 0)
     await setCurrentStepIndex(prev)
   }
 
   const toggleSubstep = async (stepId: string, substepId: string) => {
-    if (!workflow.value) return
-    const step = workflow.value.steps.find((s) => s.id === stepId)
+    const w = workflow.value
+    if (!w) return
+    const step = w.steps.find((s) => s.id === stepId)
     if (!step) return
     const ss = step.substeps.find((x) => x.id === substepId)
     if (!ss) return
 
-    const substepIndex = step.substeps.findIndex((x) => x.id === substepId)
+    const substepIndex = step.substeps.indexOf(ss)
+    if (substepIndex === -1) return
 
     if (ss.status === 'complete') {
       // Uncomplete: set back to active
@@ -277,7 +121,7 @@ export const useProjectWorkflow = () => {
       // Set next substep to active if exists
       if (substepIndex < step.substeps.length - 1) {
         const nextSubstep = step.substeps[substepIndex + 1]
-        if (nextSubstep.status === 'pending') {
+        if (nextSubstep && nextSubstep.status === 'pending') {
           nextSubstep.status = 'active'
           nextSubstep.started_at = new Date().toISOString()
         }
@@ -295,17 +139,23 @@ export const useProjectWorkflow = () => {
       step.finished_at = new Date().toISOString()
 
       // Advance to next step and set its first substep to active
-      const currentStepIndex = workflow.value.steps.findIndex((s) => s.id === stepId)
-      if (currentStepIndex < workflow.value.steps.length - 1) {
-        const nextStep = workflow.value.steps[currentStepIndex + 1]
-        nextStep.status = 'active'
-        nextStep.started_at = new Date().toISOString()
-        workflow.value.currentStepIndex = currentStepIndex + 1
+      const currentStepIndex = w.steps.findIndex((s) => s.id === stepId)
+      if (currentStepIndex !== -1 && currentStepIndex < w.steps.length - 1) {
+        const nextStep = w.steps[currentStepIndex + 1]
+        if (nextStep) {
+          nextStep.status = 'active'
+          nextStep.started_at = new Date().toISOString()
+          w.currentStepIndex = currentStepIndex + 1
 
-        // Set first substep of next step to active
-        if (nextStep.substeps.length > 0 && nextStep.substeps[0].status === 'pending') {
-          nextStep.substeps[0].status = 'active'
-          nextStep.substeps[0].started_at = new Date().toISOString()
+          // Set first substep of next step to active
+          if (
+            nextStep.substeps.length > 0 &&
+            nextStep.substeps[0] &&
+            nextStep.substeps[0].status === 'pending'
+          ) {
+            nextStep.substeps[0].status = 'active'
+            nextStep.substeps[0].started_at = new Date().toISOString()
+          }
         }
       }
     } else if (step.substeps.some((x) => x.status === 'complete' || x.status === 'active')) {
@@ -314,16 +164,78 @@ export const useProjectWorkflow = () => {
       step.status = 'pending'
     }
 
-    await api.save(workflow.value.projectId, workflow.value)
+    await api.save(w.projectId, w)
   }
 
   const resetWorkflow = async () => {
-    if (!workflow.value) return
-    workflow.value.steps = _mockWorkflowSteps()
-    workflow.value.currentStepIndex = 0
-    workflow.value.started_at = new Date().toISOString()
-    workflow.value.finished_at = null
-    await api.save(workflow.value.projectId, workflow.value)
+    const w = workflow.value
+    if (!w) return
+    w.steps = getMockWorkflowSteps()
+    w.currentStepIndex = 0
+    w.started_at = new Date().toISOString()
+    w.finished_at = null
+    await api.save(w.projectId, w)
+  }
+
+  // Finish the currently active step: mark it and its substeps complete and advance to next step.
+  const finishCurrentStep = async () => {
+    const w = workflow.value
+    if (!w) return
+    const idx = w.currentStepIndex
+    const step = w.steps[idx]
+    if (!step) return
+
+    const now = new Date().toISOString()
+    // Mark all substeps complete
+    for (const ss of step.substeps) {
+      ss.status = 'complete'
+      ss.finished_at = ss.finished_at || now
+      if (!ss.started_at) ss.started_at = now
+    }
+
+    // Mark step complete
+    step.status = 'complete'
+    step.finished_at = step.finished_at || now
+
+    // Advance to next step if exists
+    const nextIndex = Math.min(idx + 1, w.steps.length - 1)
+    if (nextIndex > idx) {
+      const next = w.steps[nextIndex]
+      if (next) {
+        next.status = 'active'
+        next.started_at = next.started_at || now
+        // set its first substep active if any
+        if (next.substeps.length > 0 && next.substeps[0] && next.substeps[0].status === 'pending') {
+          next.substeps[0].status = 'active'
+          next.substeps[0].started_at = next.substeps[0].started_at || now
+        }
+        w.currentStepIndex = nextIndex
+      }
+    } else {
+      // last step finished
+      w.currentStepIndex = idx
+      w.finished_at = now
+      try {
+        const toast = useToast()
+        toast.add({
+          title: 'Workflow completed',
+          description: 'You finished the last step!',
+          color: 'success',
+        })
+      } catch (e) {
+        void e
+      }
+    }
+
+    await api.save(w.projectId, w)
+  }
+
+  // Return the status of a step by id: 'pending'|'active'|'complete' or null if not found
+  const getStepStatus = (stepId: string): StepStatus | null => {
+    const w = workflow.value
+    if (!w) return null
+    const s = w.steps.find((x) => x.id === stepId)
+    return s ? s.status : null
   }
 
   return {
@@ -339,5 +251,7 @@ export const useProjectWorkflow = () => {
     retreatStep,
     toggleSubstep,
     resetWorkflow,
+    finishCurrentStep,
+    getStepStatus,
   }
 }
