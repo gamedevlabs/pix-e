@@ -75,7 +75,7 @@ class Config:
         default_factory=lambda: {
             "gemini": "gemini-2.0-flash-exp",
             "openai": "gpt-4o-mini",
-            "ollama": "deepseek-r1:8b"
+            "ollama": "gemma3:4b"
         }
     )
 
