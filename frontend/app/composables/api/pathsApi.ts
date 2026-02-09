@@ -1,15 +1,14 @@
-import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
+import type { Edge, Node } from '@vue-flow/core'
 import { getOutgoers } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
-import matchesProperty from 'lodash.matchesproperty'
 
 export function usePathsApi() {
   async function dijkstra_path(nodes: Node[], edges: Edge[], sourceId: string, targetId: string) {
     // initialize
-    let q = [{ id: sourceId, prio: 0 }]
-    let dist = new Map<string, number>()
+    const q = [{ id: sourceId, prio: 0 }]
+    const dist = new Map<string, number>()
     dist.set(sourceId, 0)
-    let prev = new Map<string, string>()
+    const prev = new Map<string, string>()
 
     for (const node of nodes) {
       if (node.id != sourceId) {
@@ -24,17 +23,17 @@ export function usePathsApi() {
     // iterate
     let found = false
     while (q.length && !found) {
-      let node = q.pop()
+      const node = q.pop()
       if (!node) {
         break
       }
-      let outs = getOutgoers(node.id, nodes, edges)
+      const outs = getOutgoers(node.id, nodes, edges)
       for (const out of outs) {
-        let alt = dist.get(node.id) + 1
+        const alt = dist.get(node.id) + 1
         if (alt < dist.get(out.id)) {
           prev.set(out.id, node.id)
           dist.set(out.id, alt)
-          let idx = findIndex(q, ['id', out.id])
+          const idx = findIndex(q, ['id', out.id])
           q[idx].prio = alt
           q.sort((n1, n2) => n2.prio - n1.prio)
         }
@@ -45,7 +44,7 @@ export function usePathsApi() {
       }
     }
 
-    let seq = []
+    const seq = []
     if (found) {
       // construct sequence
       let current = targetId
@@ -61,11 +60,11 @@ export function usePathsApi() {
   }
 
   async function dijkstra_multiple(nodes: Node[], edges: Edge[], selected: Node[]) {
-    let paths = new Map()
+    const paths = new Map()
 
     for (const n1 of selected) {
       for (const n2 of selected) {
-        let p = dijkstra_path(nodes, edges, n1.id, n2.id)
+        const p = dijkstra_path(nodes, edges, n1.id, n2.id)
         paths.set({ n1: n1.id, n2: n2.id }, p)
       }
     }
