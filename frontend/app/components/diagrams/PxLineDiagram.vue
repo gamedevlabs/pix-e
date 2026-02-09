@@ -143,7 +143,7 @@ const data = computed(() => {
 
 const xAxisType = ref('category')
 
-const chartOptions = computed(() => ({
+const _chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: true,
   scales: {
