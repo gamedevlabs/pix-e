@@ -303,31 +303,30 @@ export function usePxChartsCanvasApi(chartId: string) {
   async function resetPath() {
     // reset style of nodes in path
     for (const node of nodes.value) {
-        if (path.value.includes(node.id)) {
-            node.style = undefined
-        }
+      if (path.value.includes(node.id)) {
+        node.style = undefined
+      }
     }
     // reset path itself
-    path.value = [];
+    path.value = []
   }
 
   async function highlightPath() {
-
     const pathStyle = {
-        color: 'var(--ui-primary)',
-        border: '3px solid var(--ui-primary)',
-        borderRadius: '10px',
-        boxShadow: '0 0 10px var(--ui-primary)'
+      color: 'var(--ui-primary)',
+      border: '3px solid var(--ui-primary)',
+      borderRadius: '10px',
+      boxShadow: '0 0 10px var(--ui-primary)',
     }
-    
+
     if (path.value.length) {
-        // alert(path.value)
-        // set style of nodes in calculated path
-        for (const node of nodes.value) {
-            if (path.value.includes(node.id)) {
-                node.style = pathStyle
-            }
+      // alert(path.value)
+      // set style of nodes in calculated path
+      for (const node of nodes.value) {
+        if (path.value.includes(node.id)) {
+          node.style = pathStyle
         }
+      }
     }
   }
 

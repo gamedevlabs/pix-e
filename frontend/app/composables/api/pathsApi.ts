@@ -72,7 +72,11 @@ export function usePathsApi() {
     return
   }
 
-  async function calculate_path(nodes: Node[], edges: Edge[], selected: string[]): Promise<string[]> {
+  async function calculate_path(
+    nodes: Node[],
+    edges: Edge[],
+    selected: string[],
+  ): Promise<string[]> {
     if (selected.length == 2 && selected[0] && selected[1]) {
       let path = dijkstra_path(nodes, edges, selected[0], selected[1])
       if (!(await path).length) {
