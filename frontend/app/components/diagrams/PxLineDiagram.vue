@@ -20,7 +20,7 @@ const props = defineProps({
     type: Array<string>,
     default: () => [],
   },
-  id: {
+  diagramId: {
     type: String,
     default: () => ''
   }
@@ -66,44 +66,52 @@ interface NodeData {
     [key: string]: string | number | boolean | undefined;
 }
 
+const relevantNodes = computed(() => {
+    let relevantNodes = props.nodesInPath
+        .map((name) => getNodeFromName(name))
+        .filter((node) => node !== undefined)
+
+    if (!relevantNodes.length)
+        relevantNodes = pxNodes.value
+    
+    return relevantNodes
+})
+
+const nodeLabels = computed(() => {
+    const labels : string[] = []
+
+    relevantNodes.value.forEach((node) => {
+        labels.push(node.name)
+    })
+
+    return labels
+})
+
 const data = computed(() => {
-  const labels : string[] = []
   const data: NodeData[] = []
 
-  let relevantNodes = props.nodesInPath
-    .map((name) => getNodeFromName(name))
-    .filter((node) => node !== undefined)
-  if (!relevantNodes.length)
-    relevantNodes = pxNodes.value
-  // console.log(`Nodes: [${relevantNodes.toString()}]`)
-
   // build and add NodeData object for each node
-  let sumX: number = 0
-  relevantNodes.forEach((node) => {
+  let sumXValue: number = 0
+  const sumXID: string = 'sum-'.concat(selectedDefinitionsX.value)
+
+  relevantNodes.value.forEach((node) => {
     // add node name
     const nodeData: NodeData = {
         name: node.name
     }
-    labels.push(node.name)
 
     // add optional x value
     if (selectedDefinitionsX.value) {
         const xComp = pxComponents.value
             .find((c) => c.definition === selectedDefinitionsX.value && c.node === node.id)?.value
-        if (typeof xComp === 'number') {
-            sumX += xComp
-        } else {
-            sumX += 1
-            // TODO: warning about invalid component type or missing component value
-        }
-        nodeData.x = sumX;
+        sumXValue += (typeof xComp === 'number') ? xComp : 1;
+        nodeData[sumXID] = sumXValue;
     }
 
     // add values for Y-axis components
     pxComponents.value
         .filter((c) => selectedDefinitionsY.value.includes(c.definition) && c.node === node.id)
         .forEach((c) => { nodeData[c.definition] = c.value })
-
 
     data.push(nodeData)
   })
@@ -116,7 +124,7 @@ const data = computed(() => {
         label: getNameFromDefinitionId(def),
         data: data,
         parsing: {
-            xAxisKey: selectedDefinitionsX.value ? 'x' : undefined,
+            xAxisKey: selectedDefinitionsX.value ? sumXID : 'name',
             yAxisKey: def,
         },
         stepped: selectedDefinitionsX.value ? 'after' : false,
@@ -125,16 +133,19 @@ const data = computed(() => {
     })
   })
   //console.log(`Labels: [${labels.toString()}]`)
+  //alert(JSON.stringify(datasets))
   
   return {
-        labels: labels,
+        labels: nodeLabels.value,
         datasets: datasets
     }
 })
 
-const chartOptions = ref({
+const xAxisType = ref('category')
+
+const chartOptions = computed(() => ({
   responsive: true,
-  maintainAspectRatio: false,
+  maintainAspectRatio: true,
   scales: {
     x: {
       ticks: {
@@ -146,7 +157,37 @@ const chartOptions = ref({
       border: {
         color: 'rgb(128, 128, 128)',
       },
-      type: 'category',
+      type: xAxisType.value
+    },
+    y: {
+      ticks: {
+        color: 'rgb(128, 128, 128)',
+      },
+      grid: {
+        color: 'rgba(128, 128, 128, 0.2)',
+      },
+      border: {
+        color: 'rgb(128, 128, 128)',
+      }
+    },
+  },
+}))
+
+const chartOptions2 = ref({
+  responsive: true,
+  maintainAspectRatio: true,
+  scales: {
+    x: {
+      ticks: {
+        color: 'rgb(128, 128, 128)',
+      },
+      grid: {
+        color: 'rgba(128, 128, 128, 0.2)',
+      },
+      border: {
+        color: 'rgb(128, 128, 128)',
+      },
+      type: 'category'
     },
     y: {
       ticks: {
@@ -166,7 +207,7 @@ const componentDefinitionNames = computed(() => {
     return pxComponentDefinitions.value.map((def) => def.name)
 })
 
-const selectedDefinitionsX: Ref<string, string> = ref("")
+const selectedDefinitionsX: Ref<string, string> = ref('')
 const selectedDefinitionsY: Ref<string[], string[]> = ref([])
 
 async function handleDefinitionSelectionX(selection: string) {
@@ -174,10 +215,15 @@ async function handleDefinitionSelectionX(selection: string) {
     .find((def) => selection === def.name)?.id
   if (foundId) {
     selectedDefinitionsX.value = foundId
-    chartOptions.value.scales.x.type = 'linear'
+    xAxisType.value = 'linear'
+    chartOptions2.value.scales.x.type = 'linear'
+    // alert(`Changed x axis type to linear: ${JSON.stringify(chartOptions2.value)}`)
   } else {
-    chartOptions.value.scales.x.type = 'category'
+    selectedDefinitionsX.value = ''
+    xAxisType.value = 'category'
+    chartOptions2.value.scales.x.type = 'category'
   }
+  //alert(`New X axis ID: ${selectedDefinitionsX.value}`)
 }
 
 async function handleDefinitionSelectionY(selection: string[]) {
@@ -187,7 +233,7 @@ async function handleDefinitionSelectionY(selection: string[]) {
 }
 
 function emitDelete() {
-  emit('delete', props.id)
+  emit('delete', props.diagramId)
 }
 
 </script>
@@ -196,50 +242,67 @@ function emitDelete() {
   
   <UCard>
     <template #header>
-      <UFieldGroup>
-        <UBadge color="neutral" variant="outline" size="lg" label="X" />
-        <USelect
-            v-if="componentDefinitionNames.length"
-            placeholder="Select x-axis"
-            :v-model="undefined" 
-            :items="componentDefinitionNames"
-            :ui="{ content: 'min-w-fit' }"
-            @update:model-value="handleDefinitionSelectionX"
-        />
-      </UFieldGroup>
-      <UFieldGroup>
-        <UBadge color="neutral" variant="outline" size="lg" label="Y" />
-        <USelect
-            v-if="componentDefinitionNames.length"
-            placeholder="Select y-axis"
-            label="Y"
-            multiple
-            :v-model="undefined" 
-            :items="componentDefinitionNames"
-            :ui="{ content: 'min-w-fit' }"
-            @update:model-value="handleDefinitionSelectionY"
-        />
-      </UFieldGroup>
+        <div class="grid grid-cols-2 gap-6">
+        <UFieldGroup>
+            <UBadge color="neutral" variant="outline" size="lg" label="X" />
+            <USelect
+                v-if="componentDefinitionNames.length"
+                placeholder="Select Component"
+                :v-model="undefined" 
+                :items="componentDefinitionNames"
+                :ui="{ content: 'min-w-fit' }"
+                :content="{
+                    align: 'start',
+                    side: 'right',
+                    sideOffset: 8
+                }"
+                @update:model-value="handleDefinitionSelectionX"
+            /> 
+        </UFieldGroup>
+        <UFieldGroup>
+            <UBadge color="neutral" variant="outline" size="lg" label="Y" />
+            <USelect
+                v-if="componentDefinitionNames.length"
+                placeholder="Select Components"
+                label="Y"
+                multiple
+                :v-model="undefined" 
+                :items="componentDefinitionNames"
+                :ui="{ content: 'min-w-fit' }"
+                :content="{
+                    align: 'start',
+                    side: 'right',
+                    sideOffset: 8
+                }"
+                @update:model-value="handleDefinitionSelectionY"
+            />
+        </UFieldGroup>
+        </div>
+    </template>
+    <div class="chart-container">
+      <Line 
+        v-if="data && data.datasets[0]?.data.some((v) => !!v)" 
+        :data="data" 
+        :options="chartOptions2"
+      />
+      <p v-else>No data to display.</p>
+    </div>
+    <template #footer>
       <UButton
             aria-label="Delete"
-            icon="i-lucide-trash-2"
             color="error"
-            variant="ghost"
+            variant="soft"
+            label="Remove Diagram"
             @click="emitDelete"
       />  
     </template>
-    <div class="chart-container">
-      <Line v-if="data && data.datasets[0]?.data.some((v) => !!v)" :data="data" :options="chartOptions"/>
-      <p v-else>No data to display.<br/>ID of selected definition: {{ selectedDefinitionsY }}<br/>Nodes: {{ pxNodes.toString() }}<br/>Data Labels: {{ data.labels?.toString() }}<br/>Values: {{ data.datasets[0]?.data }}<br/>Path: {{ props.nodesInPath.toString() }}</p>
-    </div>
   </UCard>
 </template>
 
 <style scoped>
 .chart-container {
   position: relative; 
-  margin: auto;
-  height: 30vh; 
+  margin: auto; 
   width: 100%;
 }
 </style>
