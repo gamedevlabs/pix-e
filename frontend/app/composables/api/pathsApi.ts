@@ -59,7 +59,7 @@ export function usePathsApi() {
     return seq.reverse()
   }
 
-  async function dijkstra_multiple(nodes: Node[], edges: Edge[], selected: Node[]) {
+  async function _dijkstra_multiple(nodes: Node[], edges: Edge[], selected: Node[]) {
     const paths = new Map()
 
     for (const n1 of selected) {
