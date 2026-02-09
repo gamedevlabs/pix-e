@@ -75,7 +75,7 @@ class Config:
         default_factory=lambda: {
             "gemini": "gemini-2.0-flash-exp",
             "openai": "gpt-4o-mini",
-            "ollama": "gemma3:4b"
+            "ollama": "gemma3:4b",
         }
     )
 
@@ -230,7 +230,11 @@ class Config:
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             model_aliases=get_setting(
                 "model_aliases",
-                {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini", "ollama": "deepseek-r1:8b"},
+                {
+                    "gemini": "gemini-2.0-flash-exp",
+                    "openai": "gpt-4o-mini",
+                    "ollama": "deepseek-r1:8b",
+                },
                 dict,
             ),
             # Storage
@@ -415,10 +419,12 @@ class Config:
 # This is loaded once and can be overridden
 _default_config: Optional[Config] = None
 
+
 def get_model_id(model_name: str) -> str:
     """Map frontend model names to actual model IDs using orchestrator config."""
     config = get_config()
     return config.resolve_model_alias(model_name)
+
 
 def get_config() -> Config:
     """

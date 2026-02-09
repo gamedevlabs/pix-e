@@ -1,8 +1,11 @@
 from typing import Any, Dict
 
 from llm import BaseOperationHandler, InvalidRequestError
-from moviescriptevaluator.llm.prompts import AnalyzeScenePrompt, AnalyzeSceneWithAssetListPrompt, \
-    AnalyzeMissingAssetsPrompt
+from moviescriptevaluator.llm.prompts import (
+    AnalyzeMissingAssetsPrompt,
+    AnalyzeScenePrompt,
+    AnalyzeSceneWithAssetListPrompt,
+)
 from moviescriptevaluator.llm.schemas import MovieScriptAnalysis, RecommendationResult
 
 
@@ -19,6 +22,7 @@ class AnalyzeScene(BaseOperationHandler):
         if "scene_description" not in data:
             raise InvalidRequestError("Scene description or elements missing")
 
+
 class CreateRecommendation(BaseOperationHandler):
     operation_id = "movie-script-evaluator.create_recommendations"
     version = "1.0.0"
@@ -26,11 +30,15 @@ class CreateRecommendation(BaseOperationHandler):
     response_schema = RecommendationResult
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
-        return AnalyzeSceneWithAssetListPrompt % (data["items_needed"] , data["asset_list"])
+        return AnalyzeSceneWithAssetListPrompt % (
+            data["items_needed"],
+            data["asset_list"],
+        )
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "items_needed" not in data and "asset_list" not in data:
             raise InvalidRequestError("Required items or assets missing")
+
 
 class MissingAssetsAnalysis(BaseOperationHandler):
     operation_id = "movie-script-evaluator.missing_assets"
@@ -39,7 +47,10 @@ class MissingAssetsAnalysis(BaseOperationHandler):
     response_schema = MovieScriptAnalysis
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
-        return AnalyzeMissingAssetsPrompt % (data["items_needed"] , data["recommended_items"])
+        return AnalyzeMissingAssetsPrompt % (
+            data["items_needed"],
+            data["recommended_items"],
+        )
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "items_needed" not in data and "recommended_items" not in data:
