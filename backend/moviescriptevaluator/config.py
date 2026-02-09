@@ -1,6 +1,6 @@
 import os
+from dataclasses import dataclass
 from pathlib import Path
-from dataclasses import dataclass, field
 from typing import Optional
 
 # Load .env file if it exists
@@ -13,6 +13,7 @@ try:
         load_dotenv(env_path)
 except ImportError:
     pass  # python-dotenv not installed
+
 
 @dataclass
 class Config:
@@ -60,11 +61,15 @@ class Config:
 
         return cls(
             is_logging_enabled=get_setting("is_logging_enabled", False, bool),
-            logging_directory=get_setting("logging_directory", "./moviescriptevaluator/logs/{}-{}.txt", str),
+            logging_directory=get_setting(
+                "logging_directory", "./moviescriptevaluator/logs/{}-{}.txt", str
+            ),
         )
+
 
 # This is loaded once and can be overridden
 _default_config: Optional[Config] = None
+
 
 # get config of Movie Script Evaluator
 def get_config_mse() -> Config:

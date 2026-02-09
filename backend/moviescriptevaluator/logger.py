@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 from llm import LLMResponse
@@ -6,7 +6,7 @@ from llm import LLMResponse
 
 class Logger(ABC):
     def __init__(self):
-       pass
+        pass
 
     @abstractmethod
     def write_start_action(self):
@@ -27,6 +27,7 @@ class Logger(ABC):
     @abstractmethod
     def write_log(self, message: str):
         pass
+
 
 class PassiveLogger(Logger):
 

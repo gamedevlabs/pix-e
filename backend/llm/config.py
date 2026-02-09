@@ -8,8 +8,8 @@ Supports loading configuration from:
 - Direct initialization (for testing)
 """
 
-import os
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, get_args

@@ -3,13 +3,13 @@ from typing import Any
 
 # Import handlers to trigger auto-registration
 from backend.moviescriptevaluator.llm import handlers  # noqa: F401
-from llm import LLMOrchestrator, LLMRequest, LLMResponse
+from llm import LLMOrchestrator, LLMRequest
 from moviescriptevaluator.config import get_config_mse
 from moviescriptevaluator.llm.schemas import (
     MovieScriptAnalysis,
     RecommendationResult,
 )
-from moviescriptevaluator.logger import Logger, ActiveLogger, PassiveLogger
+from moviescriptevaluator.logger import ActiveLogger, Logger, PassiveLogger
 from moviescriptevaluator.models import (
     AssetMetaData,
     MovieScript,
@@ -18,10 +18,10 @@ from moviescriptevaluator.models import (
 )
 
 
-
 class MovieScriptLLMConnector:
     orchestrator: LLMOrchestrator
     model_id: str
+    logger: Logger
 
     def __init__(self, model_id: str):
         self.orchestrator = LLMOrchestrator()
