@@ -9,6 +9,7 @@ Supports loading configuration from:
 """
 
 import os
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, get_args
@@ -204,6 +205,8 @@ class Config:
                 return Path(env_value)
             elif cast_type == list:
                 return [s.strip() for s in env_value.split(",")]
+            elif cast_type == dict:
+                return json.loads(env_value)
             else:
                 return env_value
 
@@ -233,7 +236,7 @@ class Config:
                 {
                     "gemini": "gemini-2.0-flash-exp",
                     "openai": "gpt-4o-mini",
-                    "ollama": "deepseek-r1:8b",
+                    "ollama": "gemma3:4b",
                 },
                 dict,
             ),

@@ -4,10 +4,12 @@ from typing import Any
 # Import handlers to trigger auto-registration
 from backend.moviescriptevaluator.llm import handlers  # noqa: F401
 from llm import LLMOrchestrator, LLMRequest, LLMResponse
+from moviescriptevaluator.config import get_config_mse
 from moviescriptevaluator.llm.schemas import (
     MovieScriptAnalysis,
     RecommendationResult,
 )
+from moviescriptevaluator.logger import Logger, ActiveLogger, PassiveLogger
 from moviescriptevaluator.models import (
     AssetMetaData,
     MovieScript,
@@ -15,42 +17,6 @@ from moviescriptevaluator.models import (
     ScriptSceneAnalysisResult,
 )
 
-
-class Logger:
-    log_file_path: str
-
-    def __init__(self, log_file_path: str):
-        self.log_file_path = log_file_path
-
-    def write_start_action(self):
-        self.write_log(
-            "----------------------------Start of an action----------------------------"
-        )
-
-    def write_end_action(self):
-        self.write_log(
-            "----------------------------End of an action-----------------------------"
-        )
-
-    def get_response_log(self, response: LLMResponse):
-        return (
-            "models_used: {}, execution_time_in_ms: {}, "
-            "token_usage: {}, operation_schema: {}"
-        ).format(
-            response.metadata.models_used,
-            response.metadata.execution_time_ms,
-            response.metadata.token_usage,
-            response.metadata.operation_schema,
-        )
-
-    def write_llm_response_log(self, response: LLMResponse):
-        self.write_log(self.get_response_log(response))
-        self.write_log("The operation is successful!!!")
-
-    def write_log(self, message: str):
-        time_stamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-        with open(self.log_file_path, "a") as file:
-            file.write(f"{time_stamp}: {message}\n")
 
 
 class MovieScriptLLMConnector:
@@ -60,19 +26,31 @@ class MovieScriptLLMConnector:
     def __init__(self, model_id: str):
         self.orchestrator = LLMOrchestrator()
         self.model_id = model_id
-        self.logger = Logger(
-            "./moviescriptevaluator/logs/{}-{}.txt".format(
-                self.model_id, datetime.today().strftime("%d-%m-%Y")
+
+        config = get_config_mse()
+
+        if config.is_logging_enabled:
+            self.logger = ActiveLogger(
+                config.logging_directory.format(
+                    self.model_id, datetime.today().strftime("%d-%m-%Y")
+                )
             )
-        )
+        else:
+            self.logger = PassiveLogger()
 
     def set_model_id(self, model_id: str):
         self.model_id = model_id
-        self.logger = Logger(
-            "./moviescriptevaluator/logs/{}-{}.txt".format(
-                self.model_id, datetime.today().strftime("%d-%m-%Y")
+
+        config = get_config_mse()
+
+        if config.is_logging_enabled:
+            self.logger = ActiveLogger(
+                config.logging_directory.format(
+                    self.model_id, datetime.today().strftime("%d-%m-%Y")
+                )
             )
-        )
+        else:
+            self.logger = PassiveLogger()
 
     def analyze_movie_script(self, movie_script: MovieScript) -> dict[str, Any]:
         with movie_script.file.file.open("r") as movie_script_file:
