@@ -20,7 +20,9 @@ const chartId = props.chartId
 
 const { fetchAll: fetchPxDefinitions } = usePxComponentDefinitions()
 
-const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(props.chartId)
+const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
+  props.chartId,
+)
 
 const {
   nodes,
@@ -145,18 +147,18 @@ async function onContextMenu(mouseEvent: MouseEvent) {
 }
 
 const nodesInPath = computed(() => {
-    const containersInPath: string[] = []
-    const containerIdsInPath: string[] = []
-    path.value.forEach((containerId) => {
-        const container = pxChartContainers.value.find((container) => container.id === containerId)
-        // TODO: what if undefined?
-        if (container && container.content) {
-            containersInPath.push(container.content)
-            containerIdsInPath.push(container.id)
-        }
-    })
+  const containersInPath: string[] = []
+  const containerIdsInPath: string[] = []
+  path.value.forEach((containerId) => {
+    const container = pxChartContainers.value.find((container) => container.id === containerId)
+    // TODO: what if undefined?
+    if (container && container.content) {
+      containersInPath.push(container.content)
+      containerIdsInPath.push(container.id)
+    }
+  })
 
-    return containersInPath
+  return containersInPath
 })
 
 async function onSelectionChange(change: NodeSelectionChange) {
@@ -175,13 +177,10 @@ async function onSelectionChange(change: NodeSelectionChange) {
     await resetPath()
   }
 }
-
 </script>
 
 <template>
-  <PxDiagrams
-    :nodes-in-path="nodesInPath" 
-  />
+  <PxDiagrams :nodes-in-path="nodesInPath" />
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
