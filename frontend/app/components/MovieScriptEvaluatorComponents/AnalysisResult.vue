@@ -23,11 +23,11 @@ const columns: ColumnDef<ScriptSceneAnalysis>[] = [
         NOT_FOUND: 'text-error',
         NOT_ANALYZED: 'text-gray',
       }
-  
+
       return h(
         'span',
         { class: `font-semibold capitalize ${colorMap[asset_coverage as keyof typeof colorMap]}` },
-        asset_coverage
+        asset_coverage,
       )
     },
   },

@@ -130,7 +130,7 @@ function triggerEvaluateMissingItems() {
       description: 'Evaluation of missing items has been completed',
       color: 'success',
     })
-    
+
     fetchAndFormatAnalysisResults()
   })
 }

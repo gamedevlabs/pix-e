@@ -35,13 +35,16 @@ export function useMovieScriptEvaluatorApi() {
     script_id: number,
   ): Promise<MovieScriptAnalysisResponse> {
     try {
-      return await $fetch(`${apiBase}/projects/${projectId}/analyze?script_id=${script_id}&llm=${llm.active_llm}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
+      return await $fetch(
+        `${apiBase}/projects/${projectId}/analyze?script_id=${script_id}&llm=${llm.active_llm}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'X-CSRFToken': useCookie('csrftoken').value,
+          } as HeadersInit,
+        },
+      )
     } catch (error) {
       throw new Error((error as Error)?.message || 'Failed to analyze movie script')
     }
@@ -67,13 +70,16 @@ export function useMovieScriptEvaluatorApi() {
 
   async function getRecommendations(projectId: string) {
     try {
-      return await $fetch(`${apiBase}/projects/${projectId}/recommendations/?llm=${llm.active_llm}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
+      return await $fetch(
+        `${apiBase}/projects/${projectId}/recommendations/?llm=${llm.active_llm}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'X-CSRFToken': useCookie('csrftoken').value,
+          } as HeadersInit,
+        },
+      )
     } catch (error) {
       throw new Error((error as Error)?.message || 'Failed to get recommendations')
     }
