@@ -35,7 +35,7 @@ async function deleteDiagram(deleteId: string) {
         block
       />
       <template #content>
-      <SimpleCardSection use-add-button @add-clicked="addItem">
+      <DiagramCardSection use-add-button @add-clicked="addItem">
         <div v-for="d in diagrams" :key="d">
           <PxLineDiagram
             :nodes-in-path="props.nodesInPath"
@@ -44,7 +44,7 @@ async function deleteDiagram(deleteId: string) {
             @delete="deleteDiagram(d)"
           />
         </div>
-      </SimpleCardSection>
+      </DiagramCardSection>
       </template>
       </UCollapsible>
     </SimpleContentWrapper>

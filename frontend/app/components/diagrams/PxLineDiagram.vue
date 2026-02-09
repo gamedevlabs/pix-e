@@ -239,8 +239,7 @@ function emitDelete() {
 </script>
 
 <template>
-  
-  <UCard>
+  <UCard class="min-h-55">
     <template #header>
         <div class="grid grid-cols-2 gap-6">
         <UFieldGroup>
