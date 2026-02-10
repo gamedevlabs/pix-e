@@ -29,10 +29,10 @@ from pxcharts.permissions import IsOwner
 _movie_script_llm_connector: MovieScriptLLMConnector | None = None
 
 
-def set_model(model_name: str):
+def set_model(model_name: str, project_id: str):
     llm_connector = get_llm_connector()
     model_id = get_model_id(model_name)
-    llm_connector.set_model_id(model_id)
+    llm_connector.set_model_id(model_id, project_id)
 
 
 def get_llm_connector() -> MovieScriptLLMConnector:
@@ -78,7 +78,7 @@ class MovieProjectView(viewsets.ModelViewSet):
     def analyze_movie_script(self, request, pk):
         script_id = request.query_params.get("script_id")
         model_name = request.query_params.get("llm")
-        set_model(model_name)
+        set_model(model_name, pk)
 
         get_llm_connector().logger.write_start_action()
         get_llm_connector().logger.write_log(
@@ -126,7 +126,7 @@ class MovieProjectView(viewsets.ModelViewSet):
     @action(detail=True, methods=["GET"], url_path="recommendations")
     def get_recommendations(self, request, pk):
         model_name = request.query_params.get("llm")
-        set_model(model_name)
+        set_model(model_name, pk)
 
         get_llm_connector().logger.write_start_action()
         get_llm_connector().logger.write_log(
@@ -219,7 +219,7 @@ class MovieProjectView(viewsets.ModelViewSet):
     @action(detail=True, methods=["GET"], url_path="missing-items")
     def missing_items(self, request, pk):
         model_name = request.query_params.get("llm")
-        set_model(model_name)
+        set_model(model_name, pk)
 
         get_llm_connector().logger.write_start_action()
         get_llm_connector().logger.write_log(

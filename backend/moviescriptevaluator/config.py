@@ -18,7 +18,7 @@ except ImportError:
 @dataclass
 class Config:
     is_logging_enabled: bool = False
-    logging_directory: str = "./moviescriptevaluator/logs/{}-{}.txt"
+    logging_directory: str = "./moviescriptevaluator/logs/{}-{}-{}.txt"
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -62,7 +62,7 @@ class Config:
         return cls(
             is_logging_enabled=get_setting("is_logging_enabled", False, bool),
             logging_directory=get_setting(
-                "logging_directory", "./moviescriptevaluator/logs/{}-{}.txt", str
+                "logging_directory", "./moviescriptevaluator/logs/{}-{}-{}.txt", str
             ),
         )
 

@@ -32,13 +32,13 @@ class MovieScriptLLMConnector:
         if config.is_logging_enabled:
             self.logger = ActiveLogger(
                 config.logging_directory.format(
-                    self.model_id, datetime.today().strftime("%d-%m-%Y")
+                    self.model_id, "", datetime.today().strftime("%d-%m-%Y")
                 )
             )
         else:
             self.logger = PassiveLogger()
 
-    def set_model_id(self, model_id: str):
+    def set_model_id(self, model_id: str, project_id: str):
         self.model_id = model_id
 
         config = get_config_mse()
@@ -46,7 +46,7 @@ class MovieScriptLLMConnector:
         if config.is_logging_enabled:
             self.logger = ActiveLogger(
                 config.logging_directory.format(
-                    self.model_id, datetime.today().strftime("%d-%m-%Y")
+                    self.model_id, project_id, datetime.today().strftime("%d-%m-%Y")
                 )
             )
         else:
