@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+} from 'chart.js'
+
+import { lineCategoryOptions, lineLinearOptions } from './DiagramOptions'
 
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
+ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale)
 
 onMounted(() => {
   fetchPxNodes()
@@ -81,44 +91,14 @@ const nodeLabels = computed(() => {
 })
 
 const data = computed(() => {
-  const data: NodeData[] = []
-
-  // build and add NodeData object for each node
-  let sumXValue: number = 0
-  const sumXID: string = 'sum-'.concat(selectedDefinitionsX.value)
-
-  relevantNodes.value.forEach((node) => {
-    // add node name
-    const nodeData: NodeData = {
-      name: node.name,
-    }
-
-    // add optional x value
-    if (selectedDefinitionsX.value) {
-      const xComp = pxComponents.value.find(
-        (c) => c.definition === selectedDefinitionsX.value && c.node === node.id,
-      )?.value
-      sumXValue += typeof xComp === 'number' ? xComp : 1
-      nodeData[sumXID] = sumXValue
-    }
-
-    // add values for Y-axis components
-    pxComponents.value
-      .filter((c) => selectedDefinitionsY.value.includes(c.definition) && c.node === node.id)
-      .forEach((c) => {
-        nodeData[c.definition] = c.value
-      })
-
-    data.push(nodeData)
-  })
-
   const datasets = []
   const colors = initColorIterator()
+  const sumXID: string = 'sum-'.concat(selectedDefinitionsX.value)
 
   selectedDefinitionsY.value.forEach((def) => {
     datasets.push({
       label: getNameFromDefinitionId(def),
-      data: data,
+      data: allData.value,
       parsing: {
         xAxisKey: selectedDefinitionsX.value ? sumXID : 'name',
         yAxisKey: def,
@@ -128,7 +108,7 @@ const data = computed(() => {
       borderColor: colors.next().value,
     })
   })
-  //console.log(`Labels: [${labels.toString()}]`)
+
   //alert(JSON.stringify(datasets))
 
   return {
@@ -137,66 +117,36 @@ const data = computed(() => {
   }
 })
 
-const xAxisType = ref('category')
+const allData = computed(() => {
+  const allNodeData: NodeData[] = []
 
-const _chartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: true,
-  scales: {
-    x: {
-      ticks: {
-        color: 'rgb(128, 128, 128)',
-      },
-      grid: {
-        color: 'rgba(128, 128, 128, 0.2)',
-      },
-      border: {
-        color: 'rgb(128, 128, 128)',
-      },
-      type: xAxisType.value,
-    },
-    y: {
-      ticks: {
-        color: 'rgb(128, 128, 128)',
-      },
-      grid: {
-        color: 'rgba(128, 128, 128, 0.2)',
-      },
-      border: {
-        color: 'rgb(128, 128, 128)',
-      },
-    },
-  },
-}))
+  const sumsXComponents = Object.fromEntries(
+    pxComponents.value.map((c) => ['sum-'.concat(c.definition), 0]),
+  )
 
-const chartOptions2 = ref({
-  responsive: true,
-  maintainAspectRatio: true,
-  scales: {
-    x: {
-      ticks: {
-        color: 'rgb(128, 128, 128)',
-      },
-      grid: {
-        color: 'rgba(128, 128, 128, 0.2)',
-      },
-      border: {
-        color: 'rgb(128, 128, 128)',
-      },
-      type: 'category',
-    },
-    y: {
-      ticks: {
-        color: 'rgb(128, 128, 128)',
-      },
-      grid: {
-        color: 'rgba(128, 128, 128, 0.2)',
-      },
-      border: {
-        color: 'rgb(128, 128, 128)',
-      },
-    },
-  },
+  relevantNodes.value.forEach((node) => {
+    // add node name
+    const nodeData: NodeData = {
+      name: node.name,
+    }
+
+    // add values for Y-axis components
+    pxComponents.value
+      .filter((c) => c.node === node.id)
+      .forEach((c) => {
+        nodeData[c.definition] = c.value
+
+        const sumXID: string = 'sum-'.concat(c.definition)
+
+        sumsXComponents[sumXID] += typeof c.value === 'number' ? c.value : 1
+        nodeData[sumXID] = sumsXComponents[sumXID]
+      })
+
+    allNodeData.push(nodeData)
+  })
+
+  // alert(`Node data initialized: ${JSON.stringify(allNodeData)}`)
+  return allNodeData
 })
 
 const componentDefinitionNames = computed(() => {
@@ -210,15 +160,9 @@ async function handleDefinitionSelectionX(selection: string) {
   const foundId = pxComponentDefinitions.value.find((def) => selection === def.name)?.id
   if (foundId) {
     selectedDefinitionsX.value = foundId
-    xAxisType.value = 'linear'
-    chartOptions2.value.scales.x.type = 'linear'
-    // alert(`Changed x axis type to linear: ${JSON.stringify(chartOptions2.value)}`)
   } else {
     selectedDefinitionsX.value = ''
-    xAxisType.value = 'category'
-    chartOptions2.value.scales.x.type = 'category'
   }
-  //alert(`New X axis ID: ${selectedDefinitionsX.value}`)
 }
 
 async function handleDefinitionSelectionY(selection: string[]) {
@@ -274,9 +218,14 @@ function emitDelete() {
     </template>
     <div class="chart-container">
       <Line
-        v-if="data && data.datasets[0]?.data.some((v) => !!v)"
+        v-if="data && data.datasets[0]?.data.some((v) => !!v) && selectedDefinitionsX"
         :data="data"
-        :options="chartOptions2"
+        :options="lineLinearOptions"
+      />
+      <Line
+        v-else-if="data && data.datasets[0]?.data.some((v) => !!v)"
+        :data="data"
+        :options="lineCategoryOptions"
       />
       <p v-else>No data to display.</p>
     </div>
