@@ -73,6 +73,10 @@ function selectScriptToAnalyze(scriptId: number) {
 function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
   const itemsTobeSent = item.map((i) => {
     i.project = props.projectId
+
+    if (i.asset_coverage === undefined) {
+      i.asset_coverage = "NOT_ANALYZED"
+    }
     return i
   })
 

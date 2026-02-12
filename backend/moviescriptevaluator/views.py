@@ -100,8 +100,6 @@ class MovieProjectView(viewsets.ModelViewSet):
         response = get_llm_connector().analyze_movie_script(script)
         get_llm_connector().logger.write_end_action()
 
-        for item in response:
-            item["asset_coverage"] = AssetUsagePurpose.NOT_ANALYZED
         return Response(response, status=status.HTTP_200_OK)
 
     @staticmethod
