@@ -75,7 +75,7 @@ function saveAnalysisItems(item: ScriptSceneAnalysis[]) {
     i.project = props.projectId
 
     if (i.asset_coverage === undefined) {
-      i.asset_coverage = "NOT_ANALYZED"
+      i.asset_coverage = 'NOT_ANALYZED'
     }
     return i
   })

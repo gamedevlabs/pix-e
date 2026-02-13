@@ -110,20 +110,19 @@ function resetForm() {
 }
 
 function select(item: TableRow<ScriptSceneAnalysis> | PointerEvent) {
-
-  if (typeof item === "object" && "type" in item && item.type === "click") {
+  if (typeof item === 'object' && 'type' in item && item.type === 'click') {
     const pointerEvent = item as PointerEvent
     const target = pointerEvent.target as HTMLElement | null
     if (target?.innerText) {
-      const currentItem = target.innerText;
+      const currentItem = target.innerText
       const selectedRow = items.value.find((i) => Object.values(i).includes(currentItem))
       if (selectedRow) {
         const index = items.value.indexOf(selectedRow)
         editItem(index)
-        return;
+        return
       }
     }
-  } else if (typeof item === "object" && "index" in item) {
+  } else if (typeof item === 'object' && 'index' in item) {
     const tableRow = item as TableRow<ScriptSceneAnalysis>
     editItem(tableRow.index)
   }
@@ -186,7 +185,7 @@ function isAllItemsHaveId() {
     </div>
 
     <!-- Table -->
-    <UTable :columns="columns" :data="items"  @select="select" />
+    <UTable :columns="columns" :data="items" @select="select" />
 
     <div class="flex gap-2 mt-6 align-right justify-end">
       <UButton
