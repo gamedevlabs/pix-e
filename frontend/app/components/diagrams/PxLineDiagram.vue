@@ -186,7 +186,7 @@ function emitDelete() {
             v-if="componentDefinitionNames.length"
             placeholder="Select Component"
             :v-model="undefined"
-            :items="componentDefinitionNames"
+            :items="['None'].concat(componentDefinitionNames)"
             :ui="{ content: 'min-w-fit' }"
             :content="{
               align: 'start',
