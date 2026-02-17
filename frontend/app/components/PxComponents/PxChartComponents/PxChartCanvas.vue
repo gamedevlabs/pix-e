@@ -163,14 +163,15 @@ const nodesInPath = computed(() => {
 
 async function onSelectionChange(change: NodeSelectionChange) {
   // do something when selected nodes/edges changed
-  const previouslySelected = getSelectedNodes.value
+  const previouslySelectedIds = getSelectedNodes.value.map((gn) => gn.id)
   if (
-    previouslySelected.length == 1 &&
-    previouslySelected[0] &&
-    previouslySelected[0].id != change.id &&
+    previouslySelectedIds.length >= 1 &&
+    previouslySelectedIds[0] &&
+    previouslySelectedIds[0] != change.id &&
+    !previouslySelectedIds.includes(change.id) &&
     change.selected
   ) {
-    const ids = [previouslySelected[0].id, change.id]
+    const ids = [...previouslySelectedIds, change.id]
     await calculatePathFromSelection(ids)
     await highlightPath()
   } else {
@@ -180,13 +181,13 @@ async function onSelectionChange(change: NodeSelectionChange) {
 </script>
 
 <template>
+ <PxDiagrams :nodes-in-path="nodesInPath" />
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
   </div>
-  <div v-else>
-    <PxDiagrams :nodes-in-path="nodesInPath" />
     <VueFlow
+        v-else
         v-model:nodes="nodes"
         v-model:edges="edges"
         :edge-types="edgeTypes"
@@ -225,7 +226,6 @@ async function onSelectionChange(change: NodeSelectionChange) {
         </UTooltip>
         </Panel>
     </VueFlow>
-  </div>
 
   <div v-if="error" style="color: red; margin-top: 1rem">
     {{ error }}

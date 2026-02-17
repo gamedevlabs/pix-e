@@ -59,17 +59,21 @@ export function usePathsApi() {
     return seq.reverse()
   }
 
-  async function _dijkstra_multiple(nodes: Node[], edges: Edge[], selected: Node[]) {
-    const paths = new Map()
+  async function dijkstra_multiple(nodes: Node[], edges: Edge[], selected: string[]) {
+    let fullPath : string[] = []
 
-    for (const n1 of selected) {
-      for (const n2 of selected) {
-        const p = dijkstra_path(nodes, edges, n1.id, n2.id)
-        paths.set({ n1: n1.id, n2: n2.id }, p)
-      }
+    if (selected.length < 2) {
+        return []
     }
 
-    return
+    fullPath.push(selected[0])
+
+    for (let i = 0; i < selected.length - 1; i++) {
+        const nextSeq = await dijkstra_path(nodes, edges, selected[i], selected[i+1])
+        fullPath = fullPath.concat(nextSeq.slice(1))
+    }
+
+    return fullPath
   }
 
   async function calculate_path(
@@ -84,7 +88,7 @@ export function usePathsApi() {
       }
       return path
     } else {
-      return []
+      return dijkstra_multiple(nodes, edges, selected)
     }
   }
 
