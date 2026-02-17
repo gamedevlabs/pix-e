@@ -181,51 +181,51 @@ async function onSelectionChange(change: NodeSelectionChange) {
 </script>
 
 <template>
- <PxDiagrams :nodes-in-path="nodesInPath" />
+  <PxDiagrams :nodes-in-path="nodesInPath" />
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
   </div>
-    <VueFlow
-        v-else
-        v-model:nodes="nodes"
-        v-model:edges="edges"
-        :edge-types="edgeTypes"
-        :apply-default="false"
-        @node-drag-stop="onNodeDragStop"
-        @connect="onConnect"
-        @nodes-change="onNodesChange"
-        @edges-change="onEdgesChange"
-        @pane-context-menu="onContextMenu($event)"
-    >
-        <!--@nodes-initialized="fitView()"-->
+  <VueFlow
+    v-else
+    v-model:nodes="nodes"
+    v-model:edges="edges"
+    :edge-types="edgeTypes"
+    :apply-default="false"
+    @node-drag-stop="onNodeDragStop"
+    @connect="onConnect"
+    @nodes-change="onNodesChange"
+    @edges-change="onEdgesChange"
+    @pane-context-menu="onContextMenu($event)"
+  >
+    <!--@nodes-initialized="fitView()"-->
 
-        <Background />
+    <Background />
 
-        <template #node-pxEmpty="customNodeProps">
-        <PxChartContainer
-            v-bind="customNodeProps"
-            @delete="handleDeletePxGraphContainer"
-            @add-px-node="handleAddPxNode"
-            @edit="handleUpdatePxGraphContainer"
-        />
-        </template>
+    <template #node-pxEmpty="customNodeProps">
+      <PxChartContainer
+        v-bind="customNodeProps"
+        @delete="handleDeletePxGraphContainer"
+        @add-px-node="handleAddPxNode"
+        @edit="handleUpdatePxGraphContainer"
+      />
+    </template>
 
-        <template #node-pxNode="customNodeProps">
-        <PxChartContainerNode
-            v-bind="customNodeProps"
-            @remove-px-node="handleDeletePxNode"
-            @delete="handleDeletePxGraphContainer"
-            @edit="handleUpdatePxGraphContainer"
-        />
-        </template>
+    <template #node-pxNode="customNodeProps">
+      <PxChartContainerNode
+        v-bind="customNodeProps"
+        @remove-px-node="handleDeletePxNode"
+        @delete="handleDeletePxGraphContainer"
+        @edit="handleUpdatePxGraphContainer"
+      />
+    </template>
 
-        <Panel :position="'bottom-left'">
-        <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-            <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addContainer(0, 0)" />
-        </UTooltip>
-        </Panel>
-    </VueFlow>
+    <Panel :position="'bottom-left'">
+      <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
+        <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addContainer(0, 0)" />
+      </UTooltip>
+    </Panel>
+  </VueFlow>
 
   <div v-if="error" style="color: red; margin-top: 1rem">
     {{ error }}

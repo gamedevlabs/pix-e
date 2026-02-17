@@ -60,17 +60,17 @@ export function usePathsApi() {
   }
 
   async function dijkstra_multiple(nodes: Node[], edges: Edge[], selected: string[]) {
-    let fullPath : string[] = []
+    let fullPath: string[] = []
 
     if (selected.length < 2) {
-        return []
+      return []
     }
 
     fullPath.push(selected[0])
 
     for (let i = 0; i < selected.length - 1; i++) {
-        const nextSeq = await dijkstra_path(nodes, edges, selected[i], selected[i+1])
-        fullPath = fullPath.concat(nextSeq.slice(1))
+      const nextSeq = await dijkstra_path(nodes, edges, selected[i], selected[i + 1])
+      fullPath = fullPath.concat(nextSeq.slice(1))
     }
 
     return fullPath
