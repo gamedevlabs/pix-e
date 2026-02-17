@@ -65,11 +65,6 @@ function initColorIterator() {
   return colorIterator
 }
 
-interface NodeData {
-  name: string
-  [key: string]: string | number | boolean | undefined
-}
-
 const relevantNodes = computed(() => {
   let relevantNodes = props.nodesInPath
     .map((name) => getNodeFromName(name))
@@ -78,6 +73,46 @@ const relevantNodes = computed(() => {
   if (!relevantNodes.length) relevantNodes = pxNodes.value
 
   return relevantNodes
+})
+
+interface NodeData {
+  name: string
+  [key: string]: string | number | boolean | undefined
+}
+
+// put node data in proper format for chartjs once,
+// so it can be reused for different axis configurations
+const allData = computed(() => {
+  const allNodeData: NodeData[] = []
+
+  // aggregator for x-axis components
+  const sumsXComponents = Object.fromEntries(
+    pxComponents.value.map((c) => ['sum-'.concat(c.definition), 0]),
+  )
+
+  relevantNodes.value.forEach((node) => {
+    // add node name
+    const nodeData: NodeData = {
+      name: node.name,
+    }
+
+    // add values for components, including sums for x-axis components
+    pxComponents.value
+      .filter((c) => c.node === node.id)
+      .forEach((c) => {
+        nodeData[c.definition] = c.value
+
+        const sumXID: string = 'sum-'.concat(c.definition)
+
+        sumsXComponents[sumXID] += typeof c.value === 'number' ? c.value : 1
+        nodeData[sumXID] = sumsXComponents[sumXID]
+      })
+
+    allNodeData.push(nodeData)
+  })
+
+  // alert(`Node data initialized: ${JSON.stringify(allNodeData)}`)
+  return allNodeData
 })
 
 const nodeLabels = computed(() => {
@@ -90,6 +125,7 @@ const nodeLabels = computed(() => {
   return labels
 })
 
+// specify which of the pre-computed data (allData) to visualize
 const data = computed(() => {
   const datasets = []
   const colors = initColorIterator()
@@ -117,38 +153,6 @@ const data = computed(() => {
   }
 })
 
-const allData = computed(() => {
-  const allNodeData: NodeData[] = []
-
-  const sumsXComponents = Object.fromEntries(
-    pxComponents.value.map((c) => ['sum-'.concat(c.definition), 0]),
-  )
-
-  relevantNodes.value.forEach((node) => {
-    // add node name
-    const nodeData: NodeData = {
-      name: node.name,
-    }
-
-    // add values for Y-axis components
-    pxComponents.value
-      .filter((c) => c.node === node.id)
-      .forEach((c) => {
-        nodeData[c.definition] = c.value
-
-        const sumXID: string = 'sum-'.concat(c.definition)
-
-        sumsXComponents[sumXID] += typeof c.value === 'number' ? c.value : 1
-        nodeData[sumXID] = sumsXComponents[sumXID]
-      })
-
-    allNodeData.push(nodeData)
-  })
-
-  // alert(`Node data initialized: ${JSON.stringify(allNodeData)}`)
-  return allNodeData
-})
-
 const componentDefinitionNames = computed(() => {
   return pxComponentDefinitions.value.map((def) => def.name)
 })
@@ -157,6 +161,7 @@ const selectedDefinitionsX: Ref<string, string> = ref('')
 const selectedDefinitionsY: Ref<string[], string[]> = ref([])
 
 async function handleDefinitionSelectionX(selection: string) {
+  // check whether selection is actual component or dummy option for equal spacing
   const foundId = pxComponentDefinitions.value.find((def) => selection === def.name)?.id
   if (foundId) {
     selectedDefinitionsX.value = foundId

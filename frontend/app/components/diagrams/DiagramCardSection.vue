@@ -1,3 +1,4 @@
+<!-- based on SimpleCardSection.vue -->
 <script setup lang="ts">
 const props = defineProps<{ useAddButton?: boolean }>()
 
