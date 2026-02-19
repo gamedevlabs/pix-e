@@ -110,9 +110,46 @@ const groupedWorkflows = computed(() => {
     if (!groups[folder]) groups[folder] = []
     groups[folder].push(w)
   }
+  // Desired display order for the phase picker.
+  const phaseOrder = ['Onboarding', 'Concept and Planning', 'Validation', 'Discover'] as const
+
+  // Some phases are named differently in workflow meta (e.g. "Concept & Design").
+  // Map these to the desired canonical phases so ordering stays correct.
+  const canonicalizePhase = (folder: string) => {
+    const raw = displayPhaseName(folder).trim().toLowerCase()
+
+    if (raw.includes('onboard')) return 'onboarding'
+    if (raw.includes('valid')) return 'validation'
+    if (raw.includes('discover')) return 'discover'
+
+    // Concept & Planning bucket (common variants)
+    if (
+      raw.includes('concept') ||
+      raw.includes('plan') ||
+      raw.includes('design') ||
+      raw.includes('&')
+    ) {
+      return 'concept and planning'
+    }
+
+    return raw
+  }
+
+  const phaseIndex = (folder: string) => {
+    const canonical = canonicalizePhase(folder)
+    const idx = phaseOrder.findIndex((p) => p.toLowerCase() === canonical)
+    return idx === -1 ? Number.POSITIVE_INFINITY : idx
+  }
+
   return Object.entries(groups)
     .map(([folder, items]) => ({ folder, items }))
-    .sort((a, b) => a.folder.localeCompare(b.folder))
+    .sort((a, b) => {
+      const ai = phaseIndex(a.folder)
+      const bi = phaseIndex(b.folder)
+      if (ai !== bi) return ai - bi
+      // Unknown phases (or ties) fall back to alpha by display name
+      return displayPhaseName(a.folder).localeCompare(displayPhaseName(b.folder))
+    })
 })
 
 const displayPhaseName = (folder: string) => folder.replace(/^\d+\s*-\s*/u, '')

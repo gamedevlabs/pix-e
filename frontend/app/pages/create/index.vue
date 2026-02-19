@@ -3,7 +3,7 @@ import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
-import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
+import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const router = useRouter()
@@ -340,29 +340,22 @@ function selectGenre(genre: string) {
 // Platform options now uses the shared configuration with icons
 const platformOptions = platformConfigs
 
-const workflowSlideover = useWorkflowSlideover()
+// WORKFLOW (for workflow button)
+const projectWorkflow = useProjectWorkflow()
+const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const activeWorkflowTitle = computed(() => {
+  const list = (projectWorkflow.workflows?.value || []) as any[]
+  const activeId = projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === activeId)
+  return w?.meta?.title || 'Workflow Guide'
+})
 </script>
 
 <template>
   <div>
     <!-- Workflow toggle button (bottom-left) styled like the sidebar trigger. -->
     <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
-      <button
-        class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 flex items-center justify-between transition-colors group cursor-pointer shadow"
-        @click="workflowSlideover.toggle()"
-      >
-        <span class="flex items-center gap-2 min-w-0">
-          <UIcon name="i-lucide-zap" class="w-5 h-5 shrink-0" />
-          <span class="font-medium truncate">Workflow Guide</span>
-        </span>
-        <span class="flex items-center gap-2 shrink-0">
-          <span class="text-sm bg-white/20 px-2 py-0.5 rounded-full">Show</span>
-          <UIcon
-            name="i-lucide-chevron-right"
-            class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
-          />
-        </span>
-      </button>
+      <WorkflowSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
     </div>
 
     <!-- This ensures the actual slideover exists on this page (sidebar is hidden here). -->
