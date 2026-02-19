@@ -4,6 +4,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'
 import type { PageConfig } from '~/types/page-config'
 import type { MockWorkflow } from '~/mock_data/mock_workflow'
+import { MOCK_EXTERNAL_LINKS } from '~/mock_data/mock_external-links'
 
 // ROUTING
 const route = useRoute()
@@ -183,13 +184,13 @@ const links = computed<NavigationMenuItem[][]>(() => {
     {
       label: 'Wiki',
       icon: 'i-lucide-book-text',
-      to: 'https://github.com/gamedevlabs/pix-e/wiki',
+      to: MOCK_EXTERNAL_LINKS.wiki,
       target: '_blank',
     },
     {
       label: 'Discord',
       icon: 'i-lucide-message-circle',
-      to: 'https://discord.gg/7BhM3nTq',
+      to: MOCK_EXTERNAL_LINKS.discord,
       target: '_blank',
     },
   ]
