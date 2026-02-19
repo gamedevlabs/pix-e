@@ -2,6 +2,7 @@
 import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
+import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const router = useRouter()
@@ -20,6 +21,14 @@ const isDuplicating = ref(false)
 const currentStep = ref(1)
 const totalSteps = 3
 const submitting = ref(false)
+
+// Track which substeps of the first workflow step the user completed in the wizard
+// We can't persist these to a workflow until the project exists, so we keep local flags
+const didBasicInfo = ref(false) // corresponds to s1-1
+const didProjectDetails = ref(false) // corresponds to s1-2
+
+// Initialize workflow composable so we can persist substep progress after project creation
+const { loadForProject, toggleSubstep } = useProjectWorkflow()
 
 // Form data
 const form = reactive({
@@ -203,6 +212,12 @@ function nextStep() {
   if (!validateStep(currentStep.value)) {
     return
   }
+  // Mark local progress for workflow substeps in the first category
+  if (currentStep.value === 1) {
+    didBasicInfo.value = true
+  } else if (currentStep.value === 2) {
+    didProjectDetails.value = true
+  }
   if (currentStep.value < totalSteps) {
     currentStep.value++
   }
@@ -216,10 +231,6 @@ function previousStep() {
 
 function cancel() {
   router.push('/')
-}
-
-function _removeUpload() {
-  uploadedFile.value = null
 }
 
 function openUploadModal() {
@@ -281,6 +292,31 @@ async function createNewProject() {
 
     // Switch to the created project and navigate to dashboard
     await switchProject(created.id)
+
+    // Persist wizard progress into the project's workflow.
+    // Load/create a workflow for the newly created project and toggle the first-step substeps
+    try {
+      await loadForProject(created.id)
+      // The mock workflow for the first step expects step id 's-1' and substep ids s1-1..s1-3
+      // Decide which substeps to mark complete based on local flags OR the current wizard step
+      // (this handles duplication where the user jumps directly to review)
+      const markBasic = didBasicInfo.value || currentStep.value >= 2
+      const markDetails = didProjectDetails.value || currentStep.value >= 3
+
+      // Note: toggleSubstep only completes a substep if it's currently active. We toggle in order.
+      if (markBasic) {
+        await toggleSubstep('s-1', 's1-1')
+      }
+      if (markDetails) {
+        await toggleSubstep('s-1', 's1-2')
+      }
+      // Always toggle the final review/creation substep as the create action
+      await toggleSubstep('s-1', 's1-3')
+    } catch (e) {
+      // Don't block the user; log the failure to console for debugging
+
+      console.warn('Failed to update project workflow:', e)
+    }
   } catch {
     const toast = useToast()
     toast.add({
@@ -485,8 +521,8 @@ const platformOptions = platformConfigs
                 >
                   <template #label="{ item }">
                     <div class="flex items-center gap-2">
-                      <UIcon :name="item.icon" class="w-5 h-5" />
-                      <span>{{ item.label }}</span>
+                      <UIcon :name="(item as any).icon" class="w-5 h-5" />
+                      <span>{{ (item as any).label }}</span>
                     </div>
                   </template>
                 </UCheckboxGroup>

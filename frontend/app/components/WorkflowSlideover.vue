@@ -29,6 +29,32 @@ watch(
   { immediate: true },
 )
 
+// Refresh workflow data
+const refreshWorkflow = async () => {
+  if (currentProjectId.value) {
+    await projectWorkflow.loadForProject(currentProjectId.value)
+  }
+}
+
+// Watch for when slideover opens and refresh data
+watch(slideoverOpen, async (isOpen) => {
+  if (isOpen) {
+    await refreshWorkflow()
+  }
+})
+
+// Watch for workflow changes and auto-refresh
+watch(
+  () => projectWorkflow.workflow.value,
+  () => {
+    // Force reactivity update by triggering computed recalculation
+    if (slideoverOpen.value) {
+      // Workflow state changed, computed properties will automatically update
+    }
+  },
+  { deep: true },
+)
+
 // Computed
 const currentStepIndex = computed(() => projectWorkflow.workflow.value?.currentStepIndex ?? 0)
 const steps = computed(() => projectWorkflow.getSteps.value || [])

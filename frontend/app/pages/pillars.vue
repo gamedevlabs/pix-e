@@ -17,6 +17,7 @@ definePageMeta({
 // ============================================================================
 
 const config = useRuntimeConfig()
+const { currentProject } = useProjectHandler()
 
 const {
   items: pillars,
@@ -36,6 +37,12 @@ const {
   getContextInPillarsFeedback,
 } = usePillars()
 
+// Load workflow for the current project
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
 await pillarsFetchAll()
 
 await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`, {
@@ -54,7 +61,14 @@ function addItem() {
 }
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  await createPillar(newEntityDraft)
+  const result = await createPillar(newEntityDraft)
+
+  // Only complete workflow substep if pillar was successfully created
+  if (result) {
+    // Complete workflow substep s2-1: "Create a new pillar"
+    await toggleSubstep('s-2', 's2-1')
+  }
+
   newItem.value = null
 }
 
@@ -65,6 +79,40 @@ async function handleUpdate(id: number, namedEntityDraft: Partial<NamedEntity>) 
 
 async function dismissIssue(pillar: Pillar, index: number) {
   pillar.llm_feedback?.structuralIssues.splice(index, 1)
+}
+
+// Complete workflow substep when pillar validation is performed
+async function handleValidatePillar() {
+  // Complete workflow substep s2-2: "Generate some LLM feedback for your pillar"
+  await toggleSubstep('s-2', 's2-2')
+}
+
+async function handleGetPillarsInContextFeedback() {
+  await getPillarsInContextFeedback()
+
+  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
+  await toggleSubstep('s-2', 's2-3')
+}
+
+async function handleGetPillarsCompleteness() {
+  await getPillarsCompleteness()
+
+  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
+  await toggleSubstep('s-2', 's2-3')
+}
+
+async function handleGetPillarContradictions() {
+  await getPillarContradictions()
+
+  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
+  await toggleSubstep('s-2', 's2-3')
+}
+
+async function handleGetPillarsAdditions() {
+  await getPillarsAdditions()
+
+  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
+  await toggleSubstep('s-2', 's2-3')
 }
 </script>
 
@@ -84,6 +132,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
             @update="(namedEntityDraft) => handleUpdate(pillar.id, namedEntityDraft)"
             @delete="deletePillar(pillar.id)"
             @dismiss="dismissIssue(pillar, $event)"
+            @validate="handleValidatePillar"
           />
         </div>
         <div v-if="newItem">
@@ -107,7 +156,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
             color="secondary"
             variant="soft"
             loading-auto
-            @click="getPillarsInContextFeedback"
+            @click="handleGetPillarsInContextFeedback"
           />
         </h2>
 
@@ -120,7 +169,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
               color="secondary"
               variant="soft"
               loading-auto
-              @click="getPillarsCompleteness"
+              @click="handleGetPillarsCompleteness"
             />
           </h2>
           <!-- Coverage Feedback -->
@@ -143,7 +192,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
               color="secondary"
               variant="soft"
               loading-auto
-              @click="getPillarContradictions"
+              @click="handleGetPillarContradictions"
             />
           </h2>
           <div class="w-full p-4 gap-4">
@@ -169,7 +218,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
               color="secondary"
               variant="soft"
               loading-auto
-              @click="getPillarsAdditions"
+              @click="handleGetPillarsAdditions"
             />
           </h2>
           <div class="w-full p-4 gap-4">
