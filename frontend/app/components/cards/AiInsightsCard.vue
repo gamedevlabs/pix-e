@@ -9,26 +9,29 @@ interface Props {
   insights?: Insight[]
 }
 
+const props = defineProps<Props>()
+
 // TODO: Connect mock data to real backend (ai-insights)
-const { insights } = withDefaults(defineProps<Props>(), {
-  insights: () => [
-    {
-      type: 'info',
-      title: 'Missing PX Nodes',
-      message: 'You have combat expectations defined but no associated PX nodes yet.',
-    },
-    {
-      type: 'warning',
-      title: 'Pacing Diagram Gap',
-      message: 'Your pacing diagram lacks content around mid-game; consider adding events.',
-    },
-    {
-      type: 'success',
-      title: 'Good Alignment',
-      message: 'Your design pillars align well with player expectations.',
-    },
-  ],
-})
+const insights = computed(
+  () =>
+    props.insights ?? [
+      {
+        type: 'info',
+        title: 'Missing PX Nodes',
+        message: 'You have combat expectations defined but no associated PX nodes yet.',
+      },
+      {
+        type: 'warning',
+        title: 'Pacing Diagram Gap',
+        message: 'Your pacing diagram lacks content around mid-game; consider adding events.',
+      },
+      {
+        type: 'success',
+        title: 'Good Alignment',
+        message: 'Your design pillars align well with player expectations.',
+      },
+    ],
+)
 
 const getInsightConfig = (type: Insight['type']) => {
   const configs = {

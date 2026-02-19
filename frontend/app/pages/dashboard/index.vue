@@ -133,7 +133,9 @@ const mock_historyData = computed(() => [
                       @click="navigateToModule('/edit')"
                     />
 
-                    <div class="grid grid-cols-[max-content_max-content] items-center justify-end gap-2">
+                    <div
+                      class="grid grid-cols-[max-content_max-content] items-center justify-end gap-2"
+                    >
                       <UBadge color="success" variant="subtle" size="sm" class="w-max">
                         Active
                       </UBadge>
@@ -204,8 +206,8 @@ const mock_historyData = computed(() => [
                     <h2 class="font-semibold text-lg">LLM supported Design Pillars</h2>
                   </template>
                   <p>
-                    The tool has design pillar functionality, that is validated and cross-checked by the
-                    help of LLMs to make sure your design stays consistent.
+                    The tool has design pillar functionality, that is validated and cross-checked by
+                    the help of LLMs to make sure your design stays consistent.
                   </p>
                 </UCard>
                 <UCard class="hover:shadow-lg transition">
@@ -232,16 +234,19 @@ const mock_historyData = computed(() => [
                   </template>
                   <p>
                     All pix:e AI features are powered by a unified agentic interface. The agentic
-                    approach ensures top-tier results through tool usage and improved context awareness.
+                    approach ensures top-tier results through tool usage and improved context
+                    awareness.
                   </p>
                 </UCard>
                 <UCard class="hover:shadow-lg transition">
                   <template #header>
-                    <h2 class="font-semibold text-lg">Movie Script Evaluator for Virtual Production</h2>
+                    <h2 class="font-semibold text-lg">
+                      Movie Script Evaluator for Virtual Production
+                    </h2>
                   </template>
                   <p>
-                    This tool is to evaluate movie scripts through LLMs based on the assets available in
-                    the game engine for virtual production purposes.
+                    This tool is to evaluate movie scripts through LLMs based on the assets
+                    available in the game engine for virtual production purposes.
                   </p>
                 </UCard>
               </section>
