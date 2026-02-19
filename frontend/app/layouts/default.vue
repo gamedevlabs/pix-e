@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'
 import type { PageConfig } from '~/types/page-config'
+import type { MockWorkflow } from '~/mock_data/mock_workflow'
 
 // ROUTING
 const route = useRoute()
@@ -14,6 +16,16 @@ const authentication = useAuthentication()
 
 // HEADER
 const llmStore = useLLM()
+
+// WORKFLOW (for sidebar button)
+const projectWorkflow = useProjectWorkflow()
+const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const activeWorkflowTitle = computed(() => {
+  const list = (projectWorkflow.workflows?.value || []) as MockWorkflow[]
+  const activeId = projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === activeId)
+  return w?.meta?.title || 'Workflow Guide'
+})
 
 // PROJECT
 const { currentProjectId, syncProjectFromUrl } = useProjectHandler()
@@ -276,7 +288,12 @@ const groups = computed(() => [
                 />
 
                 <div class="mt-auto w-full flex flex-col items-start px-2">
-                  <!-- Workflow Slideover Component -->
+                  <!-- Workflow trigger + Slideover -->
+                  <WorkflowSlideOverButton
+                    :collapsed="collapsed"
+                    :title="activeWorkflowTitle"
+                    :progress="overallProgress"
+                  />
                   <WorkflowSlideover :collapsed="collapsed" />
 
                   <UNavigationMenu
