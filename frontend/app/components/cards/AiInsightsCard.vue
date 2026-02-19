@@ -10,7 +10,7 @@ interface Props {
 }
 
 // TODO: Connect mock data to real backend (ai-insights)
-const _props = withDefaults(defineProps<Props>(), {
+const { insights } = withDefaults(defineProps<Props>(), {
   insights: () => [
     {
       type: 'info',
@@ -57,6 +57,18 @@ const getInsightConfig = (type: Insight['type']) => {
 
 <template>
   <DashboardCard title="AI Insights & Suggestions" icon="i-lucide-sparkles">
+    <template #actions>
+      <UBadge
+        color="neutral"
+        variant="soft"
+        size="xs"
+        class="cursor-help"
+        title="Mock data (feature not wired up yet)"
+      >
+        Mock
+      </UBadge>
+    </template>
+
     <div class="space-y-3">
       <div
         v-for="(insight, index) in insights"
