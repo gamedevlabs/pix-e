@@ -1,34 +1,112 @@
 ﻿import { ref, computed, readonly } from '#imports'
 import { WorkflowApiEmulator, getMockWorkflowSteps } from '~/mock_data/mock_workflow'
+import type { MockWorkflow } from '~/mock_data/mock_workflow'
 import type { StepStatus, WorkflowStep, ProjectWorkflow } from '~/utils/workflow'
 
-// In-memory emulator for a single workflow per project
+// In-memory emulator (now supports multiple project workflows + a user workflow)
 const api = new WorkflowApiEmulator()
 
 // Shared state - moved outside the function to ensure singleton behavior
-const workflow = ref<ProjectWorkflow | null>(null)
+const workflows = ref<MockWorkflow[]>([])
+const activeWorkflowId = ref<string | null>(null)
+const workflow = computed<ProjectWorkflow | null>(() => {
+  if (!activeWorkflowId.value) return workflows.value[0] ?? null
+  return workflows.value.find((w) => w.id === activeWorkflowId.value) ?? workflows.value[0] ?? null
+})
 const loading = ref(false)
+
+const scopeKeyForContext = (projectId: string | null) => {
+  // For now we only support one mocked user in memory.
+  return projectId ? `project:${projectId}` : 'user:default'
+}
+
+const storageKeyForActiveWorkflow = (projectId: string | null) => {
+  return `workflow_activeWorkflowId:${scopeKeyForContext(projectId)}`
+}
+
+const isWorkflowCompleted = (w: ProjectWorkflow) => {
+  // consider done if all substeps across all steps are complete and workflow has finished_at
+  const allSubsteps = w.steps.flatMap((s) => s.substeps)
+  const done = allSubsteps.length > 0 && allSubsteps.every((ss) => ss.status === 'complete')
+  return done || !!w.finished_at
+}
+
+const getDefaultActiveWorkflowId = (list: MockWorkflow[], projectId: string | null) => {
+  if (!list.length) return null
+
+  // 1) use persisted choice if it exists and still exists in list
+  try {
+    const persisted = localStorage.getItem(storageKeyForActiveWorkflow(projectId))
+    if (persisted && list.some((w) => w.id === persisted)) return persisted
+  } catch {
+    /* ignore */
+  }
+
+  // 2) if no project: default to onboarding if not completed
+  if (!projectId) {
+    const onboarding = list[0]
+    if (onboarding && !isWorkflowCompleted(onboarding)) return onboarding.id
+    return onboarding?.id ?? list[0]?.id ?? null
+  }
+
+  // 3) project: first incomplete workflow, else first
+  const firstIncomplete = list.find((w) => !isWorkflowCompleted(w))
+  return (firstIncomplete || list[0]).id
+}
+
+const persistActiveWorkflowId = (projectId: string | null, id: string | null) => {
+  try {
+    if (!id) localStorage.removeItem(storageKeyForActiveWorkflow(projectId))
+    else localStorage.setItem(storageKeyForActiveWorkflow(projectId), id)
+  } catch {
+    /* ignore */
+  }
+}
 
 export const useProjectWorkflow = () => {
   const loadForProject = async (projectId: string) => {
     loading.value = true
-    const w = await api.getByProjectId(projectId)
-    if (w) {
-      workflow.value = w
+    const list = await api.getWorkflowsByProjectId(projectId)
+    if (list.length) {
+      workflows.value = list
     } else {
       // initialize a fresh workflow if missing
       const now = new Date().toISOString()
-      workflow.value = {
+      const initial: MockWorkflow = {
         id: `wf-${projectId}-${Date.now()}`,
         projectId,
         started_at: now,
         finished_at: null,
         currentStepIndex: 0,
         steps: getMockWorkflowSteps(),
+        meta: { scope: 'project', title: 'Getting Started', folder: 'Essentials' },
       }
-      await api.save(projectId, workflow.value)
+      workflows.value = [await api.saveWorkflow(scopeKeyForContext(projectId), initial)]
     }
+
+    // pick active workflow
+    const defaultId = getDefaultActiveWorkflowId(workflows.value, projectId)
+    activeWorkflowId.value = defaultId
+    persistActiveWorkflowId(projectId, defaultId)
     loading.value = false
+    return workflow.value
+  }
+
+  // Load the user-level onboarding workflow (no project id)
+  const loadForUser = async () => {
+    loading.value = true
+    const w = await api.getUserOnboardingWorkflow('default')
+    workflows.value = w ? [w] : []
+    const defaultId = getDefaultActiveWorkflowId(workflows.value, null)
+    activeWorkflowId.value = defaultId
+    persistActiveWorkflowId(null, defaultId)
+    loading.value = false
+    return workflow.value
+  }
+
+  const selectWorkflow = async (id: string, projectId: string | null) => {
+    activeWorkflowId.value = id
+    persistActiveWorkflowId(projectId, id)
     return workflow.value
   }
 
@@ -64,6 +142,21 @@ export const useProjectWorkflow = () => {
     return Math.round((completedSubsteps / totalSubsteps) * 100)
   })
 
+  // Expose the available workflows for the current context (additive)
+  const getWorkflows = computed(() => workflows.value)
+  const getActiveWorkflowId = computed(() => activeWorkflowId.value)
+
+  const saveActiveWorkflow = async () => {
+    const w = workflow.value
+    if (!w) return
+    const scopeKey = scopeKeyForContext(w.projectId === 'user' ? null : w.projectId)
+    await api.saveWorkflow(scopeKey, w as MockWorkflow)
+    // refresh list in memory
+    const idx = workflows.value.findIndex((x) => x.id === w.id)
+    if (idx !== -1) workflows.value[idx] = { ...(w as MockWorkflow) }
+    workflows.value = [...workflows.value]
+  }
+
   const setCurrentStepIndex = async (index: number) => {
     const w = workflow.value
     if (!w) return
@@ -76,7 +169,7 @@ export const useProjectWorkflow = () => {
       if (s.status === 'complete') continue
       s.status = i === index ? 'active' : 'pending'
     }
-    await api.save(w.projectId, w)
+    await saveActiveWorkflow()
   }
 
   const advanceStep = async () => {
@@ -160,10 +253,7 @@ export const useProjectWorkflow = () => {
       step.status = 'pending'
     }
 
-    await api.save(w.projectId, w)
-
-    // Trigger reactivity by reassigning the workflow ref
-    workflow.value = { ...w }
+    await saveActiveWorkflow()
   }
 
   const resetWorkflow = async () => {
@@ -173,7 +263,7 @@ export const useProjectWorkflow = () => {
     w.currentStepIndex = 0
     w.started_at = new Date().toISOString()
     w.finished_at = null
-    await api.save(w.projectId, w)
+    await saveActiveWorkflow()
   }
 
   // Finish the currently active step: mark it and its substeps complete and advance to next step.
@@ -226,7 +316,7 @@ export const useProjectWorkflow = () => {
       }
     }
 
-    await api.save(w.projectId, w)
+    await saveActiveWorkflow()
   }
 
   // Return the status of a step by id: 'pending'|'active'|'complete' or null if not found
@@ -238,9 +328,15 @@ export const useProjectWorkflow = () => {
   }
 
   return {
-    workflow: readonly(workflow),
+    // Backward-compatible: `workflow` is still the active workflow
+    workflow: readonly(workflow as unknown as { value: ProjectWorkflow | null }),
+    // Additive: expose workflows + selection
+    workflows: readonly(getWorkflows),
+    activeWorkflowId: readonly(getActiveWorkflowId),
     loading: readonly(loading),
     loadForProject,
+    loadForUser,
+    selectWorkflow,
     getSteps,
     getCurrentStep,
     getProgress,
