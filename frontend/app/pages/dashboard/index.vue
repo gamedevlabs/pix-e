@@ -71,274 +71,195 @@ const mock_historyData = computed(() => [
 <template>
   <UPage>
     <UPageBody>
-      <UPageGrid :ui="{ root: 'grid-cols-1 lg:grid-cols-[2fr,2fr,1fr] gap-6' }">
-        <!-- Project Information (Spans 2 columns, No Card Border) -->
-        <div class="col-span-2">
-          <!-- Settings Button - Top Right -->
-          <div class="flex justify-end mb-4">
-            <UButton
-              icon="i-lucide-settings"
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              label="Settings"
-              @click="navigateToModule('/edit')"
-            />
-          </div>
+      <div class="space-y-6">
+        <!-- Project header (compact + aligned) -->
+        <UCard class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+          <div class="p-1">
+            <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div class="flex items-center gap-4 min-w-0">
+                <UAvatar
+                  v-if="!currentProject?.icon"
+                  :text="getProjectInitials(currentProject?.name || 'Project')"
+                  :alt="currentProject?.name || 'Project'"
+                  size="xl"
+                />
+                <div v-else class="text-5xl leading-none">{{ currentProject.icon }}</div>
 
-          <!-- Two Column Layout: Title/Icon Left, Info Right -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Left Column: Project Name and Icon -->
-            <div class="flex items-center gap-4">
-              <!-- Project Icon or Initials -->
-              <div v-if="currentProject?.icon" class="text-6xl">
-                {{ currentProject.icon }}
-              </div>
-              <UAvatar
-                v-else
-                :text="getProjectInitials(currentProject?.name || 'Project')"
-                :alt="currentProject?.name || 'Project'"
-                size="3xl"
-                class="text-2xl font-bold"
-              />
-              <div>
-                <h1 class="text-4xl font-bold mb-1">{{ currentProject?.name || 'Project' }}</h1>
-                <p class="text-gray-500 dark:text-gray-400">Design games with research.</p>
-              </div>
-            </div>
-
-            <!-- Right Column: Project Information -->
-            <div class="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-4">
-              <div class="flex items-center gap-2 mb-3">
-                <UIcon name="i-lucide-info" class="text-gray-500 dark:text-gray-400" />
-                <h3 class="text-base font-medium text-gray-600 dark:text-gray-300">
-                  Project Information
-                </h3>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Target Platform</p>
-                  <p class="text-sm font-medium">PC, Console</p>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Genres</p>
-                  <div class="flex gap-1 flex-wrap mt-1">
-                    <UBadge size="xs" color="primary" variant="subtle">Action RPG</UBadge>
-                    <UBadge size="xs" color="primary" variant="subtle">Open World</UBadge>
-                  </div>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Last Updated</p>
-                  <p class="text-sm font-medium">Today, 2:30 PM</p>
-                </div>
-                <div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Status</p>
-                  <UBadge size="xs" color="success" variant="subtle">Active</UBadge>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AI Insights Card (Spans 1 column, 1 row) -->
-        <AiInsightsCard />
-
-        <!-- PX Charts Overview -->
-        <UCard
-          class="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary"
-          @click="navigateToModule('/pxcharts')"
-        >
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-chart-network" class="text-primary" />
-              <h3 class="text-lg font-semibold">PX Charts</h3>
-            </div>
-          </template>
-
-          <div class="space-y-3">
-            <div
-              v-if="pxCharts.length === 0"
-              class="text-center py-8 text-gray-500 dark:text-gray-400"
-            >
-              <UIcon name="i-lucide-chart-network" class="mx-auto mb-2 text-4xl" />
-              <p class="text-sm">No charts created yet</p>
-              <p class="text-xs mt-1">Click to create your first PX chart</p>
-            </div>
-            <div v-else class="space-y-2">
-              <div
-                class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded"
-              >
-                <span class="text-sm font-medium">Total Charts</span>
-                <UBadge color="primary" variant="subtle">{{ pxCharts.length }}</UBadge>
-              </div>
-              <div class="space-y-1">
-                <div
-                  v-for="chart in pxCharts.slice(0, 4)"
-                  :key="chart.id"
-                  class="text-sm p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded"
-                >
-                  <p class="font-medium truncate">{{ chart.name }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {{ chart.description || 'No description' }}
+                <div class="min-w-0">
+                  <h1
+                    class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 truncate"
+                  >
+                    {{ currentProject?.name || 'Project' }}
+                  </h1>
+                  <p class="text-base text-gray-600 dark:text-gray-400 truncate">
+                    Design games with research.
                   </p>
                 </div>
               </div>
-              <div v-if="pxCharts.length > 4" class="text-center pt-1">
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  +{{ pxCharts.length - 4 }} more chart{{ pxCharts.length - 4 > 1 ? 's' : '' }}
-                </p>
+
+              <!-- Right side: platform + genres on a grid + settings (top-right) + last edited (bottom-right) -->
+              <div class="w-full lg:w-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3 lg:gap-4">
+                  <!-- Left column: platform + genres (grid-driven spacing/alignment) -->
+                  <div class="grid gap-2">
+                    <!-- Platform row (single item, still aligned to genre grid) -->
+                    <div class="grid grid-cols-[max-content_1fr] items-center gap-2">
+                      <UBadge color="primary" variant="subtle" size="sm" class="w-max">
+                        <UIcon name="i-lucide-monitor" class="mr-1" />
+                        PC, Console
+                      </UBadge>
+                    </div>
+
+                    <!-- Genres row: uses CSS grid for consistent spacing; wraps automatically -->
+                    <div class="grid grid-cols-[repeat(auto-fit,minmax(110px,max-content))] gap-2">
+                      <UBadge color="primary" variant="subtle" size="sm" class="justify-center">
+                        Action RPG
+                      </UBadge>
+                      <UBadge color="primary" variant="subtle" size="sm" class="justify-center">
+                        Open World
+                      </UBadge>
+                      <!-- When real data is wired, render all genres here; grid will handle 1..N nicely -->
+                    </div>
+                  </div>
+
+                  <!-- Right column: settings (top), status + last edited (bottom) -->
+                  <div class="flex flex-col items-end justify-between gap-2">
+                    <UButton
+                      icon="i-lucide-settings"
+                      size="sm"
+                      color="neutral"
+                      variant="ghost"
+                      label="Settings"
+                      @click="navigateToModule('/edit')"
+                    />
+
+                    <div class="grid grid-cols-[max-content_max-content] items-center justify-end gap-2">
+                      <UBadge color="success" variant="subtle" size="sm" class="w-max">
+                        Active
+                      </UBadge>
+                      <UBadge color="neutral" variant="soft" size="sm" class="w-max">
+                        <UIcon name="i-lucide-clock" class="mr-1" />
+                        Today, 2:30 PM
+                      </UBadge>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </UCard>
 
-        <!-- Player Expectations Card -->
-        <UCard
-          class="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary"
-          @click="navigateToModule('/player-expectations')"
-        >
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-users" class="text-primary" />
-              <h3 class="text-lg font-semibold">Player Expectations</h3>
-            </div>
-          </template>
-
-          <div class="space-y-3">
+        <!-- Main dashboard layout -->
+        <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-6">
+          <!-- Left: Modules -->
+          <section class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-sm">Genre Benchmarks</span>
-              <UBadge color="success" variant="subtle">
-                <UIcon name="i-lucide-check" class="mr-1" />
-                Defined
-              </UBadge>
+              <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Modules</h2>
+              <UBadge color="neutral" variant="soft" size="xs">Open a module to continue</UBadge>
             </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm">Combat Expectations</span>
-              <UBadge color="success" variant="subtle">
-                <UIcon name="i-lucide-check" class="mr-1" />
-                Defined
-              </UBadge>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm">Narrative Expectations</span>
-              <UBadge color="warning" variant="subtle">
-                <UIcon name="i-lucide-alert-circle" class="mr-1" />
-                In Progress
-              </UBadge>
-            </div>
-            <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <p class="text-xs text-gray-600 dark:text-gray-400">Alignment Score</p>
-              <p class="text-2xl font-bold text-primary">87%</p>
-            </div>
-          </div>
-        </UCard>
 
-        <!-- Workflow Progress - Vertical -->
-        <WorkflowCard orientation="vertical" />
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <DashboardModuleCard
+                title="PX Charts"
+                description="Build and explore PX charts"
+                icon="i-lucide-chart-network"
+                to="/pxcharts"
+                cta-label="Open"
+                :badge-label="pxCharts.length ? `${pxCharts.length} charts` : 'New'"
+              />
 
-        <!-- Design Pillars Card -->
-        <UCard
-          class="hover:shadow-lg transition-shadow cursor-pointer hover:border-primary"
-          @click="navigateToModule('/pillars')"
-        >
-          <template #header>
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-layers" class="text-primary" />
-              <h3 class="text-lg font-semibold">Design Pillars</h3>
-            </div>
-          </template>
+              <DashboardModuleCard
+                title="Player Expectations"
+                description="Benchmarks, sentiment, and alignment"
+                icon="i-lucide-users"
+                to="/player-expectations"
+                cta-label="Open"
+                badge-label="87%"
+              />
 
-          <div class="space-y-2">
-            <div
-              v-if="pillars.length === 0"
-              class="text-center py-4 text-gray-500 dark:text-gray-400"
-            >
-              <p class="text-sm">No pillars defined yet</p>
-              <p class="text-xs mt-1">Click to create your first pillar</p>
+              <DashboardModuleCard
+                title="Design Pillars"
+                description="Define your game's foundations"
+                icon="i-lucide-layers"
+                to="/pillars"
+                cta-label="Manage"
+                :badge-label="pillars.length ? `${pillars.length}` : 'New'"
+              />
             </div>
-            <div
-              v-for="pillar in pillars.slice(0, 3)"
-              :key="pillar.id"
-              class="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg"
-            >
-              <p class="font-semibold text-sm">{{ pillar.name }}</p>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                {{ pillar.description || 'No description' }}
-              </p>
-            </div>
-            <div v-if="pillars.length > 3" class="text-center pt-2">
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                +{{ pillars.length - 3 }} more pillar{{ pillars.length - 3 > 1 ? 's' : '' }}
-              </p>
-            </div>
-          </div>
-        </UCard>
 
-        <!-- Recent Activity Card -->
-        <HistoryCard :items="mock_historyData" title="Recent Activity" />
-      </UPageGrid>
-
-      <div>
-        <SimpleContentWrapper>
-          <!-- Cards Section -->
-          <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <UCard class="hover:shadow-lg transition">
-              <template #header>
-                <h2 class="font-semibold text-lg">Formalized Player Experience</h2>
-              </template>
-              <p>
-                You can design player experiences through a formalization (currently being
-                implemented).
-              </p>
-            </UCard>
-            <UCard class="hover:shadow-lg transition">
-              <template #header>
-                <h2 class="font-semibold text-lg">LLM supported Design Pillars</h2>
-              </template>
-              <p>
-                The tool has design pillar functionality, that is validated and cross-checked by the
-                help of LLMs to make sure your design stays consistent.
-              </p>
-            </UCard>
-            <UCard class="hover:shadow-lg transition">
-              <template #header>
-                <h2 class="font-semibold text-lg">Moodboard Generation</h2>
-              </template>
-              <p>
-                Through multimodal LLMs, you can design your moodboard directly in the app by
-                describing and interaction with the tool.
-              </p>
-            </UCard>
-            <UCard class="hover:shadow-lg transition">
-              <template #header>
-                <h2 class="font-semibold text-lg">Player Expectations Dashboard</h2>
-              </template>
-              <p>
-                What do players expect when buying different genre games? What do they like or
-                dislike? For these insights and more, visit the Player Expectations module.
-              </p>
-            </UCard>
-            <UCard class="hover:shadow-lg transition">
-              <template #header>
-                <h2 class="font-semibold text-lg">Unified Agentic AI Interface</h2>
-              </template>
-              <p>
-                All pix:e AI features are powered by a unified agentic interface. The agentic
-                approach ensures top-tier results through tool usage and improved context awareness.
-              </p>
-            </UCard>
-            <UCard class="hover:shadow-lg transition">
-              <template #header>
-                <h2 class="font-semibold text-lg">Movie Script Evaluator for Virtual Production</h2>
-              </template>
-              <p>
-                This tool is to evaluate movie scripts through LLMs based on the assets available in
-                the game engine for virtual production purposes.
-              </p>
-            </UCard>
+            <!-- Helpful overview content (kept, but visually quieter) -->
+            <SimpleContentWrapper>
+              <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <UCard class="hover:shadow-lg transition">
+                  <template #header>
+                    <h2 class="font-semibold text-lg">Formalized Player Experience</h2>
+                  </template>
+                  <p>
+                    You can design player experiences through a formalization (currently being
+                    implemented).
+                  </p>
+                </UCard>
+                <UCard class="hover:shadow-lg transition">
+                  <template #header>
+                    <h2 class="font-semibold text-lg">LLM supported Design Pillars</h2>
+                  </template>
+                  <p>
+                    The tool has design pillar functionality, that is validated and cross-checked by the
+                    help of LLMs to make sure your design stays consistent.
+                  </p>
+                </UCard>
+                <UCard class="hover:shadow-lg transition">
+                  <template #header>
+                    <h2 class="font-semibold text-lg">Moodboard Generation</h2>
+                  </template>
+                  <p>
+                    Through multimodal LLMs, you can design your moodboard directly in the app by
+                    describing and interaction with the tool.
+                  </p>
+                </UCard>
+                <UCard class="hover:shadow-lg transition">
+                  <template #header>
+                    <h2 class="font-semibold text-lg">Player Expectations Dashboard</h2>
+                  </template>
+                  <p>
+                    What do players expect when buying different genre games? What do they like or
+                    dislike? For these insights and more, visit the Player Expectations module.
+                  </p>
+                </UCard>
+                <UCard class="hover:shadow-lg transition">
+                  <template #header>
+                    <h2 class="font-semibold text-lg">Unified Agentic AI Interface</h2>
+                  </template>
+                  <p>
+                    All pix:e AI features are powered by a unified agentic interface. The agentic
+                    approach ensures top-tier results through tool usage and improved context awareness.
+                  </p>
+                </UCard>
+                <UCard class="hover:shadow-lg transition">
+                  <template #header>
+                    <h2 class="font-semibold text-lg">Movie Script Evaluator for Virtual Production</h2>
+                  </template>
+                  <p>
+                    This tool is to evaluate movie scripts through LLMs based on the assets available in
+                    the game engine for virtual production purposes.
+                  </p>
+                </UCard>
+              </section>
+            </SimpleContentWrapper>
           </section>
-        </SimpleContentWrapper>
+
+          <!-- Right: Information -->
+          <aside class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Updates</h2>
+              <UBadge color="neutral" variant="soft" size="xs">Info</UBadge>
+            </div>
+
+            <AiInsightsCard />
+            <WorkflowCard orientation="vertical" />
+            <HistoryCard :items="mock_historyData" title="Recent Activity" />
+          </aside>
+        </div>
       </div>
     </UPageBody>
   </UPage>
