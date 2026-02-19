@@ -1,10 +1,12 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 
 // TODO: Connect to database - currently using mock data from ProjectApiEmulator
 const projectWorkflow = useProjectWorkflow()
 const { currentProjectId, projects } = useProjectHandler()
 const authentication = useAuthentication()
+const workflowSlideover = useWorkflowSlideover()
 
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
@@ -83,6 +85,9 @@ const totalSteps = computed(() => {
 })
 
 function openProject() {
+  // Also open the workflow slideover so the user can see progress/navigation.
+  workflowSlideover.open()
+
   // Navigate to the current active substep's route, or fall back to the step's route
   const substep = currentSubstep.value
   const step = projectWorkflow.getCurrentStep.value

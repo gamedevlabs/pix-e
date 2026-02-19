@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 
 // Props
 interface Props {
@@ -9,7 +10,8 @@ interface Props {
 defineProps<Props>()
 
 // State
-const slideoverOpen = ref(false)
+const workflowSlideover = useWorkflowSlideover()
+const slideoverOpen = workflowSlideover.isOpen
 const openSteps = ref<Set<string>>(new Set())
 
 // PROJECT
@@ -117,7 +119,7 @@ watch(
 const handleNavigate = (route: string) => {
   if (route) {
     navigateTo(route)
-    slideoverOpen.value = false
+    workflowSlideover.close()
   }
 }
 </script>
@@ -132,12 +134,14 @@ const handleNavigate = (route: string) => {
     :close="{ icon: 'i-lucide-arrow-left' }"
     title="Getting Started"
     description="Follow these instructions to set up your project."
+    @update:open="(v) => (v ? workflowSlideover.open() : workflowSlideover.close())"
+    @close="workflowSlideover.close()"
   >
     <!-- Custom styled button matching screenshot -->
     <button
       v-if="!collapsed"
       class="w-full mb-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 flex items-center justify-between transition-colors group cursor-pointer"
-      @click="slideoverOpen = true"
+      @click="workflowSlideover.open()"
     >
       <div class="flex items-center gap-2">
         <UIcon name="i-lucide-zap" class="w-5 h-5" />
@@ -159,6 +163,7 @@ const handleNavigate = (route: string) => {
       color="primary"
       variant="solid"
       class="w-full justify-center mb-2"
+      @click="workflowSlideover.open()"
     />
 
     <template #body>
