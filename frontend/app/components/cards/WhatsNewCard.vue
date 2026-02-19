@@ -9,21 +9,24 @@ interface Props {
   mockUpdates?: Update[]
 }
 
+const props = defineProps<Props>()
+
 // TODO: Connect mock data to real backend (whats-new)
-const { mockUpdates } = withDefaults(defineProps<Props>(), {
-  mockUpdates: () => [
-    {
-      title: 'Project Layer',
-      description: 'Manage different projects separately',
-      icon: 'i-lucide-zap',
-    },
-    {
-      title: 'Enhanced UX',
-      description: 'Better user experience',
-      icon: 'i-lucide-palette',
-    },
-  ],
-})
+const mockUpdates = computed(
+  () =>
+    props.mockUpdates ?? [
+      {
+        title: 'Project Layer',
+        description: 'Manage different projects separately',
+        icon: 'i-lucide-zap',
+      },
+      {
+        title: 'Enhanced UX',
+        description: 'Better user experience',
+        icon: 'i-lucide-palette',
+      },
+    ],
+)
 </script>
 
 <template>

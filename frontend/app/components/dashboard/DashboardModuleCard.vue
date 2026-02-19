@@ -1,5 +1,14 @@
 ﻿<script setup lang="ts">
-import { computed } from 'vue'
+interface PreviewItem {
+  text: string
+  icon?: string
+}
+
+interface InsightItem {
+  label: string
+  value?: string | number
+  icon?: string
+}
 
 interface Props {
   title: string
@@ -9,6 +18,9 @@ interface Props {
   ctaLabel?: string
   badgeLabel?: string
   disabled?: boolean
+  insightItems?: InsightItem[]
+  previewItems?: PreviewItem[]
+  previewMoreLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -16,9 +28,10 @@ const props = withDefaults(defineProps<Props>(), {
   ctaLabel: 'Open',
   badgeLabel: undefined,
   disabled: false,
+  insightItems: undefined,
+  previewItems: undefined,
+  previewMoreLabel: undefined,
 })
-
-const linkTo = computed(() => (props.disabled ? '#' : props.to))
 </script>
 
 <template>
@@ -32,7 +45,7 @@ const linkTo = computed(() => (props.disabled ? '#' : props.to))
   >
     <NuxtLink
       v-if="!props.disabled"
-      :to="linkTo"
+      :to="{ path: props.to }"
       class="block"
       :aria-label="`${props.title}: ${props.ctaLabel}`"
     >
@@ -64,6 +77,52 @@ const linkTo = computed(() => (props.disabled ? '#' : props.to))
             {{ props.badgeLabel }}
           </UBadge>
         </div>
+
+        <!-- Preview / insight area (optional) -->
+        <div v-if="props.previewItems?.length" class="space-y-1">
+          <div
+            v-for="(item, idx) in props.previewItems"
+            :key="idx"
+            class="flex items-center gap-2 rounded-md bg-gray-50 dark:bg-gray-800/60 px-2 py-1"
+          >
+            <UIcon
+              v-if="item.icon"
+              :name="item.icon"
+              class="size-4 text-gray-400 dark:text-gray-500 shrink-0"
+            />
+            <p class="text-sm text-gray-700 dark:text-gray-200 truncate">
+              {{ item.text }}
+            </p>
+          </div>
+
+          <p v-if="props.previewMoreLabel" class="text-xs text-gray-500 dark:text-gray-400 px-1">
+            {{ props.previewMoreLabel }}
+          </p>
+        </div>
+
+        <!-- Backwards-compatible insightItems grid (if still used anywhere) -->
+        <div v-else-if="props.insightItems?.length" class="grid grid-cols-2 gap-2">
+          <div
+            v-for="(item, idx) in props.insightItems"
+            :key="idx"
+            class="flex items-center gap-2 rounded-md bg-gray-50 dark:bg-gray-800/60 px-2 py-1"
+          >
+            <UIcon
+              v-if="item.icon"
+              :name="item.icon"
+              class="size-4 text-gray-400 dark:text-gray-500"
+            />
+            <div class="min-w-0">
+              <p class="text-[11px] leading-4 text-gray-500 dark:text-gray-400 truncate">
+                {{ item.label }}
+              </p>
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {{ item.value ?? '—' }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <slot v-else name="insight" />
 
         <div class="flex items-center justify-end">
           <UButton
@@ -106,6 +165,51 @@ const linkTo = computed(() => (props.disabled ? '#' : props.to))
             {{ props.badgeLabel }}
           </UBadge>
         </div>
+
+        <!-- Preview / insight area (optional) -->
+        <div v-if="props.previewItems?.length" class="space-y-1">
+          <div
+            v-for="(item, idx) in props.previewItems"
+            :key="idx"
+            class="flex items-center gap-2 rounded-md bg-gray-50 dark:bg-gray-800/60 px-2 py-1"
+          >
+            <UIcon
+              v-if="item.icon"
+              :name="item.icon"
+              class="size-4 text-gray-400 dark:text-gray-500 shrink-0"
+            />
+            <p class="text-sm text-gray-700 dark:text-gray-200 truncate">
+              {{ item.text }}
+            </p>
+          </div>
+
+          <p v-if="props.previewMoreLabel" class="text-xs text-gray-500 dark:text-gray-400 px-1">
+            {{ props.previewMoreLabel }}
+          </p>
+        </div>
+
+        <div v-else-if="props.insightItems?.length" class="grid grid-cols-2 gap-2">
+          <div
+            v-for="(item, idx) in props.insightItems"
+            :key="idx"
+            class="flex items-center gap-2 rounded-md bg-gray-50 dark:bg-gray-800/60 px-2 py-1"
+          >
+            <UIcon
+              v-if="item.icon"
+              :name="item.icon"
+              class="size-4 text-gray-400 dark:text-gray-500"
+            />
+            <div class="min-w-0">
+              <p class="text-[11px] leading-4 text-gray-500 dark:text-gray-400 truncate">
+                {{ item.label }}
+              </p>
+              <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {{ item.value ?? '—' }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <slot v-else name="insight" />
 
         <div class="flex items-center justify-end">
           <UButton
