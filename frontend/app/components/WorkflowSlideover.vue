@@ -40,17 +40,17 @@ const activeWorkflowId = computed(() => projectWorkflow.activeWorkflowId?.value)
 // - If a project is selected: show project workflows
 watch(
   [currentProjectId, hasProjects, isLoggedIn],
-  async ([newProjectId, hasAnyProjects, loggedIn]) => {
+  async ([newProjectId, _hasAnyProjects, loggedIn]) => {
     if (!loggedIn) return
 
-    if (!hasAnyProjects && !newProjectId) {
+    // If no project is selected, show the standalone onboarding workflow.
+    if (!newProjectId) {
       await projectWorkflow.loadForUser()
       return
     }
 
-    if (newProjectId) {
-      await projectWorkflow.loadForProject(newProjectId)
-    }
+    // Otherwise, show project workflows.
+    await projectWorkflow.loadForProject(newProjectId)
   },
   { immediate: true },
 )
@@ -59,14 +59,13 @@ watch(
 const refreshWorkflow = async () => {
   if (!isLoggedIn.value) return
 
-  if (!hasProjects.value && !currentProjectId.value) {
+  // If no project is selected, show the standalone onboarding workflow.
+  if (!currentProjectId.value) {
     await projectWorkflow.loadForUser()
     return
   }
 
-  if (currentProjectId.value) {
-    await projectWorkflow.loadForProject(currentProjectId.value)
-  }
+  await projectWorkflow.loadForProject(currentProjectId.value)
 }
 
 // Watch for when slideover opens and refresh data
@@ -209,35 +208,6 @@ const handleNavigate = (route: string) => {
     @update:open="(v) => (v ? workflowSlideover.open() : workflowSlideover.close())"
     @close="workflowSlideover.close()"
   >
-    <!-- Custom styled button matching screenshot -->
-    <button
-      v-if="!collapsed"
-      class="w-full mb-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 flex items-center justify-between transition-colors group cursor-pointer"
-      @click="workflowSlideover.open()"
-    >
-      <span class="flex items-center gap-2 min-w-0">
-        <UIcon name="i-lucide-zap" class="w-5 h-5 shrink-0" />
-        <span class="font-medium truncate">{{ activeWorkflowTitle }}</span>
-      </span>
-      <span class="flex items-center gap-2 shrink-0">
-        <span class="text-sm bg-white/20 px-2 py-0.5 rounded-full"> {{ overallProgress }}% </span>
-        <UIcon
-          name="i-lucide-chevron-right"
-          class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
-        />
-      </span>
-    </button>
-
-    <!-- Collapsed state button -->
-    <UButton
-      v-else
-      icon="i-lucide-zap"
-      color="primary"
-      variant="solid"
-      class="w-full justify-center mb-2"
-      @click="workflowSlideover.open()"
-    />
-
     <template #body>
       <!-- Use a vertical layout where the active workflow takes most space, and phases are at the bottom. -->
       <div class="flex flex-col h-full pb-6">

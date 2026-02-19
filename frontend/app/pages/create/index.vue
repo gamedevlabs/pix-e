@@ -3,6 +3,7 @@ import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
+import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const router = useRouter()
@@ -338,10 +339,35 @@ function selectGenre(genre: string) {
 
 // Platform options now uses the shared configuration with icons
 const platformOptions = platformConfigs
+
+const workflowSlideover = useWorkflowSlideover()
 </script>
 
 <template>
   <div>
+    <!-- Workflow toggle button (bottom-left) styled like the sidebar trigger. -->
+    <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
+      <button
+        class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 flex items-center justify-between transition-colors group cursor-pointer shadow"
+        @click="workflowSlideover.toggle()"
+      >
+        <span class="flex items-center gap-2 min-w-0">
+          <UIcon name="i-lucide-zap" class="w-5 h-5 shrink-0" />
+          <span class="font-medium truncate">Workflow Guide</span>
+        </span>
+        <span class="flex items-center gap-2 shrink-0">
+          <span class="text-sm bg-white/20 px-2 py-0.5 rounded-full">Show</span>
+          <UIcon
+            name="i-lucide-chevron-right"
+            class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"
+          />
+        </span>
+      </button>
+    </div>
+
+    <!-- This ensures the actual slideover exists on this page (sidebar is hidden here). -->
+    <WorkflowSlideover />
+
     <UContainer class="py-10">
       <div class="max-w-3xl mx-auto">
         <!-- Header -->
@@ -403,7 +429,7 @@ const platformOptions = platformConfigs
 
         <!-- Step Content -->
         <UCard class="mb-6">
-          <div class="min-h-[300px]">
+          <div class="min-h-75">
             <!-- Step 1: Basic Info -->
             <div v-if="currentStep === 1" class="space-y-6">
               <!-- Title and description spanning full width -->
@@ -549,7 +575,7 @@ const platformOptions = platformConfigs
                   class="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700"
                 >
                   <!-- Avatar with border/background -->
-                  <div class="flex-shrink-0">
+                  <div class="shrink-0">
                     <div
                       class="p-2 bg-white dark:bg-gray-900 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                     >
