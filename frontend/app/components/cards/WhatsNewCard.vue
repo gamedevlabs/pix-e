@@ -10,7 +10,7 @@ interface Props {
 }
 
 // TODO: Connect mock data to real backend (whats-new)
-const _mockUpdates = withDefaults(defineProps<Props>(), {
+const { mockUpdates } = withDefaults(defineProps<Props>(), {
   mockUpdates: () => [
     {
       title: 'Project Layer',
@@ -28,6 +28,18 @@ const _mockUpdates = withDefaults(defineProps<Props>(), {
 
 <template>
   <DashboardCard title="What's New" icon="i-lucide-sparkles">
+    <template #actions>
+      <UBadge
+        color="neutral"
+        variant="soft"
+        size="xs"
+        class="cursor-help"
+        title="Mock data (feature not wired up yet)"
+      >
+        Mock
+      </UBadge>
+    </template>
+
     <div class="space-y-3 text-sm">
       <div v-for="(update, index) in mockUpdates" :key="index" class="flex gap-2">
         <UIcon :name="update.icon || 'i-lucide-circle-dot'" class="text-primary shrink-0 mt-0.5" />
