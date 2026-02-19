@@ -4,6 +4,7 @@ import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
+import type { MockWorkflow } from '~/mock_data/mock_workflow'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const router = useRouter()
@@ -239,7 +240,7 @@ function openUploadModal() {
 }
 
 function closeUploadModal() {
-  isUploadModalOpen.value = false
+  isUploadModal.value = false
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -344,7 +345,7 @@ const platformOptions = platformConfigs
 const projectWorkflow = useProjectWorkflow()
 const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
 const activeWorkflowTitle = computed(() => {
-  const list = (projectWorkflow.workflows?.value || []) as any[]
+  const list = (projectWorkflow.workflows?.value || []) as MockWorkflow[]
   const activeId = projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === activeId)
   return w?.meta?.title || 'Workflow Guide'
