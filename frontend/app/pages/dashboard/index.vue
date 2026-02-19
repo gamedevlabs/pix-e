@@ -277,9 +277,6 @@ const mock_historyData = computed(() => [
 
         <!-- Recent Activity Card -->
         <HistoryCard :items="mock_historyData" title="Recent Activity" />
-
-        <!-- Workflow Progress - Horizontal (Spans 2 columns) -->
-        <WorkflowCard orientation="horizontal" />
       </UPageGrid>
 
       <div>
