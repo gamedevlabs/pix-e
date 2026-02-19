@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
-  (event: 'edit' | 'delete'): void
+  (event: 'edit' | 'delete' | 'validate'): void
   (event: 'dismiss', index: number): void
 }>()
 
@@ -31,6 +31,7 @@ async function open() {
 
 async function handleValidation() {
   await pillars.validatePillar(props.pillar)
+  emit('validate')
   if (props.pillar.llm_feedback?.hasStructureIssue) {
     toast.add({
       title: 'Structural Issues Found',

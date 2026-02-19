@@ -1,19 +1,15 @@
 ﻿import { ref, computed, readonly } from '#imports'
-import {
-  WorkflowApiEmulator,
-  getMockWorkflowSteps,
-  type StepStatus,
-  type WorkflowStep,
-  type ProjectWorkflow,
-} from '~/mock_data/mock_workflow'
+import { WorkflowApiEmulator, getMockWorkflowSteps } from '~/mock_data/mock_workflow'
+import type { StepStatus, WorkflowStep, ProjectWorkflow } from '~/utils/workflow'
 
 // In-memory emulator for a single workflow per project
 const api = new WorkflowApiEmulator()
 
-export const useProjectWorkflow = () => {
-  const workflow = ref<ProjectWorkflow | null>(null)
-  const loading = ref(false)
+// Shared state - moved outside the function to ensure singleton behavior
+const workflow = ref<ProjectWorkflow | null>(null)
+const loading = ref(false)
 
+export const useProjectWorkflow = () => {
   const loadForProject = async (projectId: string) => {
     loading.value = true
     const w = await api.getByProjectId(projectId)
@@ -165,6 +161,9 @@ export const useProjectWorkflow = () => {
     }
 
     await api.save(w.projectId, w)
+
+    // Trigger reactivity by reassigning the workflow ref
+    workflow.value = { ...w }
   }
 
   const resetWorkflow = async () => {
