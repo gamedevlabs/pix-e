@@ -147,15 +147,15 @@ async function onContextMenu(mouseEvent: MouseEvent) {
 }
 
 const nodesInPath = computed(() => {
-  const containersInPath: string[] = []
+  const nodes: string[] = []
   path.value.forEach((containerId) => {
     const container = pxChartContainers.value.find((container) => container.id === containerId)
     if (container && container.content) {
-      containersInPath.push(container.content)
+      nodes.push(container.content)
     }
   })
 
-  return containersInPath
+  return nodes
 })
 
 async function onSelectionChange(change: NodeSelectionChange) {
