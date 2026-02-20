@@ -297,9 +297,9 @@ export function usePxChartsCanvasApi(chartId: string) {
   async function calculatePathFromSelection(selected: string[]) {
     const newPath = await calculate_path(nodes.value, edges.value, selected)
     if (!newPath.length) {
-        errorToast("Failed to calculate path between selected nodes.")
+      errorToast('Failed to calculate path between selected nodes.')
     } else {
-        path.value = newPath
+      path.value = newPath
     }
   }
 

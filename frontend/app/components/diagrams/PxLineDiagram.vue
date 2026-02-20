@@ -154,9 +154,7 @@ const data = computed(() => {
 })
 
 const numericalComponentDefinitionNames = computed(() => {
-  return pxComponentDefinitions.value
-    .filter((def) => def.type === "number")
-    .map((def) => def.name)
+  return pxComponentDefinitions.value.filter((def) => def.type === 'number').map((def) => def.name)
 })
 
 const selectedDefinitionsX: Ref<string, string> = ref('')
