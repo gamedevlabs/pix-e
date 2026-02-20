@@ -12,22 +12,23 @@ import {
 } from 'chart.js'
 
 import { lineCategoryOptions, lineLinearOptions } from './DiagramOptions'
+import { type NodeData, initColorIterator } from './DiagramUtils'
 
-const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
-const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale)
 
 onMounted(() => {
-  fetchPxNodes()
-  fetchPxComponents()
   fetchPxComponentDefinitions()
 })
 
 const props = defineProps({
-  nodesInPath: {
+  nodeData: {
+    type: Array<NodeData>,
+    default: () => [],
+  },
+  nodeLabels: {
     type: Array<string>,
     default: () => [],
   },
@@ -46,86 +47,7 @@ function getNameFromDefinitionId(id: string) {
   return pxComponentDefinitions.value.find((def) => def.id === id)?.name
 }
 
-function getNodeFromName(name: string) {
-  return pxNodes.value.find((node) => node.name === name)
-}
-
-function initColorIterator() {
-  let idx = 0
-
-  const colors = ['#06b6d4', '#164e63', '#93c5fd', '#1e3a8a', '#d1d5db', '#1f2937']
-
-  const colorIterator = {
-    next() {
-      const result = { value: colors[idx % colors.length], done: false }
-      idx++
-      return result
-    },
-  }
-  return colorIterator
-}
-
-const relevantNodes = computed(() => {
-  let relevantNodes = props.nodesInPath
-    .map((name) => getNodeFromName(name))
-    .filter((node) => node !== undefined)
-
-  if (!relevantNodes.length) relevantNodes = pxNodes.value
-
-  return relevantNodes
-})
-
-interface NodeData {
-  name: string
-  [key: string]: string | number | boolean | undefined
-}
-
-// put node data in proper format for chartjs once,
-// so it can be reused for different axis configurations
-const allData = computed(() => {
-  const allNodeData: NodeData[] = []
-
-  // aggregator for x-axis components
-  const sumsXComponents = Object.fromEntries(
-    pxComponents.value.map((c) => ['sum-'.concat(c.definition), 0]),
-  )
-
-  relevantNodes.value.forEach((node) => {
-    // add node name
-    const nodeData: NodeData = {
-      name: node.name,
-    }
-
-    // add values for components, including sums for x-axis components
-    pxComponents.value
-      .filter((c) => c.node === node.id)
-      .forEach((c) => {
-        nodeData[c.definition] = c.value
-
-        const sumXID: string = 'sum-'.concat(c.definition)
-
-        sumsXComponents[sumXID] += typeof c.value === 'number' ? c.value : 1
-        nodeData[sumXID] = sumsXComponents[sumXID]
-      })
-
-    allNodeData.push(nodeData)
-  })
-
-  // alert(`Node data initialized: ${JSON.stringify(allNodeData)}`)
-  return allNodeData
-})
-
-const nodeLabels = computed(() => {
-  const labels: string[] = []
-
-  relevantNodes.value.forEach((node) => {
-    labels.push(node.name)
-  })
-
-  return labels
-})
-
-// specify which of the pre-computed data (allData) to visualize
+// specify which of the pre-computed data to visualize
 const data = computed(() => {
   const datasets = []
   const colors = initColorIterator()
@@ -135,7 +57,7 @@ const data = computed(() => {
     const color = colors.next().value
     datasets.push({
       label: getNameFromDefinitionId(def),
-      data: allData.value,
+      data: props.nodeData,
       parsing: {
         xAxisKey: selectedDefinitionsX.value ? sumXID : 'name',
         yAxisKey: def,
@@ -148,10 +70,8 @@ const data = computed(() => {
     })
   })
 
-  //alert(JSON.stringify(datasets))
-
   return {
-    labels: nodeLabels.value,
+    labels: props.nodeLabels,
     datasets: datasets,
   }
 })
