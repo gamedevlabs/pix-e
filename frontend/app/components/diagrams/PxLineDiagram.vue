@@ -11,7 +11,11 @@ import {
   LinearScale,
 } from 'chart.js'
 
-import { lineCategoryOptions, lineLinearOptions } from './DiagramOptions'
+import {
+  lineCategoryOptions,
+  lineLinearOptions,
+  getDefaultLineDatasetOptions,
+} from './DiagramOptions'
 import { type NodeData, initColorIterator } from './DiagramUtils'
 
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
@@ -39,7 +43,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits<{
-  (event: 'update', namedEntityDraft: Partial<PxChart>): void
   (event: 'delete', diagramId: string): void
 }>()
 
@@ -63,10 +66,7 @@ const data = computed(() => {
         yAxisKey: def,
       },
       stepped: selectedDefinitionsX.value ? 'after' : false,
-      fill: true,
-      borderColor: color,
-      pointBackgroundColor: color,
-      pointRadius: 4,
+      ...getDefaultLineDatasetOptions(color),
     })
   })
 
@@ -146,12 +146,12 @@ function emitDelete() {
     </template>
     <div class="chart-container">
       <Line
-        v-if="data && data.datasets[0]?.data.some((v) => !!v) && selectedDefinitionsX"
+        v-if="data && data.datasets[0]?.data.some((v: NodeData) => !!v) && selectedDefinitionsX"
         :data="data"
         :options="lineLinearOptions"
       />
       <Line
-        v-else-if="data && data.datasets[0]?.data.some((v) => !!v)"
+        v-else-if="data && data.datasets[0]?.data.some((v: NodeData) => !!v)"
         :data="data"
         :options="lineCategoryOptions"
       />

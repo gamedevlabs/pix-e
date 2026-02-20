@@ -5,7 +5,7 @@ function initColorIterator() {
 
   const colorIterator = {
     next() {
-      const result = { value: colors[idx % colors.length], done: false }
+      const result = { value: colors[idx % colors.length]!, done: false }
       idx++
       return result
     },

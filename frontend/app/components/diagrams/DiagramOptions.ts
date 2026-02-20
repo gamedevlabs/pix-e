@@ -1,12 +1,32 @@
-const skipped = (ctx, value) => (ctx.p0.skip || ctx.p1.skip ? value : undefined)
+import type { ChartOptions, ScriptableLineSegmentContext, ChartDataset, Color } from 'chart.js'
 
-const lineCategoryOptions = {
+const skippedDash = (ctx: ScriptableLineSegmentContext, value: number[]) =>
+  ctx.p0.skip || ctx.p1.skip ? value : undefined
+const skippedColor = (ctx: ScriptableLineSegmentContext, value: Color) =>
+  ctx.p0.skip || ctx.p1.skip ? value : undefined
+
+function getDefaultLineDatasetOptions(color: string): Partial<ChartDataset<'line'>> {
+  return {
+    borderColor: color,
+    pointBackgroundColor: color,
+    segment: {
+      borderDash: (ctx: ScriptableLineSegmentContext) => skippedDash(ctx, [6, 6]),
+      borderColor: (ctx: ScriptableLineSegmentContext) => skippedColor(ctx, 'rgb(0,0,0,0.3)'),
+    },
+  }
+}
+
+const lineCategoryOptions: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: true,
   spanGaps: true,
-  segment: {
-    borderDash: (ctx) => skipped(ctx, [6, 6]),
-    borderColor: (ctx) => skipped(ctx, 'rgb(0,0,0,0.3)'),
+  elements: {
+    line: {
+      fill: true,
+    },
+    point: {
+      radius: 4,
+    },
   },
   scales: {
     x: {
@@ -35,13 +55,17 @@ const lineCategoryOptions = {
   },
 }
 
-const lineLinearOptions = {
+const lineLinearOptions: ChartOptions<'line'> = {
   responsive: true,
   maintainAspectRatio: true,
   spanGaps: true,
-  segment: {
-    borderDash: (ctx) => skipped(ctx, [6, 6]),
-    borderColor: (ctx) => skipped(ctx, 'rgb(0,0,0,0.3)'),
+  elements: {
+    line: {
+      fill: true,
+    },
+    point: {
+      radius: 4,
+    },
   },
   scales: {
     x: {
@@ -70,4 +94,4 @@ const lineLinearOptions = {
   },
 }
 
-export { lineCategoryOptions, lineLinearOptions }
+export { lineCategoryOptions, lineLinearOptions, getDefaultLineDatasetOptions }

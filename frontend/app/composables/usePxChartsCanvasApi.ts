@@ -323,7 +323,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
 
     if (path.value.length) {
-      // alert(path.value)
       // set style of nodes in calculated path
       for (const node of nodes.value) {
         if (path.value.includes(node.id)) {

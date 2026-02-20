@@ -78,7 +78,7 @@ const allData = computed(() => {
         if (typeof c.value === 'number') {
           const sumXID: string = 'sum-'.concat(c.definition)
 
-          sumsXComponents[sumXID] += typeof c.value === 'number' ? c.value : 1
+          sumsXComponents[sumXID]! += typeof c.value === 'number' ? c.value : 1
           nodeData[sumXID] = sumsXComponents[sumXID]
         }
       })

@@ -29,12 +29,12 @@ export function usePathsApi() {
       }
       const outs = getOutgoers(node.id, nodes, edges)
       for (const out of outs) {
-        const alt = dist.get(node.id) + 1
-        if (alt < dist.get(out.id)) {
+        const alt = dist.get(node.id)! + 1
+        if (alt < dist.get(out.id)!) {
           prev.set(out.id, node.id)
           dist.set(out.id, alt)
           const idx = findIndex(q, ['id', out.id])
-          q[idx].prio = alt
+          q[idx]!.prio = alt
           q.sort((n1, n2) => n2.prio - n1.prio)
         }
         if (out.id == targetId) {
@@ -51,7 +51,7 @@ export function usePathsApi() {
       if (prev.has(current) || current == sourceId) {
         while (current) {
           seq.push(current)
-          current = prev.get(current)
+          current = prev.get(current)!
         }
       }
     }
@@ -66,10 +66,10 @@ export function usePathsApi() {
       return []
     }
 
-    fullPath.push(selected[0])
+    fullPath.push(selected[0]!)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const nextSeq = await dijkstra_path(nodes, edges, selected[i], selected[i + 1])
+      const nextSeq = await dijkstra_path(nodes, edges, selected[i]!, selected[i + 1]!)
       if (!nextSeq.length) {
         return []
       }
