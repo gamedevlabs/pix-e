@@ -153,8 +153,10 @@ const data = computed(() => {
   }
 })
 
-const componentDefinitionNames = computed(() => {
-  return pxComponentDefinitions.value.map((def) => def.name)
+const numericalComponentDefinitionNames = computed(() => {
+  return pxComponentDefinitions.value
+    .filter((def) => def.type === "number")
+    .map((def) => def.name)
 })
 
 const selectedDefinitionsX: Ref<string, string> = ref('')
@@ -188,10 +190,10 @@ function emitDelete() {
         <UFieldGroup>
           <UBadge color="neutral" variant="outline" size="lg" label="X" />
           <USelect
-            v-if="componentDefinitionNames.length"
+            v-if="numericalComponentDefinitionNames.length"
             placeholder="Select Component"
             :v-model="undefined"
-            :items="['None'].concat(componentDefinitionNames)"
+            :items="['None'].concat(numericalComponentDefinitionNames)"
             :ui="{ content: 'min-w-fit' }"
             :content="{
               align: 'start',
@@ -204,12 +206,12 @@ function emitDelete() {
         <UFieldGroup>
           <UBadge color="neutral" variant="outline" size="lg" label="Y" />
           <USelect
-            v-if="componentDefinitionNames.length"
+            v-if="numericalComponentDefinitionNames.length"
             placeholder="Select Components"
             label="Y"
             multiple
             :v-model="undefined"
-            :items="componentDefinitionNames"
+            :items="numericalComponentDefinitionNames"
             :ui="{ content: 'min-w-fit' }"
             :content="{
               align: 'start',
