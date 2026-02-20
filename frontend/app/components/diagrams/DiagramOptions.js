@@ -6,7 +6,7 @@ const lineCategoryOptions = {
   spanGaps: true,
   segment: {
     borderDash: (ctx) => skipped(ctx, [6, 6]),
-    borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.3)')
+    borderColor: (ctx) => skipped(ctx, 'rgb(0,0,0,0.3)'),
   },
   scales: {
     x: {
@@ -41,7 +41,7 @@ const lineLinearOptions = {
   spanGaps: true,
   segment: {
     borderDash: (ctx) => skipped(ctx, [6, 6]),
-    borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.3)')
+    borderColor: (ctx) => skipped(ctx, 'rgb(0,0,0,0.3)'),
   },
   scales: {
     x: {
