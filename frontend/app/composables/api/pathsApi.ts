@@ -70,6 +70,9 @@ export function usePathsApi() {
 
     for (let i = 0; i < selected.length - 1; i++) {
       const nextSeq = await dijkstra_path(nodes, edges, selected[i], selected[i + 1])
+      if (!nextSeq.length) {
+        return []
+      }
       fullPath = fullPath.concat(nextSeq.slice(1))
     }
 

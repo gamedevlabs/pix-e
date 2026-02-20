@@ -11,6 +11,8 @@ export function usePxChartsCanvasApi(chartId: string) {
   const error = ref<string | null>(null)
   const path = ref<string[]>([])
 
+  const { error: errorToast } = usePixeToast()
+
   const { error: pxChartError, fetchById: fetchPxChart } = usePxCharts()
   const {
     updateItem: updatePxChartContainer,
@@ -293,7 +295,12 @@ export function usePxChartsCanvasApi(chartId: string) {
   }
 
   async function calculatePathFromSelection(selected: string[]) {
-    path.value = await calculate_path(nodes.value, edges.value, selected)
+    const newPath = await calculate_path(nodes.value, edges.value, selected)
+    if (!newPath.length) {
+        errorToast("Failed to calculate path between selected nodes.")
+    } else {
+        path.value = newPath
+    }
   }
 
   async function resetPath() {
