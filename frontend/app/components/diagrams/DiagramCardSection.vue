@@ -17,7 +17,7 @@ const emit = defineEmits<{ (e: 'addClicked'): void }>()
         icon="i-lucide-plus"
         variant="soft"
         color="primary"
-        class="w-181 min-h-55 [&>*]:text-[50px] justify-center"
+        class="min-w-full min-h-55 [&>*]:text-[50px] justify-center"
         @click="emit('addClicked')"
       />
     </div>
