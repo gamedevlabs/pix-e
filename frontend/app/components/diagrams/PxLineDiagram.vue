@@ -132,6 +132,7 @@ const data = computed(() => {
   const sumXID: string = 'sum-'.concat(selectedDefinitionsX.value)
 
   selectedDefinitionsY.value.forEach((def) => {
+    const color = colors.next().value
     datasets.push({
       label: getNameFromDefinitionId(def),
       data: allData.value,
@@ -141,7 +142,9 @@ const data = computed(() => {
       },
       stepped: selectedDefinitionsX.value ? 'after' : false,
       fill: true,
-      borderColor: colors.next().value,
+      borderColor: color,
+      pointBackgroundColor: color,
+      pointRadius: 4,
     })
   })
 

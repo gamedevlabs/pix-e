@@ -1,6 +1,13 @@
+const skipped = (ctx, value) => (ctx.p0.skip || ctx.p1.skip ? value : undefined)
+
 const lineCategoryOptions = {
   responsive: true,
   maintainAspectRatio: true,
+  spanGaps: true,
+  segment: {
+    borderDash: (ctx) => skipped(ctx, [6, 6]),
+    borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.3)')
+  },
   scales: {
     x: {
       ticks: {
@@ -31,6 +38,11 @@ const lineCategoryOptions = {
 const lineLinearOptions = {
   responsive: true,
   maintainAspectRatio: true,
+  spanGaps: true,
+  segment: {
+    borderDash: (ctx) => skipped(ctx, [6, 6]),
+    borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.3)')
+  },
   scales: {
     x: {
       ticks: {
