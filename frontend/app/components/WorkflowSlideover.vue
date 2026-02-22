@@ -35,6 +35,13 @@ const availableWorkflows = computed(
 )
 const activeWorkflowId = computed(() => projectWorkflow.activeWorkflowId?.value)
 
+// The workflow currently being *viewed* in the panel (may differ from activeWorkflowId)
+const viewedWorkflowId = computed(() => {
+  // Expose viewedWorkflowId from the composable if set, otherwise fall back to activeWorkflowId
+  // We read from the workflow itself since viewedWorkflowId is internal to the composable
+  return projectWorkflow.workflow.value?.id ?? activeWorkflowId.value
+})
+
 // Load workflows depending on context:
 // - If user is logged in and has no projects: show onboarding (user-level)
 // - If a project is selected: show project workflows
@@ -93,7 +100,8 @@ const steps = computed(() => projectWorkflow.getSteps.value || [])
 const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
 
 const activeWorkflowTitle = computed(() => {
-  const w = availableWorkflows.value.find((x) => x.id === activeWorkflowId.value)
+  const id = viewedWorkflowId.value ?? activeWorkflowId.value
+  const w = availableWorkflows.value.find((x) => x.id === id)
   return w?.meta?.title || 'Workflow'
 })
 
@@ -167,6 +175,12 @@ const getWorkflowStatus = (w: MockWorkflow): StepStatus => {
 
 const selectWorkflow = async (id: string) => {
   await projectWorkflow.selectWorkflow(id, currentProjectId.value)
+  openSteps.value = new Set()
+}
+
+// Preview a workflow without changing the active state
+const viewWorkflow = async (id: string) => {
+  await projectWorkflow.viewWorkflow(id)
   openSteps.value = new Set()
 }
 
@@ -406,11 +420,11 @@ const handleNavigate = (route: string) => {
                         v-for="w in group.items"
                         :key="w.id"
                         color="neutral"
-                        :variant="w.id === activeWorkflowId ? 'soft' : 'ghost'"
+                        :variant="w.id === viewedWorkflowId ? 'soft' : 'ghost'"
                         size="sm"
                         block
                         class="justify-between"
-                        @click="selectWorkflow(w.id)"
+                        @click="viewWorkflow(w.id)"
                       >
                         <template #leading>
                           <UIcon

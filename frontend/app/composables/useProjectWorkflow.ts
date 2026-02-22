@@ -10,13 +10,15 @@ const api = new WorkflowApiEmulator()
 
 const workflows = ref<WorkflowInstance[]>([])
 const activeWorkflowId = ref<string | null>(null)
+const viewedWorkflowId = ref<string | null>(null)  // preview only, does not change active state
 const loading = ref(false)
 
 // The currently selected workflow instance
 const workflow = computed<WorkflowInstance | null>(() => {
-  if (!activeWorkflowId.value) return workflows.value[0] ?? null
+  const id = viewedWorkflowId.value ?? activeWorkflowId.value
+  if (!id) return workflows.value[0] ?? null
   return (
-    workflows.value.find((w) => w.id === activeWorkflowId.value) ?? workflows.value[0] ?? null
+    workflows.value.find((w) => w.id === id) ?? workflows.value[0] ?? null
   )
 })
 
@@ -113,6 +115,10 @@ export const useProjectWorkflow = () => {
     activeWorkflowId.value = id
     persistActiveId(projectId, id)
     return workflow.value
+  }
+
+  const viewWorkflow = async (id: string) => {
+    viewedWorkflowId.value = id
   }
 
   // ── Computed getters ───────────────────────────────────────────────────────
@@ -364,6 +370,7 @@ export const useProjectWorkflow = () => {
 
     // Selection
     selectWorkflow,
+    viewWorkflow,
 
     // Getters
     getSteps,
