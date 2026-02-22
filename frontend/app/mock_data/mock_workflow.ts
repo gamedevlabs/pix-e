@@ -61,9 +61,9 @@ export interface PhaseTemplate {
 export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   {
     id: 'onboarding',
-    title: 'Getting Oriented',
+    title: 'Have a Look Around',
     folder: 'Onboarding',
-    completionMessage: "You're all oriented — the dashboard and navigation are yours to explore. Time to dive into your first design phase!",
+    completionMessage: "Nice exploration! You can continue with the Design Pillars phase whenever you're ready.",
     steps: [
       {
         id: 'onb-1',
@@ -71,8 +71,9 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         description: 'Learn where things are and what each module does.',
         route: '/dashboard',
         substeps: [
-          { id: 'onb-1-1', name: 'Open the dashboard and pick a project', route: '/dashboard' },
-          { id: 'onb-1-2', name: 'Explore navigation (sidebar + search)', route: '/dashboard' },
+          { id: 'onb-1-1', name: 'Inspect the sidebar and open any module', route: '/dashboard' },
+          { id: 'onb-1-2', name: 'Have a look at the project Settings', route: '/edit' },
+          { id: 'onb-1-3', name: 'Use the Search Bar to find the Dashboard', route: '/dashboard' },
         ],
       },
     ],

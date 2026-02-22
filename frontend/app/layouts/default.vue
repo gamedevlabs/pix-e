@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { PageConfig } from '~/types/page-config'
 import type { MockWorkflow } from '~/mock_data/mock_workflow'
 import { MOCK_EXTERNAL_LINKS } from '~/mock_data/mock_external-links'
@@ -11,6 +11,9 @@ const route = useRoute()
 const router = useRouter()
 
 const open = ref(false)
+
+// Search bar open state (for onb-1-3)
+const searchOpen = ref(false)
 
 // AUTH
 const authentication = useAuthentication()
@@ -205,6 +208,50 @@ const groups = computed(() => [
     items: links.value.flat(),
   },
 ])
+
+// ─── Getting Oriented substep auto-completion ─────────────────────────────────
+
+// Routes that count as "a module" (everything except dashboard itself)
+const MODULE_ROUTES = ['/pillars', '/pxcharts', '/pxnodes', '/pxcomponentdefinitions', '/pxcomponents', '/player-expectations', '/player-experience', '/sentiments', '/edit']
+
+/** Try to complete a substep only if it is currently pending/active (idempotent). */
+async function tryCompleteSubstep(stepId: string, substepId: string) {
+  const w = projectWorkflow.workflow.value
+  if (!w) return
+  const step = w.steps.find(s => s.id === stepId)
+  if (!step) return
+  const ss = step.substeps.find(x => x.id === substepId)
+  if (!ss || ss.status === 'complete') return
+  await projectWorkflow.toggleSubstep(stepId, substepId)
+}
+
+// onb-1-1: first time the user navigates to any module page (not dashboard)
+const hasVisitedModule = ref(false)
+watch(() => route.path, (path) => {
+  if (hasVisitedModule.value) return
+  if (MODULE_ROUTES.some(r => path.startsWith(r)) && path !== '/dashboard') {
+    hasVisitedModule.value = true
+    tryCompleteSubstep('onb-1', 'onb-1-1')
+  }
+})
+
+// onb-1-2: first time the user lands on /edit (Settings page)
+const hasVisitedSettings = ref(false)
+watch(() => route.path, (path) => {
+  if (hasVisitedSettings.value) return
+  if (path.startsWith('/edit')) {
+    hasVisitedSettings.value = true
+    tryCompleteSubstep('onb-1', 'onb-1-2')
+  }
+})
+
+// onb-1-3: first time the search bar is opened
+const hasOpenedSearch = ref(false)
+watch(searchOpen, (isOpen) => {
+  if (hasOpenedSearch.value || !isOpen) return
+  hasOpenedSearch.value = true
+  tryCompleteSubstep('onb-1', 'onb-1-3')
+})
 </script>
 
 <template>
@@ -315,7 +362,7 @@ const groups = computed(() => [
             </template>
           </UDashboardSidebar>
 
-          <UDashboardSearch :groups="groups" />
+          <UDashboardSearch v-model:open="searchOpen" :groups="groups" />
 
           <!-- Panel wrapper: leave top margin to account for header; make this area fill vertical space and contain a scrollable slot -->
           <div class="flex-1 min-h-0 overflow-hidden" style="margin-top: 52px">

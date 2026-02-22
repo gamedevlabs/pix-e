@@ -154,6 +154,30 @@ export const useProjectWorkflow = () => {
     return phase?.completionMessage ?? 'Workflow complete!'
   }
 
+  /**
+   * Called whenever a workflow is marked finished.
+   * Shows the completion toast and automatically switches to the next incomplete workflow.
+   */
+  function onWorkflowComplete(w: WorkflowInstance) {
+    // Show toast
+    try {
+      useToast().add({
+        title: `🎉 "${w.meta.title}" complete!`,
+        description: getCompletionMessage(w),
+        color: 'success',
+        duration: 8000,
+      })
+    } catch { /* ignore */ }
+
+    // Auto-advance to the next incomplete workflow in the list
+    const currentIdx = workflows.value.findIndex((x) => x.id === w.id)
+    const next = workflows.value.slice(currentIdx + 1).find((x) => !isInstanceComplete(x))
+    if (next) {
+      activeWorkflowId.value = next.id
+      persistActiveId(w.projectId === 'user' ? null : w.projectId, next.id)
+    }
+  }
+
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   const saveActiveWorkflow = async () => {
@@ -275,14 +299,7 @@ export const useProjectWorkflow = () => {
         const allWorkflowDone = allWorkflowSubsteps.every((ss) => ss.status === 'complete')
         if (allWorkflowDone && !w.finished_at) {
           w.finished_at = now
-          try {
-            useToast().add({
-              title: `🎉 "${w.meta.title}" complete!`,
-              description: getCompletionMessage(w),
-              color: 'success',
-              duration: 8000,
-            })
-          } catch { /* ignore */ }
+          onWorkflowComplete(w)
         }
       }
     } else {
@@ -320,14 +337,7 @@ export const useProjectWorkflow = () => {
       w.currentStepIndex = nextIndex
     } else {
       w.finished_at = now
-      try {
-        useToast().add({
-          title: `🎉 "${w.meta.title}" complete!`,
-          description: getCompletionMessage(w),
-          color: 'success',
-          duration: 8000,
-        })
-      } catch { /* ignore */ }
+      onWorkflowComplete(w)
     }
 
     await saveActiveWorkflow()
