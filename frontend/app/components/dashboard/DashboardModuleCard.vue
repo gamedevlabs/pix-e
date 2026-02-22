@@ -64,34 +64,37 @@ const props = withDefaults(defineProps<Props>(), {
               </p>
             </div>
           </div>
-          <UBadge v-if="props.badgeLabel" color="primary" variant="subtle" size="xs" class="shrink-0">
-            {{ props.badgeLabel }}
-          </UBadge>
+
+          <!-- Hover "Open →" label (replaces badge) -->
+          <div class="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 mt-0.5">
+            <span>{{ props.ctaLabel }}</span>
+            <UIcon name="i-lucide-arrow-right" class="size-3 group-hover:translate-x-0.5 transition-transform" />
+          </div>
         </div>
 
-        <!-- Preview / insight area (optional) -->
-        <div v-if="props.previewItems?.length" class="space-y-1">
+        <!-- Preview items list -->
+        <div v-if="props.previewItems?.length" class="space-y-1.5">
           <div
             v-for="(item, idx) in props.previewItems"
             :key="idx"
-            class="flex items-center gap-2 rounded-md bg-gray-50 dark:bg-gray-800/60 px-2 py-1"
+            class="flex items-center gap-2.5 rounded-md bg-gray-50 dark:bg-gray-800/60 px-3 py-2"
           >
             <UIcon
               v-if="item.icon"
               :name="item.icon"
-              class="size-4 text-gray-400 dark:text-gray-500 shrink-0"
+              class="size-4 text-primary/70 dark:text-primary/60 shrink-0"
             />
-            <p class="text-sm text-gray-700 dark:text-gray-200 truncate">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
               {{ item.text }}
             </p>
           </div>
 
-          <p v-if="props.previewMoreLabel" class="text-xs text-gray-500 dark:text-gray-400 px-1">
+          <p v-if="props.previewMoreLabel" class="text-sm text-gray-500 dark:text-gray-400 px-1 pt-0.5">
             {{ props.previewMoreLabel }}
           </p>
         </div>
 
-        <!-- Backwards-compatible insightItems grid (if still used anywhere) -->
+        <!-- Backwards-compatible insightItems grid -->
         <div v-else-if="props.insightItems?.length" class="grid grid-cols-2 gap-2">
           <div
             v-for="(item, idx) in props.insightItems"
@@ -114,19 +117,6 @@ const props = withDefaults(defineProps<Props>(), {
           </div>
         </div>
         <slot v-else name="insight" />
-
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors">
-            Click to open
-          </span>
-          <UButton
-            :label="props.ctaLabel"
-            color="primary"
-            variant="soft"
-            size="sm"
-            trailing-icon="i-lucide-arrow-right"
-          />
-        </div>
       </div>
     </NuxtLink>
 
@@ -135,9 +125,7 @@ const props = withDefaults(defineProps<Props>(), {
       <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
-            <div
-              class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0"
-            >
+            <div class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0">
               <UIcon :name="props.icon" class="size-5" />
             </div>
             <div class="min-w-0">
@@ -149,36 +137,25 @@ const props = withDefaults(defineProps<Props>(), {
               </p>
             </div>
           </div>
-
-          <UBadge
-            v-if="props.badgeLabel"
-            color="primary"
-            variant="subtle"
-            size="xs"
-            class="shrink-0"
-          >
-            {{ props.badgeLabel }}
-          </UBadge>
         </div>
 
-        <!-- Preview / insight area (optional) -->
-        <div v-if="props.previewItems?.length" class="space-y-1">
+        <!-- Preview items list (disabled) -->
+        <div v-if="props.previewItems?.length" class="space-y-1.5">
           <div
             v-for="(item, idx) in props.previewItems"
             :key="idx"
-            class="flex items-center gap-2 rounded-md bg-gray-50 dark:bg-gray-800/60 px-2 py-1"
+            class="flex items-center gap-2.5 rounded-md bg-gray-50 dark:bg-gray-800/60 px-3 py-2"
           >
             <UIcon
               v-if="item.icon"
               :name="item.icon"
-              class="size-4 text-gray-400 dark:text-gray-500 shrink-0"
+              class="size-4 text-primary/70 dark:text-primary/60 shrink-0"
             />
-            <p class="text-sm text-gray-700 dark:text-gray-200 truncate">
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
               {{ item.text }}
             </p>
           </div>
-
-          <p v-if="props.previewMoreLabel" class="text-xs text-gray-500 dark:text-gray-400 px-1">
+          <p v-if="props.previewMoreLabel" class="text-sm text-gray-500 dark:text-gray-400 px-1 pt-0.5">
             {{ props.previewMoreLabel }}
           </p>
         </div>
@@ -205,17 +182,6 @@ const props = withDefaults(defineProps<Props>(), {
           </div>
         </div>
         <slot v-else name="insight" />
-
-        <div class="flex items-center justify-end">
-          <UButton
-            :label="props.ctaLabel"
-            color="primary"
-            variant="soft"
-            size="sm"
-            trailing-icon="i-lucide-arrow-right"
-            disabled
-          />
-        </div>
       </div>
     </div>
   </UCard>

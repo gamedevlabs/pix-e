@@ -25,11 +25,88 @@ const { currentProject, currentProjectId } = useProjectHandler()
 // Fetch real data from modules
 const { items: pillars, fetchAll: fetchPillars } = usePillars()
 const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
+const {
+  aspectChartData,
+  sentimentPieData,
+  load: loadExpectations,
+} = usePlayerExpectationCharts('http://localhost:8000/api')
 
 onMounted(() => {
   fetchPillars()
   fetchPxCharts()
+  loadExpectations()
 })
+
+// ── Preview helpers ──────────────────────────────────────────────────────────
+const PREVIEW_MAX = 2
+
+// Pillars
+const pillarPreviewItems = computed(() =>
+  pillars.value.slice(0, PREVIEW_MAX).map(p => ({ text: p.name, icon: 'i-lucide-layers' }))
+)
+const pillarMoreLabel = computed(() => {
+  const rest = pillars.value.length - PREVIEW_MAX
+  if (pillars.value.length === 0) return 'No pillars yet — add your first one'
+  if (rest <= 0) return undefined
+  return `+${rest} more ${rest === 1 ? 'pillar' : 'pillars'}`
+})
+
+// PX Charts
+const chartPreviewItems = computed(() =>
+  pxCharts.value.slice(0, PREVIEW_MAX).map(c => ({ text: c.name, icon: 'i-lucide-chart-network' }))
+)
+const chartMoreLabel = computed(() => {
+  const rest = pxCharts.value.length - PREVIEW_MAX
+  if (pxCharts.value.length === 0) return 'No charts yet — create your first one'
+  if (rest <= 0) return undefined
+  return `+${rest} more ${rest === 1 ? 'chart' : 'charts'}`
+})
+
+// Player Expectations — top aspects + sentiment summary
+const expectationsPreviewItems = computed(() => {
+  const items: { text: string; icon: string }[] = []
+
+  // Top 2 most-mentioned aspects from aspectChartData
+  const aspectData = aspectChartData.value as { labels: string[]; datasets: { data: number[] }[] } | null
+  if (aspectData?.labels?.length) {
+    const paired = aspectData.labels.map((label, i) => ({
+      label,
+      count: aspectData.datasets[0]?.data[i] ?? 0,
+    }))
+    paired
+      .sort((a, b) => b.count - a.count)
+      .slice(0, PREVIEW_MAX)
+      .forEach(({ label, count }) => {
+        items.push({ text: `${label} — ${count} mentions`, icon: 'i-lucide-tag' })
+      })
+  }
+
+  // Dominant sentiment from sentimentPieData
+  const pieData = sentimentPieData.value as { labels: string[]; datasets: { data: number[] }[] } | null
+  if (pieData?.labels?.length) {
+    const total = pieData.datasets[0]?.data.reduce((a, b) => a + b, 0) ?? 0
+    if (total > 0) {
+      const maxIdx = pieData.datasets[0]!.data.indexOf(Math.max(...pieData.datasets[0]!.data))
+      const dominant = pieData.labels[maxIdx]
+      const pct = Math.round((pieData.datasets[0]!.data[maxIdx]! / total) * 100)
+      const icon =
+        dominant === 'positive'
+          ? 'i-lucide-smile'
+          : dominant === 'negative'
+            ? 'i-lucide-frown'
+            : 'i-lucide-meh'
+      items.push({ text: `${pct}% ${dominant} sentiment`, icon })
+    }
+  }
+
+  return items
+})
+
+const expectationsMoreLabel = computed(() => {
+  if (!expectationsPreviewItems.value.length) return 'No data loaded yet'
+  return undefined
+})
+// ────────────────────────────────────────────────────────────────────────────
 
 // Helper function to generate initials from project name
 const getProjectInitials = (name: string) => {
@@ -142,28 +219,31 @@ const mock_historyData = computed(() => mockRecentActivity)
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DashboardModuleCard
-            title="PX Charts"
+            title="Design Pillars"
+            description="Define your game's core foundations"
+            icon="i-lucide-landmark"
+            to="/pillars"
+            cta-label="Manage"
+            :preview-items="pillarPreviewItems"
+            :preview-more-label="pillarMoreLabel"
+          />
+          <DashboardModuleCard
+            title="Player Experience"
             description="Build and explore player experience charts"
             icon="i-lucide-chart-network"
             to="/pxcharts"
             cta-label="Open"
-            :badge-label="pxCharts.length ? `${pxCharts.length} charts` : 'New'"
+            :preview-items="chartPreviewItems"
+            :preview-more-label="chartMoreLabel"
           />
           <DashboardModuleCard
             title="Player Expectations"
             description="Benchmarks, sentiment, and alignment"
-            icon="i-lucide-users"
+            icon="i-lucide-book-open"
             to="/player-expectations"
             cta-label="Open"
-            badge-label="87%"
-          />
-          <DashboardModuleCard
-            title="Design Pillars"
-            description="Define your game's core foundations"
-            icon="i-lucide-layers"
-            to="/pillars"
-            cta-label="Manage"
-            :badge-label="pillars.length ? `${pillars.length}` : 'New'"
+            :preview-items="expectationsPreviewItems"
+            :preview-more-label="expectationsMoreLabel"
           />
         </div>
       </div>
