@@ -4,6 +4,7 @@
 // ============================================================================
 // MOCK DATA FOR DASHBOARD CARDS
 import { mockRecentActivity } from '~/mock_data/mock_recent-activity'
+import { platformConfigs } from '~/utils/platformConfig'
 
 definePageMeta({
   middleware: ['authentication', 'project-context'],
@@ -57,12 +58,12 @@ const mock_historyData = computed(() => mockRecentActivity)
     <!-- ─── Project Header ──────────────────────────────────────────────── -->
     <UCard
       class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
-      :ui="{ body: 'px-6 py-5' }"
+      :ui="{ body: 'px-3 py-2.5' }"
     >
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex items-stretch gap-4 min-h-20">
 
         <!-- Left: avatar + name + description -->
-        <div class="flex items-center gap-4 min-w-0">
+        <div class="flex items-center gap-4 min-w-0 flex-1">
           <UAvatar
             v-if="!currentProject?.icon"
             :text="getProjectInitials(currentProject?.name || 'Project')"
@@ -82,26 +83,8 @@ const mock_historyData = computed(() => mockRecentActivity)
           </div>
         </div>
 
-        <!-- Right: meta row + actions -->
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
-          <!-- Genre badges from real data -->
-          <template v-if="currentProject?.genre">
-            <UBadge
-              v-for="g in currentProject.genre.split(',').map((s: string) => s.trim()).filter(Boolean)"
-              :key="g"
-              color="neutral"
-              variant="soft"
-              size="sm"
-            >
-              {{ g }}
-            </UBadge>
-          </template>
-
-          <UBadge color="success" variant="subtle" size="sm">
-            <UIcon name="i-lucide-circle" class="mr-1 size-2 fill-current" />
-            Active
-          </UBadge>
-
+        <!-- Right: settings top, badges bottom -->
+        <div class="flex flex-col items-end justify-between shrink-0 gap-3">
           <UButton
             icon="i-lucide-settings"
             size="sm"
@@ -110,7 +93,32 @@ const mock_historyData = computed(() => mockRecentActivity)
             label="Settings"
             @click="navigateToModule('/edit')"
           />
+          <div class="flex flex-col items-end gap-2">
+            <!-- Platform icons -->
+            <div v-if="currentProject?.targetPlatform?.length" class="flex items-center gap-2">
+              <UTooltip
+                v-for="platform in platformConfigs.filter(p => (currentProject?.targetPlatform as string[])?.includes(p.value))"
+                :key="platform.value"
+                :text="platform.label"
+              >
+                <UIcon :name="platform.icon" class="size-4 text-gray-500 dark:text-gray-400" />
+              </UTooltip>
+            </div>
+            <!-- Genre badges -->
+            <div v-if="currentProject?.genre" class="flex flex-wrap justify-end items-center gap-2">
+              <UBadge
+                v-for="g in currentProject.genre.split(',').map((s: string) => s.trim()).filter(Boolean)"
+                :key="g"
+                :label="g"
+                size="sm"
+                color="neutral"
+                variant="outline"
+                class="pointer-events-none"
+              />
+            </div>
+          </div>
         </div>
+
       </div>
     </UCard>
 
@@ -130,7 +138,6 @@ const mock_historyData = computed(() => mockRecentActivity)
             <div class="h-6 w-1 rounded-full bg-primary" />
             <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Modules</h2>
           </div>
-          <UBadge color="neutral" variant="soft" size="sm">Select a module to continue</UBadge>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
