@@ -12,21 +12,13 @@ export interface MockAiInsight {
  */
 export const mockAiInsights: MockAiInsight[] = [
   {
-    type: 'info',
-    title: 'Unlinked expectations',
-    message:
-      'You have player expectations that aren’t connected to any PX nodes yet. Linking them will improve traceability.',
-  },
-  {
     type: 'warning',
     title: 'Mid-game pacing dip',
-    message:
-      'Your pacing diagram has a quieter stretch around the midpoint. Consider adding a new beat, location, or escalation.',
+    message: 'A quieter stretch around the midpoint — consider adding a beat or escalation.',
   },
   {
     type: 'success',
     title: 'Strong pillar alignment',
-    message:
-      'Your design pillars map well to your top expectations. Nice consistency across the experience goals.',
+    message: 'Your design pillars map well to your top expectations.',
   },
 ]

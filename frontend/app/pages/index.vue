@@ -200,8 +200,8 @@ const projectStats = computed(() => ({
 
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
     <section class="text-center space-y-3 max-w-2xl mx-auto">
-      <h1 class="text-4xl xl:text-5xl font-bold tracking-tight bg-linear-to-br from-primary-500 to-primary-700 bg-clip-text text-transparent">
-        Welcome<span v-if="isLoggedIn">, {{ username }}</span> 👋
+      <h1 class="text-4xl xl:text-5xl font-bold tracking-tight">
+        Welcome back<span v-if="isLoggedIn">, {{ username }}</span> 🎉
       </h1>
       <p class="text-base text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
         <span class="text-primary font-semibold">pix:e</span> enables you to design games with
@@ -324,10 +324,6 @@ const projectStats = computed(() => ({
                 Standalone tools that work independently from your projects
               </p>
             </div>
-            <UBadge color="neutral" variant="soft" size="sm" class="ml-2 self-start mt-0.5">
-              <UIcon name="i-lucide-puzzle" class="mr-1 size-3" />
-              Standalone
-            </UBadge>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
