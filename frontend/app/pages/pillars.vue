@@ -53,6 +53,11 @@ await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`,
   designIdea.value = data.data.value?.description ?? ''
 })
 
+// pillars-1-1: "Open Design Pillars" — completes as soon as this page mounts
+onMounted(() => {
+  toggleSubstep('pillars-1', 'pillars-1-1')
+})
+
 const selectedPillar = ref(-1)
 const newItem = ref<NamedEntity | null>(null)
 
@@ -63,10 +68,9 @@ function addItem() {
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
   const result = await createPillar(newEntityDraft)
 
-  // Only complete workflow substep if pillar was successfully created
+  // pillars-1-2: "Create a new pillar" — completes on first successful save
   if (result) {
-    // Complete workflow substep s2-1: "Create a new pillar"
-    await toggleSubstep('s-2', 's2-1')
+    await toggleSubstep('pillars-1', 'pillars-1-2')
   }
 
   newItem.value = null
@@ -81,38 +85,39 @@ async function dismissIssue(pillar: Pillar, index: number) {
   pillar.llm_feedback?.structuralIssues.splice(index, 1)
 }
 
-// Complete workflow substep when pillar validation is performed
+// pillars-1-3: "Generate LLM feedback for your first pillar" — completes when validate runs on any pillar
 async function handleValidatePillar() {
-  // Complete workflow substep s2-2: "Generate some LLM feedback for your pillar"
-  await toggleSubstep('s-2', 's2-2')
+  await toggleSubstep('pillars-1', 'pillars-1-3')
 }
 
 async function handleGetPillarsInContextFeedback() {
   await getPillarsInContextFeedback()
 
-  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
-  await toggleSubstep('s-2', 's2-3')
+  // Complete all three pillars-2 substeps when Refresh All is used
+  await toggleSubstep('pillars-2', 'pillars-2-1')
+  await toggleSubstep('pillars-2', 'pillars-2-2')
+  await toggleSubstep('pillars-2', 'pillars-2-3')
 }
 
 async function handleGetPillarsCompleteness() {
   await getPillarsCompleteness()
 
-  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
-  await toggleSubstep('s-2', 's2-3')
+  // pillars-2-1: "Coverage"
+  await toggleSubstep('pillars-2', 'pillars-2-1')
 }
 
 async function handleGetPillarContradictions() {
   await getPillarContradictions()
 
-  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
-  await toggleSubstep('s-2', 's2-3')
+  // pillars-2-2: "Contradictions"
+  await toggleSubstep('pillars-2', 'pillars-2-2')
 }
 
 async function handleGetPillarsAdditions() {
   await getPillarsAdditions()
 
-  // Complete workflow substep s2-3: "Checkout LLM Coverage, Contradictions and Additions"
-  await toggleSubstep('s-2', 's2-3')
+  // pillars-2-3: "Additions"
+  await toggleSubstep('pillars-2', 'pillars-2-3')
 }
 </script>
 
