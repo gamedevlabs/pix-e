@@ -14,9 +14,7 @@ import { PxChartEdge } from '#components'
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
-  (e: 'containerAdded'): void
-  (e: 'edgeConnected'): void
-  (e: 'nodeAddedToContainer'): void
+  (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
 }>()
 
 const { screenToFlowCoordinate } = useVueFlow()
@@ -172,7 +170,11 @@ async function handleAddContainerFromPanel() {
       <PxChartContainer
         v-bind="customNodeProps"
         @delete="handleDeletePxGraphContainer"
-        @add-px-node="(containerId, nodeId) => { handleAddPxNode(containerId, nodeId) }"
+        @add-px-node="
+          (containerId, nodeId) => {
+            handleAddPxNode(containerId, nodeId)
+          }
+        "
         @edit="handleUpdatePxGraphContainer"
       />
     </template>
@@ -188,7 +190,12 @@ async function handleAddContainerFromPanel() {
 
     <Panel :position="'bottom-left'">
       <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-plus" color="primary" @click="handleAddContainerFromPanel" />
+        <UButton
+          size="xl"
+          icon="i-lucide-plus"
+          color="primary"
+          @click="handleAddContainerFromPanel"
+        />
       </UTooltip>
     </Panel>
   </VueFlow>

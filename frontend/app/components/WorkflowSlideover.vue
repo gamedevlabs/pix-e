@@ -4,13 +4,6 @@ import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 import type { MockWorkflow } from '~/mock_data/mock_workflow'
 import type { StepStatus } from '~/utils/workflow'
 
-// Props
-interface Props {
-  collapsed?: boolean
-}
-
-const props = defineProps<Props>()
-
 // State
 const workflowSlideover = useWorkflowSlideover()
 const slideoverOpen = workflowSlideover.isOpen
@@ -159,11 +152,6 @@ const getWorkflowStatus = (w: MockWorkflow): StepStatus => {
   return completed > 0 ? 'active' : 'pending'
 }
 
-const selectWorkflow = async (id: string) => {
-  await projectWorkflow.selectWorkflow(id, currentProjectId.value)
-  openSteps.value = new Set()
-}
-
 // Preview a workflow without changing the active state
 const viewWorkflow = async (id: string) => {
   await projectWorkflow.viewWorkflow(id)
@@ -248,7 +236,6 @@ const handleNavigate = (route: string) => {
     @update:open="(v) => (v ? workflowSlideover.open() : workflowSlideover.close())"
     @close="workflowSlideover.close()"
   >
-
     <template #body>
       <!-- Use a vertical layout where the active workflow takes most space, and phases are at the bottom. -->
       <div class="flex flex-col h-full pb-6">

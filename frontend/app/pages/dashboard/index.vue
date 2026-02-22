@@ -42,7 +42,7 @@ const PREVIEW_MAX = 2
 
 // Pillars
 const pillarPreviewItems = computed(() =>
-  pillars.value.slice(0, PREVIEW_MAX).map(p => ({ text: p.name, icon: 'i-lucide-layers' }))
+  pillars.value.slice(0, PREVIEW_MAX).map((p) => ({ text: p.name, icon: 'i-lucide-layers' })),
 )
 const pillarMoreLabel = computed(() => {
   const rest = pillars.value.length - PREVIEW_MAX
@@ -53,7 +53,9 @@ const pillarMoreLabel = computed(() => {
 
 // PX Charts
 const chartPreviewItems = computed(() =>
-  pxCharts.value.slice(0, PREVIEW_MAX).map(c => ({ text: c.name, icon: 'i-lucide-chart-network' }))
+  pxCharts.value
+    .slice(0, PREVIEW_MAX)
+    .map((c) => ({ text: c.name, icon: 'i-lucide-chart-network' })),
 )
 const chartMoreLabel = computed(() => {
   const rest = pxCharts.value.length - PREVIEW_MAX
@@ -67,7 +69,10 @@ const expectationsPreviewItems = computed(() => {
   const items: { text: string; icon: string }[] = []
 
   // Top 2 most-mentioned aspects from aspectChartData
-  const aspectData = aspectChartData.value as { labels: string[]; datasets: { data: number[] }[] } | null
+  const aspectData = aspectChartData.value as {
+    labels: string[]
+    datasets: { data: number[] }[]
+  } | null
   if (aspectData?.labels?.length) {
     const paired = aspectData.labels.map((label, i) => ({
       label,
@@ -82,7 +87,10 @@ const expectationsPreviewItems = computed(() => {
   }
 
   // Dominant sentiment from sentimentPieData
-  const pieData = sentimentPieData.value as { labels: string[]; datasets: { data: number[] }[] } | null
+  const pieData = sentimentPieData.value as {
+    labels: string[]
+    datasets: { data: number[] }[]
+  } | null
   if (pieData?.labels?.length) {
     const total = pieData.datasets[0]?.data.reduce((a, b) => a + b, 0) ?? 0
     if (total > 0) {
@@ -131,14 +139,12 @@ const mock_historyData = computed(() => mockRecentActivity)
 
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-2 py-8 space-y-10">
-
     <!-- ─── Project Header ──────────────────────────────────────────────── -->
     <UCard
       class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
       :ui="{ body: 'px-3 py-2.5' }"
     >
       <div class="flex items-stretch gap-4 min-h-20">
-
         <!-- Left: avatar + name + description -->
         <div class="flex items-center gap-4 min-w-0 flex-1">
           <UAvatar
@@ -151,7 +157,9 @@ const mock_historyData = computed(() => mockRecentActivity)
           <div v-else class="text-5xl leading-none shrink-0">{{ currentProject.icon }}</div>
 
           <div class="min-w-0">
-            <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">
+            <h1
+              class="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate leading-tight"
+            >
               {{ currentProject?.name || 'Project' }}
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
@@ -174,7 +182,9 @@ const mock_historyData = computed(() => mockRecentActivity)
             <!-- Platform icons -->
             <div v-if="currentProject?.targetPlatform?.length" class="flex items-center gap-2">
               <UTooltip
-                v-for="platform in platformConfigs.filter(p => (currentProject?.targetPlatform as string[])?.includes(p.value))"
+                v-for="platform in platformConfigs.filter((p) =>
+                  (currentProject?.targetPlatform as string[])?.includes(p.value),
+                )"
                 :key="platform.value"
                 :text="platform.label"
               >
@@ -184,7 +194,10 @@ const mock_historyData = computed(() => mockRecentActivity)
             <!-- Genre badges -->
             <div v-if="currentProject?.genre" class="flex flex-wrap justify-end items-center gap-2">
               <UBadge
-                v-for="g in currentProject.genre.split(',').map((s: string) => s.trim()).filter(Boolean)"
+                v-for="g in currentProject.genre
+                  .split(',')
+                  .map((s: string) => s.trim())
+                  .filter(Boolean)"
                 :key="g"
                 :label="g"
                 size="sm"
@@ -195,13 +208,11 @@ const mock_historyData = computed(() => mockRecentActivity)
             </div>
           </div>
         </div>
-
       </div>
     </UCard>
 
     <!-- ─── 3-col layout (mirrors landing page) ───────────────────────── -->
     <div class="grid grid-cols-1 xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
-
       <!-- Left side panel -->
       <aside class="hidden xl:flex flex-col gap-4">
         <WorkflowCard orientation="vertical" />
@@ -252,7 +263,6 @@ const mock_historyData = computed(() => mockRecentActivity)
       <aside class="hidden xl:flex flex-col gap-4">
         <AiInsightsCard />
       </aside>
-
     </div>
   </div>
 </template>

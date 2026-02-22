@@ -157,7 +157,9 @@ const standaloneModules = ref<Card[]>([
       'Evaluate movie scripts through LLMs based on available assets for virtual production.',
     icon: 'i-lucide-film',
     requiresAuth: false,
-    action: () => { router.push('/movie-script-evaluator') },
+    action: () => {
+      router.push('/movie-script-evaluator')
+    },
   },
 ])
 
@@ -189,7 +191,6 @@ const projectStats = computed(() => ({
 
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
-
     <!-- Workflow button + slideover for logged-out users -->
     <template v-if="!isLoggedIn">
       <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
@@ -211,7 +212,6 @@ const projectStats = computed(() => ({
 
     <!-- ─── Main 3-col layout ─────────────────────────────────────────────── -->
     <div class="grid grid-cols-1 xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
-
       <!-- Left Side Panel -->
       <aside class="hidden xl:flex flex-col gap-4">
         <QuickStatsCard :total="projectStats.total" :recent="projectStats.recent" />
@@ -220,7 +220,6 @@ const projectStats = computed(() => ({
 
       <!-- ─── CENTER COLUMN ─────────────────────────────────────────────── -->
       <div class="space-y-12 min-w-0">
-
         <!-- Projects section header -->
         <div class="space-y-5">
           <div class="flex items-center justify-between">
@@ -245,7 +244,9 @@ const projectStats = computed(() => ({
             class="border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
           >
             <div class="py-16 flex flex-col items-center gap-6 text-center">
-              <div class="rounded-full bg-gray-100 dark:bg-gray-800 p-5 aspect-square flex items-center justify-center">
+              <div
+                class="rounded-full bg-gray-100 dark:bg-gray-800 p-5 aspect-square flex items-center justify-center"
+              >
                 <UIcon name="i-lucide-lock" class="size-10 text-gray-400 dark:text-gray-500" />
               </div>
               <div class="space-y-1.5 max-w-sm">
@@ -294,14 +295,11 @@ const projectStats = computed(() => ({
           </div>
 
           <!-- Project cards grid -->
-          <div
-            v-else
-            class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4"
-          >
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
             <LandingProjectCard
               v-for="project in projectCards"
-              :key="project.id"
               :id="project.id"
+              :key="project.id"
               :label="project.label"
               :description="project.description"
               :icon="project.icon"
@@ -342,7 +340,9 @@ const projectStats = computed(() => ({
             >
               <template #header>
                 <div class="flex items-center gap-3">
-                  <div class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0">
+                  <div
+                    class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0"
+                  >
                     <UIcon v-if="module.icon" :name="module.icon" class="size-5 text-primary" />
                   </div>
                   <div class="min-w-0">
@@ -358,12 +358,14 @@ const projectStats = computed(() => ({
               </p>
               <div class="flex items-center gap-1.5 text-xs text-primary font-medium pt-1">
                 <span>Launch</span>
-                <UIcon name="i-lucide-arrow-right" class="size-3 group-hover:translate-x-0.5 transition-transform" />
+                <UIcon
+                  name="i-lucide-arrow-right"
+                  class="size-3 group-hover:translate-x-0.5 transition-transform"
+                />
               </div>
             </UCard>
           </div>
         </div>
-
       </div>
       <!-- END CENTER COLUMN -->
 
@@ -373,9 +375,7 @@ const projectStats = computed(() => ({
         <WhatsNewCard />
         <NeedHelpCard />
       </aside>
-
     </div>
-
   </div>
 </template>
 

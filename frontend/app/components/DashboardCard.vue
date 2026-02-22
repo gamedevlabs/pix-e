@@ -30,7 +30,9 @@ const isInactive = computed(() => props.loginRequired && !isLoggedIn.value)
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <UIcon :name="icon" class="size-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
-          <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">
+          <h3
+            class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate"
+          >
             {{ title }}
           </h3>
         </div>

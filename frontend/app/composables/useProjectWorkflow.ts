@@ -1,5 +1,9 @@
 ﻿import { ref, computed, readonly } from '#imports'
-import { WorkflowApiEmulator, WORKFLOW_TEMPLATE, ONBOARDING_TEMPLATE } from '~/mock_data/mock_workflow'
+import {
+  WorkflowApiEmulator,
+  WORKFLOW_TEMPLATE,
+  ONBOARDING_TEMPLATE,
+} from '~/mock_data/mock_workflow'
 import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 import type { StepStatus, WorkflowStep } from '~/utils/workflow'
 
@@ -10,16 +14,14 @@ const api = new WorkflowApiEmulator()
 
 const workflows = ref<WorkflowInstance[]>([])
 const activeWorkflowId = ref<string | null>(null)
-const viewedWorkflowId = ref<string | null>(null)  // preview only, does not change active state
+const viewedWorkflowId = ref<string | null>(null) // preview only, does not change active state
 const loading = ref(false)
 
 // The currently selected workflow instance
 const workflow = computed<WorkflowInstance | null>(() => {
   const id = viewedWorkflowId.value ?? activeWorkflowId.value
   if (!id) return workflows.value[0] ?? null
-  return (
-    workflows.value.find((w) => w.id === id) ?? workflows.value[0] ?? null
-  )
+  return workflows.value.find((w) => w.id === id) ?? workflows.value[0] ?? null
 })
 
 // The truly active workflow — always used for mutations, never the viewed/preview one
@@ -51,7 +53,6 @@ function pickDefaultActiveId(list: WorkflowInstance[], projectId: string | null)
 // ─── Composable ───────────────────────────────────────────────────────────────
 
 export const useProjectWorkflow = () => {
-
   // ── Loading ────────────────────────────────────────────────────────────────
 
   /**
@@ -164,7 +165,9 @@ export const useProjectWorkflow = () => {
         color: 'success',
         duration: 8000,
       })
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     // Auto-advance to the next incomplete workflow in the list
     const currentIdx = workflows.value.findIndex((x) => x.id === w.id)

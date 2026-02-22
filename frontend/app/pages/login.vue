@@ -90,7 +90,6 @@ async function handleRegistration() {
 
 <template>
   <div class="items-center justify-center flex-col flex">
-
     <!-- Workflow button fixed bottom-left -->
     <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
       <WorkflowSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />

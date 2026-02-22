@@ -52,7 +52,9 @@ const props = withDefaults(defineProps<Props>(), {
       <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
-            <div class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0">
+            <div
+              class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0"
+            >
               <UIcon :name="props.icon" class="size-5" />
             </div>
             <div class="min-w-0">
@@ -66,9 +68,14 @@ const props = withDefaults(defineProps<Props>(), {
           </div>
 
           <!-- Hover "Open →" label (replaces badge) -->
-          <div class="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 mt-0.5">
+          <div
+            class="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 mt-0.5"
+          >
             <span>{{ props.ctaLabel }}</span>
-            <UIcon name="i-lucide-arrow-right" class="size-3 group-hover:translate-x-0.5 transition-transform" />
+            <UIcon
+              name="i-lucide-arrow-right"
+              class="size-3 group-hover:translate-x-0.5 transition-transform"
+            />
           </div>
         </div>
 
@@ -89,7 +96,10 @@ const props = withDefaults(defineProps<Props>(), {
             </p>
           </div>
 
-          <p v-if="props.previewMoreLabel" class="text-sm text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+          <p
+            v-if="props.previewMoreLabel"
+            class="text-sm text-gray-500 dark:text-gray-400 px-1 pt-0.5"
+          >
             {{ props.previewMoreLabel }}
           </p>
         </div>
@@ -125,7 +135,9 @@ const props = withDefaults(defineProps<Props>(), {
       <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
-            <div class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0">
+            <div
+              class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0"
+            >
               <UIcon :name="props.icon" class="size-5" />
             </div>
             <div class="min-w-0">
@@ -155,7 +167,10 @@ const props = withDefaults(defineProps<Props>(), {
               {{ item.text }}
             </p>
           </div>
-          <p v-if="props.previewMoreLabel" class="text-sm text-gray-500 dark:text-gray-400 px-1 pt-0.5">
+          <p
+            v-if="props.previewMoreLabel"
+            class="text-sm text-gray-500 dark:text-gray-400 px-1 pt-0.5"
+          >
             {{ props.previewMoreLabel }}
           </p>
         </div>

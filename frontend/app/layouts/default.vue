@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { PageConfig } from '~/types/page-config'
 import type { MockWorkflow } from '~/mock_data/mock_workflow'
 import { MOCK_EXTERNAL_LINKS } from '~/mock_data/mock_external-links'
@@ -212,38 +212,54 @@ const groups = computed(() => [
 // ─── Getting Oriented substep auto-completion ─────────────────────────────────
 
 // Routes that count as "a module" (everything except dashboard itself)
-const MODULE_ROUTES = ['/pillars', '/pxcharts', '/pxnodes', '/pxcomponentdefinitions', '/pxcomponents', '/player-expectations', '/player-experience', '/sentiments', '/edit']
+const MODULE_ROUTES = [
+  '/pillars',
+  '/pxcharts',
+  '/pxnodes',
+  '/pxcomponentdefinitions',
+  '/pxcomponents',
+  '/player-expectations',
+  '/player-experience',
+  '/sentiments',
+  '/edit',
+]
 
 /** Try to complete a substep only if it is currently pending/active (idempotent). */
 async function tryCompleteSubstep(stepId: string, substepId: string) {
   const w = projectWorkflow.workflow.value
   if (!w) return
-  const step = w.steps.find(s => s.id === stepId)
+  const step = w.steps.find((s) => s.id === stepId)
   if (!step) return
-  const ss = step.substeps.find(x => x.id === substepId)
+  const ss = step.substeps.find((x) => x.id === substepId)
   if (!ss || ss.status === 'complete') return
   await projectWorkflow.toggleSubstep(stepId, substepId)
 }
 
 // onb-1-1: first time the user navigates to any module page (not dashboard)
 const hasVisitedModule = ref(false)
-watch(() => route.path, (path) => {
-  if (hasVisitedModule.value) return
-  if (MODULE_ROUTES.some(r => path.startsWith(r)) && path !== '/dashboard') {
-    hasVisitedModule.value = true
-    tryCompleteSubstep('onb-1', 'onb-1-1')
-  }
-})
+watch(
+  () => route.path,
+  (path) => {
+    if (hasVisitedModule.value) return
+    if (MODULE_ROUTES.some((r) => path.startsWith(r)) && path !== '/dashboard') {
+      hasVisitedModule.value = true
+      tryCompleteSubstep('onb-1', 'onb-1-1')
+    }
+  },
+)
 
 // onb-1-2: first time the user lands on /edit (Settings page)
 const hasVisitedSettings = ref(false)
-watch(() => route.path, (path) => {
-  if (hasVisitedSettings.value) return
-  if (path.startsWith('/edit')) {
-    hasVisitedSettings.value = true
-    tryCompleteSubstep('onb-1', 'onb-1-2')
-  }
-})
+watch(
+  () => route.path,
+  (path) => {
+    if (hasVisitedSettings.value) return
+    if (path.startsWith('/edit')) {
+      hasVisitedSettings.value = true
+      tryCompleteSubstep('onb-1', 'onb-1-2')
+    }
+  },
+)
 
 // onb-1-3: first time the search bar is opened
 const hasOpenedSearch = ref(false)
