@@ -2,6 +2,9 @@
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
 // ============================================================================
+// MOCK DATA FOR DASHBOARD CARDS
+import { mockRecentActivity } from '~/mock_data/mock_recent-activity'
+
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -45,27 +48,7 @@ const navigateToModule = (route: string) => {
   navigateTo(`${route}${projectQuery}`)
 }
 
-// MOCK DATA FOR DASHBOARD CARDS
-const mock_historyData = computed(() => [
-  {
-    title: 'Set new Project Icon',
-    timestamp: '10 min ago',
-    icon: 'i-lucide-folder-open',
-    type: 'edit' as const,
-  },
-  {
-    title: 'Created New Pillar "testPillar1"',
-    timestamp: '2 hours ago',
-    icon: 'i-lucide-plus',
-    type: 'create' as const,
-  },
-  {
-    title: 'Adjusted PX Chart "Main Story Arc"',
-    timestamp: 'Yesterday',
-    icon: 'i-lucide-trash',
-    type: 'delete' as const,
-  },
-])
+const mock_historyData = computed(() => mockRecentActivity)
 </script>
 
 <template>

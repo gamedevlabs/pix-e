@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { mockAiInsights } from '~/mock_data/mock_ai-insights'
+
 interface Insight {
   type: 'info' | 'warning' | 'success'
   title: string
@@ -11,26 +13,9 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// TODO: Connect mock data to real backend (ai-insights)
-const insights = computed(
-  () =>
-    props.insights ?? [
-      {
-        type: 'info',
-        title: 'Missing PX Nodes',
-        message: 'You have combat expectations defined but no associated PX nodes yet.',
-      },
-      {
-        type: 'warning',
-        title: 'Pacing Diagram Gap',
-        message: 'Your pacing diagram lacks content around mid-game; consider adding events.',
-      },
-      {
-        type: 'success',
-        title: 'Good Alignment',
-        message: 'Your design pillars align well with player expectations.',
-      },
-    ],
+// Use shared mock data by default (until wired to backend)
+const insights = computed<Insight[]>(
+  () => props.insights ?? (mockAiInsights as unknown as Insight[]),
 )
 
 const getInsightConfig = (type: Insight['type']) => {
@@ -61,15 +46,7 @@ const getInsightConfig = (type: Insight['type']) => {
 <template>
   <DashboardCard title="AI Insights & Suggestions" icon="i-lucide-sparkles">
     <template #actions>
-      <UBadge
-        color="neutral"
-        variant="soft"
-        size="xs"
-        class="cursor-help"
-        title="Mock data (feature not wired up yet)"
-      >
-        Mock
-      </UBadge>
+      <MockDataBadge />
     </template>
 
     <div class="space-y-3">
