@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { onMounted, computed } from '#imports'
-import type { WorkflowStep } from '~/composables/useProjectWorkflow'
+import type { WorkflowStep } from '~/utils/workflow'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import type { StepperItem } from '@nuxt/ui'
 
@@ -60,7 +60,7 @@ const navigateToCurrentStep = () => {
   <DashboardCard title="Workflow" icon="i-lucide-list-checks">
     <template #actions>
       <UButton
-        v-if="current?.route"
+        v-if="!loading && current?.route"
         color="primary"
         size="sm"
         trailing-icon="i-lucide-arrow-right"
@@ -71,9 +71,26 @@ const navigateToCurrentStep = () => {
     </template>
 
     <div class="space-y-4">
+      <!-- Loading state (skeleton + spinner) -->
+      <div v-if="loading" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="h-4 w-44 rounded bg-gray-200/70 dark:bg-gray-800/70 animate-pulse" />
+          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <UIcon name="i-lucide-loader-2" class="animate-spin" />
+            <span>Loading workflow…</span>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="h-10 rounded bg-gray-200/70 dark:bg-gray-800/70 animate-pulse" />
+          <div class="h-10 rounded bg-gray-200/60 dark:bg-gray-800/60 animate-pulse" />
+          <div class="h-10 rounded bg-gray-200/50 dark:bg-gray-800/50 animate-pulse" />
+        </div>
+      </div>
+
       <!-- Stepper -->
       <UStepper
-        v-if="!loading && stepperItems.length > 0"
+        v-else-if="stepperItems.length > 0"
         :model-value="activeStepValue"
         :items="stepperItems"
         color="primary"
@@ -94,9 +111,18 @@ const navigateToCurrentStep = () => {
         </template>
       </UStepper>
 
-      <!-- Loading state -->
-      <div v-else-if="loading" class="flex items-center justify-center py-8">
-        <UIcon name="i-lucide-loader-2" class="animate-spin text-primary-500" />
+      <!-- Empty state (after loading) -->
+      <div v-else class="py-6">
+        <div class="flex items-start gap-3">
+          <UIcon name="i-lucide-inbox" class="mt-0.5 text-gray-500 dark:text-gray-400" />
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">No workflow yet</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Once a workflow is created for this project, it’ll show up here so you can continue
+              where you left off.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </DashboardCard>
