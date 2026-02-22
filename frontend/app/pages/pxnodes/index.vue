@@ -20,6 +20,12 @@ const {
   deleteItem: deletePxNode,
 } = usePxNodes()
 
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
 onMounted(() => {
   fetchPxNodes()
 })
@@ -32,6 +38,8 @@ function addItem() {
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
   await createPxNode({ ...newEntityDraft })
+  // px-2-2: "Create your first node"
+  await toggleSubstep('px-2', 'px-2-2')
   newItem.value = null
 }
 
@@ -40,6 +48,11 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
 async function handleForeignAddComponent() {
   pxNodes.value = []
   await fetchPxNodes()
+}
+
+async function handleAddComponent() {
+  // px-2-3: "Add a component to your new node"
+  await toggleSubstep('px-2', 'px-2-3')
 }
 </script>
 
@@ -56,6 +69,7 @@ async function handleForeignAddComponent() {
             :visualization-style="'detailed'"
             @delete="deletePxNode"
             @add-foreign-component="handleForeignAddComponent"
+            @add-component="handleAddComponent"
           />
         </div>
         <div v-if="newItem">

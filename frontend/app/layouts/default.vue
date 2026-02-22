@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import type { PageConfig } from '~/types/page-config'
 import type { MockWorkflow } from '~/mock_data/mock_workflow'
 import { MOCK_EXTERNAL_LINKS } from '~/mock_data/mock_external-links'
