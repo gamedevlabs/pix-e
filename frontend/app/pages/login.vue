@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
+import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
@@ -13,12 +14,26 @@ definePageMeta({
 })
 // ============================================================================
 
-const state = reactive({
-  username: '',
-  password: '',
-})
+const state = reactive({ username: '', password: '' })
 const authentication = useAuthentication()
 const show = ref(false)
+
+const { loadForUser, toggleSubstep } = useProjectWorkflow()
+const projectWorkflow = useProjectWorkflow()
+
+const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const activeWorkflowTitle = computed(() => {
+  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
+  const activeId = projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === activeId)
+  return w?.meta?.title || 'Getting Started'
+})
+
+onMounted(async () => {
+  await loadForUser()
+  // Opening the login page counts as completing the first substep
+  await toggleSubstep('user-onb-1', 'user-onb-1-1')
+})
 
 const validate = (state: { username: string; password: string }): FormError[] => {
   const errors = []
@@ -32,6 +47,8 @@ const toast = useToast()
 async function handleLogin() {
   const success = await authentication.login(state.username, state.password)
   if (success) {
+    // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
+    await toggleSubstep('user-onb-1', 'user-onb-1-2')
     toast.add({
       title: 'Login Successful',
       description: `Welcome Back ${state.username}`,
@@ -54,6 +71,8 @@ async function handleRegistration() {
   }
   const success = await authentication.register(state.username, state.password)
   if (success) {
+    // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
+    await toggleSubstep('user-onb-1', 'user-onb-1-2')
     toast.add({
       title: 'Registration Successful',
       description: `Welcome ${state.username}`,
@@ -71,6 +90,13 @@ async function handleRegistration() {
 
 <template>
   <div class="items-center justify-center flex-col flex">
+
+    <!-- Workflow button fixed bottom-left -->
+    <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
+      <WorkflowSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
+    </div>
+    <WorkflowSlideover />
+
     <h1 class="text-2xl font-bold mb-4">Login</h1>
     <UForm :validate="validate" :state="state" class="space-y-4 w-60">
       <UFormField label="Username" name="username" size="lg" required>

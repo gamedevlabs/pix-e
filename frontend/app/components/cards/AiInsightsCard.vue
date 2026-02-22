@@ -44,7 +44,7 @@ const getInsightConfig = (type: Insight['type']) => {
 </script>
 
 <template>
-  <DashboardCard title="AI Insights & Suggestions" icon="i-lucide-sparkles">
+  <DashboardCard title="AI Insights & Suggestions" icon="i-lucide-sparkles" :login-required="true">
     <template #actions>
       <MockDataBadge />
     </template>

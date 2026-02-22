@@ -4,7 +4,7 @@ import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
-import type { MockWorkflow } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const router = useRouter()
@@ -24,13 +24,8 @@ const currentStep = ref(1)
 const totalSteps = 3
 const submitting = ref(false)
 
-// Track which substeps of the first workflow step the user completed in the wizard
-// We can't persist these to a workflow until the project exists, so we keep local flags
-const didBasicInfo = ref(false) // corresponds to s1-1
-const didProjectDetails = ref(false) // corresponds to s1-2
-
 // Initialize workflow composable so we can persist substep progress after project creation
-const { loadForProject, toggleSubstep } = useProjectWorkflow()
+const { loadForUser, toggleSubstep, completeOnboarding } = useProjectWorkflow()
 
 // Form data
 const form = reactive({
@@ -102,7 +97,11 @@ const loadProjectForDuplication = async () => {
 }
 
 // Load on mount if duplicating
-onMounted(() => {
+onMounted(async () => {
+  // Mark "Follow the creation guide" substep as active/started when the page opens
+  await loadForUser()
+  await toggleSubstep('user-onb-2', 'user-onb-2-1')
+
   if (duplicateId.value) {
     loadProjectForDuplication()
   }
@@ -214,12 +213,6 @@ function nextStep() {
   if (!validateStep(currentStep.value)) {
     return
   }
-  // Mark local progress for workflow substeps in the first category
-  if (currentStep.value === 1) {
-    didBasicInfo.value = true
-  } else if (currentStep.value === 2) {
-    didProjectDetails.value = true
-  }
   if (currentStep.value < totalSteps) {
     currentStep.value++
   }
@@ -240,7 +233,7 @@ function openUploadModal() {
 }
 
 function closeUploadModal() {
-  isUploadModal.value = false
+  isUploadModalOpen.value = false
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -261,29 +254,25 @@ async function createNewProject() {
 
   submitting.value = true
   try {
-    // If user uploaded a file, convert to data URL and attach as icon
     let iconToSend: string | null = null
     if (uploadedFile.value) {
       try {
         iconToSend = await fileToDataUrl(uploadedFile.value)
       } catch {
-        // ignore conversion errors and continue without icon
         iconToSend = null
       }
     } else if (form.icon) {
-      // user might have a preset icon URL (not in this flow), preserve it
       iconToSend = form.icon
     }
 
     const created = await createProject({
       name: form.name!.trim(),
       shortDescription: form.shortDescription?.trim() ?? '',
-      genre: form.genre.join(', '), // Join array into string
+      genre: form.genre.join(', '),
       targetPlatform: form.targetPlatform as Project['targetPlatform'],
       icon: iconToSend,
     })
 
-    // Show success message
     const toast = useToast()
     toast.add({
       title: 'Success!',
@@ -292,33 +281,17 @@ async function createNewProject() {
       icon: 'i-heroicons-check-circle',
     })
 
+    // Complete the user onboarding: marks "Follow the creation guide" done,
+    // auto-completes the Done step, and embeds the completed snapshot into
+    // the new project's workflow list as the first phase.
+    try {
+      await completeOnboarding(created.id)
+    } catch (e) {
+      console.warn('Failed to complete onboarding workflow:', e)
+    }
+
     // Switch to the created project and navigate to dashboard
     await switchProject(created.id)
-
-    // Persist wizard progress into the project's workflow.
-    // Load/create a workflow for the newly created project and toggle the first-step substeps
-    try {
-      await loadForProject(created.id)
-      // The mock workflow for the first step expects step id 's-1' and substep ids s1-1..s1-3
-      // Decide which substeps to mark complete based on local flags OR the current wizard step
-      // (this handles duplication where the user jumps directly to review)
-      const markBasic = didBasicInfo.value || currentStep.value >= 2
-      const markDetails = didProjectDetails.value || currentStep.value >= 3
-
-      // Note: toggleSubstep only completes a substep if it's currently active. We toggle in order.
-      if (markBasic) {
-        await toggleSubstep('s-1', 's1-1')
-      }
-      if (markDetails) {
-        await toggleSubstep('s-1', 's1-2')
-      }
-      // Always toggle the final review/creation substep as the create action
-      await toggleSubstep('s-1', 's1-3')
-    } catch (e) {
-      // Don't block the user; log the failure to console for debugging
-
-      console.warn('Failed to update project workflow:', e)
-    }
   } catch {
     const toast = useToast()
     toast.add({
@@ -345,7 +318,7 @@ const platformOptions = platformConfigs
 const projectWorkflow = useProjectWorkflow()
 const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
 const activeWorkflowTitle = computed(() => {
-  const list = (projectWorkflow.workflows?.value || []) as MockWorkflow[]
+  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
   const activeId = projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === activeId)
   return w?.meta?.title || 'Workflow Guide'
