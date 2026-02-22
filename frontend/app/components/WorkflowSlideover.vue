@@ -119,27 +119,13 @@ const groupedWorkflows = computed(() => {
     groups[folder].push(w)
   }
   // Desired display order for the phase picker.
-  const phaseOrder = ['Onboarding', 'Concept and Planning', 'Validation', 'Discover'] as const
+  const phaseOrder = ['Onboarding', 'Design & Validation', 'Discover More'] as const
 
-  // Some phases are named differently in workflow meta (e.g. "Concept & Design").
-  // Map these to the desired canonical phases so ordering stays correct.
   const canonicalizePhase = (folder: string) => {
     const raw = displayPhaseName(folder).trim().toLowerCase()
-
     if (raw.includes('onboard')) return 'onboarding'
-    if (raw.includes('valid')) return 'validation'
-    if (raw.includes('discover')) return 'discover'
-
-    // Concept & Planning bucket (common variants)
-    if (
-      raw.includes('concept') ||
-      raw.includes('plan') ||
-      raw.includes('design') ||
-      raw.includes('&')
-    ) {
-      return 'concept and planning'
-    }
-
+    if (raw.includes('discover')) return 'discover more'
+    if (raw.includes('design') || raw.includes('validation')) return 'design & validation'
     return raw
   }
 
