@@ -24,6 +24,12 @@ const selectedGenres = ref([])
 const selectedSentiment = ref('')
 const selectedGames = ref([])
 
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
 // Fetch data from API
 const fetchSentiments = async () => {
   loading.value = true
@@ -42,7 +48,11 @@ const fetchSentiments = async () => {
 }
 
 // Initial data load
-onMounted(fetchSentiments)
+onMounted(async () => {
+  await fetchSentiments()
+  // pe-1-2: "Inspect Sentiment Analysis" — completes as soon as this page mounts
+  await toggleSubstep('pe-1', 'pe-1-2')
+})
 
 // Dynamic options for filters
 const uniqueGenres = computed(() => {
