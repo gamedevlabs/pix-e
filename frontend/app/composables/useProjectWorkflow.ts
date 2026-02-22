@@ -1,5 +1,5 @@
 ﻿import { ref, computed, readonly } from '#imports'
-import { WorkflowApiEmulator } from '~/mock_data/mock_workflow'
+import { WorkflowApiEmulator, WORKFLOW_TEMPLATE, ONBOARDING_TEMPLATE } from '~/mock_data/mock_workflow'
 import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 import type { StepStatus, WorkflowStep } from '~/utils/workflow'
 
@@ -143,6 +143,17 @@ export const useProjectWorkflow = () => {
     return Math.round((done / step.substeps.length) * 100)
   })
 
+  /** Look up the completionMessage for a workflow instance from the templates. */
+  function getCompletionMessage(w: WorkflowInstance): string {
+    // Derive the phase id from the workflow id (format: wf-<projectId>-<phaseId>)
+    const phaseId = w.id.replace(/^wf-[^-]+-/, '')
+    if (phaseId === ONBOARDING_TEMPLATE.id) {
+      return ONBOARDING_TEMPLATE.completionMessage ?? 'Workflow complete!'
+    }
+    const phase = WORKFLOW_TEMPLATE.find((p) => p.id === phaseId)
+    return phase?.completionMessage ?? 'Workflow complete!'
+  }
+
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   const saveActiveWorkflow = async () => {
@@ -258,6 +269,21 @@ export const useProjectWorkflow = () => {
           }
         }
         w.currentStepIndex = stepIndex + 1
+      } else {
+        // Last step completed — the whole workflow is done
+        const allWorkflowSubsteps = w.steps.flatMap((s) => s.substeps)
+        const allWorkflowDone = allWorkflowSubsteps.every((ss) => ss.status === 'complete')
+        if (allWorkflowDone && !w.finished_at) {
+          w.finished_at = now
+          try {
+            useToast().add({
+              title: `🎉 "${w.meta.title}" complete!`,
+              description: getCompletionMessage(w),
+              color: 'success',
+              duration: 8000,
+            })
+          } catch { /* ignore */ }
+        }
       }
     } else {
       step.status = anyProgress ? 'active' : 'pending'
@@ -296,9 +322,10 @@ export const useProjectWorkflow = () => {
       w.finished_at = now
       try {
         useToast().add({
-          title: 'Workflow completed',
-          description: 'You finished the last step!',
+          title: `🎉 "${w.meta.title}" complete!`,
+          description: getCompletionMessage(w),
           color: 'success',
+          duration: 8000,
         })
       } catch { /* ignore */ }
     }

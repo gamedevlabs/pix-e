@@ -3,10 +3,12 @@ import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
+import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
+const { close: closeSlideover } = useWorkflowSlideover()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
@@ -98,9 +100,8 @@ const loadProjectForDuplication = async () => {
 
 // Load on mount if duplicating
 onMounted(async () => {
-  // Mark "Follow the creation guide" substep as active/started when the page opens
+  // Activate the first substep ("Project Information") when the page opens
   await loadForUser()
-  await toggleSubstep('user-onb-2', 'user-onb-2-1')
 
   if (duplicateId.value) {
     loadProjectForDuplication()
@@ -215,6 +216,12 @@ function nextStep() {
   }
   if (currentStep.value < totalSteps) {
     currentStep.value++
+    // Mark the corresponding substep complete when the user advances
+    if (currentStep.value === 2) {
+      toggleSubstep('user-onb-2', 'user-onb-2-1')
+    } else if (currentStep.value === 3) {
+      toggleSubstep('user-onb-2', 'user-onb-2-2')
+    }
   }
 }
 
@@ -285,6 +292,7 @@ async function createNewProject() {
     // auto-completes the Done step, and embeds the completed snapshot into
     // the new project's workflow list as the first phase.
     try {
+      await toggleSubstep('user-onb-2', 'user-onb-2-3')
       await completeOnboarding(created.id)
     } catch (e) {
       console.warn('Failed to complete onboarding workflow:', e)
@@ -292,6 +300,7 @@ async function createNewProject() {
 
     // Switch to the created project and navigate to dashboard
     await switchProject(created.id)
+    closeSlideover() // Close the slideover after switching projects
   } catch {
     const toast = useToast()
     toast.add({

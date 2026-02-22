@@ -48,6 +48,8 @@ export interface PhaseTemplate {
   title: string
   /** Folder / phase group shown in the slideover. */
   folder: string
+  /** Toast message shown when the user completes this workflow. */
+  completionMessage?: string
   steps: StepTemplate[]
 }
 
@@ -61,6 +63,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'onboarding',
     title: 'Getting Oriented',
     folder: 'Onboarding',
+    completionMessage: "You're all oriented — the dashboard and navigation are yours to explore. Time to dive into your first design phase!",
     steps: [
       {
         id: 'onb-1',
@@ -78,6 +81,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'pillars',
     title: 'Design Pillars',
     folder: 'Concept & Design',
+    completionMessage: "Great work on your Design Pillars! Your pillars are shaping the vision. Check out Player Experience next to start mapping the journey.",
     steps: [
       {
         id: 'pillars-1',
@@ -110,6 +114,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'player-experience',
     title: 'Player Experience',
     folder: 'Concept & Design',
+    completionMessage: "Player Experience complete! Your PX chart and node graph are looking solid. Head over to Player Expectations to validate your design.",
     steps: [
       {
         id: 'px-1',
@@ -143,6 +148,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'player-expectations',
     title: 'Player Expectations',
     folder: 'Validation',
+    completionMessage: "Validation done! You've captured and reviewed your player expectations. Why not explore the Movie Script Evaluator next?",
     steps: [
       {
         id: 'pe-1',
@@ -167,6 +173,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'movie-script-evaluator',
     title: 'Movie Script Evaluator',
     folder: 'Discover',
+    completionMessage: "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production. 🎉",
     steps: [
       {
         id: 'mse-1',
@@ -200,6 +207,7 @@ export const ONBOARDING_TEMPLATE: PhaseTemplate = {
   id: 'user-onboarding',
   title: 'Getting Started',
   folder: 'Onboarding',
+  completionMessage: "You've completed the Getting Started workflow! Your first project is ready — open it and begin your design journey.",
   steps: [
     {
       id: 'user-onb-1',
@@ -217,7 +225,9 @@ export const ONBOARDING_TEMPLATE: PhaseTemplate = {
       description: 'Set up a project so you can use the project workflows.',
       route: '/create',
       substeps: [
-        { id: 'user-onb-2-1', name: 'Follow the creation guide', route: '/create' },
+        { id: 'user-onb-2-1', name: 'Project Information', route: '/create' },
+        { id: 'user-onb-2-2', name: 'Project Details', route: '/create' },
+        { id: 'user-onb-2-3', name: 'Review Project Settings', route: '/create' },
       ],
     },
     {
