@@ -52,205 +52,122 @@ const mock_historyData = computed(() => mockRecentActivity)
 </script>
 
 <template>
-  <UPage>
-    <UPageBody>
-      <div class="space-y-6">
-        <!-- Project header (compact + aligned) -->
-        <UCard class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <div class="p-1">
-            <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div class="flex items-center gap-4 min-w-0">
-                <UAvatar
-                  v-if="!currentProject?.icon"
-                  :text="getProjectInitials(currentProject?.name || 'Project')"
-                  :alt="currentProject?.name || 'Project'"
-                  size="xl"
-                />
-                <div v-else class="text-5xl leading-none">{{ currentProject.icon }}</div>
+  <div class="max-w-screen-2xl mx-auto w-full px-2 py-8 space-y-10">
 
-                <div class="min-w-0">
-                  <h1
-                    class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-gray-100 truncate"
-                  >
-                    {{ currentProject?.name || 'Project' }}
-                  </h1>
-                  <p class="text-base text-gray-600 dark:text-gray-400 truncate">
-                    Design games with research.
-                  </p>
-                </div>
-              </div>
+    <!-- ─── Project Header ──────────────────────────────────────────────── -->
+    <UCard
+      class="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+      :ui="{ body: 'px-6 py-5' }"
+    >
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
 
-              <!-- Right side: platform + genres on a grid + settings (top-right) + last edited (bottom-right) -->
-              <div class="w-full lg:w-auto">
-                <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-3 lg:gap-4">
-                  <!-- Left column: platform + genres (grid-driven spacing/alignment) -->
-                  <div class="grid gap-2">
-                    <!-- Platform row (single item, still aligned to genre grid) -->
-                    <div class="grid grid-cols-[max-content_1fr] items-center gap-2">
-                      <UBadge color="primary" variant="subtle" size="sm" class="w-max">
-                        <UIcon name="i-lucide-monitor" class="mr-1" />
-                        PC, Console
-                      </UBadge>
-                    </div>
+        <!-- Left: avatar + name + description -->
+        <div class="flex items-center gap-4 min-w-0">
+          <UAvatar
+            v-if="!currentProject?.icon"
+            :text="getProjectInitials(currentProject?.name || 'Project')"
+            :alt="currentProject?.name || 'Project'"
+            size="xl"
+            class="shrink-0 text-primary bg-primary-100 dark:bg-primary-900/50 font-bold ring-2 ring-primary-200 dark:ring-primary-800"
+          />
+          <div v-else class="text-5xl leading-none shrink-0">{{ currentProject.icon }}</div>
 
-                    <!-- Genres row: uses CSS grid for consistent spacing; wraps automatically -->
-                    <div class="grid grid-cols-[repeat(auto-fit,minmax(110px,max-content))] gap-2">
-                      <UBadge color="primary" variant="subtle" size="sm" class="justify-center">
-                        Action RPG
-                      </UBadge>
-                      <UBadge color="primary" variant="subtle" size="sm" class="justify-center">
-                        Open World
-                      </UBadge>
-                      <!-- When real data is wired, render all genres here; grid will handle 1..N nicely -->
-                    </div>
-                  </div>
-
-                  <!-- Right column: settings (top), status + last edited (bottom) -->
-                  <div class="flex flex-col items-end justify-between gap-2">
-                    <UButton
-                      icon="i-lucide-settings"
-                      size="sm"
-                      color="neutral"
-                      variant="ghost"
-                      label="Settings"
-                      @click="navigateToModule('/edit')"
-                    />
-
-                    <div
-                      class="grid grid-cols-[max-content_max-content] items-center justify-end gap-2"
-                    >
-                      <UBadge color="success" variant="subtle" size="sm" class="w-max">
-                        Active
-                      </UBadge>
-                      <UBadge color="neutral" variant="soft" size="sm" class="w-max">
-                        <UIcon name="i-lucide-clock" class="mr-1" />
-                        Today, 2:30 PM
-                      </UBadge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="min-w-0">
+            <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">
+              {{ currentProject?.name || 'Project' }}
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
+              {{ currentProject?.shortDescription || 'No description' }}
+            </p>
           </div>
-        </UCard>
+        </div>
 
-        <!-- Main dashboard layout -->
-        <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-6">
-          <!-- Left: Modules -->
-          <section class="space-y-3">
-            <div class="flex items-center justify-between">
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Modules</h2>
-              <UBadge color="neutral" variant="soft" size="xs">Open a module to continue</UBadge>
-            </div>
+        <!-- Right: meta row + actions -->
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <!-- Genre badges from real data -->
+          <template v-if="currentProject?.genre">
+            <UBadge
+              v-for="g in currentProject.genre.split(',').map((s: string) => s.trim()).filter(Boolean)"
+              :key="g"
+              color="neutral"
+              variant="soft"
+              size="sm"
+            >
+              {{ g }}
+            </UBadge>
+          </template>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <DashboardModuleCard
-                title="PX Charts"
-                description="Build and explore PX charts"
-                icon="i-lucide-chart-network"
-                to="/pxcharts"
-                cta-label="Open"
-                :badge-label="pxCharts.length ? `${pxCharts.length} charts` : 'New'"
-              />
+          <UBadge color="success" variant="subtle" size="sm">
+            <UIcon name="i-lucide-circle" class="mr-1 size-2 fill-current" />
+            Active
+          </UBadge>
 
-              <DashboardModuleCard
-                title="Player Expectations"
-                description="Benchmarks, sentiment, and alignment"
-                icon="i-lucide-users"
-                to="/player-expectations"
-                cta-label="Open"
-                badge-label="87%"
-              />
-
-              <DashboardModuleCard
-                title="Design Pillars"
-                description="Define your game's foundations"
-                icon="i-lucide-layers"
-                to="/pillars"
-                cta-label="Manage"
-                :badge-label="pillars.length ? `${pillars.length}` : 'New'"
-              />
-            </div>
-
-            <!-- Helpful overview content (kept, but visually quieter) -->
-            <SimpleContentWrapper>
-              <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <UCard class="hover:shadow-lg transition">
-                  <template #header>
-                    <h2 class="font-semibold text-lg">Formalized Player Experience</h2>
-                  </template>
-                  <p>
-                    You can design player experiences through a formalization (currently being
-                    implemented).
-                  </p>
-                </UCard>
-                <UCard class="hover:shadow-lg transition">
-                  <template #header>
-                    <h2 class="font-semibold text-lg">LLM supported Design Pillars</h2>
-                  </template>
-                  <p>
-                    The tool has design pillar functionality, that is validated and cross-checked by
-                    the help of LLMs to make sure your design stays consistent.
-                  </p>
-                </UCard>
-                <UCard class="hover:shadow-lg transition">
-                  <template #header>
-                    <h2 class="font-semibold text-lg">Moodboard Generation</h2>
-                  </template>
-                  <p>
-                    Through multimodal LLMs, you can design your moodboard directly in the app by
-                    describing and interaction with the tool.
-                  </p>
-                </UCard>
-                <UCard class="hover:shadow-lg transition">
-                  <template #header>
-                    <h2 class="font-semibold text-lg">Player Expectations Dashboard</h2>
-                  </template>
-                  <p>
-                    What do players expect when buying different genre games? What do they like or
-                    dislike? For these insights and more, visit the Player Expectations module.
-                  </p>
-                </UCard>
-                <UCard class="hover:shadow-lg transition">
-                  <template #header>
-                    <h2 class="font-semibold text-lg">Unified Agentic AI Interface</h2>
-                  </template>
-                  <p>
-                    All pix:e AI features are powered by a unified agentic interface. The agentic
-                    approach ensures top-tier results through tool usage and improved context
-                    awareness.
-                  </p>
-                </UCard>
-                <UCard class="hover:shadow-lg transition">
-                  <template #header>
-                    <h2 class="font-semibold text-lg">
-                      Movie Script Evaluator for Virtual Production
-                    </h2>
-                  </template>
-                  <p>
-                    This tool is to evaluate movie scripts through LLMs based on the assets
-                    available in the game engine for virtual production purposes.
-                  </p>
-                </UCard>
-              </section>
-            </SimpleContentWrapper>
-          </section>
-
-          <!-- Right: Information -->
-          <aside class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Updates</h2>
-              <UBadge color="neutral" variant="soft" size="xs">Info</UBadge>
-            </div>
-
-            <AiInsightsCard />
-            <WorkflowCard orientation="vertical" />
-            <HistoryCard :items="mock_historyData" title="Recent Activity" />
-          </aside>
+          <UButton
+            icon="i-lucide-settings"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            label="Settings"
+            @click="navigateToModule('/edit')"
+          />
         </div>
       </div>
-    </UPageBody>
-  </UPage>
+    </UCard>
+
+    <!-- ─── 3-col layout (mirrors landing page) ───────────────────────── -->
+    <div class="grid grid-cols-1 xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
+
+      <!-- Left side panel -->
+      <aside class="hidden xl:flex flex-col gap-4">
+        <WorkflowCard orientation="vertical" />
+        <HistoryCard :items="mock_historyData" title="Recent Activity" />
+      </aside>
+
+      <!-- Center: Modules -->
+      <div class="space-y-5 min-w-0">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-6 w-1 rounded-full bg-primary" />
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Modules</h2>
+          </div>
+          <UBadge color="neutral" variant="soft" size="sm">Select a module to continue</UBadge>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DashboardModuleCard
+            title="PX Charts"
+            description="Build and explore player experience charts"
+            icon="i-lucide-chart-network"
+            to="/pxcharts"
+            cta-label="Open"
+            :badge-label="pxCharts.length ? `${pxCharts.length} charts` : 'New'"
+          />
+          <DashboardModuleCard
+            title="Player Expectations"
+            description="Benchmarks, sentiment, and alignment"
+            icon="i-lucide-users"
+            to="/player-expectations"
+            cta-label="Open"
+            badge-label="87%"
+          />
+          <DashboardModuleCard
+            title="Design Pillars"
+            description="Define your game's core foundations"
+            icon="i-lucide-layers"
+            to="/pillars"
+            cta-label="Manage"
+            :badge-label="pillars.length ? `${pillars.length}` : 'New'"
+          />
+        </div>
+      </div>
+
+      <!-- Right side panel -->
+      <aside class="hidden xl:flex flex-col gap-4">
+        <AiInsightsCard />
+      </aside>
+
+    </div>
+  </div>
 </template>
 
 <style scoped></style>

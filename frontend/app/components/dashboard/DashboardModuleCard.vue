@@ -36,11 +36,11 @@ const props = withDefaults(defineProps<Props>(), {
 
 <template>
   <UCard
-    class="group transition-all"
+    class="group transition-all border-l-[3px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
     :class="[
       props.disabled
-        ? 'opacity-60'
-        : 'hover:shadow-lg hover:-translate-y-0.5 hover:border-primary cursor-pointer',
+        ? 'opacity-60 border-l-gray-300 dark:border-l-gray-600'
+        : 'border-l-primary/60 hover:border-l-primary hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-xl hover:-translate-y-1 cursor-pointer',
     ]"
   >
     <NuxtLink
@@ -52,28 +52,19 @@ const props = withDefaults(defineProps<Props>(), {
       <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
-            <div
-              class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0"
-            >
+            <div class="mt-0.5 rounded-md p-2 bg-primary-50 dark:bg-primary-950/30 text-primary shrink-0">
               <UIcon :name="props.icon" class="size-5" />
             </div>
             <div class="min-w-0">
-              <p class="text-base font-semibold text-gray-900 dark:text-gray-100 truncate">
+              <p class="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
                 {{ props.title }}
               </p>
-              <p v-if="props.description" class="text-sm text-gray-600 dark:text-gray-400">
+              <p v-if="props.description" class="text-sm text-gray-500 dark:text-gray-400">
                 {{ props.description }}
               </p>
             </div>
           </div>
-
-          <UBadge
-            v-if="props.badgeLabel"
-            color="primary"
-            variant="subtle"
-            size="xs"
-            class="shrink-0"
-          >
+          <UBadge v-if="props.badgeLabel" color="primary" variant="subtle" size="xs" class="shrink-0">
             {{ props.badgeLabel }}
           </UBadge>
         </div>
@@ -124,7 +115,10 @@ const props = withDefaults(defineProps<Props>(), {
         </div>
         <slot v-else name="insight" />
 
-        <div class="flex items-center justify-end">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors">
+            Click to open
+          </span>
           <UButton
             :label="props.ctaLabel"
             color="primary"
@@ -136,6 +130,7 @@ const props = withDefaults(defineProps<Props>(), {
       </div>
     </NuxtLink>
 
+    <!-- Disabled state -->
     <div v-else class="block" aria-disabled="true">
       <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">

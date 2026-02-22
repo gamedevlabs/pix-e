@@ -98,10 +98,17 @@ const navigateToCurrentStep = () => {
         size="sm"
         class="w-full"
         :ui="{
-          trigger:
-            'group-data-[state=active]:bg-elevated group-data-[state=active]:border-2 group-data-[state=active]:border-primary-500 dark:group-data-[state=active]:border-primary-400 group-data-[state=active]:text-default',
+          trigger: [
+            'group-data-[state=active]:bg-elevated',
+            'group-data-[state=active]:border-2',
+            'group-data-[state=active]:border-primary-500',
+            'dark:group-data-[state=active]:border-primary-400',
+            'group-data-[state=active]:text-default',
+          ].join(' '),
           item: orientation === 'vertical' ? 'w-full' : undefined,
-          wrapper: orientation === 'vertical' ? 'flex-1' : undefined,
+          wrapper: orientation === 'vertical' ? 'flex-1 min-w-0' : undefined,
+          header: orientation === 'vertical' ? 'w-full' : undefined,
+          content: 'hidden',
         }"
         @update:model-value="handleStepClick"
       >
