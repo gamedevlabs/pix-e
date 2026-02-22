@@ -130,9 +130,13 @@ const formatRelativeTime = (dateString: string): string => {
       <template #footer>
         <div class="flex items-center justify-between gap-2">
           <!-- Last edited timestamp -->
-          <div class="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 min-w-0">
+          <div
+            class="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500 min-w-0"
+          >
             <UIcon name="i-lucide-clock" class="size-3 shrink-0" />
-            <span class="truncate">{{ props.updatedAt ? formatRelativeTime(props.updatedAt) : '—' }}</span>
+            <span class="truncate">{{
+              props.updatedAt ? formatRelativeTime(props.updatedAt) : '—'
+            }}</span>
           </div>
 
           <!-- "Open →" fades in on hover -->
@@ -140,7 +144,10 @@ const formatRelativeTime = (dateString: string): string => {
             class="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150"
           >
             <span>Open</span>
-            <UIcon name="i-lucide-arrow-right" class="size-3 group-hover:translate-x-0.5 transition-transform" />
+            <UIcon
+              name="i-lucide-arrow-right"
+              class="size-3 group-hover:translate-x-0.5 transition-transform"
+            />
           </div>
         </div>
       </template>

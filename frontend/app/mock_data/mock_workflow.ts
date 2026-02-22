@@ -63,7 +63,8 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'onboarding',
     title: 'Have a Look Around',
     folder: 'Onboarding',
-    completionMessage: "Nice exploration! You can continue with the Design Pillars phase whenever you're ready.",
+    completionMessage:
+      "Nice exploration! You can continue with the Design Pillars phase whenever you're ready.",
     steps: [
       {
         id: 'onb-1',
@@ -82,7 +83,8 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'pillars',
     title: 'Design Pillars',
     folder: 'Design & Validation',
-    completionMessage: "Great work on your Design Pillars! Your pillars are shaping the vision. Check out Player Experience next to start mapping the journey.",
+    completionMessage:
+      'Great work on your Design Pillars! Your pillars are shaping the vision. Check out Player Experience next to start mapping the journey.',
     steps: [
       {
         id: 'pillars-1',
@@ -92,7 +94,11 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         substeps: [
           { id: 'pillars-1-1', name: 'Open Design Pillars', route: '/pillars' },
           { id: 'pillars-1-2', name: 'Create a new pillar', route: '/pillars' },
-          { id: 'pillars-1-3', name: 'Generate LLM feedback for your first pillar', route: '/pillars' },
+          {
+            id: 'pillars-1-3',
+            name: 'Generate LLM feedback for your first pillar',
+            route: '/pillars',
+          },
         ],
       },
       {
@@ -112,7 +118,8 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'player-experience',
     title: 'Player Experience',
     folder: 'Design & Validation',
-    completionMessage: "Player Experience complete! Your PX chart and node graph are looking solid. Head over to Player Expectations to validate your design.",
+    completionMessage:
+      'Player Experience complete! Your PX chart and node graph are looking solid. Head over to Player Expectations to validate your design.',
     steps: [
       {
         id: 'px-1',
@@ -137,7 +144,11 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
           { id: 'px-2-1', name: 'Add a Component Definition', route: '/pxcomponentdefinitions' },
           { id: 'px-2-2', name: 'Create your first node', route: '/pxnodes' },
           { id: 'px-2-3', name: 'Add a component to your new node', route: '/pxnodes' },
-          { id: 'px-2-4', name: 'Open a chart and add a node to any container', route: '/pxcharts' },
+          {
+            id: 'px-2-4',
+            name: 'Open a chart and add a node to any container',
+            route: '/pxcharts',
+          },
         ],
       },
     ],
@@ -146,7 +157,8 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'player-expectations',
     title: 'Player Expectations',
     folder: 'Design & Validation',
-    completionMessage: "Validation done! You've captured and reviewed your player expectations. Why not explore the Movie Script Evaluator next?",
+    completionMessage:
+      "Validation done! You've captured and reviewed your player expectations. Why not explore the Movie Script Evaluator next?",
     steps: [
       {
         id: 'pe-1',
@@ -164,7 +176,8 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'movie-script-evaluator',
     title: 'Movie Script Evaluator',
     folder: 'Discover More',
-    completionMessage: "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production. 🎉",
+    completionMessage:
+      "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production. 🎉",
     steps: [
       {
         id: 'mse-1',
@@ -193,7 +206,8 @@ export const ONBOARDING_TEMPLATE: PhaseTemplate = {
   id: 'user-onboarding',
   title: 'Getting Started',
   folder: 'Onboarding',
-  completionMessage: "You've completed the Getting Started workflow! Your first project is ready — open it and begin your design journey.",
+  completionMessage:
+    "You've completed the Getting Started workflow! Your first project is ready — open it and begin your design journey.",
   steps: [
     {
       id: 'user-onb-1',
@@ -376,8 +390,12 @@ export class WorkflowApiEmulator {
   }
 
   setActiveWorkflowId(scopeKey: string, id: string | null): void {
-    if (id) this.activeWorkflowIds[scopeKey] = id
-    else delete this.activeWorkflowIds[scopeKey]
+    if (id) {
+      this.activeWorkflowIds[scopeKey] = id
+    } else {
+      const { [scopeKey]: _, ...rest } = this.activeWorkflowIds
+      this.activeWorkflowIds = rest
+    }
   }
 
   // ── Project workflows ──────────────────────────────────────────────────────
@@ -393,7 +411,10 @@ export class WorkflowApiEmulator {
    * Pass `onboardingAlreadyDone: true` for projects created after the first one.
    * Always prepends the current (completed) user-onboarding as the first phase.
    */
-  async seedProject(projectId: string, onboardingAlreadyDone: boolean): Promise<WorkflowInstance[]> {
+  async seedProject(
+    projectId: string,
+    onboardingAlreadyDone: boolean,
+  ): Promise<WorkflowInstance[]> {
     const completedOnboarding = this.userWorkflows['default']
       ? markPhaseComplete(JSON.parse(JSON.stringify(this.userWorkflows['default'])))
       : undefined

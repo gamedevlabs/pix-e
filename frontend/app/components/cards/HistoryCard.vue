@@ -25,26 +25,28 @@ const { title, items, showMockBadge } = toRefs(props)
 const typeConfig = (type?: string) => {
   const map: Record<string, { icon: string; iconBg: string; line: string }> = {
     create: {
-      icon:   'text-success-600 dark:text-success-400',
+      icon: 'text-success-600 dark:text-success-400',
       iconBg: 'bg-success-50 dark:bg-success-900/30 ring-1 ring-success-200 dark:ring-success-800',
-      line:   'bg-success-200 dark:bg-success-800',
+      line: 'bg-success-200 dark:bg-success-800',
     },
     edit: {
-      icon:   'text-primary-600 dark:text-primary-400',
+      icon: 'text-primary-600 dark:text-primary-400',
       iconBg: 'bg-primary-50 dark:bg-primary-900/30 ring-1 ring-primary-200 dark:ring-primary-800',
-      line:   'bg-primary-200 dark:bg-primary-800',
+      line: 'bg-primary-200 dark:bg-primary-800',
     },
     delete: {
-      icon:   'text-error-600 dark:text-error-400',
+      icon: 'text-error-600 dark:text-error-400',
       iconBg: 'bg-error-50 dark:bg-error-900/30 ring-1 ring-error-200 dark:ring-error-800',
-      line:   'bg-error-200 dark:bg-error-800',
+      line: 'bg-error-200 dark:bg-error-800',
     },
   }
-  return map[type as string] ?? {
-    icon:   'text-gray-500 dark:text-gray-400',
-    iconBg: 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700',
-    line:   'bg-gray-200 dark:bg-gray-700',
-  }
+  return (
+    map[type as string] ?? {
+      icon: 'text-gray-500 dark:text-gray-400',
+      iconBg: 'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700',
+      line: 'bg-gray-200 dark:bg-gray-700',
+    }
+  )
 }
 </script>
 
@@ -55,11 +57,7 @@ const typeConfig = (type?: string) => {
     </template>
 
     <div class="flex flex-col gap-0">
-      <div
-        v-for="(item, index) in items"
-        :key="index"
-        class="relative flex items-stretch gap-4"
-      >
+      <div v-for="(item, index) in items" :key="index" class="relative flex items-stretch gap-4">
         <!-- Left: icon + vertical line -->
         <div class="flex flex-col items-center shrink-0">
           <!-- Icon node -->
