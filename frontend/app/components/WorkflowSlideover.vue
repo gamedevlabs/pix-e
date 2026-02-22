@@ -9,7 +9,7 @@ interface Props {
   collapsed?: boolean
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 // State
 const workflowSlideover = useWorkflowSlideover()
@@ -230,6 +230,8 @@ const handleNavigate = (route: string) => {
     workflowSlideover.close()
   }
 }
+
+// Width is fixed to match a reasonable sidebar size
 </script>
 
 <template>
@@ -242,9 +244,11 @@ const handleNavigate = (route: string) => {
     :close="{ icon: 'i-lucide-arrow-left' }"
     title="Workflow Guide"
     description="Pick a phase and continue your current step. Your progress is saved automatically."
+    :ui="{ content: 'max-w-xs xl:max-w-sm 2xl:max-w-sm' }"
     @update:open="(v) => (v ? workflowSlideover.open() : workflowSlideover.close())"
     @close="workflowSlideover.close()"
   >
+
     <template #body>
       <!-- Use a vertical layout where the active workflow takes most space, and phases are at the bottom. -->
       <div class="flex flex-col h-full pb-6">
