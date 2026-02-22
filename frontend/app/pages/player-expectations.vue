@@ -26,7 +26,17 @@ const {
   load,
 } = usePlayerExpectationCharts('http://localhost:8000/api')
 
-onMounted(load)
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
+onMounted(async () => {
+  await load()
+  // pe-1-1: "Open Player Expectations Page" — completes as soon as this page mounts
+  await toggleSubstep('pe-1', 'pe-1-1')
+})
 </script>
 
 <template>

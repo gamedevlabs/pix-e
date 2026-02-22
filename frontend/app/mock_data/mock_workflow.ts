@@ -150,20 +150,13 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     steps: [
       {
         id: 'pe-1',
-        name: 'Enter expectations data',
-        description: 'Populate the table and learn the workflow.',
+        name: 'Check out Player Expectations',
+        description: 'Open the page and inspect the sentiment analysis.',
         route: '/player-expectations',
         substeps: [
-          { id: 'pe-1-1', name: 'Open Player Expectations', route: '/player-expectations' },
-          { id: 'pe-1-2', name: 'Add a few expectation records', route: '/player-expectations' },
+          { id: 'pe-1-1', name: 'Open Player Expectations Page', route: '/player-expectations' },
+          { id: 'pe-1-2', name: 'Inspect Sentiment Analysis', route: '/sentiments' },
         ],
-      },
-      {
-        id: 'pe-2',
-        name: 'Review sentiment analysis',
-        description: 'Interpret sentiment and annotations.',
-        route: '/sentiments',
-        substeps: [{ id: 'pe-2-1', name: 'Open Sentiments', route: '/sentiments' }],
       },
     ],
   },
@@ -373,10 +366,23 @@ export class WorkflowApiEmulator {
   private projectWorkflows: Record<string, WorkflowInstance[]> = {}
   /** user id → standalone onboarding instance */
   private userWorkflows: Record<string, WorkflowInstance> = {}
+  /** project id (or 'user') → active workflow id */
+  private activeWorkflowIds: Record<string, string> = {}
 
   constructor() {
     // Seed the standalone onboarding workflow for the default user.
     this.userWorkflows['default'] = createOnboardingWorkflow()
+  }
+
+  // ── Active workflow id ─────────────────────────────────────────────────────
+
+  getActiveWorkflowId(scopeKey: string): string | null {
+    return this.activeWorkflowIds[scopeKey] ?? null
+  }
+
+  setActiveWorkflowId(scopeKey: string, id: string | null): void {
+    if (id) this.activeWorkflowIds[scopeKey] = id
+    else delete this.activeWorkflowIds[scopeKey]
   }
 
   // ── Project workflows ──────────────────────────────────────────────────────

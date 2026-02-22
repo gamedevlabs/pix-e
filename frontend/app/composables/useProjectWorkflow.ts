@@ -22,26 +22,17 @@ const workflow = computed<WorkflowInstance | null>(() => {
   )
 })
 
+// The truly active workflow — always used for mutations, never the viewed/preview one
+const activeWorkflow = computed<WorkflowInstance | null>(() => {
+  if (!activeWorkflowId.value) return workflows.value[0] ?? null
+  return workflows.value.find((w) => w.id === activeWorkflowId.value) ?? workflows.value[0] ?? null
+})
+
 // ─── Persistence helpers ──────────────────────────────────────────────────────
 
-const STORAGE_KEY = (projectId: string | null) =>
-  `workflow_activeId:${projectId ?? 'user'}`
-
-function persistActiveId(projectId: string | null, id: string | null) {
-  try {
-    const key = STORAGE_KEY(projectId)
-    if (id) localStorage.setItem(key, id)
-    else localStorage.removeItem(key)
-  } catch { /* ignore */ }
-}
-
-function getPersistedActiveId(projectId: string | null, list: WorkflowInstance[]): string | null {
-  try {
-    const persisted = localStorage.getItem(STORAGE_KEY(projectId))
-    if (persisted && list.some((w) => w.id === persisted)) return persisted
-  } catch { /* ignore */ }
-  return null
-}
+// Scope key used to namespace the active workflow id inside the emulator.
+// Project workflows are keyed by projectId; user-level by 'user'.
+const scopeKey = (projectId: string | null) => projectId ?? 'user'
 
 function isInstanceComplete(w: WorkflowInstance): boolean {
   if (w.finished_at) return true
@@ -51,8 +42,8 @@ function isInstanceComplete(w: WorkflowInstance): boolean {
 
 function pickDefaultActiveId(list: WorkflowInstance[], projectId: string | null): string | null {
   if (!list.length) return null
-  const persisted = getPersistedActiveId(projectId, list)
-  if (persisted) return persisted
+  const stored = api.getActiveWorkflowId(scopeKey(projectId))
+  if (stored && list.some((w) => w.id === stored)) return stored
   // prefer first incomplete, fallback to first
   return (list.find((w) => !isInstanceComplete(w)) ?? list[0]!).id
 }
@@ -76,7 +67,7 @@ export const useProjectWorkflow = () => {
     }
     workflows.value = list
     activeWorkflowId.value = pickDefaultActiveId(list, projectId)
-    persistActiveId(projectId, activeWorkflowId.value)
+    api.setActiveWorkflowId(scopeKey(projectId), activeWorkflowId.value)
     loading.value = false
     return workflow.value
   }
@@ -87,7 +78,7 @@ export const useProjectWorkflow = () => {
     const w = await api.getUserOnboardingWorkflow()
     workflows.value = w ? [w] : []
     activeWorkflowId.value = pickDefaultActiveId(workflows.value, null)
-    persistActiveId(null, activeWorkflowId.value)
+    api.setActiveWorkflowId(scopeKey(null), activeWorkflowId.value)
     loading.value = false
     return workflow.value
   }
@@ -113,7 +104,7 @@ export const useProjectWorkflow = () => {
 
   const selectWorkflow = async (id: string, projectId: string | null) => {
     activeWorkflowId.value = id
-    persistActiveId(projectId, id)
+    api.setActiveWorkflowId(scopeKey(projectId), id)
     return workflow.value
   }
 
@@ -180,14 +171,14 @@ export const useProjectWorkflow = () => {
     const next = workflows.value.slice(currentIdx + 1).find((x) => !isInstanceComplete(x))
     if (next) {
       activeWorkflowId.value = next.id
-      persistActiveId(w.projectId === 'user' ? null : w.projectId, next.id)
+      api.setActiveWorkflowId(w.projectId === 'user' ? null : w.projectId, next.id)
     }
   }
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   const saveActiveWorkflow = async () => {
-    const w = workflow.value
+    const w = activeWorkflow.value
     if (!w) return
     await api.saveWorkflow(w)
     const idx = workflows.value.findIndex((x) => x.id === w.id)
@@ -196,7 +187,7 @@ export const useProjectWorkflow = () => {
   }
 
   const setCurrentStepIndex = async (index: number) => {
-    const w = workflow.value
+    const w = activeWorkflow.value
     if (!w || index < 0 || index >= w.steps.length) return
     w.currentStepIndex = index
     for (let i = 0; i < w.steps.length; i++) {
@@ -208,19 +199,19 @@ export const useProjectWorkflow = () => {
   }
 
   const advanceStep = async () => {
-    const w = workflow.value
+    const w = activeWorkflow.value
     if (!w) return
     await setCurrentStepIndex(Math.min(w.currentStepIndex + 1, w.steps.length - 1))
   }
 
   const retreatStep = async () => {
-    const w = workflow.value
+    const w = activeWorkflow.value
     if (!w) return
     await setCurrentStepIndex(Math.max(w.currentStepIndex - 1, 0))
   }
 
   const toggleSubstep = async (stepId: string, substepId: string) => {
-    const w = workflow.value
+    const w = activeWorkflow.value
     if (!w) return
 
     const stepIndex = w.steps.findIndex((s) => s.id === stepId)
@@ -316,7 +307,7 @@ export const useProjectWorkflow = () => {
   }
 
   const finishCurrentStep = async () => {
-    const w = workflow.value
+    const w = activeWorkflow.value
     if (!w) return
     const idx = w.currentStepIndex
     const step = w.steps[idx]
@@ -350,7 +341,7 @@ export const useProjectWorkflow = () => {
   }
 
   const getStepStatus = (stepId: string): StepStatus | null => {
-    const s = workflow.value?.steps.find((x) => x.id === stepId)
+    const s = activeWorkflow.value?.steps.find((x) => x.id === stepId)
     return s?.status ?? null
   }
 
