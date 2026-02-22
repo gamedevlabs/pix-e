@@ -1,171 +1,165 @@
 ﻿import { ref, computed, readonly } from '#imports'
-import { WorkflowApiEmulator, getMockWorkflowSteps } from '~/mock_data/mock_workflow'
-import type { MockWorkflow } from '~/mock_data/mock_workflow'
-import type { StepStatus, WorkflowStep, ProjectWorkflow } from '~/utils/workflow'
+import { WorkflowApiEmulator } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import type { StepStatus, WorkflowStep } from '~/utils/workflow'
 
-// In-memory emulator (now supports multiple project workflows + a user workflow)
+// ─── Singleton emulator & state ───────────────────────────────────────────────
+// Kept outside the composable function so all component instances share one store.
+
 const api = new WorkflowApiEmulator()
 
-// Shared state - moved outside the function to ensure singleton behavior
-const workflows = ref<MockWorkflow[]>([])
+const workflows = ref<WorkflowInstance[]>([])
 const activeWorkflowId = ref<string | null>(null)
-const workflow = computed<ProjectWorkflow | null>(() => {
-  if (!activeWorkflowId.value) return workflows.value[0] ?? null
-  return workflows.value.find((w) => w.id === activeWorkflowId.value) ?? workflows.value[0] ?? null
-})
 const loading = ref(false)
 
-const scopeKeyForContext = (projectId: string | null) => {
-  // For now we only support one mocked user in memory.
-  return projectId ? `project:${projectId}` : 'user:default'
-}
+// The currently selected workflow instance
+const workflow = computed<WorkflowInstance | null>(() => {
+  if (!activeWorkflowId.value) return workflows.value[0] ?? null
+  return (
+    workflows.value.find((w) => w.id === activeWorkflowId.value) ?? workflows.value[0] ?? null
+  )
+})
 
-const storageKeyForActiveWorkflow = (projectId: string | null) => {
-  return `workflow_activeWorkflowId:${scopeKeyForContext(projectId)}`
-}
+// ─── Persistence helpers ──────────────────────────────────────────────────────
 
-const isWorkflowCompleted = (w: ProjectWorkflow) => {
-  // consider done if all substeps across all steps are complete and workflow has finished_at
-  const allSubsteps = w.steps.flatMap((s) => s.substeps)
-  const done = allSubsteps.length > 0 && allSubsteps.every((ss) => ss.status === 'complete')
-  return done || !!w.finished_at
-}
+const STORAGE_KEY = (projectId: string | null) =>
+  `workflow_activeId:${projectId ?? 'user'}`
 
-const getDefaultActiveWorkflowId = (list: MockWorkflow[], projectId: string | null) => {
-  if (!list.length) return null
-
-  // 1) use persisted choice if it exists and still exists in list
+function persistActiveId(projectId: string | null, id: string | null) {
   try {
-    const persisted = localStorage.getItem(storageKeyForActiveWorkflow(projectId))
+    const key = STORAGE_KEY(projectId)
+    if (id) localStorage.setItem(key, id)
+    else localStorage.removeItem(key)
+  } catch { /* ignore */ }
+}
+
+function getPersistedActiveId(projectId: string | null, list: WorkflowInstance[]): string | null {
+  try {
+    const persisted = localStorage.getItem(STORAGE_KEY(projectId))
     if (persisted && list.some((w) => w.id === persisted)) return persisted
-  } catch {
-    /* ignore */
-  }
-
-  // 2) if no project: default to onboarding if not completed
-  if (!projectId) {
-    const onboarding = list[0]
-    if (onboarding && !isWorkflowCompleted(onboarding)) return onboarding.id
-    return onboarding?.id ?? list[0]?.id ?? null
-  }
-
-  // 3) project: first incomplete workflow, else first
-  const firstIncomplete = list.find((w) => !isWorkflowCompleted(w))
-  return (firstIncomplete || list[0]).id
+  } catch { /* ignore */ }
+  return null
 }
 
-const persistActiveWorkflowId = (projectId: string | null, id: string | null) => {
-  try {
-    if (!id) localStorage.removeItem(storageKeyForActiveWorkflow(projectId))
-    else localStorage.setItem(storageKeyForActiveWorkflow(projectId), id)
-  } catch {
-    /* ignore */
-  }
+function isInstanceComplete(w: WorkflowInstance): boolean {
+  if (w.finished_at) return true
+  const all = w.steps.flatMap((s) => s.substeps)
+  return all.length > 0 && all.every((ss) => ss.status === 'complete')
 }
+
+function pickDefaultActiveId(list: WorkflowInstance[], projectId: string | null): string | null {
+  if (!list.length) return null
+  const persisted = getPersistedActiveId(projectId, list)
+  if (persisted) return persisted
+  // prefer first incomplete, fallback to first
+  return (list.find((w) => !isInstanceComplete(w)) ?? list[0]!).id
+}
+
+// ─── Composable ───────────────────────────────────────────────────────────────
 
 export const useProjectWorkflow = () => {
-  const loadForProject = async (projectId: string) => {
-    loading.value = true
-    const list = await api.getWorkflowsByProjectId(projectId)
-    if (list.length) {
-      workflows.value = list
-    } else {
-      // initialize a fresh workflow if missing
-      const now = new Date().toISOString()
-      const initial: MockWorkflow = {
-        id: `wf-${projectId}-${Date.now()}`,
-        projectId,
-        started_at: now,
-        finished_at: null,
-        currentStepIndex: 0,
-        steps: getMockWorkflowSteps(),
-        meta: { scope: 'project', title: 'Getting Started', folder: 'Essentials' },
-      }
-      workflows.value = [await api.saveWorkflow(scopeKeyForContext(projectId), initial)]
-    }
 
-    // pick active workflow
-    const defaultId = getDefaultActiveWorkflowId(workflows.value, projectId)
-    activeWorkflowId.value = defaultId
-    persistActiveWorkflowId(projectId, defaultId)
+  // ── Loading ────────────────────────────────────────────────────────────────
+
+  /**
+   * Load (or seed) workflows for a project.
+   * If the project has no saved workflows yet, the template is used to create them.
+   * Pass `onboardingAlreadyDone: true` when creating a project that isn't the user's first.
+   */
+  const loadForProject = async (projectId: string, onboardingAlreadyDone = false) => {
+    loading.value = true
+    let list = await api.getWorkflowsByProjectId(projectId)
+    if (!list.length) {
+      list = await api.seedProject(projectId, onboardingAlreadyDone)
+    }
+    workflows.value = list
+    activeWorkflowId.value = pickDefaultActiveId(list, projectId)
+    persistActiveId(projectId, activeWorkflowId.value)
     loading.value = false
     return workflow.value
   }
 
-  // Load the user-level onboarding workflow (no project id)
+  /** Load the standalone user-level onboarding workflow (no project required). */
   const loadForUser = async () => {
     loading.value = true
-    const w = await api.getUserOnboardingWorkflow('default')
+    const w = await api.getUserOnboardingWorkflow()
     workflows.value = w ? [w] : []
-    const defaultId = getDefaultActiveWorkflowId(workflows.value, null)
-    activeWorkflowId.value = defaultId
-    persistActiveWorkflowId(null, defaultId)
+    activeWorkflowId.value = pickDefaultActiveId(workflows.value, null)
+    persistActiveId(null, activeWorkflowId.value)
     loading.value = false
     return workflow.value
   }
+
+  /**
+   * Called after the user creates their very first project.
+   * Marks the standalone onboarding workflow as fully complete and refreshes
+   * the embedded snapshot inside the active project's workflow list.
+   */
+  const completeOnboarding = async (activeProjectId?: string) => {
+    await api.completeOnboardingWorkflow()
+    // If the user-level onboarding is currently loaded, refresh it
+    if (workflows.value.some((w) => w.projectId === 'user')) {
+      await loadForUser()
+    }
+    // If a project is active, reload so the embedded completed snapshot is updated
+    if (activeProjectId) {
+      await loadForProject(activeProjectId)
+    }
+  }
+
+  // ── Selection ──────────────────────────────────────────────────────────────
 
   const selectWorkflow = async (id: string, projectId: string | null) => {
     activeWorkflowId.value = id
-    persistActiveWorkflowId(projectId, id)
+    persistActiveId(projectId, id)
     return workflow.value
   }
 
-  const getSteps = computed((): WorkflowStep[] => (workflow.value ? workflow.value.steps : []))
+  // ── Computed getters ───────────────────────────────────────────────────────
+
+  const getSteps = computed((): WorkflowStep[] => workflow.value?.steps ?? [])
 
   const getCurrentStep = computed(() => {
-    if (!workflow.value) return null
-    return workflow.value.steps[workflow.value.currentStepIndex] ?? null
+    const w = workflow.value
+    if (!w) return null
+    return w.steps[w.currentStepIndex] ?? null
   })
 
   const getProgress = computed(() => {
-    if (!workflow.value) return 0
-    // compute progress as completed substeps / total substeps across all steps
-    let total = 0
-    let completed = 0
-    for (const s of workflow.value.steps) {
-      for (const ss of s.substeps) {
-        total++
-        if (ss.status === 'complete') completed++
-      }
-    }
-    return total === 0 ? 0 : Math.round((completed / total) * 100)
+    const w = workflow.value
+    if (!w) return 0
+    const substeps = w.steps.flatMap((s) => s.substeps)
+    if (!substeps.length) return 0
+    const done = substeps.filter((ss) => ss.status === 'complete').length
+    return Math.round((done / substeps.length) * 100)
   })
 
   const getCurrentStepProgress = computed(() => {
-    if (!workflow.value) return 0
-    const currentStep = workflow.value.steps[workflow.value.currentStepIndex]
-    if (!currentStep || currentStep.substeps.length === 0) return 0
-
-    const totalSubsteps = currentStep.substeps.length
-    const completedSubsteps = currentStep.substeps.filter((ss) => ss.status === 'complete').length
-
-    return Math.round((completedSubsteps / totalSubsteps) * 100)
+    const w = workflow.value
+    if (!w) return 0
+    const step = w.steps[w.currentStepIndex]
+    if (!step?.substeps.length) return 0
+    const done = step.substeps.filter((ss) => ss.status === 'complete').length
+    return Math.round((done / step.substeps.length) * 100)
   })
 
-  // Expose the available workflows for the current context (additive)
-  const getWorkflows = computed(() => workflows.value)
-  const getActiveWorkflowId = computed(() => activeWorkflowId.value)
+  // ── Mutations ──────────────────────────────────────────────────────────────
 
   const saveActiveWorkflow = async () => {
     const w = workflow.value
     if (!w) return
-    const scopeKey = scopeKeyForContext(w.projectId === 'user' ? null : w.projectId)
-    await api.saveWorkflow(scopeKey, w as MockWorkflow)
-    // refresh list in memory
+    await api.saveWorkflow(w)
     const idx = workflows.value.findIndex((x) => x.id === w.id)
-    if (idx !== -1) workflows.value[idx] = { ...(w as MockWorkflow) }
+    if (idx !== -1) workflows.value[idx] = { ...w }
     workflows.value = [...workflows.value]
   }
 
   const setCurrentStepIndex = async (index: number) => {
     const w = workflow.value
-    if (!w) return
-    if (index < 0 || index >= w.steps.length) return
+    if (!w || index < 0 || index >= w.steps.length) return
     w.currentStepIndex = index
-    // update statuses: mark the active step; keep completed steps complete
     for (let i = 0; i < w.steps.length; i++) {
-      const s = w.steps[i]
-      if (!s) continue
+      const s = w.steps[i]!
       if (s.status === 'complete') continue
       s.status = i === index ? 'active' : 'pending'
     }
@@ -175,98 +169,103 @@ export const useProjectWorkflow = () => {
   const advanceStep = async () => {
     const w = workflow.value
     if (!w) return
-    const next = Math.min(w.currentStepIndex + 1, w.steps.length - 1)
-    await setCurrentStepIndex(next)
+    await setCurrentStepIndex(Math.min(w.currentStepIndex + 1, w.steps.length - 1))
   }
 
   const retreatStep = async () => {
     const w = workflow.value
     if (!w) return
-    const prev = Math.max(w.currentStepIndex - 1, 0)
-    await setCurrentStepIndex(prev)
+    await setCurrentStepIndex(Math.max(w.currentStepIndex - 1, 0))
   }
 
   const toggleSubstep = async (stepId: string, substepId: string) => {
     const w = workflow.value
     if (!w) return
-    const step = w.steps.find((s) => s.id === stepId)
-    if (!step) return
-    const ss = step.substeps.find((x) => x.id === substepId)
-    if (!ss) return
 
-    const substepIndex = step.substeps.indexOf(ss)
-    if (substepIndex === -1) return
+    const stepIndex = w.steps.findIndex((s) => s.id === stepId)
+    if (stepIndex === -1) return
+    const step = w.steps[stepIndex]!
+    const ssIndex = step.substeps.findIndex((x) => x.id === substepId)
+    if (ssIndex === -1) return
+    const ss = step.substeps[ssIndex]!
+
+    const now = new Date().toISOString()
 
     if (ss.status === 'complete') {
-      // Uncomplete: set back to active
+      // Uncomplete — revert to active
       ss.status = 'active'
       ss.finished_at = null
-    } else if (ss.status === 'active') {
-      // Complete current substep
-      ss.status = 'complete'
-      ss.finished_at = new Date().toISOString()
-      if (!step.started_at) step.started_at = new Date().toISOString()
+    } else {
+      // Complete this substep AND all preceding substeps/steps that aren't done yet
 
-      // Set next substep to active if exists
-      if (substepIndex < step.substeps.length - 1) {
-        const nextSubstep = step.substeps[substepIndex + 1]
-        if (nextSubstep && nextSubstep.status === 'pending') {
-          nextSubstep.status = 'active'
-          nextSubstep.started_at = new Date().toISOString()
-        }
-      }
-    }
-
-    // Update step status based on substeps
-    if (step.substeps.length === 0) {
-      // No substeps, step can be marked complete immediately
-      step.status = 'complete'
-      step.finished_at = new Date().toISOString()
-    } else if (step.substeps.every((x) => x.status === 'complete')) {
-      // All substeps complete, mark step complete
-      step.status = 'complete'
-      step.finished_at = new Date().toISOString()
-
-      // Advance to next step and set its first substep to active
-      const currentStepIndex = w.steps.findIndex((s) => s.id === stepId)
-      if (currentStepIndex !== -1 && currentStepIndex < w.steps.length - 1) {
-        const nextStep = w.steps[currentStepIndex + 1]
-        if (nextStep) {
-          nextStep.status = 'active'
-          nextStep.started_at = new Date().toISOString()
-          w.currentStepIndex = currentStepIndex + 1
-
-          // Set first substep of next step to active
-          if (
-            nextStep.substeps.length > 0 &&
-            nextStep.substeps[0] &&
-            nextStep.substeps[0].status === 'pending'
-          ) {
-            nextStep.substeps[0].status = 'active'
-            nextStep.substeps[0].started_at = new Date().toISOString()
+      // 1. Complete all preceding steps fully
+      for (let i = 0; i < stepIndex; i++) {
+        const prevStep = w.steps[i]!
+        if (prevStep.status === 'complete') continue
+        for (const prevSs of prevStep.substeps) {
+          if (prevSs.status !== 'complete') {
+            prevSs.status = 'complete'
+            prevSs.started_at = prevSs.started_at ?? now
+            prevSs.finished_at = now
           }
         }
+        prevStep.status = 'complete'
+        prevStep.started_at = prevStep.started_at ?? now
+        prevStep.finished_at = now
       }
-    } else if (step.substeps.some((x) => x.status === 'complete' || x.status === 'active')) {
-      step.status = 'active'
+
+      // 2. Complete all preceding substeps within the current step
+      for (let i = 0; i < ssIndex; i++) {
+        const prevSs = step.substeps[i]!
+        if (prevSs.status !== 'complete') {
+          prevSs.status = 'complete'
+          prevSs.started_at = prevSs.started_at ?? now
+          prevSs.finished_at = now
+        }
+      }
+
+      // 3. Complete the target substep itself
+      ss.status = 'complete'
+      ss.started_at = ss.started_at ?? now
+      ss.finished_at = now
+      if (!step.started_at) step.started_at = now
+
+      // 4. Activate the next substep if any
+      const nextSs = step.substeps[ssIndex + 1]
+      if (nextSs?.status === 'pending') {
+        nextSs.status = 'active'
+        nextSs.started_at = now
+      }
+    }
+
+    // Recalculate step status
+    const allDone = step.substeps.every((x) => x.status === 'complete')
+    const anyProgress = step.substeps.some((x) => x.status === 'complete' || x.status === 'active')
+
+    if (step.substeps.length === 0 || allDone) {
+      step.status = 'complete'
+      step.finished_at = now
+
+      // Advance workflow to next step
+      if (stepIndex < w.steps.length - 1) {
+        const nextStep = w.steps[stepIndex + 1]!
+        if (nextStep.status === 'pending') {
+          nextStep.status = 'active'
+          nextStep.started_at = nextStep.started_at ?? now
+          if (nextStep.substeps[0]?.status === 'pending') {
+            nextStep.substeps[0].status = 'active'
+            nextStep.substeps[0].started_at = now
+          }
+        }
+        w.currentStepIndex = stepIndex + 1
+      }
     } else {
-      step.status = 'pending'
+      step.status = anyProgress ? 'active' : 'pending'
     }
 
     await saveActiveWorkflow()
   }
 
-  const resetWorkflow = async () => {
-    const w = workflow.value
-    if (!w) return
-    w.steps = getMockWorkflowSteps()
-    w.currentStepIndex = 0
-    w.started_at = new Date().toISOString()
-    w.finished_at = null
-    await saveActiveWorkflow()
-  }
-
-  // Finish the currently active step: mark it and its substeps complete and advance to next step.
   const finishCurrentStep = async () => {
     const w = workflow.value
     if (!w) return
@@ -275,78 +274,72 @@ export const useProjectWorkflow = () => {
     if (!step) return
 
     const now = new Date().toISOString()
-    // Mark all substeps complete
     for (const ss of step.substeps) {
       ss.status = 'complete'
-      ss.finished_at = ss.finished_at || now
-      if (!ss.started_at) ss.started_at = now
+      ss.finished_at = ss.finished_at ?? now
+      ss.started_at = ss.started_at ?? now
     }
-
-    // Mark step complete
     step.status = 'complete'
-    step.finished_at = step.finished_at || now
+    step.finished_at = step.finished_at ?? now
 
-    // Advance to next step if exists
-    const nextIndex = Math.min(idx + 1, w.steps.length - 1)
-    if (nextIndex > idx) {
-      const next = w.steps[nextIndex]
-      if (next) {
-        next.status = 'active'
-        next.started_at = next.started_at || now
-        // set its first substep active if any
-        if (next.substeps.length > 0 && next.substeps[0] && next.substeps[0].status === 'pending') {
-          next.substeps[0].status = 'active'
-          next.substeps[0].started_at = next.substeps[0].started_at || now
-        }
-        w.currentStepIndex = nextIndex
+    const nextIndex = idx + 1
+    if (nextIndex < w.steps.length) {
+      const next = w.steps[nextIndex]!
+      next.status = 'active'
+      next.started_at = next.started_at ?? now
+      if (next.substeps[0]?.status === 'pending') {
+        next.substeps[0].status = 'active'
+        next.substeps[0].started_at = now
       }
+      w.currentStepIndex = nextIndex
     } else {
-      // last step finished
-      w.currentStepIndex = idx
       w.finished_at = now
       try {
-        const toast = useToast()
-        toast.add({
+        useToast().add({
           title: 'Workflow completed',
           description: 'You finished the last step!',
           color: 'success',
         })
-      } catch (e) {
-        void e
-      }
+      } catch { /* ignore */ }
     }
 
     await saveActiveWorkflow()
   }
 
-  // Return the status of a step by id: 'pending'|'active'|'complete' or null if not found
   const getStepStatus = (stepId: string): StepStatus | null => {
-    const w = workflow.value
-    if (!w) return null
-    const s = w.steps.find((x) => x.id === stepId)
-    return s ? s.status : null
+    const s = workflow.value?.steps.find((x) => x.id === stepId)
+    return s?.status ?? null
   }
 
+  // ── Public API ─────────────────────────────────────────────────────────────
+
   return {
-    // Backward-compatible: `workflow` is still the active workflow
-    workflow: readonly(workflow as unknown as { value: ProjectWorkflow | null }),
-    // Additive: expose workflows + selection
-    workflows: readonly(getWorkflows),
-    activeWorkflowId: readonly(getActiveWorkflowId),
+    // State (readonly)
+    workflow: readonly(workflow),
+    workflows: readonly(computed(() => workflows.value)),
+    activeWorkflowId: readonly(computed(() => activeWorkflowId.value)),
     loading: readonly(loading),
+
+    // Loading
     loadForProject,
     loadForUser,
+    completeOnboarding,
+
+    // Selection
     selectWorkflow,
+
+    // Getters
     getSteps,
     getCurrentStep,
     getProgress,
     getCurrentStepProgress,
+    getStepStatus,
+
+    // Mutations
     setCurrentStepIndex,
     advanceStep,
     retreatStep,
     toggleSubstep,
-    resetWorkflow,
     finishCurrentStep,
-    getStepStatus,
   }
 }

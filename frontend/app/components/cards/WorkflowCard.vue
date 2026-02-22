@@ -3,6 +3,7 @@ import { onMounted, computed } from '#imports'
 import type { WorkflowStep } from '~/utils/workflow'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import type { StepperItem } from '@nuxt/ui'
+import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 
 interface Props {
   projectId?: string
@@ -15,6 +16,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const { loading, loadForProject, getSteps, getCurrentStep } = useProjectWorkflow()
+const { open: openSlideover } = useWorkflowSlideover()
 
 const router = useRouter()
 
@@ -52,6 +54,7 @@ const handleStepClick = (value: string | number) => {
 const navigateToCurrentStep = () => {
   if (current.value?.route) {
     router.push(current.value.route)
+    openSlideover()
   }
 }
 </script>

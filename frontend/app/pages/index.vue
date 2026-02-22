@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
@@ -58,9 +59,32 @@ onMounted(() => {
 })
 
 const { switchProject, projects, deleteProject } = useProjectHandler()
+const { loadForUser } = useProjectWorkflow()
 
 const username = computed(() => authentication.user.value?.username || 'Guest')
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
+
+// Load the user-level onboarding workflow when not logged in
+const projectWorkflow = useProjectWorkflow()
+const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const activeWorkflowTitle = computed(() => {
+  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
+  const activeId = projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === activeId)
+  return w?.meta?.title || 'Getting Started'
+})
+
+onMounted(async () => {
+  if (!isLoggedIn.value) {
+    await loadForUser()
+  }
+})
+
+watch(isLoggedIn, async (loggedIn) => {
+  if (!loggedIn) {
+    await loadForUser()
+  }
+})
 
 const getInitials = (name: string): string =>
   name
@@ -166,6 +190,14 @@ const projectStats = computed(() => ({
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
 
+    <!-- Workflow button + slideover for logged-out users -->
+    <template v-if="!isLoggedIn">
+      <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
+        <WorkflowSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
+      </div>
+      <WorkflowSlideover />
+    </template>
+
     <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
     <section class="text-center space-y-3 max-w-2xl mx-auto">
       <h1 class="text-4xl xl:text-5xl font-bold tracking-tight bg-linear-to-br from-primary-500 to-primary-700 bg-clip-text text-transparent">
@@ -213,7 +245,7 @@ const projectStats = computed(() => ({
             class="border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
           >
             <div class="py-16 flex flex-col items-center gap-6 text-center">
-              <div class="rounded-full bg-gray-100 dark:bg-gray-800 p-5">
+              <div class="rounded-full bg-gray-100 dark:bg-gray-800 p-5 aspect-square flex items-center justify-center">
                 <UIcon name="i-lucide-lock" class="size-10 text-gray-400 dark:text-gray-500" />
               </div>
               <div class="space-y-1.5 max-w-sm">
@@ -341,8 +373,8 @@ const projectStats = computed(() => ({
 
       <!-- Right Side Panel -->
       <aside class="hidden xl:flex flex-col gap-4">
-        <WhatsNewCard />
         <ContinueWorkflowCard />
+        <WhatsNewCard />
         <NeedHelpCard />
       </aside>
 

@@ -33,12 +33,3 @@ export interface ProjectWorkflow {
   currentStepIndex: number
   steps: WorkflowStep[]
 }
-
-// Declarations for helpers / emulator provided in mock_data to improve editor tooling
-export function getMockWorkflowSteps(): WorkflowStep[]
-
-export class WorkflowApiEmulator {
-  constructor()
-  getByProjectId(projectId: string): Promise<ProjectWorkflow | null>
-  save(projectId: string, workflow: ProjectWorkflow): Promise<ProjectWorkflow>
-}

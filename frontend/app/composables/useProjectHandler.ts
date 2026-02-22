@@ -1,7 +1,9 @@
 ﻿import type { Project } from '~/utils/project'
 import { ProjectApiEmulator } from '~/mock_data/mock_projects'
+import { WorkflowApiEmulator } from '~/mock_data/mock_workflow'
 
 const mock_projects = new ProjectApiEmulator()
+const mock_workflows = new WorkflowApiEmulator()
 
 export const useProjectHandler = () => {
   // state
@@ -55,8 +57,17 @@ export const useProjectHandler = () => {
   }
 
   const createProject = async (data: Partial<Project>): Promise<Project> => {
+    const isFirstProject = (await mock_projects.getAll()).length === 0
     const created = await mock_projects.create(data)
     projects.value = await mock_projects.getAll()
+
+    // Seed workflows for the new project.
+    // The onboarding phase is pre-completed for any project after the first.
+    // For the first project the create page calls completeOnboarding() via the
+    // composable, which also refreshes the embedded snapshot — so we don't call
+    // completeOnboardingWorkflow() here to avoid double-completing.
+    await mock_workflows.seedProject(created.id, !isFirstProject)
+
     return created
   }
 
