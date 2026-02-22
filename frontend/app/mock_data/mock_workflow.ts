@@ -81,7 +81,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   {
     id: 'pillars',
     title: 'Design Pillars',
-    folder: 'Concept & Design',
+    folder: 'Design & Validation',
     completionMessage: "Great work on your Design Pillars! Your pillars are shaping the vision. Check out Player Experience next to start mapping the journey.",
     steps: [
       {
@@ -111,7 +111,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   {
     id: 'player-experience',
     title: 'Player Experience',
-    folder: 'Concept & Design',
+    folder: 'Design & Validation',
     completionMessage: "Player Experience complete! Your PX chart and node graph are looking solid. Head over to Player Expectations to validate your design.",
     steps: [
       {
@@ -145,7 +145,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   {
     id: 'player-expectations',
     title: 'Player Expectations',
-    folder: 'Validation',
+    folder: 'Design & Validation',
     completionMessage: "Validation done! You've captured and reviewed your player expectations. Why not explore the Movie Script Evaluator next?",
     steps: [
       {
@@ -163,23 +163,18 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   {
     id: 'movie-script-evaluator',
     title: 'Movie Script Evaluator',
-    folder: 'Discover',
+    folder: 'Discover More',
     completionMessage: "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production. 🎉",
     steps: [
       {
         id: 'mse-1',
-        name: 'Run your first evaluation',
-        description: 'Try the standalone evaluator and understand the output.',
+        name: 'Have a look at Movie Script Evaluator',
+        description: 'Open the Movie Script Evaluator and explore.',
         route: '/movie-script-evaluator',
         substeps: [
           {
             id: 'mse-1-1',
             name: 'Open Movie Script Evaluator',
-            route: '/movie-script-evaluator',
-          },
-          {
-            id: 'mse-1-2',
-            name: 'Create an evaluation and review results',
             route: '/movie-script-evaluator',
           },
         ],
