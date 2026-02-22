@@ -8,7 +8,7 @@ definePageMeta({
     icon: 'i-lucide-library-big',
     navGroup: 'main',
     navParent: 'player-experience',
-    navOrder: 4,
+    navOrder: 3,
     showInNav: true,
   },
 })
@@ -32,8 +32,16 @@ const state = ref<{ name: string; type: PxValueType }>({
   type: 'none',
 })
 
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
 async function handleCreate() {
   await createPxComponentDefinition({ ...state.value })
+  // px-2-1: "Add a Component Definition"
+  await toggleSubstep('px-2', 'px-2-1')
   state.value.name = ''
   state.value.type = 'none'
 }

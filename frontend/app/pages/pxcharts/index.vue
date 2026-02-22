@@ -7,7 +7,7 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'PxCharts',
+    title: 'Charts',
     icon: 'i-lucide-chart-network',
     navGroup: 'main',
     navParent: 'player-experience',
@@ -24,8 +24,16 @@ const {
   deleteItem: deletePxChart,
 } = usePxCharts()
 
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
 onMounted(() => {
   fetchPxCharts()
+  // px-1-1: "Open Charts page"
+  toggleSubstep('px-1', 'px-1-1')
 })
 
 const newItem = ref<NamedEntity | null>(null)
@@ -36,6 +44,8 @@ function addItem() {
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
   await createPxChart({ ...newEntityDraft })
+  // px-1-2: "Create a new chart"
+  await toggleSubstep('px-1', 'px-1-2')
   newItem.value = null
 }
 </script>
