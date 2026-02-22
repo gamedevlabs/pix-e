@@ -92,21 +92,18 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         substeps: [
           { id: 'pillars-1-1', name: 'Open Design Pillars', route: '/pillars' },
           { id: 'pillars-1-2', name: 'Create a new pillar', route: '/pillars' },
-          { id: 'pillars-1-3', name: 'Refine wording and save', route: '/pillars' },
+          { id: 'pillars-1-3', name: 'Generate LLM feedback for your first pillar', route: '/pillars' },
         ],
       },
       {
         id: 'pillars-2',
-        name: 'Get LLM feedback',
+        name: 'Utilize LLM for Feedback',
         description: 'Generate feedback and learn how to interpret it.',
         route: '/pillars',
         substeps: [
-          { id: 'pillars-2-1', name: 'Generate LLM feedback for a pillar', route: '/pillars' },
-          {
-            id: 'pillars-2-2',
-            name: 'Check coverage, contradictions and additions',
-            route: '/pillars',
-          },
+          { id: 'pillars-2-1', name: 'Coverage', route: '/pillars' },
+          { id: 'pillars-2-2', name: 'Contradictions', route: '/pillars' },
+          { id: 'pillars-2-3', name: 'Additions', route: '/pillars' },
         ],
       },
     ],
