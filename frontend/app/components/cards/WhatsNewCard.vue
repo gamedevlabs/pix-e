@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { mockWhatsNew } from '~/mock_data/mock_whats-new'
+
 interface Update {
   title: string
   description: string
@@ -11,36 +13,16 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// TODO: Connect mock data to real backend (whats-new)
-const mockUpdates = computed(
-  () =>
-    props.mockUpdates ?? [
-      {
-        title: 'Project Layer',
-        description: 'Manage different projects separately',
-        icon: 'i-lucide-zap',
-      },
-      {
-        title: 'Enhanced UX',
-        description: 'Better user experience',
-        icon: 'i-lucide-palette',
-      },
-    ],
+// Use shared mock data by default (until wired to backend)
+const mockUpdates = computed<Update[]>(
+  () => props.mockUpdates ?? (mockWhatsNew as unknown as Update[]),
 )
 </script>
 
 <template>
   <DashboardCard title="What's New" icon="i-lucide-sparkles">
     <template #actions>
-      <UBadge
-        color="neutral"
-        variant="soft"
-        size="xs"
-        class="cursor-help"
-        title="Mock data (feature not wired up yet)"
-      >
-        Mock
-      </UBadge>
+      <MockDataBadge />
     </template>
 
     <div class="space-y-3 text-sm">

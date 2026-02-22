@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { mockRecentActivity } from '~/mock_data/mock_recent-activity'
+
 interface HistoryItem {
   title: string
   timestamp: string
@@ -9,32 +11,18 @@ interface HistoryItem {
 interface Props {
   items?: HistoryItem[]
   title?: string
+  /** When true, show a small badge indicating this card is backed by mock data. */
+  showMockBadge?: boolean
 }
 
-// TODO: Connect mock data to real backend (history)
-const _mockHistoryEntries = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: 'Recent Activity',
-  items: () => [
-    {
-      title: 'Updated PX Node',
-      timestamp: '10 min ago',
-      icon: 'i-lucide-edit',
-      type: 'edit',
-    },
-    {
-      title: 'Added Design Pillar',
-      timestamp: '2 hours ago',
-      icon: 'i-lucide-plus',
-      type: 'create',
-    },
-    {
-      title: 'Removed expectation',
-      timestamp: 'Yesterday',
-      icon: 'i-lucide-trash',
-      type: 'delete',
-    },
-  ],
+  items: () => mockRecentActivity as unknown as HistoryItem[],
+  showMockBadge: true,
 })
+
+const { title, items } = toRefs(props)
+const { showMockBadge } = toRefs(props)
 
 const getTypeColor = (type?: string) => {
   const colors = {
@@ -48,6 +36,9 @@ const getTypeColor = (type?: string) => {
 
 <template>
   <DashboardCard :title="title" icon="i-lucide-clock">
+    <template #actions>
+      <MockDataBadge v-if="showMockBadge" />
+    </template>
     <div class="space-y-2">
       <div v-for="(item, index) in items" :key="index" class="flex gap-2 items-center text-sm">
         <UIcon :name="item.icon" :class="getTypeColor(item.type)" class="shrink-0" />
