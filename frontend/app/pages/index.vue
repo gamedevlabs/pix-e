@@ -45,7 +45,6 @@ onMounted(() => {
       color: 'warning',
       icon: 'i-lucide-alert-circle',
     })
-    // Clean up URL
     router.replace({ query: {} })
   } else if (error === 'project-not-found') {
     toast.add({
@@ -53,9 +52,7 @@ onMounted(() => {
       description: `Project "${projectId}" does not exist`,
       color: 'error',
       icon: 'i-lucide-alert-triangle',
-      timeout: 5000,
     })
-    // Clean up URL
     router.replace({ query: {} })
   }
 })
@@ -65,48 +62,20 @@ const { switchProject, projects, deleteProject } = useProjectHandler()
 const username = computed(() => authentication.user.value?.username || 'Guest')
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
-// Helper function to get initials from project name
-const getInitials = (name: string): string => {
-  return name
+const getInitials = (name: string): string =>
+  name
     .split(' ')
-    .map((word) => word[0])
+    .map((w) => w[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
-}
 
-// Helper function to format relative time
-const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
-  if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-  if (diffDays < 30)
-    return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`
-  if (diffDays < 365)
-    return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`
-  return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) > 1 ? 's' : ''} ago`
-}
-
-// Project cards - dynamically generated from the project handler
+// Project cards - sorted by most recently edited
 const projectCards = computed<Card[]>(() => {
-  // If not logged in, return empty array - don't create cards at all
-  if (!isLoggedIn.value) {
-    return []
-  }
+  if (!isLoggedIn.value) return []
 
-  // Copy and sort projects by updated_at descending (most recently edited first)
   const list = (projects?.value ?? []).slice().sort((a, b) => {
-    const ta = new Date(a.updated_at).getTime()
-    const tb = new Date(b.updated_at).getTime()
-    return tb - ta
+    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   })
 
   const mapped: Card[] = list.map((p) => ({
@@ -123,19 +92,7 @@ const projectCards = computed<Card[]>(() => {
     },
   }))
 
-  // Always append the 'Create New Project' card at the end
-  mapped.push({
-    id: 'create-project',
-    label: 'Create New Project',
-    description: 'Create your new project here',
-    requiresAuth: true,
-    isCreateCard: true,
-    initials: 'NP',
-    action: async () => {
-      await router.push('/create')
-    },
-  })
-
+  // No longer append the create card here — empty state handles it
   return mapped
 })
 
@@ -145,16 +102,12 @@ const getProjectMenuItems = (projectId: string): DropdownMenuItem[][] => [
     {
       label: 'Edit',
       icon: 'i-lucide-pencil',
-      onSelect: () => {
-        router.push(`/edit?id=${projectId}`)
-      },
+      onSelect: () => router.push(`/edit?id=${projectId}`),
     },
     {
       label: 'Duplicate',
       icon: 'i-lucide-copy',
-      onSelect: () => {
-        router.push(`/create?duplicate=${projectId}`)
-      },
+      onSelect: () => router.push(`/create?duplicate=${projectId}`),
     },
   ],
   [
@@ -171,7 +124,7 @@ const getProjectMenuItems = (projectId: string): DropdownMenuItem[][] => [
   ],
 ]
 
-// Standalone modules - modules that don't require a project
+// Standalone modules
 const standaloneModules = ref<Card[]>([
   {
     id: 'movie-script',
@@ -180,29 +133,21 @@ const standaloneModules = ref<Card[]>([
       'Evaluate movie scripts through LLMs based on available assets for virtual production.',
     icon: 'i-lucide-film',
     requiresAuth: false,
-    action: () => {
-      router.push('/movie-script-evaluator')
-    },
+    action: () => { router.push('/movie-script-evaluator') },
   },
 ])
 
 const handleCardClick = async (card: Card, event?: MouseEvent) => {
-  // Prevent action if clicking on dropdown menu
-  if (event?.target && (event.target as HTMLElement).closest('.project-menu-button')) {
-    return
-  }
+  if (event?.target && (event.target as HTMLElement).closest('.project-menu-button')) return
 
   if (card.requiresAuth && !isLoggedIn.value) {
     router.push('/login')
     return
   }
 
-  // Execute the card's action (e.g. switchProject or route to create page)
   if (card.action) {
     await card.action()
   }
-
-  // Let individual actions handle routing (switchProject already navigates to dashboard).
 }
 
 // Quick stats
@@ -219,53 +164,71 @@ const projectStats = computed(() => ({
 </script>
 
 <template>
-  <UContainer class="py-10 space-y-10">
-    <!-- Hero Section -->
-    <section class="text-center max-w-4xl mx-auto">
-      <h1
-        class="text-5xl font-bold mb-4 bg-linear-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent"
-      >
-        Welcome <span v-if="isLoggedIn">{{ username }}</span> 🎉
+  <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
+
+    <!-- ─── Hero ─────────────────────────────────────────────────────────── -->
+    <section class="text-center space-y-3 max-w-2xl mx-auto">
+      <h1 class="text-4xl xl:text-5xl font-bold tracking-tight bg-linear-to-br from-primary-500 to-primary-700 bg-clip-text text-transparent">
+        Welcome<span v-if="isLoggedIn">, {{ username }}</span> 👋
       </h1>
-      <p class="text-lg text-gray-600 dark:text-gray-400 mb-6">
+      <p class="text-base text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
         <span class="text-primary font-semibold">pix:e</span> enables you to design games with
         research-backed player experience tools.
       </p>
     </section>
 
-    <!-- Projects Section with Side Panels -->
-    <section>
-      <h2 class="text-3xl font-bold mb-6 text-center">Your Projects</h2>
+    <!-- ─── Main 3-col layout ─────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 xl:grid-cols-[260px_1fr_260px] gap-6 items-start">
 
-      <div class="grid grid-cols-1 xl:grid-cols-[300px_1fr_300px] gap-12">
-        <!-- Left Side Panel - Quick Stats -->
-        <aside class="hidden xl:block space-y-4">
-          <QuickStatsCard :total="projectStats.total" :recent="projectStats.recent" />
-          <AiInsightsCard />
-        </aside>
+      <!-- Left Side Panel -->
+      <aside class="hidden xl:flex flex-col gap-4">
+        <QuickStatsCard :total="projectStats.total" :recent="projectStats.recent" />
+        <AiInsightsCard />
+      </aside>
 
-        <!-- Center - Project Grid -->
-        <div v-if="!isLoggedIn" class="col-span-1">
-          <!-- Login Required Overlay -->
-          <UCard class="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-800">
-            <div class="text-center py-16 space-y-6">
-              <UIcon
-                name="i-lucide-lock"
-                class="text-gray-400 dark:text-gray-500 text-6xl mx-auto"
-              />
-              <div class="space-y-2">
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Login Required</h3>
-                <p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                  Please log in to view and manage your projects. Create an account to get started
-                  with pix:e.
+      <!-- ─── CENTER COLUMN ─────────────────────────────────────────────── -->
+      <div class="space-y-12 min-w-0">
+
+        <!-- Projects section header -->
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="h-6 w-1 rounded-full bg-primary" />
+              <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Your Projects</h2>
+            </div>
+            <UButton
+              v-if="isLoggedIn"
+              label="New Project"
+              icon="i-lucide-plus"
+              color="primary"
+              variant="soft"
+              size="md"
+              @click="router.push('/create')"
+            />
+          </div>
+
+          <!-- Login required state -->
+          <UCard
+            v-if="!isLoggedIn"
+            class="border-2 border-dashed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+          >
+            <div class="py-16 flex flex-col items-center gap-6 text-center">
+              <div class="rounded-full bg-gray-100 dark:bg-gray-800 p-5">
+                <UIcon name="i-lucide-lock" class="size-10 text-gray-400 dark:text-gray-500" />
+              </div>
+              <div class="space-y-1.5 max-w-sm">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Login Required</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Please log in to view and manage your projects. Create a free account to get
+                  started with pix:e.
                 </p>
               </div>
-              <div class="flex gap-3 justify-center">
+              <div class="flex gap-3">
                 <UButton
                   label="Login"
                   icon="i-lucide-log-in"
                   color="primary"
-                  size="lg"
+                  size="md"
                   @click="router.push('/login')"
                 />
                 <UButton
@@ -273,162 +236,119 @@ const projectStats = computed(() => ({
                   icon="i-lucide-user-plus"
                   color="neutral"
                   variant="outline"
-                  size="lg"
+                  size="md"
                   @click="router.push('/login')"
                 />
               </div>
             </div>
           </UCard>
-        </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="project in projectCards" :key="project.id" class="relative">
-            <!-- Create New Project Card (centered icon style) -->
-            <UCard
-              v-if="project.isCreateCard"
-              class="hover:shadow-2xl hover:scale-[1.025] transition-all cursor-pointer h-full flex items-center justify-center min-h-50 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-primary bg-white dark:bg-gray-900"
-              role="button"
-              tabindex="0"
-              @click="handleCardClick(project)"
-              @keydown.enter="handleCardClick(project)"
-            >
-              <div
-                class="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500 hover:text-primary transition-colors"
-              >
-                <UIcon name="i-heroicons-plus-circle" class="text-6xl mb-2" />
-                <p class="text-sm font-medium">New Project</p>
-              </div>
-            </UCard>
+          <!-- Empty state – logged in but no projects yet -->
+          <div
+            v-else-if="projectCards.length === 0"
+            class="flex flex-col items-center gap-4 py-14 text-center"
+          >
+            <p class="text-base text-gray-500 dark:text-gray-400">
+              You don't have any projects yet. Create your first one to get started with pix:e.
+            </p>
+            <UButton
+              label="New Project"
+              icon="i-lucide-plus"
+              color="primary"
+              variant="soft"
+              size="md"
+              @click="router.push('/create')"
+            />
+          </div>
 
-            <!-- Regular Project Card with Context Menu -->
-            <UContextMenu v-else :items="getProjectMenuItems(project.id)" class="h-full">
-              <UCard
-                class="hover:shadow-2xl hover:scale-[1.025] transition-all cursor-pointer h-full bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:from-primary-50 hover:to-white dark:hover:from-primary-950/30 dark:hover:to-gray-900"
-                :ui="{
-                  footer: 'py-2 px-6 border-t-0',
-                  root: 'h-full flex flex-col',
-                  body: 'flex-1',
-                }"
-                role="button"
-                tabindex="0"
-                @click="handleCardClick(project, $event)"
-                @keydown.enter="handleCardClick(project)"
-              >
-                <template #header>
-                  <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                      <!-- Avatar with icon or initials -->
-                      <UAvatar
-                        v-if="project.icon"
-                        :src="project.icon"
-                        :alt="project.label"
-                        size="lg"
-                      />
-                      <UAvatar
-                        v-else
-                        :alt="project.label"
-                        size="lg"
-                        :text="project.initials || 'PR'"
-                      />
-                      <h2 class="font-bold text-xl truncate">{{ project.label }}</h2>
-                    </div>
-
-                    <!-- 3-dot menu button -->
-                    <UDropdownMenu
-                      :items="getProjectMenuItems(project.id)"
-                      class="project-menu-button"
-                    >
-                      <UButton
-                        icon="i-lucide-more-vertical"
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        @click.stop
-                      />
-                    </UDropdownMenu>
-                  </div>
-                </template>
-
-                <!-- Short description in body -->
-                <p v-if="project.description" class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ project.description }}
-                </p>
-                <p v-else class="text-sm text-gray-400 dark:text-gray-500 italic">No description</p>
-
-                <template #footer>
-                  <!-- Last edited timestamp - bottom left, smaller -->
-                  <div class="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                    <UIcon name="i-lucide-clock" class="inline-block size-2.5" />
-                    Last edited {{ formatRelativeTime(project.updatedAt!) }}
-                  </div>
-                </template>
-              </UCard>
-            </UContextMenu>
+          <!-- Project cards grid -->
+          <div
+            v-else
+            class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4"
+          >
+            <LandingProjectCard
+              v-for="project in projectCards"
+              :key="project.id"
+              :id="project.id"
+              :label="project.label"
+              :description="project.description"
+              :icon="project.icon"
+              :initials="project.initials"
+              :updated-at="project.updatedAt"
+              :is-create-card="project.isCreateCard"
+              :menu-items="project.isCreateCard ? [] : getProjectMenuItems(project.id)"
+              @click="handleCardClick(project, $event)"
+            />
           </div>
         </div>
 
-        <!-- Right Side Panel - Recent Activity & Help -->
-        <aside class="hidden xl:block space-y-4">
-          <WhatsNewCard />
-          <ContinueWorkflowCard />
-          <NeedHelpCard />
-        </aside>
-      </div>
-    </section>
+        <!-- ─── Standalone Modules ──────────────────────────────────────── -->
+        <div class="space-y-5">
+          <div class="flex items-center gap-3">
+            <div class="h-6 w-1 rounded-full bg-secondary-500" />
+            <div>
+              <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Additional Modules</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                Standalone tools that work independently from your projects
+              </p>
+            </div>
+            <UBadge color="neutral" variant="soft" size="sm" class="ml-2 self-start mt-0.5">
+              <UIcon name="i-lucide-puzzle" class="mr-1 size-3" />
+              Standalone
+            </UBadge>
+          </div>
 
-    <!-- Standalone Modules Section - Visually Distinct -->
-    <section class="mt-20">
-      <div class="text-center mb-8">
-        <UBadge color="primary" variant="subtle" size="lg" class="mb-3">
-          <UIcon name="i-lucide-puzzle" class="mr-1" />
-          Standalone Tools
-        </UBadge>
-        <h2 class="text-3xl font-bold mb-2">Additional Modules</h2>
-        <p class="text-gray-600 dark:text-gray-400">
-          Specialized tools that work independently from your projects
-        </p>
-      </div>
-
-      <div class="max-w-4xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            v-for="module in standaloneModules"
-            :key="module.id"
-            class="relative"
-            role="button"
-            tabindex="0"
-            @click.capture="handleCardClick(module)"
-            @keydown.enter="handleCardClick(module)"
-          >
-            <!-- Module Card - Different styling -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <UCard
-              class="hover:shadow-2xl hover:scale-105 transition-all cursor-pointer h-full border-2 border-primary/20 hover:border-primary bg-linear-to-br from-primary-50 to-white dark:from-primary-950 dark:to-gray-900"
-              :ui="{ body: 'space-y-3' }"
+              v-for="module in standaloneModules"
+              :key="module.id"
+              class="group border border-primary-200 dark:border-primary-900/50 bg-linear-to-br from-primary-50 to-white dark:from-primary-950/40 dark:to-gray-900 hover:shadow-md hover:border-primary hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+              :ui="{
+                header: 'px-4 py-3',
+                body: 'px-4 py-3 space-y-3',
+              }"
+              role="button"
+              tabindex="0"
+              @click="handleCardClick(module)"
+              @keydown.enter="handleCardClick(module)"
             >
               <template #header>
                 <div class="flex items-center gap-3">
-                  <div class="p-2 bg-primary/10 rounded-lg">
-                    <UIcon v-if="module.icon" :name="module.icon" class="text-3xl text-primary" />
+                  <div class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0">
+                    <UIcon v-if="module.icon" :name="module.icon" class="size-5 text-primary" />
                   </div>
-                  <div>
-                    <h2 class="font-bold text-xl">{{ module.label }}</h2>
-                    <UBadge color="primary" variant="subtle" size="xs">Independent Module</UBadge>
+                  <div class="min-w-0">
+                    <p class="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                      {{ module.label }}
+                    </p>
+                    <UBadge color="primary" variant="subtle" size="xs">Independent</UBadge>
                   </div>
                 </div>
               </template>
-              <p class="text-sm text-gray-700 dark:text-gray-300">
+              <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                 {{ module.description }}
               </p>
-              <div class="flex items-center gap-2 text-xs text-primary font-medium pt-2">
-                <span>Launch Module</span>
-                <UIcon name="i-lucide-arrow-right" />
+              <div class="flex items-center gap-1.5 text-xs text-primary font-medium pt-1">
+                <span>Launch</span>
+                <UIcon name="i-lucide-arrow-right" class="size-3 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </UCard>
           </div>
         </div>
+
       </div>
-    </section>
-  </UContainer>
+      <!-- END CENTER COLUMN -->
+
+      <!-- Right Side Panel -->
+      <aside class="hidden xl:flex flex-col gap-4">
+        <WhatsNewCard />
+        <ContinueWorkflowCard />
+        <NeedHelpCard />
+      </aside>
+
+    </div>
+
+  </div>
 </template>
 
 <style scoped></style>
