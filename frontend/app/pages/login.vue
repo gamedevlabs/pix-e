@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/studyMock'
+import { useAuthentication } from '~/studyMock'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
@@ -15,6 +16,7 @@ definePageMeta({
 // ============================================================================
 
 const state = reactive({ username: '', password: '' })
+// Use optional auth so study/mock mode never calls the backend.
 const authentication = useAuthentication()
 const show = ref(false)
 
@@ -54,6 +56,8 @@ async function handleLogin() {
       description: `Welcome Back ${state.username}`,
       color: 'success',
     })
+
+    await navigateTo('/')
   } else {
     state.password = ''
     toast.add({ title: 'Login Failed', description: 'Invalid credentials.', color: 'error' })
@@ -78,6 +82,8 @@ async function handleRegistration() {
       description: `Welcome ${state.username}`,
       color: 'success',
     })
+
+    await navigateTo('/')
   } else {
     toast.add({
       title: 'Registration Failed',
@@ -97,6 +103,7 @@ async function handleRegistration() {
     <WorkflowSlideover />
 
     <h1 class="text-2xl font-bold mb-4">Login</h1>
+
     <UForm :validate="validate" :state="state" class="space-y-4 w-60">
       <UFormField label="Username" name="username" size="lg" required>
         <UInput v-model="state.username" class="w-full" />

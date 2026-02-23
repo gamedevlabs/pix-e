@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed } from 'vue'
+import { useAuthentication } from '~/studyMock'
 
 interface Props {
   title: string

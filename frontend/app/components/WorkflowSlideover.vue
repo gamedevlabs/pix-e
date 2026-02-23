@@ -1,8 +1,9 @@
 ﻿<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/studyMock'
 import type { StepStatus } from '~/utils/workflow'
+import { useAuthentication } from '~/studyMock'
 
 // State
 const workflowSlideover = useWorkflowSlideover()
@@ -91,18 +92,11 @@ watch(
 const currentStepIndex = computed(() => projectWorkflow.workflow.value?.currentStepIndex ?? 0)
 const steps = computed(() => projectWorkflow.getSteps.value || [])
 const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
-const allWorkflowsDone = computed(() => projectWorkflow.allWorkflowsDone.value)
 
 const activeWorkflowTitle = computed(() => {
   const id = viewedWorkflowId.value ?? activeWorkflowId.value
   const w = availableWorkflows.value.find((x) => x.id === id)
   return w?.meta?.title || 'Workflow'
-})
-
-const activeWorkflowDescription = computed(() => {
-  const id = viewedWorkflowId.value ?? activeWorkflowId.value
-  const w = availableWorkflows.value.find((x) => x.id === id)
-  return w?.meta?.description ?? null
 })
 
 const activeWorkflowPhase = computed(() => {
@@ -151,10 +145,17 @@ const displayPhaseName = (folder: string) => folder.replace(/^\d+\s*-\s*/u, '')
 const getWorkflowStatus = (w: WorkflowInstance): StepStatus => {
   if (w.finished_at) return 'complete'
   if (w.id === activeWorkflowId.value) return 'active'
-  const total = w.steps.flatMap((s) => s.substeps).length
-  const completed = w.steps
-    .flatMap((s) => s.substeps)
-    .filter((ss) => ss.status === 'complete').length
+
+  // Safely collect substeps without using `any`.
+  const allSubsteps: Array<Record<string, unknown>> = w.steps.flatMap((step) => {
+    const maybe = (step as unknown as Record<string, unknown>).substeps
+    return Array.isArray(maybe) ? (maybe as Array<Record<string, unknown>>) : []
+  })
+
+  const total = allSubsteps.length
+  const completed = allSubsteps.filter(
+    (ss) => (ss as Record<string, unknown>).status === 'complete',
+  ).length
   if (total > 0 && completed === total) return 'complete'
   return completed > 0 ? 'active' : 'pending'
 }
@@ -227,6 +228,10 @@ const handleNavigate = (route: string) => {
 }
 
 // Width is fixed to match a reasonable sidebar size
+
+function workflowLabel(w: WorkflowInstance): string {
+  return w.meta?.title || w.id
+}
 </script>
 
 <template>
@@ -441,7 +446,7 @@ const handleNavigate = (route: string) => {
                         </template>
 
                         <span class="truncate text-left flex-1">
-                          {{ w.meta?.title || w.id }}
+                          {{ workflowLabel(w) }}
                         </span>
 
                         <template #trailing>

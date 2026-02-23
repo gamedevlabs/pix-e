@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
+import { useAuthentication } from '~/studyMock'
 
 // TODO: Connect to database - currently using mock data from ProjectApiEmulator
 const projectWorkflow = useProjectWorkflow()
@@ -47,11 +48,15 @@ const currentSubstep = computed(() => {
   if (!step || !step.substeps || step.substeps.length === 0) return null
 
   // Find the first active substep
-  const activeSubstep = step.substeps.find((ss) => ss.status === 'active')
+  const activeSubstep = (step.substeps as Array<Record<string, unknown>>).find(
+    (ss) => (ss as Record<string, unknown>).status === 'active',
+  )
   if (activeSubstep) return activeSubstep
 
   // If no active substep, find the first incomplete one
-  const incompleteSubstep = step.substeps.find((ss) => ss.status === 'pending')
+  const incompleteSubstep = (step.substeps as Array<Record<string, unknown>>).find(
+    (ss) => (ss as Record<string, unknown>).status === 'pending',
+  )
   if (incompleteSubstep) return incompleteSubstep
 
   // Otherwise return the first substep

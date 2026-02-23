@@ -1,3 +1,5 @@
+import { getOfflinePlayerExpectations } from '~/studyMock'
+
 type AspectSentimentRow = {
   dominant_aspect: string
   dominant_sentiment: 'positive' | 'neutral' | 'negative'
@@ -37,7 +39,7 @@ const confusionPaletteBase = [
   '#27599e', // repeat ok
 ]
 
-export function usePlayerExpectationCharts(baseUrl = 'http://localhost:8000/api') {
+export function usePlayerExpectationCharts(_baseUrl = 'http://localhost:8000/api') {
   // reactive chart state
   const aspectChartData = ref(null)
   const sentimentChartData = ref(null)
@@ -119,31 +121,15 @@ export function usePlayerExpectationCharts(baseUrl = 'http://localhost:8000/api'
     error.value = null
 
     try {
-      const [
-        aspectFrequency,
-        aspectSentiment,
-        trendOverTime,
-        sentimentPie,
-        heatmap,
-        topConfusions,
-      ] = await Promise.all([
-        $fetch<{ data: Record<string, number> }>(`${baseUrl}/aspect-frequency`),
-        $fetch<{ data: AspectSentimentRow[] }>(`${baseUrl}/aspect-sentiment`),
-        $fetch<{ data: TrendRow[] }>(`${baseUrl}/trend-over-time`),
-        $fetch<{ data: Record<string, number> }>(`${baseUrl}/sentiment-pie`),
-        $fetch<{ data: Record<string, Record<string, number>> }>(`${baseUrl}/heatmap`),
-        $fetch<{ data: ConfusionRow[] }>(`${baseUrl}/top-confusions`),
-      ])
-
-      aspectChartData.value = toAspectBar(aspectFrequency.data)
-      sentimentChartData.value = toAspectSentimentStacks(aspectSentiment.data)
-      lineChartData.value = toTrendLines(trendOverTime.data)
-      sentimentPieData.value = toPie(sentimentPie.data)
-      heatmapData.value = heatmap.data
-      topConfusionsChartData.value = toConfusionsBar(topConfusions.data)
-    } catch (e) {
-      error.value = e
-      console.error('Error loading charts:', e)
+      const payload = await getOfflinePlayerExpectations()
+      aspectChartData.value = toAspectBar(payload.aspectFrequency)
+      sentimentChartData.value = toAspectSentimentStacks(payload.aspectSentiment)
+      lineChartData.value = toTrendLines(payload.trendOverTime)
+      sentimentPieData.value = toPie(payload.sentimentPie)
+      heatmapData.value = payload.heatmap
+      topConfusionsChartData.value = toConfusionsBar(payload.topConfusions)
+    } catch (err) {
+      error.value = err
     } finally {
       loading.value = false
     }

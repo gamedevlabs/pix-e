@@ -28,5 +28,5 @@
 </template>
 
 <script setup lang="ts">
-import { MOCK_EXTERNAL_LINKS } from '~/mock_data/mock_external-links'
+import { MOCK_EXTERNAL_LINKS } from '~/studyMock'
 </script>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getOfflineSentiments } from '~/studyMock'
+
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -30,14 +32,12 @@ if (currentProject.value?.id) {
   await loadForProject(currentProject.value.id)
 }
 
-// Fetch data from API
+// Fetch data from local mock JSON
 const fetchSentiments = async () => {
   loading.value = true
   error.value = null
   try {
-    const sentiments = await $fetch(
-      `http://localhost:8000/api/sentiments/?type=${selectedDataset.value}`,
-    )
+    const sentiments = await getOfflineSentiments()
     allSentiments.value = sentiments.data
   } catch (err) {
     console.error(err)

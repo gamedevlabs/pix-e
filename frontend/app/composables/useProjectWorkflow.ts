@@ -1,39 +1,29 @@
 ﻿import { ref, computed, readonly } from '#imports'
-import {
-  WorkflowApiEmulator,
-  WORKFLOW_TEMPLATE,
-  ONBOARDING_TEMPLATE,
-} from '~/mock_data/mock_workflow'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
-import type { StepStatus, WorkflowStep } from '~/utils/workflow'
+import { useProjectDataProvider, WORKFLOW_TEMPLATE, ONBOARDING_TEMPLATE } from '~/studyMock'
+import type { WorkflowInstance } from '~/studyMock'
 
-// ─── Singleton emulator & state ───────────────────────────────────────────────
-// Kept outside the composable function so all component instances share one store.
+// ─────────────────────────────────────────────────────────────────────────────
+// Singleton state (kept outside composable so instances share one store)
 
-const api = new WorkflowApiEmulator()
+// IMPORTANT: do NOT call useProjectDataProvider() at module top-level.
+// That would call useRuntimeConfig/useNuxtApp before Nuxt is initialized.
 
 const workflows = ref<WorkflowInstance[]>([])
 const activeWorkflowId = ref<string | null>(null)
-const viewedWorkflowId = ref<string | null>(null) // preview only, does not change active state
+const viewedWorkflowId = ref<string | null>(null)
 const loading = ref(false)
 
-// The currently selected workflow instance
 const workflow = computed<WorkflowInstance | null>(() => {
   const id = viewedWorkflowId.value ?? activeWorkflowId.value
   if (!id) return workflows.value[0] ?? null
   return workflows.value.find((w) => w.id === id) ?? workflows.value[0] ?? null
 })
 
-// The truly active workflow — always used for mutations, never the viewed/preview one
 const activeWorkflow = computed<WorkflowInstance | null>(() => {
   if (!activeWorkflowId.value) return workflows.value[0] ?? null
   return workflows.value.find((w) => w.id === activeWorkflowId.value) ?? workflows.value[0] ?? null
 })
 
-// ─── Persistence helpers ──────────────────────────────────────────────────────
-
-// Scope key used to namespace the active workflow id inside the emulator.
-// Project workflows are keyed by projectId; user-level by 'user'.
 const scopeKey = (projectId: string | null) => projectId ?? 'user'
 
 function isInstanceComplete(w: WorkflowInstance): boolean {
@@ -44,15 +34,15 @@ function isInstanceComplete(w: WorkflowInstance): boolean {
 
 function pickDefaultActiveId(list: WorkflowInstance[], projectId: string | null): string | null {
   if (!list.length) return null
-  const stored = api.getActiveWorkflowId(scopeKey(projectId))
+  const provider = useProjectDataProvider()
+  const stored = provider.getActiveWorkflowId(scopeKey(projectId))
   if (stored && list.some((w) => w.id === stored)) return stored
-  // prefer first incomplete, fallback to first
   return (list.find((w) => !isInstanceComplete(w)) ?? list[0]!).id
 }
 
-// ─── Composable ───────────────────────────────────────────────────────────────
-
 export const useProjectWorkflow = () => {
+  const provider = useProjectDataProvider()
+
   // ── Loading ────────────────────────────────────────────────────────────────
 
   /**
@@ -62,13 +52,13 @@ export const useProjectWorkflow = () => {
    */
   const loadForProject = async (projectId: string, onboardingAlreadyDone = false) => {
     loading.value = true
-    let list = await api.getWorkflowsByProjectId(projectId)
+    let list = await provider.getWorkflowsByProjectId(projectId)
     if (!list.length) {
-      list = await api.seedProject(projectId, onboardingAlreadyDone)
+      list = await provider.seedProjectWorkflows(projectId, onboardingAlreadyDone)
     }
     workflows.value = list
     activeWorkflowId.value = pickDefaultActiveId(list, projectId)
-    api.setActiveWorkflowId(scopeKey(projectId), activeWorkflowId.value)
+    provider.setActiveWorkflowId(scopeKey(projectId), activeWorkflowId.value)
     loading.value = false
     return workflow.value
   }
@@ -76,10 +66,10 @@ export const useProjectWorkflow = () => {
   /** Load the standalone user-level onboarding workflow (no project required). */
   const loadForUser = async () => {
     loading.value = true
-    const w = await api.getUserOnboardingWorkflow()
+    const w = await provider.getUserOnboardingWorkflow()
     workflows.value = w ? [w] : []
     activeWorkflowId.value = pickDefaultActiveId(workflows.value, null)
-    api.setActiveWorkflowId(scopeKey(null), activeWorkflowId.value)
+    provider.setActiveWorkflowId(scopeKey(null), activeWorkflowId.value)
     loading.value = false
     return workflow.value
   }
@@ -90,7 +80,7 @@ export const useProjectWorkflow = () => {
    * the embedded snapshot inside the active project's workflow list.
    */
   const completeOnboarding = async (activeProjectId?: string) => {
-    await api.completeOnboardingWorkflow()
+    await provider.completeOnboardingWorkflow()
     // If the user-level onboarding is currently loaded, refresh it
     if (workflows.value.some((w) => w.projectId === 'user')) {
       await loadForUser()
@@ -105,7 +95,7 @@ export const useProjectWorkflow = () => {
 
   const selectWorkflow = async (id: string, projectId: string | null) => {
     activeWorkflowId.value = id
-    api.setActiveWorkflowId(scopeKey(projectId), id)
+    provider.setActiveWorkflowId(scopeKey(projectId), id)
     return workflow.value
   }
 
@@ -130,12 +120,6 @@ export const useProjectWorkflow = () => {
     if (!substeps.length) return 0
     const done = substeps.filter((ss) => ss.status === 'complete').length
     return Math.round((done / substeps.length) * 100)
-  })
-
-  const allWorkflowsDone = computed(() => {
-    const list = workflows.value
-    if (!list.length) return false
-    return list.every((w) => isInstanceComplete(w))
   })
 
   const getCurrentStepProgress = computed(() => {
@@ -180,8 +164,7 @@ export const useProjectWorkflow = () => {
     const next = workflows.value.slice(currentIdx + 1).find((x) => !isInstanceComplete(x))
     if (next) {
       activeWorkflowId.value = next.id
-      const projectKey = w.projectId === 'user' ? 'user' : w.projectId
-      api.setActiveWorkflowId(projectKey, next.id)
+      provider.setActiveWorkflowId(scopeKey(w.projectId === 'user' ? null : w.projectId), next.id)
     }
   }
 
@@ -190,7 +173,7 @@ export const useProjectWorkflow = () => {
   const saveActiveWorkflow = async () => {
     const w = activeWorkflow.value
     if (!w) return
-    await api.saveWorkflow(w)
+    await provider.saveWorkflow(w)
     const idx = workflows.value.findIndex((x) => x.id === w.id)
     if (idx !== -1) workflows.value[idx] = { ...w }
     workflows.value = [...workflows.value]
@@ -334,58 +317,107 @@ export const useProjectWorkflow = () => {
 
     const nextIndex = idx + 1
     if (nextIndex < w.steps.length) {
-      const next = w.steps[nextIndex]!
-      next.status = 'active'
-      next.started_at = next.started_at ?? now
-      if (next.substeps[0]?.status === 'pending') {
-        next.substeps[0].status = 'active'
-        next.substeps[0].started_at = now
-      }
+      // Activate next step
+      const nextStep = w.steps[nextIndex]!
       w.currentStepIndex = nextIndex
+      if (nextStep.status === 'pending') {
+        nextStep.status = 'active'
+        nextStep.started_at = nextStep.started_at ?? now
+      }
+      if (nextStep.substeps[0] && nextStep.substeps[0].status === 'pending') {
+        nextStep.substeps[0].status = 'active'
+        nextStep.substeps[0].started_at = nextStep.substeps[0].started_at ?? now
+      }
     } else {
-      w.finished_at = now
-      onWorkflowComplete(w)
+      // Finished last step => finish workflow
+      if (!w.finished_at) {
+        w.finished_at = now
+        onWorkflowComplete(w)
+      }
     }
 
     await saveActiveWorkflow()
   }
 
-  const getStepStatus = (stepId: string): StepStatus | null => {
-    const s = activeWorkflow.value?.steps.find((x) => x.id === stepId)
-    return s?.status ?? null
+  const finishWorkflow = async () => {
+    const w = activeWorkflow.value
+    if (!w) return
+
+    const now = new Date().toISOString()
+    for (const step of w.steps) {
+      step.started_at = step.started_at ?? now
+      step.status = 'complete'
+      step.finished_at = step.finished_at ?? now
+      for (const ss of step.substeps) {
+        ss.started_at = ss.started_at ?? now
+        ss.status = 'complete'
+        ss.finished_at = ss.finished_at ?? now
+      }
+    }
+
+    w.finished_at = w.finished_at ?? now
+    onWorkflowComplete(w)
+    await saveActiveWorkflow()
   }
 
-  // ── Public API ─────────────────────────────────────────────────────────────
+  const resetWorkflow = async () => {
+    const w = activeWorkflow.value
+    if (!w) return
+
+    // Reset in-memory instance only; provider persists the save.
+    w.started_at = null
+    w.finished_at = null
+    w.currentStepIndex = 0
+
+    const now = new Date().toISOString()
+    for (let i = 0; i < w.steps.length; i++) {
+      const step = w.steps[i]!
+      step.started_at = null
+      step.finished_at = null
+      step.status = i === 0 ? 'active' : 'pending'
+
+      for (let j = 0; j < step.substeps.length; j++) {
+        const ss = step.substeps[j]!
+        ss.started_at = null
+        ss.finished_at = null
+        ss.status = i === 0 && j === 0 ? 'active' : 'pending'
+        // keep timestamps null; now is unused but kept for potential future
+        void now
+      }
+    }
+
+    await saveActiveWorkflow()
+  }
 
   return {
-    // State (readonly)
+    // state
+    workflows: readonly(workflows),
+    activeWorkflowId: readonly(activeWorkflowId),
     workflow: readonly(workflow),
-    workflows: readonly(computed(() => workflows.value)),
-    activeWorkflowId: readonly(computed(() => activeWorkflowId.value)),
     loading: readonly(loading),
 
-    // Loading
+    // loading
     loadForProject,
     loadForUser,
     completeOnboarding,
 
-    // Selection
+    // selection
     selectWorkflow,
     viewWorkflow,
 
-    // Getters
-    getSteps,
-    getCurrentStep,
-    getProgress,
-    getCurrentStepProgress,
-    getStepStatus,
-    allWorkflowsDone,
+    // getters
+    getSteps: readonly(getSteps),
+    getCurrentStep: readonly(getCurrentStep),
+    getProgress: readonly(getProgress),
+    getCurrentStepProgress: readonly(getCurrentStepProgress),
 
-    // Mutations
+    // mutations
     setCurrentStepIndex,
     advanceStep,
     retreatStep,
     toggleSubstep,
     finishCurrentStep,
+    finishWorkflow,
+    resetWorkflow,
   }
 }

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { mockWhatsNew } from '~/mock_data/mock_whats-new'
+import { mockWhatsNew } from '~/studyMock'
 
 interface Update {
   title: string

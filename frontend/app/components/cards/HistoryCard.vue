@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { mockRecentActivity } from '~/mock_data/mock_recent-activity'
+import { mockRecentActivity } from '~/studyMock'
 
 interface HistoryItem {
   title: string

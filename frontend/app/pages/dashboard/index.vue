@@ -3,7 +3,7 @@
 // PAGE CONFIG - Edit these settings for this module
 // ============================================================================
 // MOCK DATA FOR DASHBOARD CARDS
-import { mockRecentActivity } from '~/mock_data/mock_recent-activity'
+import { mockRecentActivity } from '~/studyMock'
 import { platformConfigs } from '~/utils/platformConfig'
 
 definePageMeta({
@@ -25,11 +25,12 @@ const { currentProject, currentProjectId } = useProjectHandler()
 // Fetch real data from modules
 const { items: pillars, fetchAll: fetchPillars } = usePillars()
 const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
+const config = useRuntimeConfig()
 const {
   aspectChartData,
   sentimentPieData,
   load: loadExpectations,
-} = usePlayerExpectationCharts('http://localhost:8000/api')
+} = usePlayerExpectationCharts(`${config.public.apiBase}/api`)
 
 onMounted(() => {
   fetchPillars()

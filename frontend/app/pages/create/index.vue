@@ -5,7 +5,7 @@ import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/pl
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/studyMock'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const { close: closeSlideover } = useWorkflowSlideover()

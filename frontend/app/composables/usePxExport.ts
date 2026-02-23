@@ -1,41 +1,29 @@
-const BASE_URL = 'http://localhost:8000/'
+import { useProjectDataProvider } from '~/studyMock'
 
 export function usePxExport() {
   const loading = ref<boolean>(false)
   const error = ref<unknown>(null)
-  const API_URL = BASE_URL + 'api/'
   const { success, error: errorToast } = usePixeToast()
 
   async function exportPxData(): Promise<object> {
+    const provider = useProjectDataProvider()
     loading.value = true
-    let data
     try {
-      data = await $fetch<object>(API_URL + 'pxexport/', {
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
+      const json = await provider.exportState()
+      return JSON.parse(json)
     } catch (err) {
       error.value = err
       errorToast(err)
+      return {}
     } finally {
       loading.value = false
     }
-
-    return data!
   }
 
   async function importPxData(payload: object) {
+    const provider = useProjectDataProvider()
     try {
-      await $fetch<object>(API_URL + 'pximport/', {
-        method: 'POST',
-        body: payload,
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
+      await provider.importState(JSON.stringify(payload))
       success('JSON imported successfully!')
     } catch (err) {
       error.value = err

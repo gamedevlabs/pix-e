@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/studyMock'
+import { useAuthentication } from '~/studyMock'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module

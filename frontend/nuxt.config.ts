@@ -34,7 +34,8 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:8000', //131.159.25.79:8000
+      apiBase: 'http://localhost:8000',
+      // mock-only study deployment; no dataMode switching
     },
   },
 })

@@ -1,22 +1,20 @@
-﻿const BASE_URL = 'http://localhost:8000/'
+﻿import { useOfflineFetch } from '~/studyMock'
 
 export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
   const items = ref<T[]>([])
   const loading = ref(false)
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = BASE_URL + apiUrl
 
   async function fetchAll() {
     loading.value = true
     try {
-      const data = await $fetch<T[]>(API_URL, {
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
-      items.value = data || []
+      if (apiUrl === 'api/pxcharts/') {
+        const offline = await useOfflineFetch<{ charts: T[] }>('pxcharts')
+        items.value = (offline as { charts: T[] }).charts || []
+      } else {
+        items.value = []
+      }
     } catch (err) {
       error.value = err
       errorToast(err)
@@ -28,12 +26,9 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
   async function fetchById(id: number | string) {
     loading.value = true
     try {
-      return await $fetch<T>(`${API_URL}${id}`, {
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
+      return (
+        (items.value as Array<{ id?: unknown }>).find?.((x) => String(x.id) === String(id)) ?? null
+      )
     } catch (err) {
       error.value = err
       errorToast(err)
@@ -43,53 +38,29 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
     }
   }
 
-  async function createItem(payload: Partial<T>) {
+  async function createItem(_payload: Partial<T>) {
     try {
-      const data = await $fetch<T>(API_URL, {
-        method: 'POST',
-        body: payload,
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
-      success('Item created successfully!')
+      success('Saved locally (mock mode)')
       await fetchAll()
-      return data.id
+      return undefined
     } catch (err) {
       error.value = err
       errorToast(err)
     }
   }
 
-  async function updateItem(id: number | string, payload: Partial<T>) {
+  async function updateItem(_id: number | string, _payload: Partial<T>) {
     try {
-      await $fetch<T>(`${API_URL}${id}/`, {
-        method: 'PATCH',
-        body: payload,
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
-      success('Item updated successfully!')
-      await fetchAll()
+      success('Saved locally (mock mode)')
     } catch (err) {
       error.value = err
       errorToast(err)
     }
   }
 
-  async function deleteItem(id: number | string) {
+  async function deleteItem(_id: number | string) {
     try {
-      await $fetch<null>(`${API_URL}${id}/`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
-      success('Item deleted successfully!')
+      success('Deleted locally (mock mode)')
       await fetchAll()
     } catch (err) {
       error.value = err

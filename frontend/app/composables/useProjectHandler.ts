@@ -1,28 +1,24 @@
 ﻿import type { Project } from '~/utils/project'
-import { ProjectApiEmulator } from '~/mock_data/mock_projects'
-import { WorkflowApiEmulator } from '~/mock_data/mock_workflow'
-
-const mock_projects = new ProjectApiEmulator()
-const mock_workflows = new WorkflowApiEmulator()
+import { useProjectDataProvider } from '~/studyMock'
 
 export const useProjectHandler = () => {
   // state
   const currentProjectId = useState<string | null>('project_currentProjectId', () => null)
   const currentProject = useState<Project | null>('project_currentProject', () => null)
-  // initializer must be synchronous for useState; fetch projects explicitly below
   const projects = useState<Project[]>('project_projects', () => [])
 
   const isProjectSelected = computed(() => !!currentProjectId.value)
 
-  // actions
   const fetchProjects = async (): Promise<Project[]> => {
-    const list = await mock_projects.getAll()
+    const provider = useProjectDataProvider()
+    const list = await provider.getProjects()
     projects.value = list
     return list
   }
 
   const fetchProjectById = async (id: string): Promise<Project | null> => {
-    return await mock_projects.getById(id)
+    const provider = useProjectDataProvider()
+    return await provider.getProject(id)
   }
 
   const selectProject = async (projectOrId: string | Project) => {
@@ -57,23 +53,22 @@ export const useProjectHandler = () => {
   }
 
   const createProject = async (data: Partial<Project>): Promise<Project> => {
-    const isFirstProject = (await mock_projects.getAll()).length === 0
-    const created = await mock_projects.create(data)
-    projects.value = await mock_projects.getAll()
+    const provider = useProjectDataProvider()
+    const isFirstProject = (await provider.getProjects()).length === 0
+    const created = await provider.createProject(data)
+    projects.value = await provider.getProjects()
 
     // Seed workflows for the new project.
     // The onboarding phase is pre-completed for any project after the first.
-    // For the first project the create page calls completeOnboarding() via the
-    // composable, which also refreshes the embedded snapshot — so we don't call
-    // completeOnboardingWorkflow() here to avoid double-completing.
-    await mock_workflows.seedProject(created.id, !isFirstProject)
+    await provider.seedProjectWorkflows(created.id, !isFirstProject)
 
     return created
   }
 
   const updateProject = async (id: string, data: Partial<Project>): Promise<Project | null> => {
-    const updated = await mock_projects.update(id, data)
-    projects.value = await mock_projects.getAll()
+    const provider = useProjectDataProvider()
+    const updated = await provider.updateProject(id, data)
+    projects.value = await provider.getProjects()
     try {
       const toast = useToast()
       if (updated) {
@@ -92,8 +87,9 @@ export const useProjectHandler = () => {
   }
 
   const deleteProject = async (id: string): Promise<boolean> => {
-    const deleted = await mock_projects.delete(id)
-    projects.value = await mock_projects.getAll()
+    const provider = useProjectDataProvider()
+    const deleted = await provider.deleteProject(id)
+    projects.value = await provider.getProjects()
     try {
       const toast = useToast()
       if (deleted) {

@@ -1,0 +1,157 @@
+﻿{
+  "schemaVersion": 1,
+  "pillars": {
+    "schemaVersion": 1,
+    "pillars": [
+      {
+        "id": 1,
+        "name": "Clarity",
+        "description": "Make goals and feedback obvious and consistent.",
+        "created_at": "2025-10-01T10:00:00.000Z",
+        "updated_at": "2026-02-23T00:00:00.000Z"
+      },
+      {
+        "id": 2,
+        "name": "Flow",
+        "description": "Keep the player in a steady rhythm of decisions and rewards.",
+        "created_at": "2025-10-02T10:00:00.000Z",
+        "updated_at": "2026-02-23T00:00:00.000Z"
+      }
+    ],
+    "designIdea": {
+      "description": "A short narrative adventure where choices shape relationships and endings."
+    }
+  },
+  "sentiments": {
+    "schemaVersion": 1,
+    "data": [
+      {
+        "name": "Demo Game",
+        "genres": "['Adventure','Narrative']",
+        "dominant_sentiment": "positive",
+        "review_count": 1200,
+        "positive": 800,
+        "neutral": 250,
+        "negative": 150
+      },
+      {
+        "name": "Mobile Puzzle",
+        "genres": "['Puzzle','Casual']",
+        "dominant_sentiment": "neutral",
+        "review_count": 650,
+        "positive": 260,
+        "neutral": 280,
+        "negative": 110
+      },
+      {
+        "name": "Retro Shooter",
+        "genres": "['Action','Shooter']",
+        "dominant_sentiment": "negative",
+        "review_count": 400,
+        "positive": 120,
+        "neutral": 90,
+        "negative": 190
+      }
+    ]
+  },
+  "playerExpectations": {
+    "schemaVersion": 1,
+    "aspectFrequency": {
+      "clarity": 42,
+      "challenge": 31,
+      "agency": 27,
+      "feedback": 19,
+      "pacing": 14
+    },
+    "aspectSentiment": [
+      { "dominant_aspect": "clarity", "dominant_sentiment": "positive", "count": 18 },
+      { "dominant_aspect": "clarity", "dominant_sentiment": "neutral", "count": 16 },
+      { "dominant_aspect": "clarity", "dominant_sentiment": "negative", "count": 8 },
+
+      { "dominant_aspect": "challenge", "dominant_sentiment": "positive", "count": 12 },
+      { "dominant_aspect": "challenge", "dominant_sentiment": "neutral", "count": 11 },
+      { "dominant_aspect": "challenge", "dominant_sentiment": "negative", "count": 8 },
+
+      { "dominant_aspect": "agency", "dominant_sentiment": "positive", "count": 14 },
+      { "dominant_aspect": "agency", "dominant_sentiment": "neutral", "count": 9 },
+      { "dominant_aspect": "agency", "dominant_sentiment": "negative", "count": 4 },
+
+      { "dominant_aspect": "feedback", "dominant_sentiment": "positive", "count": 9 },
+      { "dominant_aspect": "feedback", "dominant_sentiment": "neutral", "count": 6 },
+      { "dominant_aspect": "feedback", "dominant_sentiment": "negative", "count": 4 },
+
+      { "dominant_aspect": "pacing", "dominant_sentiment": "positive", "count": 6 },
+      { "dominant_aspect": "pacing", "dominant_sentiment": "neutral", "count": 5 },
+      { "dominant_aspect": "pacing", "dominant_sentiment": "negative", "count": 3 }
+    ],
+    "trendOverTime": [
+      { "month": "2025-10", "positive": 18, "neutral": 10, "negative": 7 },
+      { "month": "2025-11", "positive": 20, "neutral": 13, "negative": 7 },
+      { "month": "2025-12", "positive": 23, "neutral": 14, "negative": 8 },
+      { "month": "2026-01", "positive": 25, "neutral": 16, "negative": 9 },
+      { "month": "2026-02", "positive": 27, "neutral": 18, "negative": 10 }
+    ],
+    "sentimentPie": { "positive": 113, "neutral": 71, "negative": 37 },
+    "heatmap": {
+      "clarity": { "positive": 18, "neutral": 16, "negative": 8 },
+      "challenge": { "positive": 12, "neutral": 11, "negative": 8 },
+      "agency": { "positive": 14, "neutral": 9, "negative": 4 },
+      "feedback": { "positive": 9, "neutral": 6, "negative": 4 },
+      "pacing": { "positive": 6, "neutral": 5, "negative": 3 }
+    },
+    "topConfusions": [
+      { "pair": "clarity → feedback", "count": 8 },
+      { "pair": "challenge → pacing", "count": 6 },
+      { "pair": "agency → clarity", "count": 5 },
+      { "pair": "feedback → clarity", "count": 4 },
+      { "pair": "pacing → challenge", "count": 3 }
+    ]
+  },
+  "pxcharts": {
+    "schemaVersion": 1,
+    "charts": [
+      {
+        "id": 1,
+        "name": "Core Loop",
+        "project": "pixe",
+        "created_at": "2025-09-10T10:00:00.000Z",
+        "updated_at": "2026-02-23T00:00:00.000Z"
+      }
+    ]
+  },
+  "projects": {
+    "schemaVersion": 1,
+    "projects": [
+      {
+        "id": "pixe",
+        "name": "pix:e",
+        "shortDescription": "This project contains all the old data from the other pix:e devs.",
+        "genre": "Tool",
+        "targetPlatform": "web",
+        "created_at": "2024-01-01T10:00:00.000Z",
+        "updated_at": "2026-02-23T00:00:00.000Z",
+        "icon": null
+      },
+      {
+        "id": "29673",
+        "name": "Demo Project",
+        "shortDescription": "An experimental narrative project with example scenes.",
+        "genre": "Narrative, Adventure, Story-Driven",
+        "targetPlatform": "desktop, web, console",
+        "created_at": "2024-06-15T08:30:00.000Z",
+        "updated_at": "2024-07-18T08:30:00.000Z",
+        "icon": null
+      },
+      {
+        "id": "1648843",
+        "name": "Mobile Game",
+        "shortDescription": "Mock mobile-oriented project.",
+        "genre": "Puzzle, Casual, Strategy",
+        "targetPlatform": "mobile",
+        "created_at": "2025-02-10T12:00:00.000Z",
+        "updated_at": "2026-01-03T12:00:00.000Z",
+        "icon": null
+      }
+    ]
+  }
+}

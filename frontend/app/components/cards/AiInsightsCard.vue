@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { mockAiInsights } from '~/mock_data/mock_ai-insights'
+import { mockAiInsights } from '~/studyMock'
 
 interface Insight {
   type: 'info' | 'warning' | 'success'

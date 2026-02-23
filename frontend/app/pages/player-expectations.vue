@@ -16,6 +16,8 @@ definePageMeta({
 })
 // ============================================================================
 
+const config = useRuntimeConfig()
+
 const {
   aspectChartData,
   sentimentChartData,
@@ -24,7 +26,7 @@ const {
   heatmapData,
   topConfusionsChartData,
   load,
-} = usePlayerExpectationCharts('http://localhost:8000/api')
+} = usePlayerExpectationCharts(`${config.public.apiBase}/api`)
 
 const { currentProject } = useProjectHandler()
 const { toggleSubstep, loadForProject } = useProjectWorkflow()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import { useAuthentication } from '~/studyMock'
 
 defineProps<{
   collapsed?: boolean

@@ -4,6 +4,8 @@
 // ============================================================================
 // ============================================================================
 import type { MovieProject } from '~/utils/movie-script-evaluator'
+import { useAuthentication } from '~/studyMock'
+
 definePageMeta({
   pageConfig: {
     type: 'standalone',

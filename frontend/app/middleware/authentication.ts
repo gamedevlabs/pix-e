@@ -1,10 +1,4 @@
-﻿export default defineNuxtRouteMiddleware(async (to) => {
-  const { isLoggedIn, checkedLogin, checkAuthentication } = useAuthentication()
-
-  if (!checkedLogin.value) {
-    await checkAuthentication()
-  }
-  if (!isLoggedIn.value) {
-    return navigateTo(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
-  }
+﻿export default defineNuxtRouteMiddleware(async () => {
+  // Mock-only study deployment: no backend auth required.
+  return
 })
