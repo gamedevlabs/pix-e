@@ -127,72 +127,119 @@ const statusText = computed(() => {
 <template>
   <teleport to="body">
     <div v-if="open" class="fixed inset-0 z-100">
-      <!-- Backdrop blocks interaction (only dismissable once finished) -->
+      <!-- Backdrop: stronger blur + darker overlay to clearly separate from app -->
       <div
-        class="absolute inset-0 bg-black/40"
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm"
         @click.self="phase === 'finished' ? (open = false) : null"
       />
 
       <!-- Centered modal -->
-      <div class="absolute inset-0 flex items-center justify-center p-4">
-        <div class="w-105 max-w-[calc(100vw-2rem)]">
-          <UCard>
+      <div class="absolute inset-0 flex items-center justify-center p-6">
+        <div class="w-full max-w-lg">
+          <UCard
+            class="ring-2 ring-primary-500/60 shadow-2xl"
+            :ui="{
+              header: 'px-6 py-4 bg-primary-600 dark:bg-primary-700 rounded-t-xl',
+              body: 'px-6 py-5',
+              footer: 'px-6 py-4 border-t border-default/60',
+            }"
+          >
             <template #header>
               <div class="flex items-center justify-between">
-                <div class="font-medium">Study Mode</div>
+                <div class="flex items-center gap-3">
+                  <UIcon name="i-lucide-flask-conical" class="size-5 text-white/90" />
+                  <span class="text-lg font-bold text-white tracking-wide">Study Mode</span>
+                  <UBadge color="warning" variant="solid" size="sm">MOCK</UBadge>
+                </div>
                 <div class="flex items-center gap-2">
-                  <UBadge color="success" variant="subtle">MOCK</UBadge>
+                  <span class="text-xs text-white/70 font-mono">{{ statusText }}</span>
                   <UButton
                     v-if="phase === 'finished'"
                     size="xs"
                     variant="ghost"
                     color="neutral"
                     icon="i-lucide-x"
+                    class="text-white/80 hover:text-white hover:bg-white/10"
                     @click="open = false"
                   />
                 </div>
               </div>
-              <div class="mt-1 text-xs text-gray-500">{{ statusText }}</div>
             </template>
 
-            <div class="space-y-4">
-              <div v-if="phase === 'setup'">
-                <div class="text-sm text-gray-600 dark:text-gray-300">
-                  Configure the study, then start it. Starting will reset local data, unselect any
-                  project, and log out.
-                </div>
+            <div class="space-y-5">
+              <!-- SETUP PHASE -->
+              <div v-if="phase === 'setup'" class="space-y-5">
+                <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                  Configure the study session, then start it. Starting will
+                  <span class="font-semibold text-gray-800 dark:text-gray-100"
+                    >reset local data</span
+                  >, unselect any project, and log out so the participant starts fresh.
+                </p>
 
                 <UFormField
                   label="Participant ID"
                   name="participantId"
                   size="lg"
                   hint="Stored locally in your browser"
+                  class="w-full"
                 >
                   <UInput
                     :model-value="participantId"
                     placeholder="e.g. P01"
+                    size="lg"
+                    class="w-full font-mono"
                     @update:model-value="onParticipantChange"
                   />
                 </UFormField>
 
-                <div class="flex flex-wrap gap-2">
-                  <UButton size="xs" color="warning" variant="soft" @click="onResetSession(true)"
-                    >Reset session</UButton
+                <div class="flex flex-wrap gap-3 pt-1">
+                  <UButton
+                    size="md"
+                    color="warning"
+                    variant="soft"
+                    icon="i-lucide-rotate-ccw"
+                    @click="onResetSession(true)"
                   >
-                  <UButton size="xs" color="primary" variant="solid" @click="onStartStudy"
-                    >Start study</UButton
+                    Reset session
+                  </UButton>
+                  <UButton
+                    size="md"
+                    color="primary"
+                    variant="solid"
+                    icon="i-lucide-play"
+                    @click="onStartStudy"
                   >
+                    Start study
+                  </UButton>
                 </div>
 
-                <div class="pt-2 border-t border-default/50">
-                  <div class="text-xs text-gray-500 mb-2">
-                    Import/export is usually used by the facilitator.
-                  </div>
+                <!-- Facilitator section -->
+                <div class="pt-4 border-t border-default/50 space-y-3">
+                  <p
+                    class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
+                  >
+                    Facilitator tools
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Import or export session data between participants.
+                  </p>
                   <div class="flex flex-wrap gap-2">
-                    <UButton size="xs" color="neutral" variant="soft" @click="onExport"
-                      >Export session</UButton
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-download"
+                      @click="onExport"
                     >
-                    <UButton size="xs" color="neutral" variant="soft" as="label">
+                      Export session
+                    </UButton>
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-upload"
+                      as="label"
+                    >
                       Import session
                       <input
                         type="file"
@@ -207,34 +254,71 @@ const statusText = computed(() => {
                 </div>
               </div>
 
-              <div v-else-if="phase === 'finished'">
-                <div class="text-sm text-gray-600 dark:text-gray-300">
-                  Study finished. Export the captured session data.
+              <!-- FINISHED PHASE -->
+              <div v-else-if="phase === 'finished'" class="space-y-5">
+                <div
+                  class="flex items-start gap-3 p-4 rounded-lg bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800/50"
+                >
+                  <UIcon
+                    name="i-lucide-check-circle"
+                    class="size-5 text-success-500 mt-0.5 shrink-0"
+                  />
+                  <div>
+                    <p class="text-sm font-semibold text-success-700 dark:text-success-400">
+                      Study finished
+                    </p>
+                    <p class="text-sm text-success-600 dark:text-success-500 mt-0.5">
+                      Export the captured session data before closing.
+                    </p>
+                  </div>
                 </div>
 
-                <div class="flex flex-wrap gap-2">
-                  <UButton size="xs" color="neutral" variant="soft" @click="onExport"
-                    >Export session</UButton
+                <div class="flex flex-wrap gap-3">
+                  <UButton
+                    size="md"
+                    color="neutral"
+                    variant="soft"
+                    icon="i-lucide-download"
+                    @click="onExport"
                   >
-                  <UButton size="xs" color="warning" variant="soft" @click="onResetSession(true)"
-                    >Reset session</UButton
+                    Export session
+                  </UButton>
+                  <UButton
+                    size="md"
+                    color="warning"
+                    variant="soft"
+                    icon="i-lucide-rotate-ccw"
+                    @click="onResetSession(true)"
                   >
-                  <UButton size="xs" color="primary" variant="solid" @click="open = false"
-                    >Close</UButton
+                    Reset session
+                  </UButton>
+                  <UButton
+                    size="md"
+                    color="primary"
+                    variant="solid"
+                    icon="i-lucide-x"
+                    @click="open = false"
                   >
+                    Close
+                  </UButton>
                 </div>
               </div>
             </div>
 
             <template #footer>
               <div class="flex items-center justify-between">
-                <div class="text-xs text-gray-500">Storage key: <code>pixe.study.v1</code></div>
-                <!-- Facilitator-only: show Finish button while running -->
+                <div class="text-xs text-gray-400 dark:text-gray-500">
+                  Storage key:
+                  <code class="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs"
+                    >pixe.study.v1</code
+                  >
+                </div>
                 <UButton
                   v-if="phase === 'running'"
-                  size="xs"
+                  size="sm"
                   color="neutral"
                   variant="soft"
+                  icon="i-lucide-flag"
                   @click="onFinishStudy"
                 >
                   Finish study
