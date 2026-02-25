@@ -583,7 +583,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         substeps: [
           { id: 'onb-1-1', name: 'Inspect the sidebar and open any module', route: '/dashboard' },
           { id: 'onb-1-2', name: 'Have a look at the project Settings', route: '/edit' },
-          { id: 'onb-1-3', name: 'Use the Search Bar to find the Dashboard', route: '/dashboard' },
+          { id: 'onb-1-3', name: 'Have a look at the searchbar', route: '/dashboard' },
         ],
       },
     ],

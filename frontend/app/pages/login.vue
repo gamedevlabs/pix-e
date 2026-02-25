@@ -1,7 +1,8 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
-import type { WorkflowInstance } from '~/studyMock'
 import { useAuthentication } from '~/studyMock'
+import type { WorkflowInstance } from '~/studyMock'
+import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
@@ -31,6 +32,8 @@ const activeWorkflowTitle = computed(() => {
   return w?.meta?.title || 'Getting Started'
 })
 
+const showWorkflowButton = computed(() => activeWorkflowTitle.value === 'Getting Started')
+
 onMounted(async () => {
   await loadForUser()
   // Opening the login page counts as completing the first substep
@@ -47,7 +50,7 @@ const validate = (state: { username: string; password: string }): FormError[] =>
 const toast = useToast()
 
 async function handleLogin() {
-  const success = await authentication.login(state.username, state.password)
+  const success = await authentication.login(state.username)
   if (success) {
     // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
     await toggleSubstep('user-onb-1', 'user-onb-1-2')
@@ -73,7 +76,7 @@ async function handleRegistration() {
     })
     return
   }
-  const success = await authentication.register(state.username, state.password)
+  const success = await authentication.register(state.username)
   if (success) {
     // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
     await toggleSubstep('user-onb-1', 'user-onb-1-2')
@@ -96,11 +99,17 @@ async function handleRegistration() {
 
 <template>
   <div class="items-center justify-center flex-col flex">
-    <!-- Workflow button fixed bottom-left -->
-    <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
-      <WorkflowSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
-    </div>
-    <WorkflowSlideover />
+    <!-- Workflow button fixed bottom-left, only shown during "Getting Started" onboarding -->
+    <template v-if="showWorkflowButton">
+      <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
+        <WorkflowSlideOverButton
+          :collapsed="false"
+          :title="activeWorkflowTitle"
+          :progress="overallProgress"
+        />
+      </div>
+      <WorkflowSlideover :collapsed="false" />
+    </template>
 
     <h1 class="text-2xl font-bold mb-4">Login</h1>
 

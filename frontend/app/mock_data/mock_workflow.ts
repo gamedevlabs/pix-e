@@ -50,8 +50,6 @@ export interface PhaseTemplate {
   title: string
   /** Folder / phase group shown in the slideover. */
   folder: string
-  /** Short description displayed below the workflow title in the slideover. */
-  description?: string
   /** Toast message shown when the user completes this workflow. */
   completionMessage?: string
   steps: StepTemplate[]
