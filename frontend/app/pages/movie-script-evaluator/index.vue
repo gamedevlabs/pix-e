@@ -10,7 +10,7 @@ definePageMeta({
     showSidebar: false,
     title: 'Movie Script Evaluator',
     icon: 'i-lucide-film',
-    navGroup: 'main',
+    navGroup: 'tools',
     navOrder: 5,
     showInNav: true,
   },

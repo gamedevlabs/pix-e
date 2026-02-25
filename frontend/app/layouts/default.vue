@@ -117,20 +117,17 @@ const showSidebar = computed(() => {
 const links = computed<NavigationMenuItem[][]>(() => {
   const routes = router.getRoutes()
 
-  // Filter routes that should appear in navigation
   const navRoutes = routes.filter((route) => {
     const pageConfig = route.meta.pageConfig as PageConfig | undefined
     return pageConfig?.showInNav !== false && pageConfig?.title && pageConfig?.icon
   })
 
-  // Sort by navOrder
   const sortedRoutes = navRoutes.sort((a, b) => {
     const aConfig = a.meta.pageConfig as PageConfig
     const bConfig = b.meta.pageConfig as PageConfig
     return (aConfig.navOrder || 999) - (bConfig.navOrder || 999)
   })
 
-  // Group routes by parent
   const routesByParent = new Map<string, typeof sortedRoutes>()
   const topLevelRoutes: typeof sortedRoutes = []
 
@@ -144,15 +141,10 @@ const links = computed<NavigationMenuItem[][]>(() => {
     }
   })
 
-  // Build navigation items
-  const navItems: NavigationMenuItem[] = topLevelRoutes.map((route) => {
+  const buildNavItem = (route: (typeof sortedRoutes)[number]): NavigationMenuItem => {
     const pageConfig = route.meta.pageConfig as PageConfig
     const routePath = route.path
-
-    // Check if this route has children
     const childRoutes = routesByParent.get(routePath.replace(/^\//, ''))
-
-    // Determine if route needs project query
     const needsProjectQuery = pageConfig.type === 'project-required'
     const to = needsProjectQuery ? `${routePath}${projectQuery.value}` : routePath
 
@@ -162,7 +154,6 @@ const links = computed<NavigationMenuItem[][]>(() => {
       to,
     }
 
-    // Add children if they exist
     if (childRoutes && childRoutes.length > 0) {
       navItem.children = childRoutes.map((childRoute) => {
         const childConfig = childRoute.meta.pageConfig as PageConfig
@@ -170,7 +161,6 @@ const links = computed<NavigationMenuItem[][]>(() => {
         const childTo = childNeedsProjectQuery
           ? `${childRoute.path}${projectQuery.value}`
           : childRoute.path
-
         return {
           label: childConfig.title!,
           icon: childConfig.icon!,
@@ -180,9 +170,22 @@ const links = computed<NavigationMenuItem[][]>(() => {
     }
 
     return navItem
-  })
+  }
 
-  // External links section
+  const mainItems: NavigationMenuItem[] = topLevelRoutes
+    .filter((r) => {
+      const cfg = r.meta.pageConfig as PageConfig
+      return !cfg.navGroup || cfg.navGroup === 'main'
+    })
+    .map(buildNavItem)
+
+  const toolItems: NavigationMenuItem[] = topLevelRoutes
+    .filter((r) => {
+      const cfg = r.meta.pageConfig as PageConfig
+      return cfg.navGroup === 'tools'
+    })
+    .map(buildNavItem)
+
   const externalLinks: NavigationMenuItem[] = [
     {
       label: 'Wiki',
@@ -198,7 +201,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
     },
   ]
 
-  return [navItems, externalLinks]
+  return [mainItems, toolItems, externalLinks]
 })
 
 const groups = computed(() => [
@@ -351,6 +354,20 @@ watch(searchOpen, (isOpen) => {
                   popover
                 />
 
+                <USeparator
+                  :label="collapsed ? undefined : 'Standalone Tools'"
+                  class="my-2"
+                  :ui="{ label: 'text-xs text-gray-400 dark:text-gray-500 px-2' }"
+                />
+
+                <UNavigationMenu
+                  :collapsed="collapsed"
+                  :items="links[1]"
+                  orientation="vertical"
+                  tooltip
+                  popover
+                />
+
                 <div class="mt-auto w-full flex flex-col items-start px-2">
                   <!-- Workflow trigger + Slideover -->
                   <WorkflowSlideOverButton
@@ -362,7 +379,7 @@ watch(searchOpen, (isOpen) => {
 
                   <UNavigationMenu
                     :collapsed="collapsed"
-                    :items="links[1]"
+                    :items="links[2]"
                     orientation="vertical"
                     tooltip
                     class="w-full"
