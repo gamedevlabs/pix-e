@@ -170,17 +170,16 @@ const statusText = computed(() => {
               <!-- SETUP PHASE -->
               <div v-if="phase === 'setup'" class="space-y-5">
                 <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-                  Configure the study session, then start it. Starting will
-                  <span class="font-semibold text-gray-800 dark:text-gray-100"
-                    >reset local data</span
-                  >, unselect any project, and log out so the participant starts fresh.
+                  Welcome! Before you begin, please enter your participant ID below, then click
+                  <span class="font-semibold text-gray-800 dark:text-gray-100">Start study</span>
+                  to get started.
                 </p>
 
                 <UFormField
                   label="Participant ID"
                   name="participantId"
                   size="lg"
-                  hint="Stored locally in your browser"
+                  hint="You'll find this on your study sheet"
                   class="w-full"
                 >
                   <UInput
@@ -193,15 +192,6 @@ const statusText = computed(() => {
                 </UFormField>
 
                 <div class="flex flex-wrap gap-3 pt-1">
-                  <UButton
-                    size="md"
-                    color="warning"
-                    variant="soft"
-                    icon="i-lucide-rotate-ccw"
-                    @click="onResetSession(true)"
-                  >
-                    Reset session
-                  </UButton>
                   <UButton
                     size="md"
                     color="primary"
@@ -220,10 +210,16 @@ const statusText = computed(() => {
                   >
                     Facilitator tools
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    Import or export session data between participants.
-                  </p>
                   <div class="flex flex-wrap gap-2">
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-rotate-ccw"
+                      @click="onResetSession(true)"
+                    >
+                      Reset session
+                    </UButton>
                     <UButton
                       size="sm"
                       color="neutral"
@@ -265,10 +261,10 @@ const statusText = computed(() => {
                   />
                   <div>
                     <p class="text-sm font-semibold text-success-700 dark:text-success-400">
-                      Study finished
+                      You're done — great job!
                     </p>
                     <p class="text-sm text-success-600 dark:text-success-500 mt-0.5">
-                      Export the captured session data before closing.
+                      Please let the facilitator know you have finished.
                     </p>
                   </div>
                 </div>
