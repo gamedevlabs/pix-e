@@ -17,16 +17,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-
-from player_expectations_new.constants import (
-    AESTHETIC_CODE_TO_TEXT,
-    FEATURE_CODE_TO_TEXT,
-    PAIN_CODE_TO_TEXT,
-    POSITIVE_LABELS,
-    NEGATIVE_LABELS,
-    NEUTRAL_LABELS,
-)
-
+from player_expectations_new.constants import (AESTHETIC_CODE_TO_TEXT,
+                                               FEATURE_CODE_TO_TEXT,
+                                               NEGATIVE_LABELS, NEUTRAL_LABELS,
+                                               PAIN_CODE_TO_TEXT,
+                                               POSITIVE_LABELS)
 
 DashboardPolarity = str  # "any" | "rec" | "nrec"
 DashboardLanguage = str  # "all" | "english" | "schinese"

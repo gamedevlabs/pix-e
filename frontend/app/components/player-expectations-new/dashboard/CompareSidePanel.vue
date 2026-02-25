@@ -25,7 +25,7 @@ import type {
   DashboardPolarity,
 } from '~/utils/playerExpectationsNewDashboard'
 
-const props = defineProps<{
+defineProps<{
   title: string
   genreToAppIds: Record<string, number[]>
   gameNames: Record<number, string>

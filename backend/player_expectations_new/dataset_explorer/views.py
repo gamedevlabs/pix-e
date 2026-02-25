@@ -13,15 +13,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
+from player_expectations_new.constants import (AESTHETIC_CODE_TO_TEXT,
+                                               FEATURE_CODE_TO_TEXT,
+                                               GAME_NAMES, PAIN_CODE_TO_TEXT)
 
 from .efficientdbfix import SQLITE_DATASET_EXPLORER_INDEXES
-
-from player_expectations_new.constants import (
-    GAME_NAMES,
-    FEATURE_CODE_TO_TEXT,
-    PAIN_CODE_TO_TEXT,
-    AESTHETIC_CODE_TO_TEXT,
-)
 
 
 # _parse_int: parse Integer from a string

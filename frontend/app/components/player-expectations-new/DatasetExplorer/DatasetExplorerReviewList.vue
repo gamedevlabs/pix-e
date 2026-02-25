@@ -23,7 +23,7 @@ type Meta = {
 }
 
 //declares what this component expects from its parent.
-const props = defineProps<{
+defineProps<{
   rows: ReviewRow[]
   meta: Meta | null
   loading: boolean

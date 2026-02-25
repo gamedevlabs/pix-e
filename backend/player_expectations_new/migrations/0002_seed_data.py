@@ -1,6 +1,7 @@
-from django.db import migrations
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+from django.db import migrations
 
 
 def _read_csv(path: Path) -> pd.DataFrame:
