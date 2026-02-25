@@ -112,9 +112,9 @@ async function onEndStudy() {
       <div class="absolute inset-0 flex items-center justify-center p-6">
         <div class="w-full max-w-sm">
           <UCard
-            class="ring-2 ring-primary-500/60 shadow-2xl"
+            class="ring-2 ring-primary-500/60 shadow-2xl overflow-hidden"
             :ui="{
-              header: 'px-5 py-3 bg-primary-600 dark:bg-primary-700 rounded-t-xl',
+              header: 'px-5 py-3 bg-primary-600 dark:bg-primary-700',
               body: 'px-5 py-4',
               footer: 'hidden',
             }"
@@ -123,7 +123,6 @@ async function onEndStudy() {
               <div class="flex items-center gap-2">
                 <UIcon name="i-lucide-flask-conical" class="size-4 text-white/90" />
                 <span class="text-base font-bold text-white tracking-wide">Study Mode</span>
-                <UBadge color="warning" variant="solid" size="sm">MOCK</UBadge>
               </div>
             </template>
 
