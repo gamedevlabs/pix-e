@@ -2,11 +2,15 @@
 # maps incoming HTTP paths to Python view functions.
 
 from django.urls import path
+
 from player_expectations_new.dashboard.views import (
-    compare_heatmap_codes, compare_kpis, compare_sentiment_distribution,
-    compare_timeseries, compare_top_codes)
-from player_expectations_new.dataset_explorer.views import \
-    dataset_explorer_reviews
+    compare_heatmap_codes,
+    compare_kpis,
+    compare_sentiment_distribution,
+    compare_timeseries,
+    compare_top_codes,
+)
+from player_expectations_new.dataset_explorer.views import dataset_explorer_reviews
 
 app_name = "player_expectations_new"
 

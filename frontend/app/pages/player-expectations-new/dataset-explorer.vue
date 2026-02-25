@@ -22,11 +22,11 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'Dataset Explorer (v2)',
+    title: 'Dataset Explorer',
     icon: 'i-lucide-telescope',
     navGroup: 'main',
     navParent: 'player-expectations-landing',
-    navOrder: 4,
+    navOrder: 2,
     showInNav: true,
   },
 })

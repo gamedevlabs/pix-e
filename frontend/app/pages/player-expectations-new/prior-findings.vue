@@ -4,11 +4,11 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'Prior Findings (v2)',
+    title: 'Prior Findings',
     icon: 'i-lucide-library-big',
     navGroup: 'main',
     navParent: 'player-expectations-landing',
-    navOrder: 5,
+    navOrder: 3,
     showInNav: true,
   },
 })

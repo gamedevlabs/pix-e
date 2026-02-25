@@ -4,11 +4,11 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'Sentiment Analysis (v1)',
+    title: 'Sentiment Analysis (legacy)',
     icon: 'i-lucide-library-big',
     navGroup: 'main',
     navParent: 'player-expectations-landing',
-    navOrder: 2,
+    navOrder: 5,
     showInNav: true,
   },
 })

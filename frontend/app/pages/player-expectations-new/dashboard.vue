@@ -22,11 +22,11 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'PE Dashboard (v2)',
+    title: 'Dashboard',
     icon: 'i-lucide-layout-dashboard',
     navGroup: 'main',
     navParent: 'player-expectations-landing',
-    navOrder: 3,
+    navOrder: 1,
     showInNav: true,
   },
 })

@@ -7,11 +7,11 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'PE Dashboard (v1)',
+    title: 'Dashboard (legacy)',
     icon: 'i-lucide-book-open',
     navGroup: 'main',
     navParent: 'player-expectations-landing',
-    navOrder: 1,
+    navOrder: 4,
     showInNav: true,
   },
 })

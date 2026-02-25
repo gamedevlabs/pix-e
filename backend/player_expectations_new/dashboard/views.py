@@ -17,11 +17,15 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from player_expectations_new.constants import (AESTHETIC_CODE_TO_TEXT,
-                                               FEATURE_CODE_TO_TEXT,
-                                               NEGATIVE_LABELS, NEUTRAL_LABELS,
-                                               PAIN_CODE_TO_TEXT,
-                                               POSITIVE_LABELS)
+
+from player_expectations_new.constants import (
+    AESTHETIC_CODE_TO_TEXT,
+    FEATURE_CODE_TO_TEXT,
+    NEGATIVE_LABELS,
+    NEUTRAL_LABELS,
+    PAIN_CODE_TO_TEXT,
+    POSITIVE_LABELS,
+)
 
 DashboardPolarity = str  # "any" | "rec" | "nrec"
 DashboardLanguage = str  # "all" | "english" | "schinese"
@@ -91,7 +95,7 @@ def _in_clause(values: Sequence[Any]) -> Tuple[str, List[Any]]:
 
 # Assigns raw sentiment the respective bucket...implicite positve -> positve
 def _sentiment_bucket(sentiment_v2: Optional[str]) -> str:
-    s = sentiment_v2.strip().lower()
+    s = (sentiment_v2 or "").strip().lower()
     if not s:
         return "missing"
     if s in POSITIVE_LABELS:
