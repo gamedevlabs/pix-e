@@ -6,7 +6,11 @@ For features/pain it draws a parent/child grid (parents are x-axis columns, chil
 on hover, it shows a tooltip with code name, net value, and total mentions. -->
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { CompareHeatmapCodes, DimensionKey, HeatmapCodeRow } from '~/utils/playerExpectationsNewDashboard'
+import type {
+  CompareHeatmapCodes,
+  DimensionKey,
+  HeatmapCodeRow,
+} from '~/utils/playerExpectationsNewDashboard'
 import { fmtFloat, fmtInt } from '~/utils/playerExpectationsNewDashboard'
 
 const props = defineProps<{
@@ -123,7 +127,7 @@ const hier = computed(() => {
     childrenByParent.set(p, xs)
   }
 
-  const maxDepth = Math.max(0, ...parents.map((p) => (childrenByParent.get(p)?.length ?? 0)))
+  const maxDepth = Math.max(0, ...parents.map((p) => childrenByParent.get(p)?.length ?? 0))
 
   // Build a 2D grid:
   const grid: Cell[][] = []
@@ -132,8 +136,8 @@ const hier = computed(() => {
     grid.push(
       parents.map((p) => {
         const child = childrenByParent.get(p)?.[i]
-        return child ? byCode.value.get(child) ?? null : null
-      })
+        return child ? (byCode.value.get(child) ?? null) : null
+      }),
     )
   }
 
@@ -221,14 +225,12 @@ function hideTip() {
       </div>
     </div>
 
-    <div class="mt-3 text-[11px] text-slate-500 dark:text-slate-400">Hover over a box to see category name and net.</div>
+    <div class="mt-3 text-[11px] text-slate-500 dark:text-slate-400">
+      Hover over a box to see category name and net.
+    </div>
 
     <!-- Custom tooltip -->
-    <div
-      v-if="tip.visible"
-      class="hm-tip"
-      :style="{ left: `${tip.x}px`, top: `${tip.y}px` }"
-    >
+    <div v-if="tip.visible" class="hm-tip" :style="{ left: `${tip.x}px`, top: `${tip.y}px` }">
       <pre class="hm-tip-pre">{{ tip.text }}</pre>
     </div>
   </UCard>
@@ -270,7 +272,15 @@ function hideTip() {
   margin: 0;
   font-size: 12px;
   line-height: 1.25;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-    "Segoe UI Emoji";
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
 }
 </style>

@@ -15,7 +15,6 @@ definePageMeta({
     showInNav: true,
   },
 })
-
 </script>
 
 <template>
@@ -23,7 +22,10 @@ definePageMeta({
     <!-- Hero Section -->
     <section class="text-center">
       <h1 class="text-4xl font-bold mb-4">Welcome to the player expectation section of pix:e 🎉</h1>
-      <p class="text-gray-500 dark:text-gray-400 mb-6">Research player expectations for your game. Two different approaches using two different datasets are available to explore: v1, and v2.</p>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">
+        Research player expectations for your game. Two different approaches using two different
+        datasets are available to explore: v1, and v2.
+      </p>
     </section>
 
     <!-- Cards Section -->
@@ -42,9 +44,7 @@ definePageMeta({
             <NuxtLink to="/sentiments"> Sentiment Analysis (v1) </NuxtLink>
           </h2>
         </template>
-        <p>
-          Analyse extracted sentiment of the v1 dataset.
-        </p>
+        <p>Analyse extracted sentiment of the v1 dataset.</p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -53,17 +53,21 @@ definePageMeta({
           </h2>
         </template>
         <p>
-          Data-Driven insights into how player expectations differ across cultural contexts, genre conventions, and individual game titles.
+          Data-Driven insights into how player expectations differ across cultural contexts, genre
+          conventions, and individual game titles.
         </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
           <h2 class="font-semibold text-lg">
-            <NuxtLink to="/player-expectations-new/dataset-explorer"> Dataset Explorer (v2) </NuxtLink>
+            <NuxtLink to="/player-expectations-new/dataset-explorer">
+              Dataset Explorer (v2)
+            </NuxtLink>
           </h2>
         </template>
         <p>
-          Inspect individual Steam reviews and validate the extracted quote → aspect code → sentiment assignments within each review.
+          Inspect individual Steam reviews and validate the extracted quote → aspect code →
+          sentiment assignments within each review.
         </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
@@ -73,11 +77,11 @@ definePageMeta({
           </h2>
         </template>
         <p>
-          Serves as a centralized catalog of selected findings (presented as direct quotes) from prior research on game review analysis
+          Serves as a centralized catalog of selected findings (presented as direct quotes) from
+          prior research on game review analysis
         </p>
       </UCard>
     </section>
-
   </UContainer>
 </template>
 

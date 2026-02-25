@@ -64,7 +64,8 @@ function selectRec(id: string) {
           type="button"
           class="review-row"
           :class="selectedRecId === r.recommendation_id ? 'review-row--selected' : ''"
-          @click="selectRec(r.recommendation_id)">
+          @click="selectRec(r.recommendation_id)"
+        >
           <div class="flex items-center justify-between gap-2">
             <div class="font-medium truncate">
               {{ r.game_name }}
@@ -90,7 +91,10 @@ function selectRec(id: string) {
 
         <!-- Loading / empty states -->
         <div v-if="loading" class="p-3 text-sm text-slate-500 dark:text-slate-400">Loading…</div>
-        <div v-if="!loading && rows.length === 0" class="p-3 text-sm text-slate-500 dark:text-slate-400">
+        <div
+          v-if="!loading && rows.length === 0"
+          class="p-3 text-sm text-slate-500 dark:text-slate-400"
+        >
           No results (try relaxing filters).
         </div>
       </div>

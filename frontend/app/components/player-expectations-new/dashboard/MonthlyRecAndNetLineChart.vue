@@ -17,14 +17,13 @@ const props = withDefaults(
   {
     title: 'Timeline - Recommendation Rate vs. Net Sentiment (Monthly Average)',
     data: null,
-  }
+  },
 )
 
 // Small helper: keep numbers inside a range (prevents layout issues)
 function clamp(x: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, x))
 }
-
 
 type Point = {
   month: string
@@ -49,7 +48,6 @@ const points = computed<Point[]>(() => {
     })
     .filter((p) => !!p.month)
 })
-
 
 /**
  * layout constants.
@@ -124,7 +122,6 @@ const netTicks = computed(() => [
   { v: 0, y: yNet(0) },
   { v: -1, y: yNet(-1) },
 ])
-
 
 function parseMonthKey(m: string): { yyyy: number; mm: number } | null {
   // expected "YYYY-MM"
@@ -268,8 +265,20 @@ const AXIS_Y = computed(() => H - P_B)
         </g>
 
         <!-- series -->
-        <path :d="pathRec" fill="none" stroke="var(--ui-primary)" stroke-width="2.4" opacity="0.92" />
-        <path :d="pathNet" fill="none" stroke="var(--ui-secondary)" stroke-width="2.4" opacity="0.92" />
+        <path
+          :d="pathRec"
+          fill="none"
+          stroke="var(--ui-primary)"
+          stroke-width="2.4"
+          opacity="0.92"
+        />
+        <path
+          :d="pathNet"
+          fill="none"
+          stroke="var(--ui-secondary)"
+          stroke-width="2.4"
+          opacity="0.92"
+        />
 
         <!-- points with tooltips -->
         <g v-for="(p, i) in points" :key="`pt-${p.month}-${i}`">

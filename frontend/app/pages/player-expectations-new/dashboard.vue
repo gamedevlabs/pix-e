@@ -44,7 +44,9 @@ onMounted(compare.load)
 //onBeforeUnmount(() => console.log('DASH unmounted'))
 
 // Show a simple "Loading…" hint only during the very first load:
-const showLoadingHint = computed(() => compare.loading && !compare.leftKpis.value && !compare.rightKpis.value)
+const showLoadingHint = computed(
+  () => compare.loading && !compare.leftKpis.value && !compare.rightKpis.value,
+)
 </script>
 
 <template>
@@ -54,7 +56,8 @@ const showLoadingHint = computed(() => compare.loading && !compare.leftKpis.valu
       <h1 class="text-3xl font-semibold">Dashboard</h1>
       <!-- Short explanation of what the page is for -->
       <p class="mt-1 text-slate-600 dark:text-slate-300">
-        Two independent selections. Compare recommendation rate, sentiment distribution, drivers, heatmaps, and timeline of two subgroups.
+        Two independent selections. Compare recommendation rate, sentiment distribution, drivers,
+        heatmaps, and timeline of two subgroups.
       </p>
     </div>
 

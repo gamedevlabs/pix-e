@@ -204,7 +204,7 @@ function hideTip() {
                       :style="{
                         height: segPct(r.neutral, r.total),
                         backgroundColor: 'var(--ui-info)',
-                        opacity: 0.70,
+                        opacity: 0.7,
                       }"
                     />
                     <div
@@ -244,7 +244,8 @@ function hideTip() {
           </div>
 
           <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-            X: top {{ top.length }} aspects by volume. · Y: #mentions · Hover over a bar for more info
+            X: top {{ top.length }} aspects by volume. · Y: #mentions · Hover over a bar for more
+            info
           </div>
         </div>
       </div>
@@ -253,7 +254,7 @@ function hideTip() {
     <!-- Custom tooltip, teleport to body otherwis the other charts slip down when open -->
     <Teleport to="body">
       <div v-if="tip.visible" class="tv-tip" :style="{ left: `${tip.x}px`, top: `${tip.y}px` }">
-      <pre class="tv-tip-pre">{{ tip.text }}</pre>
+        <pre class="tv-tip-pre">{{ tip.text }}</pre>
       </div>
     </Teleport>
   </div>
@@ -312,7 +313,15 @@ function hideTip() {
   margin: 0;
   font-size: 12px;
   line-height: 1.25;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-    "Segoe UI Emoji";
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
 }
 </style>

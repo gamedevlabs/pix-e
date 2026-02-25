@@ -26,7 +26,9 @@ defineProps<{ kpis: CompareKpis | null }>()
 
     <UCard>
       <div class="text-xs text-slate-500 dark:text-slate-400">Mentions / review</div>
-      <div class="text-lg font-semibold">{{ kpis ? fmtFloat(kpis.mentions_per_review, 2) : '—' }}</div>
+      <div class="text-lg font-semibold">
+        {{ kpis ? fmtFloat(kpis.mentions_per_review, 2) : '—' }}
+      </div>
     </UCard>
   </div>
 </template>

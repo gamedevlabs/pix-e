@@ -10,7 +10,6 @@
 import { computed } from 'vue'
 import type { ReviewRow } from '~/composables/usePlayerExpectationsNewDatasetExplorer'
 
-
 type Segment = { text: string; highlight: boolean }
 type Interval = { start: number; end: number } // [start, end)
 
@@ -37,7 +36,7 @@ function findAllIntervals(text: string, needle: string): Interval[] {
 function mergeIntervals(xs: Interval[]): Interval[] {
   if (xs.length === 0) return []
 
-  const sorted = [...xs].sort((a, b) => (a.start - b.start) || (a.end - b.end))
+  const sorted = [...xs].sort((a, b) => a.start - b.start || a.end - b.end)
   const first = sorted[0]
   if (!first) return []
 
@@ -123,16 +122,17 @@ const highlightedSegments = computed<Segment[]>(() => {
 
           <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
             {{ formatUnix(selectedReview.timestamp_created) }}
-            • 👍 {{ selectedReview.votes_up }}
-            • 😂 {{ selectedReview.votes_funny }}
-            • playtime: {{ selectedReview.playtime_at_review }} → {{ selectedReview.playtime_forever }}
+            • 👍 {{ selectedReview.votes_up }} • 😂 {{ selectedReview.votes_funny }} • playtime:
+            {{ selectedReview.playtime_at_review }} → {{ selectedReview.playtime_forever }}
           </div>
         </div>
 
         <!-- Review text with highlighted quote snippets -->
         <div>
           <div class="font-medium mb-2">Review text (highlighted quotes)</div>
-          <div class="text-sm leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-wrap">
+          <div
+            class="text-sm leading-relaxed text-slate-800 dark:text-slate-100 whitespace-pre-wrap"
+          >
             <template v-for="(seg, i) in highlightedSegments" :key="i">
               <mark v-if="seg.highlight" class="rounded px-0.5">
                 {{ seg.text }}
@@ -147,7 +147,10 @@ const highlightedSegments = computed<Segment[]>(() => {
           <div class="font-medium mb-2">Extracted Quotes (true pairs only)</div>
 
           <!-- If the backend returned no quotes for this review -->
-          <div v-if="!selectedReview.quotes?.length" class="text-sm text-slate-500 dark:text-slate-400">
+          <div
+            v-if="!selectedReview.quotes?.length"
+            class="text-sm text-slate-500 dark:text-slate-400"
+          >
             No extracted quote → code → sentiment pairs for this review.
           </div>
 
@@ -162,7 +165,9 @@ const highlightedSegments = computed<Segment[]>(() => {
                 <UBadge size="xs" variant="soft">
                   {{ qRow.coarse_category }}
                 </UBadge>
-                <span class="text-xs text-slate-500 dark:text-slate-400">quote_id {{ qRow.quote_id }}</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400"
+                  >quote_id {{ qRow.quote_id }}</span
+                >
               </div>
 
               <div class="text-sm text-slate-800 dark:text-slate-100">
@@ -175,17 +180,16 @@ const highlightedSegments = computed<Segment[]>(() => {
                   :key="`${c.coarse_category}-${c.code_int}`"
                   class="flex flex-wrap gap-2 items-center"
                 >
-                  <UBadge size="xs" variant="soft">
-                    {{ c.code_int }} — {{ c.code_text }}
-                  </UBadge>
+                  <UBadge size="xs" variant="soft"> {{ c.code_int }} — {{ c.code_text }} </UBadge>
 
-                  <UBadge size="xs" variant="outline"> sentiment: {{ prettySentiment(c.sentiment_v2) }} </UBadge>
+                  <UBadge size="xs" variant="outline">
+                    sentiment: {{ prettySentiment(c.sentiment_v2) }}
+                  </UBadge>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>

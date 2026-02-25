@@ -11,7 +11,6 @@
 import { computed } from 'vue'
 import { GENRE_APPIDS, GAME_NAMES } from '~/composables/usePlayerExpectationsNewDatasetExplorer'
 
-
 //describe the shape of the code lists used in the UI.
 type CodeBtn = { code: number; label: string }
 type Group = { top: number; label: string; subs: { code: number; label: string }[] }
@@ -64,8 +63,6 @@ function hasInSet<T>(s: Set<T>, value: T): boolean {
 function chipColor(selected: boolean) {
   return selected ? 'primary' : 'neutral'
 }
-
-
 </script>
 
 <template>

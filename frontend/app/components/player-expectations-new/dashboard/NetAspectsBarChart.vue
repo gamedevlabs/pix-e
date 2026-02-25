@@ -206,7 +206,7 @@ function hideTip() {
                       :style="{
                         height: segPct(r.neutral, r.total),
                         backgroundColor: 'var(--ui-info)',
-                        opacity: 0.70,
+                        opacity: 0.7,
                       }"
                     />
                     <div
@@ -312,7 +312,15 @@ function hideTip() {
   margin: 0;
   font-size: 12px;
   line-height: 1.25;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-    "Segoe UI Emoji";
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
 }
 </style>

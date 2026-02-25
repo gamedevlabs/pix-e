@@ -59,7 +59,8 @@ const {
                 placeholder="Search in findings…"
                 class="w-full mt-2"
                 size="lg"
-              />  <!-- linked to keyword memore var...every update here triggers the logi in usepr... -->
+              />
+              <!-- linked to keyword memore var...every update here triggers the logi in usepr... -->
             </div>
           </div>
         </template>
@@ -84,7 +85,8 @@ const {
               size="xs"
               :variant="selectedTags.has(tag) ? 'solid' : 'soft'"
               @click="toggleTag(tag)"
-            >        <!-- FOr every tag, loop and buld  button for each -->
+            >
+              <!-- FOr every tag, loop and buld  button for each -->
               {{ tag }}
             </UButton>
           </div>

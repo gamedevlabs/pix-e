@@ -84,7 +84,10 @@ const emit = defineEmits<{
       />
 
       <!-- Timeline -->
-      <MonthlyRecAndNetLineChart title="Timeline - Recommendation Rate vs. Net Sentiment (Monthly Average)" :data="timeseries.value" />
+      <MonthlyRecAndNetLineChart
+        title="Timeline - Recommendation Rate vs. Net Sentiment (Monthly Average)"
+        :data="timeseries.value"
+      />
     </div>
   </UCard>
 </template>

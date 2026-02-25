@@ -81,9 +81,7 @@ function chipColor(selected: boolean) {
 
 /** same as above */
 function segStyle(selected: boolean) {
-  return selected
-    ? { backgroundColor: 'var(--ui-primary)', color: 'white', fontWeight: '600' }
-    : {}
+  return selected ? { backgroundColor: 'var(--ui-primary)', color: 'white', fontWeight: '600' } : {}
 }
 
 // Helper: is a specific app ID currently selected?
@@ -103,9 +101,7 @@ function hasAnyGenreSelected(genre: string) {
     <!-- Title + selected count -->
     <div class="flex items-center justify-between">
       <h3 class="font-semibold">{{ title }}</h3>
-      <div class="text-xs text-slate-500 dark:text-slate-400">
-        {{ appIds.length }} game(s)
-      </div>
+      <div class="text-xs text-slate-500 dark:text-slate-400">{{ appIds.length }} game(s)</div>
     </div>
 
     <!-- Recommendation/ polarity -->

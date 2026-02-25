@@ -150,12 +150,16 @@ function clickPolarity(v: Recommended) {
     <!-- Row 1: Search + polarity + date range -->
     <div class="grid grid-cols-12 gap-3 items-end">
       <div class="col-span-12 lg:col-span-4">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Search</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Search</label
+        >
         <UInput v-model="qModel" placeholder="Search review text…" size="md" />
       </div>
 
       <div class="col-span-12 lg:col-span-4">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Polarity</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Polarity</label
+        >
 
         <div class="segmented">
           <button
@@ -189,12 +193,16 @@ function clickPolarity(v: Recommended) {
       </div>
 
       <div class="col-span-6 lg:col-span-2">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Time from</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Time from</label
+        >
         <UInput v-model="dateFromModel" type="date" size="md" />
       </div>
 
       <div class="col-span-6 lg:col-span-2">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Time to</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Time to</label
+        >
         <UInput v-model="dateToModel" type="date" size="md" />
       </div>
     </div>
@@ -202,7 +210,9 @@ function clickPolarity(v: Recommended) {
     <!-- Row 2: numeric range filters -->
     <div class="grid grid-cols-12 gap-3 mt-4">
       <div class="col-span-12 lg:col-span-3">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Helpful votes</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Helpful votes</label
+        >
         <div class="flex gap-2">
           <!-- v-model.number converts the input string to a number automatically -->
           <UInput v-model="minVotesUpModel" type="number" placeholder="min" size="sm" />
@@ -211,7 +221,9 @@ function clickPolarity(v: Recommended) {
       </div>
 
       <div class="col-span-12 lg:col-span-3">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Funny votes</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Funny votes</label
+        >
         <div class="flex gap-2">
           <UInput v-model="minVotesFunnyModel" type="number" placeholder="min" size="sm" />
           <UInput v-model="maxVotesFunnyModel" type="number" placeholder="max" size="sm" />
@@ -219,7 +231,9 @@ function clickPolarity(v: Recommended) {
       </div>
 
       <div class="col-span-12 lg:col-span-3">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Playtime at review</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Playtime at review</label
+        >
         <div class="flex gap-2">
           <UInput v-model="minPlaytimeAtReviewModel" type="number" placeholder="min" size="sm" />
           <UInput v-model="maxPlaytimeAtReviewModel" type="number" placeholder="max" size="sm" />
@@ -227,7 +241,9 @@ function clickPolarity(v: Recommended) {
       </div>
 
       <div class="col-span-12 lg:col-span-3">
-        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Playtime forever</label>
+        <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+          >Playtime forever</label
+        >
         <div class="flex gap-2">
           <UInput v-model="minPlaytimeForeverModel" type="number" placeholder="min" size="sm" />
           <UInput v-model="maxPlaytimeForeverModel" type="number" placeholder="max" size="sm" />
@@ -239,7 +255,9 @@ function clickPolarity(v: Recommended) {
     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <div>
-          <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Sort</label>
+          <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+            >Sort</label
+          >
           <select
             v-model="sortModel"
             class="h-7 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm"
@@ -250,7 +268,9 @@ function clickPolarity(v: Recommended) {
         </div>
 
         <div>
-          <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300">Page size</label>
+          <label class="block text-xs font-medium mb-1 text-slate-600 dark:text-slate-300"
+            >Page size</label
+          >
           <select
             v-model.number="pageSizeModel"
             class="h-7 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 text-sm"
@@ -273,7 +293,13 @@ function clickPolarity(v: Recommended) {
         </div>
 
         <div class="flex gap-2">
-          <UButton color="neutral" variant="outline" size="sm" :disabled="!meta || meta.page <= 1" @click="prevPage">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            :disabled="!meta || meta.page <= 1"
+            @click="prevPage"
+          >
             Prev
           </UButton>
           <UButton

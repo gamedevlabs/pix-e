@@ -37,7 +37,6 @@ defineProps<{
     <!-- Main content -->
     <div v-else class="mt-4 space-y-5">
       <div>
-
         <!-- 1) Most mentioned aspects -->
         <div>
           <div class="text-sm font-semibold mb-2">Most Mentioned Aspects</div>
@@ -48,21 +47,33 @@ defineProps<{
 
         <!-- 2) Net-sentiment rankings (positive and negative) -->
         <div class="space-y-4">
-          <div class="text-sm font-semibold mb-2">Highest Rated Aspects: Ranked by Net Sentiment</div>
+          <div class="text-sm font-semibold mb-2">
+            Highest Rated Aspects: Ranked by Net Sentiment
+          </div>
           <div class="sm:px-0 mb-3 text-[11px] leading-snug text-slate-600 dark:text-slate-300">
             Net sentiment = (positive mentions − negative mentions) / total mentions,<br />
             ranging from −1 (all negative) to +1 (all positive).
           </div>
-          <NetAspectsBarChart title="Most positive" kind="pos" :rows="data.top_positive" />        <br />
-          <div class="text-sm font-semibold mb-2">Lowest Rated Aspects: Ranked by Net Sentiment</div>
+          <NetAspectsBarChart title="Most positive" kind="pos" :rows="data.top_positive" /> <br />
+          <div class="text-sm font-semibold mb-2">
+            Lowest Rated Aspects: Ranked by Net Sentiment
+          </div>
           <NetAspectsBarChart title="Most negative" kind="neg" :rows="data.top_negative" />
         </div>
       </div>
 
       <!-- 3) Heatmaps:-->
       <div class="space-y-4">
-        <CodeHeatmapGrid title="Heatmap - Game Aesthetics" dimension="aesthetics" :data="heatAesthetics" />
-        <CodeHeatmapGrid title="Heatmap - Game Features" dimension="features" :data="heatFeatures" />
+        <CodeHeatmapGrid
+          title="Heatmap - Game Aesthetics"
+          dimension="aesthetics"
+          :data="heatAesthetics"
+        />
+        <CodeHeatmapGrid
+          title="Heatmap - Game Features"
+          dimension="features"
+          :data="heatFeatures"
+        />
         <CodeHeatmapGrid title="Heatmap - Pain Points" dimension="pain" :data="heatPain" />
       </div>
     </div>

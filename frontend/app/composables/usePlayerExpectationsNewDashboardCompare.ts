@@ -36,14 +36,11 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
   }
 
   const base =
-    apiBase ??
-    joinBase(cfg?.public?.apiBase as string | undefined, '/api/player-expectations-new')
-
+    apiBase ?? joinBase(cfg?.public?.apiBase as string | undefined, '/api/player-expectations-new')
 
   const alive = ref(true)
 
   let controller: AbortController | null = null
-
 
   const makeSide = () => {
     const appIds = ref<number[]>([])
@@ -101,14 +98,10 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
     }
   }
 
-  async function fetchJson<T>(
-  url: string,
-  params: Record<string, string | number | undefined>
-) {
-  // controller is created per load()
-  return await $fetch<T>(url, { query: params, signal: controller?.signal })
-}
-
+  async function fetchJson<T>(url: string, params: Record<string, string | number | undefined>) {
+    // controller is created per load()
+    return await $fetch<T>(url, { query: params, signal: controller?.signal })
+  }
 
   // Load one heatmap (aesthetics/features/pain) for a given scope
   async function loadHeatmap(scope: CompareScope, dimension: DimensionKey) {
@@ -118,7 +111,6 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
       dimension,
     })
   }
-
 
   // Load all data blocks needed for one side (Left OR Right).
   // We fetch in parallel because they are independent requests.
@@ -133,8 +125,11 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
       fetchJson<CompareTimeseries>(`${base}/dashboard/compare/timeseries/`, p),
 
       // Drivers table should be “most mentioned aspects regardless of level”
-      fetchJson<CompareTopCodes>(`${base}/dashboard/compare/top-codes/`, { ...p, level: 'all', limit: 20 }),
-
+      fetchJson<CompareTopCodes>(`${base}/dashboard/compare/top-codes/`, {
+        ...p,
+        level: 'all',
+        limit: 20,
+      }),
 
       loadHeatmap(scope, 'aesthetics'),
       loadHeatmap(scope, 'features'),
@@ -154,7 +149,7 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
   const stopWatch = watch(
     [left.appIds, left.polarity, left.languages, right.appIds, right.polarity, right.languages],
     () => scheduleLoad(),
-    { deep: true }
+    { deep: true },
   )
 
   // Load BOTH sides, then write the results into the refs used by components.
@@ -188,7 +183,13 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
     } catch (e: unknown) {
       // Abort is expected on navigation or when a new load starts
       if (e instanceof DOMException && e.name === 'AbortError') return
-      if (typeof e === 'object' && e !== null && 'name' in e && (e as { name?: unknown }).name === 'AbortError') return
+      if (
+        typeof e === 'object' &&
+        e !== null &&
+        'name' in e &&
+        (e as { name?: unknown }).name === 'AbortError'
+      )
+        return
 
       // ofetch often throws FetchError with a nested cause = AbortError
       if (
@@ -196,7 +197,7 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
         e !== null &&
         'cause' in e &&
         (e as { cause?: unknown }).cause instanceof DOMException &&
-        ((e as { cause: DOMException }).cause.name === 'AbortError')
+        (e as { cause: DOMException }).cause.name === 'AbortError'
       ) {
         return
       }

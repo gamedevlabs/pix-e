@@ -70,7 +70,7 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
 
   //Find the selected review in the current page rows.
   const selectedReview = computed(
-    () => core.rows.value.find((r) => r.recommendation_id === selectedRecId.value) || null
+    () => core.rows.value.find((r) => r.recommendation_id === selectedRecId.value) || null,
   )
 
   //error extraction fix
@@ -106,12 +106,12 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
       if (statusMessage != null) return String(statusMessage)
     }
 
-  try {
-    return JSON.stringify(e, null, 2)
-  } catch {
-    return String(e)
-  }
-})
+    try {
+      return JSON.stringify(e, null, 2)
+    } catch {
+      return String(e)
+    }
+  })
 
   // shorten long review text so lists look clean.
   function truncate(text: string, n = 220) {
@@ -156,7 +156,7 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
       const pattern = new RegExp(escapeRegex(qEsc), 'g')
       out = out.replace(
         pattern,
-        `<mark class="px-1 rounded bg-yellow-200/70 dark:bg-yellow-400/20 font-semibold">${qEsc}</mark>`
+        `<mark class="px-1 rounded bg-yellow-200/70 dark:bg-yellow-400/20 font-semibold">${qEsc}</mark>`,
       )
     }
     return out
@@ -186,7 +186,8 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
     {
       top: 800,
       subs: [
-        801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814, 815, 816, 817, 818, 819,
+        801, 802, 803, 804, 805, 806, 807, 808, 809, 810, 811, 812, 813, 814, 815, 816, 817, 818,
+        819,
       ],
     },
     { top: 90, subs: [91, 92, 93, 94, 95] },
@@ -231,9 +232,12 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
     const t = featureSearch.value.trim().toLowerCase()
     if (!t) return featureGroups
     return featureGroups
-      .map((g) => { //If you match the top label, keep the whole group.
+      .map((g) => {
+        //If you match the top label, keep the whole group.
         const topHit = g.label.toLowerCase().includes(t) || String(g.top).includes(t)
-        const subs = g.subs.filter((s) => s.label.toLowerCase().includes(t) || String(s.code).includes(t))
+        const subs = g.subs.filter(
+          (s) => s.label.toLowerCase().includes(t) || String(s.code).includes(t),
+        )
         return topHit ? g : { ...g, subs }
       })
       .filter((g) => g.label.toLowerCase().includes(t) || g.subs.length > 0)
@@ -245,7 +249,9 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
     return painGroups
       .map((g) => {
         const topHit = g.label.toLowerCase().includes(t) || String(g.top).includes(t)
-        const subs = g.subs.filter((s) => s.label.toLowerCase().includes(t) || String(s.code).includes(t))
+        const subs = g.subs.filter(
+          (s) => s.label.toLowerCase().includes(t) || String(s.code).includes(t),
+        )
         return topHit ? g : { ...g, subs }
       })
       .filter((g) => g.label.toLowerCase().includes(t) || g.subs.length > 0)
@@ -306,7 +312,7 @@ export function useDatasetExplorerViewModel(core: DatasetExplorerCore) {
     () => {
       core.page.value = 1
       core.load()
-    }
+    },
   )
 
   //Anything returned here can be used in dataset-explorer.vue and its child components.

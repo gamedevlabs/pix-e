@@ -3,14 +3,15 @@ import { papers, findings } from '~/utils/priorFindingsData'
 
 type PaperOption = { id: string; label: string }
 
-function normalizeText(s: string) { // for the keyword search, make sure you can compare without considereing capitalization
+function normalizeText(s: string) {
+  // for the keyword search, make sure you can compare without considereing capitalization
   return (s || '').toLowerCase().trim()
 }
 
 export function usePriorFindings() {
   //a ll the memmory/const are refs..so they are reactive and when changed update straight away
   // UI state
-  const selectedPaperId = ref<string>('all')// asumme you wwant to see all papers initially
+  const selectedPaperId = ref<string>('all') // asumme you wwant to see all papers initially
   const keyword = ref<string>('') //keyword starts empty
 
   // tags: use Set for easy toggle
@@ -80,24 +81,25 @@ export function usePriorFindings() {
 
   // UI actions..so buttons user interacts with
 
-
-
-  function toggleTag(tag: string) {//
+  function toggleTag(tag: string) {
+    //
     const s = new Set(selectedTags.value)
     if (s.has(tag)) s.delete(tag)
     else s.add(tag)
     selectedTags.value = s
   }
 
-  function clearTags() {//turns of all tags
+  function clearTags() {
+    //turns of all tags
     selectedTags.value = new Set()
   }
 
-  const resultsSubtitle = computed(() => { //generates the summarry/sentence that is on the right below findings
+  const resultsSubtitle = computed(() => {
+    //generates the summarry/sentence that is on the right below findings
     const paperLabel =
       selectedPaperId.value === 'all'
         ? 'All papers'
-        : papers.find((p) => p.id === selectedPaperId.value)?.citation ?? 'Selected paper'
+        : (papers.find((p) => p.id === selectedPaperId.value)?.citation ?? 'Selected paper')
 
     const tagPart =
       selectedTags.value.size === 0

@@ -9,7 +9,9 @@ import { pct } from '~/utils/playerExpectationsNewDashboard'
 const props = defineProps<{ data: CompareSentiments | null }>()
 
 // The backend provides shares as values between 0 and 1.
-const shares = computed(() => props.data?.shares ?? { positive: 0, neutral: 0, negative: 0, missing: 0 })
+const shares = computed(
+  () => props.data?.shares ?? { positive: 0, neutral: 0, negative: 0, missing: 0 },
+)
 
 // Convert a 0..1 share into a CSS width string like "42.00%".
 function widthPct(x: number) {
@@ -31,10 +33,22 @@ function widthPct(x: number) {
 
     <!-- color and width based on the sentument-->
     <div class="mt-3 h-3 w-full rounded overflow-hidden flex bg-slate-200 dark:bg-slate-800">
-      <div class="h-full opacity-75" :style="{ width: widthPct(shares.positive), backgroundColor: 'var(--ui-success)' }" />
-      <div class="h-full opacity-65" :style="{ width: widthPct(shares.neutral), backgroundColor: 'var(--ui-info)' }" />
-      <div class="h-full opacity-65" :style="{ width: widthPct(shares.negative), backgroundColor: 'var(--ui-error)' }" />
-      <div class="h-full opacity-50" :style="{ width: widthPct(shares.missing), backgroundColor: 'var(--ui-neutral)' }" />
+      <div
+        class="h-full opacity-75"
+        :style="{ width: widthPct(shares.positive), backgroundColor: 'var(--ui-success)' }"
+      />
+      <div
+        class="h-full opacity-65"
+        :style="{ width: widthPct(shares.neutral), backgroundColor: 'var(--ui-info)' }"
+      />
+      <div
+        class="h-full opacity-65"
+        :style="{ width: widthPct(shares.negative), backgroundColor: 'var(--ui-error)' }"
+      />
+      <div
+        class="h-full opacity-50"
+        :style="{ width: widthPct(shares.missing), backgroundColor: 'var(--ui-neutral)' }"
+      />
     </div>
 
     <!-- labels with formatted percentage-->

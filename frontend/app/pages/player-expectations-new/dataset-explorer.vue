@@ -35,16 +35,15 @@ const core = usePlayerExpectationsNewDatasetExplorer()
 //Create the view model, passing the core object into it.
 const vm = useDatasetExplorerViewModel(core)
 
-
 //  Error banner fix: ref object is "truthy" even if its .value is empty. ->create a computed string value
-const errorTextValue = computed(() => (vm.errorText.value))
+const errorTextValue = computed(() => vm.errorText.value)
 
 // Sidebar prop-type fix: "Expected Array, got Object" -> wrappers guarantee we pass an array
 const filteredFeatureGroupsValue = computed(() =>
-  Array.isArray(vm.filteredFeatureGroups.value) ? vm.filteredFeatureGroups.value : []
+  Array.isArray(vm.filteredFeatureGroups.value) ? vm.filteredFeatureGroups.value : [],
 )
 const filteredPainGroupsValue = computed(() =>
-  Array.isArray(vm.filteredPainGroups.value) ? vm.filteredPainGroups.value : []
+  Array.isArray(vm.filteredPainGroups.value) ? vm.filteredPainGroups.value : [],
 )
 /*
  * onMounted(...) runs when the page loads the first time
@@ -79,41 +78,25 @@ onMounted(core.load)
       :min-playtime-forever="core.minPlaytimeForever.value"
       :max-playtime-forever="core.maxPlaytimeForever.value"
       :page-size="core.pageSize.value"
-
       :loading="core.loading.value"
       :meta="core.meta.value"
       :prev-page="core.prevPage"
       :next-page="core.nextPage"
-
       @update:q="(v) => (core.q.value = v)"
-
       @update:recommended="(v) => (core.recommended.value = v)"
-
       @update:sort="(v) => (core.sort.value = v)"
-
       @update:date-from="(v) => (core.dateFrom.value = v)"
-
       @update:date-to="(v) => (core.dateTo.value = v)"
-
       @update:min-votes-up="(v) => (core.minVotesUp.value = v)"
-
       @update:max-votes-up="(v) => (core.maxVotesUp.value = v)"
-
       @update:min-votes-funny="(v) => (core.minVotesFunny.value = v)"
-
       @update:max-votes-funny="(v) => (core.maxVotesFunny.value = v)"
-
       @update:min-playtime-at-review="(v) => (core.minPlaytimeAtReview.value = v)"
-
       @update:max-playtime-at-review="(v) => (core.maxPlaytimeAtReview.value = v)"
-
       @update:min-playtime-forever="(v) => (core.minPlaytimeForever.value = v)"
-
       @update:max-playtime-forever="(v) => (core.maxPlaytimeForever.value = v)"
-
       @update:page-size="(v) => (core.pageSize.value = v)"
     />
-
 
     <!-- FIX: use the string value, not a ref object -->
     <UAlert v-if="errorTextValue" color="error" variant="soft" title="API error">
@@ -124,8 +107,8 @@ onMounted(core.load)
     <div class="grid grid-cols-12 gap-4">
       <!-- Left: filters sidebar...pass many refs so the sidebar can toggle them-->
       <DatasetExplorerFiltersSidebar
-          :feature-search="vm.featureSearch.value"
-          :pain-search="vm.painSearch.value"
+        :feature-search="vm.featureSearch.value"
+        :pain-search="vm.painSearch.value"
         class="col-span-12 lg:col-span-3 h-[clamp(520px,120vh,760px)] card"
         :selected-genres="core.selectedGenres.value"
         :selected-games="core.selectedGames.value"
@@ -140,29 +123,26 @@ onMounted(core.load)
         :click-game="vm.clickGame"
         :click-code="vm.clickCode"
         :chip-variant="vm.chipVariant"
-          @update:feature-search="(v) => (vm.featureSearch.value = v)"
-          @update:pain-search="(v) => (vm.painSearch.value = v)"
+        @update:feature-search="(v) => (vm.featureSearch.value = v)"
+        @update:pain-search="(v) => (vm.painSearch.value = v)"
       />
 
       <!-- Middle: review list...displays the current page of reviews -->
       <DatasetExplorerReviewList
-            :selected-rec-id="vm.selectedRecId.value"
-
-            :rows="core.rows.value"
-            :meta="core.meta.value"
-            :loading="core.loading.value"
-            :page-size="core.pageSize.value"
-
-            :truncate="vm.truncate"
-            :format-unix="vm.formatUnix"
-            class="col-span-12 lg:col-span-5 h-[clamp(520px,120vh,760px)] card"
-            @update:selected-rec-id="(v) => (vm.selectedRecId.value = v)"
-
+        :selected-rec-id="vm.selectedRecId.value"
+        :rows="core.rows.value"
+        :meta="core.meta.value"
+        :loading="core.loading.value"
+        :page-size="core.pageSize.value"
+        :truncate="vm.truncate"
+        :format-unix="vm.formatUnix"
+        class="col-span-12 lg:col-span-5 h-[clamp(520px,120vh,760px)] card"
+        @update:selected-rec-id="(v) => (vm.selectedRecId.value = v)"
       />
 
       <!-- Right: detail view for the selected review-->
       <DatasetExplorerReviewDetail
-          class="col-span-12 lg:col-span-4 h-[clamp(520px,120vh,760px)] card"
+        class="col-span-12 lg:col-span-4 h-[clamp(520px,120vh,760px)] card"
         :selected-review="vm.selectedReview.value"
         :pretty-sentiment="core.prettySentiment"
         :format-unix="vm.formatUnix"
@@ -183,7 +163,7 @@ onMounted(core.load)
 
   --dex-seg-border: rgba(15, 23, 42, 0.16);
   --dex-seg-bg: rgba(15, 23, 42, 0.04);
-  --dex-seg-on-bg: rgba(15, 23, 42, 0.10);
+  --dex-seg-on-bg: rgba(15, 23, 42, 0.1);
   --dex-seg-on-text: rgb(15, 23, 42);
   --dex-seg-off-text: rgba(15, 23, 42, 0.78);
 
@@ -206,9 +186,9 @@ onMounted(core.load)
   --dex-seg-bg: rgba(148, 163, 184, 0.08);
   --dex-seg-on-bg: rgba(148, 163, 184, 0.18);
   --dex-seg-on-text: rgb(241, 245, 249);
-  --dex-seg-off-text: rgba(241, 245, 249, 0.80);
+  --dex-seg-off-text: rgba(241, 245, 249, 0.8);
 
-  --dex-row-hover: rgba(148, 163, 184, 0.10);
+  --dex-row-hover: rgba(148, 163, 184, 0.1);
   --dex-row-selected: rgba(148, 163, 184, 0.14);
   --dex-row-selected-border: rgba(241, 245, 249, 0.22);
 }

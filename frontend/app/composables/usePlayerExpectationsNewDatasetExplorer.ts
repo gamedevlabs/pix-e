@@ -14,7 +14,7 @@
  */
 import { computed, ref } from 'vue'
 // export ... makes availble for other files
-    //  Record<K, V>, key, value pairs
+//  Record<K, V>, key, value pairs
 export const GAME_NAMES: Record<number, string> = {
   367520: 'Hollow Knight',
   620: 'Portal 2',
@@ -193,7 +193,6 @@ export const PAIN_CODE_TO_TEXT: Record<number, string> = {
   153: 'server instability or downtime',
 }
 
-
 // These TypeScript "types" describe the JSON we get from the backend.
 export type CodeRow = {
   coarse_category: string
@@ -230,7 +229,6 @@ export type ReviewsResponse = {
   data: ReviewRow[]
 }
 
-
 //Helper file: converts the date string from an <input type="date"> into unix seconds.
 // Scraped data is in unix seconds  and the users input is a date string
 function dateStrToUnixSeconds(dateStr: string, endOfDay: boolean) {
@@ -243,10 +241,10 @@ function dateStrToUnixSeconds(dateStr: string, endOfDay: boolean) {
   return Math.floor(d.getTime() / 1000)
 }
 
-
 //Main composable function.
 export function usePlayerExpectationsNewDatasetExplorer(
-  baseUrl = 'http://localhost:8000/api/player-expectations-new') {
+  baseUrl = 'http://localhost:8000/api/player-expectations-new',
+) {
   const loading = ref(false)
   // ref creates a reactive value...if the value changes, Vue will automatically update the UI.
   //access the real value via .value
@@ -285,19 +283,18 @@ export function usePlayerExpectationsNewDatasetExplorer(
    * Here: visibleGames changes when selectedGenres changes.
    */
   const visibleGames = computed(() => {
-  // If no genre filter is selected, show ALL games (so UI looks unselected but still shows everything)
-  if (selectedGenres.value.size === 0) {
-    return Array.from(new Set(Object.values(GENRE_APPIDS).flat())).sort((a, b) => a - b)
-  }
+    // If no genre filter is selected, show ALL games (so UI looks unselected but still shows everything)
+    if (selectedGenres.value.size === 0) {
+      return Array.from(new Set(Object.values(GENRE_APPIDS).flat())).sort((a, b) => a - b)
+    }
 
-  // Otherwise, show only games in the selected genres
-  const ids = new Set<number>()
-  for (const g of selectedGenres.value) {
-    for (const id of GENRE_APPIDS[g] || []) ids.add(id)
-  }
-  return Array.from(ids).sort((a, b) => a - b)
-})
-
+    // Otherwise, show only games in the selected genres
+    const ids = new Set<number>()
+    for (const g of selectedGenres.value) {
+      for (const id of GENRE_APPIDS[g] || []) ids.add(id)
+    }
+    return Array.from(ids).sort((a, b) => a - b)
+  })
 
   function toggleGenre(genre: string) {
     // Toggle means: if selected -> unselect; if unselected -> select
@@ -356,7 +353,7 @@ export function usePlayerExpectationsNewDatasetExplorer(
     return s.replaceAll('_', ' ')
   }
 
-//Converts current filter state into query params for the backend (must match views.py)
+  //Converts current filter state into query params for the backend (must match views.py)
   function toQueryParams() {
     const params: Record<string, string | number | undefined> = {
       page: page.value,
