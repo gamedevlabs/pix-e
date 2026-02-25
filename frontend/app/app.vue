@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const authentication = useAuthentication()
+const appReady = useState<boolean>('appReady', () => false)
+
 await authentication.checkAuthentication()
+
+appReady.value = true
 </script>
 
 <template>
