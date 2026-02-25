@@ -174,7 +174,10 @@ PAIN_CODE_TO_TEXT: Dict[int, str] = {
     90: "Does not provide adequate training and help",
     91: "does not provide default or recommended choices",
     92: "does not provide suggestions or help",
-    93: "does not provide adequate documentation, instructions, tutorials, and training videos",
+    93: (
+        "does not provide adequate documentation, instructions, tutorials, and "
+        "training videos"
+    ),
     100: "Command sequences are too complex",
     101: "learning curve is too steep",
     102: "requires too much micromanagement",
@@ -183,7 +186,10 @@ PAIN_CODE_TO_TEXT: Dict[int, str] = {
     111: "bad visualization of information",
     112: "too much screen clutter",
     113: "too many characters or game elements on the screen at the same time",
-    114: "difficult to visually distinguish interactive content from non-interactive content",
+    114: (
+        "difficult to visually distinguish interactive content from non-interactive "
+        "content"
+    ),
     120: "Response to user's action not timely enough",
     130: "Translation and localization issues",
     131: "inadequate or missing localization",

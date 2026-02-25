@@ -59,7 +59,8 @@ def _recommended_clause(recommended: str) -> Tuple[str, List[Any]]:
     return "", []
 
 
-# SQLite index initializer..could delete however if i change or add new data i want it easier repeated
+# SQLite index initializer..could delete however
+# if i change or add new data i want it easier repeated
 _INDEXES_READY = False
 
 
@@ -189,7 +190,8 @@ def dataset_explorer_reviews(request):
         params.append(max_pr)
 
     # 4) COde filters
-    # convert all selected codes into one list of "pairs": (coarse_category_name, code_int)
+    # convert all selected codes into one list
+    # of "pairs": (coarse_category_name, code_int)
     # a review must contain ALL selected pairs somewhere
     selected_pairs: List[Tuple[str, int]] = []
     for c in feature_codes:
@@ -201,7 +203,8 @@ def dataset_explorer_reviews(request):
 
     if selected_pairs:
         # Build an OR list for the pairs: OR (..AND...) OR (..AND...)
-        # Why? so we see how many codes a  review matches and if distinct = the selected filters..it is all incldueed
+        # Why? so we see how many codes a  review matches
+        # and if distinct = the selected filters..it is all incldueed
         ors: List[str] = []
         pair_params: List[Any] = []
         for coarse, code_int in selected_pairs:
@@ -218,7 +221,8 @@ def dataset_explorer_reviews(request):
 
         # idea:
         # 1) Join quotes -> quote_code_sentiment
-        # 2) Keep only rows with a real sentiment ("true pairs")..missing is filtered out here
+        # 2) Keep only rows with a real sentiment ("true pairs")
+        # ..missing is filtered out here
         # 3) Filter down to rows matching ANY selected pair (OR)
         # 4) GROUP BY recommendation_id, so per review
         # 5) HAVING count of distinct matched pairs == number of selected pairs
@@ -289,7 +293,8 @@ def dataset_explorer_reviews(request):
     rec_ids = [r[0] for r in review_rows]
 
     # 6) Fetch quotes + (code, sentiment) pairs for these reviews
-    # return quotes_by_rec[recommendation_id] = [ {quote_id, quote_text, coarse_category, codes:[...]} ]
+    # return quotes_by_rec[recommendation_id] =
+    # [ {quote_id, quote_text, coarse_category, codes:[...]} ]
     quotes_by_rec: Dict[str, List[Dict[str, Any]]] = {rid: [] for rid in rec_ids}
     quote_index: Dict[int, Dict[str, Any]] = {}
 

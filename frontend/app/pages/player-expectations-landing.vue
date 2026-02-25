@@ -23,14 +23,18 @@ definePageMeta({
     <section class="text-center">
       <h1 class="text-4xl font-bold mb-4">Welcome to the player expectation section of pix:e 🎉</h1>
       <p class="text-gray-500 dark:text-gray-400 mb-4">
-        A data driven analytics platform that transforms unstructured Steam reviews into actionable player expectation insights.
+        A data driven analytics platform that transforms unstructured Steam reviews into actionable
+        player expectation insights.
       </p>
 
       <p class="text-gray-500 dark:text-gray-400 mb-6">
-        Powered by a multi agent LLM pipeline, reviews are segmented into quotes, mapped to a three dimensional expectation framework
-        consisting of Game Features, Game Aesthetics (experiential), and Pain Points, and enriched with fine grained sentiment analysis
-        including implicit and sarcastic expressions. Building on an earlier prototype marked as Legacy, the current system introduces deeper conceptual modeling,
-        cross language comparison, and an enhanced interactive interface, converting large scale player discourse into insights for both game studios and indie developers.
+        Powered by a multi agent LLM pipeline, reviews are segmented into quotes, mapped to a three
+        dimensional expectation framework consisting of Game Features, Game Aesthetics
+        (experiential), and Pain Points, and enriched with fine grained sentiment analysis including
+        implicit and sarcastic expressions. Building on an earlier prototype marked as Legacy, the
+        current system introduces deeper conceptual modeling, cross language comparison, and an
+        enhanced interactive interface, converting large scale player discourse into insights for
+        both game studios and indie developers.
       </p>
     </section>
 
@@ -50,14 +54,12 @@ definePageMeta({
       <UCard class="hover:shadow-lg transition">
         <template #header>
           <h2 class="font-semibold text-lg">
-            <NuxtLink to="/player-expectations-new/dataset-explorer">
-              Dataset Explorer
-            </NuxtLink>
+            <NuxtLink to="/player-expectations-new/dataset-explorer"> Dataset Explorer </NuxtLink>
           </h2>
         </template>
         <p>
-          Inspect individual Steam reviews and validate verify the full analytical chain from extracted quote to assigned
-          aspect code and sentiment label within each review.
+          Inspect individual Steam reviews and validate verify the full analytical chain from
+          extracted quote to assigned aspect code and sentiment label within each review.
         </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
@@ -77,8 +79,10 @@ definePageMeta({
             <NuxtLink to="/player-expectations"> Dashboard (legacy) </NuxtLink>
           </h2>
         </template>
-        <p>A static interface that provides a high level overview of extracted player expectations and aspect level
-          sentiment across the complete legacy dataset.</p>
+        <p>
+          A static interface that provides a high level overview of extracted player expectations
+          and aspect level sentiment across the complete legacy dataset.
+        </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
@@ -86,8 +90,9 @@ definePageMeta({
             <NuxtLink to="/sentiments"> Sentiment Analysis (legacy) </NuxtLink>
           </h2>
         </template>
-        <p>Analyze sentiment patterns within the Legacy dataset through an interactive interface that visualizes
-          sentiment distribution and dominant aspects across reviews.
+        <p>
+          Analyze sentiment patterns within the Legacy dataset through an interactive interface that
+          visualizes sentiment distribution and dominant aspects across reviews.
         </p>
       </UCard>
     </section>

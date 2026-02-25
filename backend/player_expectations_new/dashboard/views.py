@@ -124,7 +124,8 @@ def _base_review_where(
     languages: List[str],
     polarity: DashboardPolarity,
 ) -> Tuple[str, List[Any]]:
-    where_sql = "WHERE 1=1"  # this is so that we can just append any filters with AND, even the first
+    where_sql = "WHERE 1=1"
+    # this is so that we can just append any filters with AND, even the first
     params: List[Any] = []
 
     if app_ids:
@@ -145,7 +146,8 @@ def _base_review_where(
     return where_sql, params
 
 
-# builds a WHERE clause for queries that join multiple tables (review_quotes, quote_code_sentiment, etc.)
+# builds a WHERE clause for queries that join multiple tables
+# (review_quotes, quote_code_sentiment, etc.)
 def _base_mentions_where(
     app_ids: List[int],
     languages: List[str],
@@ -319,7 +321,8 @@ Returns monthly time series data:
   - mentions sentiment buckets by month
 
 fix note:
-- write '%%Y-%%m' instead of '%Y-%m' because Django debug formatting can treat % as formatting tokens.
+- write '%%Y-%%m' instead of '%Y-%m' because Django
+debug formatting can treat % as formatting tokens.
     """
 
 
@@ -335,7 +338,9 @@ def compare_timeseries(request):
         cur.execute(
             f"""
             SELECT
-              strftime('%%Y-%%m', datetime(COALESCE(t.timestamp_created,0), 'unixepoch')) AS ym,
+              strftime('%%Y-%%m', datetime(COALESCE(t.timestamp_created,0),
+               'unixepoch'))
+               AS ym,
                 COUNT(1) AS reviews,
                 SUM(CASE WHEN COALESCE(t.voted_up,0)=1 THEN 1 ELSE 0 END) AS recommended
             FROM thesis_dataset t
@@ -364,7 +369,9 @@ def compare_timeseries(request):
         cur.execute(
             f"""
             SELECT
-              strftime('%%Y-%%m', datetime(COALESCE(t.timestamp_created,0), 'unixepoch')) AS ym,
+              strftime('%%Y-%%m', datetime(COALESCE(t.timestamp_created,0),
+               'unixepoch'))
+              AS ym,
               qcs.sentiment_v2,
               COUNT(1) AS n
             FROM thesis_dataset t
@@ -411,7 +418,8 @@ def compare_timeseries(request):
     return JsonResponse({"data": data})
 
 
-# Returns the "top codes" table (most frequent/mentioned codes), optionally filtered to top-level codes.
+# Returns the "top codes" table (most frequent/mentioned codes),
+# optionally filtered to top-level codes.
 @require_GET
 def compare_top_codes(request):
     app_ids = _parse_csv_ints(request.GET.get("app_ids"))
@@ -502,7 +510,8 @@ def compare_top_codes(request):
     )
 
 
-# Returns a row for every code in a dimension, so the frontend can build a “heatmap grid”.
+# Returns a row for every code in a dimension,
+# so the frontend can build a “heatmap grid”.
 # Even if a code has 0 mentions, we still return it (so the grid is stable).
 @require_GET
 def compare_heatmap_codes(request):
