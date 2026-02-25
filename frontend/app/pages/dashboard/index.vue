@@ -135,6 +135,14 @@ const navigateToModule = (route: string) => {
 }
 
 const mock_historyData = computed(() => mockRecentActivity)
+
+// Returns true when the icon is a data URL or a regular URL (i.e. an image),
+// false when it's a short string like an emoji.
+const iconIsImage = computed(() => {
+  const icon = currentProject.value?.icon
+  if (!icon) return false
+  return icon.startsWith('data:') || icon.startsWith('http://') || icon.startsWith('https://') || icon.startsWith('/')
+})
 </script>
 
 <template>
@@ -147,14 +155,24 @@ const mock_historyData = computed(() => mockRecentActivity)
       <div class="flex items-stretch gap-4 min-h-20">
         <!-- Left: avatar + name + description -->
         <div class="flex items-center gap-4 min-w-0 flex-1">
+          <!-- Image icon (data URL or regular URL) -->
           <UAvatar
-            v-if="!currentProject?.icon"
+            v-if="iconIsImage"
+            :src="currentProject!.icon!"
+            :alt="currentProject?.name || 'Project'"
+            size="xl"
+            class="shrink-0 ring-2 ring-primary-200 dark:ring-primary-800"
+          />
+          <!-- Emoji icon -->
+          <div v-else-if="currentProject?.icon" class="text-5xl leading-none shrink-0">{{ currentProject.icon }}</div>
+          <!-- Initials fallback -->
+          <UAvatar
+            v-else
             :text="getProjectInitials(currentProject?.name || 'Project')"
             :alt="currentProject?.name || 'Project'"
             size="xl"
             class="shrink-0 text-primary bg-primary-100 dark:bg-primary-900/50 font-bold ring-2 ring-primary-200 dark:ring-primary-800"
           />
-          <div v-else class="text-5xl leading-none shrink-0">{{ currentProject.icon }}</div>
 
           <div class="min-w-0">
             <h1
