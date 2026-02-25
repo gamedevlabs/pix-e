@@ -21,6 +21,7 @@ interface Props {
   insightItems?: InsightItem[]
   previewItems?: PreviewItem[]
   previewMoreLabel?: string
+  emptyStateDescription?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -31,7 +32,15 @@ const props = withDefaults(defineProps<Props>(), {
   insightItems: undefined,
   previewItems: undefined,
   previewMoreLabel: undefined,
+  emptyStateDescription: undefined,
 })
+
+// True when there is genuinely no data to show
+const isEmpty = computed(
+  () =>
+    !props.previewItems?.length &&
+    !props.insightItems?.length,
+)
 </script>
 
 <template>
@@ -67,7 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
             </div>
           </div>
 
-          <!-- Hover "Open →" label (replaces badge) -->
+          <!-- Hover "Open →" label -->
           <div
             class="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 mt-0.5"
           >
@@ -126,6 +135,26 @@ const props = withDefaults(defineProps<Props>(), {
             </div>
           </div>
         </div>
+
+        <!-- ── Empty state ─────────────────────────────────────────────── -->
+        <div
+          v-else-if="isEmpty"
+          class="rounded-md border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 px-4 py-4 flex items-start gap-3"
+        >
+          <UIcon
+            name="i-lucide-plus-circle"
+            class="size-4 text-primary/50 shrink-0 mt-0.5 group-hover:text-primary transition-colors"
+          />
+          <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+            <template v-if="props.emptyStateDescription">
+              {{ props.emptyStateDescription }}
+            </template>
+            <template v-else>
+              Nothing here yet — click to open {{ props.title }} and get started.
+            </template>
+          </p>
+        </div>
+
         <slot v-else name="insight" />
       </div>
     </NuxtLink>
@@ -196,6 +225,23 @@ const props = withDefaults(defineProps<Props>(), {
             </div>
           </div>
         </div>
+
+        <!-- Empty state (disabled) -->
+        <div
+          v-else-if="isEmpty"
+          class="rounded-md border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/30 px-4 py-4 flex items-start gap-3"
+        >
+          <UIcon name="i-lucide-plus-circle" class="size-4 text-gray-400 shrink-0 mt-0.5" />
+          <p class="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+            <template v-if="props.emptyStateDescription">
+              {{ props.emptyStateDescription }}
+            </template>
+            <template v-else>
+              Nothing here yet.
+            </template>
+          </p>
+        </div>
+
         <slot v-else name="insight" />
       </div>
     </div>
