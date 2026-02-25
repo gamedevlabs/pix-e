@@ -237,6 +237,7 @@ const mock_historyData = computed(() => mockRecentActivity)
             cta-label="Manage"
             :preview-items="pillarPreviewItems"
             :preview-more-label="pillarMoreLabel"
+            empty-state-description="Define the core values that shape your game's identity and guide every design decision."
           />
           <DashboardModuleCard
             title="Player Experience"
@@ -246,6 +247,7 @@ const mock_historyData = computed(() => mockRecentActivity)
             cta-label="Open"
             :preview-items="chartPreviewItems"
             :preview-more-label="chartMoreLabel"
+            empty-state-description="Map how different aspects of your game contribute to the overall player experience."
           />
           <DashboardModuleCard
             title="Player Expectations"
@@ -255,6 +257,7 @@ const mock_historyData = computed(() => mockRecentActivity)
             cta-label="Open"
             :preview-items="expectationsPreviewItems"
             :preview-more-label="expectationsMoreLabel"
+            empty-state-description="Track what players expect and see how well your design meets those expectations."
           />
         </div>
       </div>
