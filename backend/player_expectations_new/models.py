@@ -83,6 +83,7 @@ class QuoteCodeSentiment(models.Model):
     sentiment_v2 = models.TextField(null=True, blank=True)
     raw_sentiment_v2_json = models.TextField(null=True, blank=True)
     updated_at_v2 = models.IntegerField(null=True, blank=True)
+
     class Meta:
         db_table = "quote_code_sentiment"
         managed = True

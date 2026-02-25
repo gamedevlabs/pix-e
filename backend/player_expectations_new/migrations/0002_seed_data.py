@@ -93,8 +93,12 @@ def load_seed_data(apps, schema_editor):
             )
             for r in df.to_dict(orient="records")
         ]
-        QuoteCodeSentiment.objects.bulk_create(objs, batch_size=4000, ignore_conflicts=True)
-        print(f"[seed] quote_code_sentiment inserted: {len(objs)} (ignore_conflicts=True)")
+        QuoteCodeSentiment.objects.bulk_create(
+            objs, batch_size=4000, ignore_conflicts=True
+        )
+        print(
+            f"[seed] quote_code_sentiment inserted: {len(objs)} (ignore_conflicts=True)"
+        )
     else:
         print(f"[seed] WARNING missing: {qcs_path}")
 

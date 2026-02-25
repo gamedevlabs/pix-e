@@ -16,9 +16,15 @@ from django.views.decorators.http import require_GET
 
 from .efficientdbfix import SQLITE_DATASET_EXPLORER_INDEXES
 
-from player_expectations_new.constants import GAME_NAMES, FEATURE_CODE_TO_TEXT, PAIN_CODE_TO_TEXT, AESTHETIC_CODE_TO_TEXT
+from player_expectations_new.constants import (
+    GAME_NAMES,
+    FEATURE_CODE_TO_TEXT,
+    PAIN_CODE_TO_TEXT,
+    AESTHETIC_CODE_TO_TEXT,
+)
 
-#_parse_int: parse Integer from a string
+
+# _parse_int: parse Integer from a string
 def _parse_int(s: Optional[str], default: Optional[int] = None) -> Optional[int]:
     if s is None or s == "":
         return default
@@ -27,7 +33,8 @@ def _parse_int(s: Optional[str], default: Optional[int] = None) -> Optional[int]
     except Exception:
         return default
 
-#_parse_csv_ints: csv like "1,2,3" into [1,2,3].
+
+# _parse_csv_ints: csv like "1,2,3" into [1,2,3].
 def _parse_csv_ints(s: Optional[str]) -> List[int]:
     if not s:
         return []
@@ -42,7 +49,8 @@ def _parse_csv_ints(s: Optional[str]) -> List[int]:
             continue
     return out
 
-#_recommended_clause: from reccomend to appropriate Database flag
+
+# _recommended_clause: from reccomend to appropriate Database flag
 def _recommended_clause(recommended: str) -> Tuple[str, List[Any]]:
     if recommended == "recommended":
         return "AND t.voted_up = 1", []
@@ -54,11 +62,12 @@ def _recommended_clause(recommended: str) -> Tuple[str, List[Any]]:
 # SQLite index initializer..could delete however if i change or add new data i want it easier repeated
 _INDEXES_READY = False
 
+
 def _ensure_sqlite_indexes() -> None:
     global _INDEXES_READY
     if _INDEXES_READY:
         return
-    if connection.vendor != "sqlite": #sanity check that wereusing sqlite
+    if connection.vendor != "sqlite":  # sanity check that wereusing sqlite
         _INDEXES_READY = True
         return
 
@@ -71,10 +80,10 @@ def _ensure_sqlite_indexes() -> None:
     _INDEXES_READY = True
 
 
-
-#---------------
+# ---------------
 # MAIN API ENDPOIINT
-#---------------
+# ---------------
+
 
 @require_GET
 def dataset_explorer_reviews(request):
@@ -93,9 +102,9 @@ def dataset_explorer_reviews(request):
     offset = (page - 1) * page_size
 
     # 2) read filters from query params
-    q = (request.GET.get("q") or "").strip() # key word search
+    q = (request.GET.get("q") or "").strip()  # key word search
     recommended = (request.GET.get("recommended") or "all").strip()
-    app_ids = _parse_csv_ints(request.GET.get("app_ids")) # games
+    app_ids = _parse_csv_ints(request.GET.get("app_ids"))  # games
 
     date_from = _parse_int(request.GET.get("date_from"))
     date_to = _parse_int(request.GET.get("date_to"))
@@ -110,14 +119,18 @@ def dataset_explorer_reviews(request):
     min_pr = _parse_int(request.GET.get("min_playtime_at_review"))
     max_pr = _parse_int(request.GET.get("max_playtime_at_review"))
 
-    #forgot sort
+    # forgot sort
     sort = (request.GET.get("sort") or "newest").strip()
     # Only allow known sort options (prevents SQL injection)
     if sort == "oldest":
-        order_sql = "ORDER BY COALESCE(t.timestamp_created, 0) ASC, t.recommendation_id ASC"
+        order_sql = (
+            "ORDER BY COALESCE(t.timestamp_created, 0) ASC, t.recommendation_id ASC"
+        )
     else:
         # default: newest
-        order_sql = "ORDER BY COALESCE(t.timestamp_created, 0) DESC, t.recommendation_id DESC"
+        order_sql = (
+            "ORDER BY COALESCE(t.timestamp_created, 0) DESC, t.recommendation_id DESC"
+        )
 
     # 3) Build SQL WHERE conditions, for better overview we create conditions substrings
     feature_codes = _parse_csv_ints(request.GET.get("feature_codes"))
@@ -188,7 +201,7 @@ def dataset_explorer_reviews(request):
 
     if selected_pairs:
         # Build an OR list for the pairs: OR (..AND...) OR (..AND...)
-        #Why? so we see how many codes a  review matches and if distinct = the selected filters..it is all incldueed
+        # Why? so we see how many codes a  review matches and if distinct = the selected filters..it is all incldueed
         ors: List[str] = []
         pair_params: List[Any] = []
         for coarse, code_int in selected_pairs:
@@ -355,7 +368,9 @@ def dataset_explorer_reviews(request):
 
         # 3) DROP quotes that have no true pairs
         for rec_id in list(quotes_by_rec.keys()):
-            quotes_by_rec[rec_id] = [qq for qq in quotes_by_rec[rec_id] if qq.get("codes")]
+            quotes_by_rec[rec_id] = [
+                qq for qq in quotes_by_rec[rec_id] if qq.get("codes")
+            ]
 
     # Convert DB Rows into a json object
     results: List[Dict[str, Any]] = []
