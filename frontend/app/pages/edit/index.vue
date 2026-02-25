@@ -198,7 +198,6 @@ watch(
 
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-2 py-8 space-y-8">
-
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center min-h-100">
       <UIcon name="i-lucide-loader-2" class="animate-spin size-8 text-primary" />
@@ -210,10 +209,8 @@ watch(
 
       <form class="space-y-6" @submit.prevent="handleSubmit">
         <div class="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
-
           <!-- ─── Left: Main fields ────────────────────────────────────── -->
           <div class="space-y-6">
-
             <!-- Basic Information -->
             <UCard
               class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
@@ -222,7 +219,9 @@ watch(
               <template #header>
                 <div class="flex items-center gap-3">
                   <div class="h-5 w-1 rounded-full bg-primary" />
-                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">Basic Information</h2>
+                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">
+                    Basic Information
+                  </h2>
                 </div>
               </template>
 
@@ -259,7 +258,9 @@ watch(
               <template #header>
                 <div class="flex items-center gap-3">
                   <div class="h-5 w-1 rounded-full bg-secondary-500" />
-                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">Project Details</h2>
+                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">
+                    Project Details
+                  </h2>
                 </div>
               </template>
 
@@ -269,7 +270,9 @@ watch(
                   <div class="space-y-2 w-full">
                     <UInputTags
                       v-model="formData.genre"
-                      :placeholder="formData.genre.length === 0 ? 'e.g. Action, Adventure, RPG…' : ''"
+                      :placeholder="
+                        formData.genre.length === 0 ? 'e.g. Action, Adventure, RPG…' : ''
+                      "
                       size="md"
                       icon="i-lucide-tag"
                       :highlight="false"
@@ -309,12 +312,10 @@ watch(
                 </UFormField>
               </div>
             </UCard>
-
           </div>
 
           <!-- ─── Right: Icon + Metadata ──────────────────────────────── -->
           <div class="space-y-6">
-
             <!-- Project Icon -->
             <UCard
               class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
@@ -400,46 +401,58 @@ watch(
 
               <div class="px-5 pb-4 space-y-3">
                 <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                  <div
+                    class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0"
+                  >
                     <UIcon name="i-lucide-hash" class="size-3.5" />
                     <span>ID</span>
                   </div>
-                  <span class="text-xs font-mono text-gray-400 dark:text-gray-500 truncate select-all">
+                  <span
+                    class="text-xs font-mono text-gray-400 dark:text-gray-500 truncate select-all"
+                  >
                     {{ originalProject['id'] }}
                   </span>
                 </div>
                 <USeparator />
                 <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                  <div
+                    class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0"
+                  >
                     <UIcon name="i-lucide-calendar-plus" class="size-3.5" />
                     <span>Created</span>
                   </div>
                   <span class="text-xs text-gray-400 dark:text-gray-500">
-                    {{ originalProject['created_at'] ? new Date(originalProject['created_at']).toLocaleDateString() : 'N/A' }}
+                    {{
+                      originalProject['created_at']
+                        ? new Date(originalProject['created_at']).toLocaleDateString()
+                        : 'N/A'
+                    }}
                   </span>
                 </div>
                 <USeparator />
                 <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                  <div
+                    class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0"
+                  >
                     <UIcon name="i-lucide-calendar-clock" class="size-3.5" />
                     <span>Updated</span>
                   </div>
                   <span class="text-xs text-gray-400 dark:text-gray-500">
-                    {{ originalProject['updated_at'] ? new Date(originalProject['updated_at']).toLocaleDateString() : 'N/A' }}
+                    {{
+                      originalProject['updated_at']
+                        ? new Date(originalProject['updated_at']).toLocaleDateString()
+                        : 'N/A'
+                    }}
                   </span>
                 </div>
               </div>
             </UCard>
-
           </div>
         </div>
 
         <!-- ─── Save bar ────────────────────────────────────────────────── -->
         <Transition name="slide-up">
-          <div
-            v-if="hasChanges"
-            class="sticky bottom-4 z-10"
-          >
+          <div v-if="hasChanges" class="sticky bottom-4 z-10">
             <UCard
               class="border border-primary/30 bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow-lg"
               :ui="{ body: 'px-5 py-3' }"
@@ -471,7 +484,6 @@ watch(
             </UCard>
           </div>
         </Transition>
-
       </form>
     </template>
   </div>

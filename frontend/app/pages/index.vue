@@ -66,8 +66,8 @@ const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
 // Load the user-level onboarding workflow when not logged in
 const projectWorkflow = useProjectWorkflow()
-const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
-const activeWorkflowTitle = computed(() => {
+const _overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const _activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
   const activeId = projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === activeId)
@@ -87,12 +87,12 @@ watch(isLoggedIn, async (loggedIn) => {
 })
 
 const getInitials = (name: string): string =>
-    name
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
+  name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
 // Project cards - sorted by most recently edited
 const projectCards = computed<Card[]>(() => {
@@ -154,7 +154,7 @@ const standaloneModules = ref<Card[]>([
     id: 'movie-script',
     label: 'Movie Script Evaluator',
     description:
-        'Evaluate movie scripts through LLMs based on available assets for virtual production.',
+      'Evaluate movie scripts through LLMs based on available assets for virtual production.',
     icon: 'i-lucide-film',
     requiresAuth: false,
     action: () => {
@@ -180,12 +180,12 @@ const handleCardClick = async (card: Card, event?: MouseEvent) => {
 const projectStats = computed(() => ({
   total: projects?.value?.length || 0,
   recent:
-      projects?.value?.filter((p) => {
-        const updated = new Date(p.updated_at)
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7)
-        return updated > weekAgo
-      }).length || 0,
+    projects?.value?.filter((p) => {
+      const updated = new Date(p.updated_at)
+      const weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      return updated > weekAgo
+    }).length || 0,
 }))
 </script>
 
@@ -207,7 +207,9 @@ const projectStats = computed(() => ({
           <img src="/favicon.png" alt="pix:e logo" class="size-14 rounded-xl" />
         </div>
 
-        <h1 class="text-4xl xl:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 leading-tight">
+        <h1
+          class="text-4xl xl:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 leading-tight"
+        >
           Build better games with<br />
           <span class="text-primary">player experience tools</span>
         </h1>
@@ -219,19 +221,19 @@ const projectStats = computed(() => ({
 
         <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
           <UButton
-              label="Get Started"
-              icon="i-lucide-user-plus"
-              color="primary"
-              size="xl"
-              @click="router.push('/login')"
+            label="Get Started"
+            icon="i-lucide-user-plus"
+            color="primary"
+            size="xl"
+            @click="router.push('/login')"
           />
           <UButton
-              label="Sign in"
-              icon="i-lucide-log-in"
-              color="neutral"
-              variant="outline"
-              size="xl"
-              @click="router.push('/login')"
+            label="Sign in"
+            icon="i-lucide-log-in"
+            color="neutral"
+            variant="outline"
+            size="xl"
+            @click="router.push('/login')"
           />
         </div>
       </section>
@@ -255,7 +257,9 @@ const projectStats = computed(() => ({
                 <UIcon name="i-lucide-house" class="size-4 text-primary" />
               </div>
               <div class="space-y-0.5 min-w-0">
-                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Project Workspace</p>
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                  Project Workspace
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Keep all your game's design artefacts and research in one place.
                 </p>
@@ -272,7 +276,9 @@ const projectStats = computed(() => ({
                 <UIcon name="i-lucide-landmark" class="size-4 text-secondary-500" />
               </div>
               <div class="space-y-0.5 min-w-0">
-                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Experience Pillars</p>
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                  Experience Pillars
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Map design decisions to validated player experience dimensions.
                 </p>
@@ -286,10 +292,15 @@ const projectStats = computed(() => ({
           >
             <div class="flex items-start gap-3">
               <div class="rounded-lg p-2 bg-success-500/10 shrink-0 mt-0.5">
-                <UIcon name="i-lucide-book-open" class="size-4 text-success-600 dark:text-success-400" />
+                <UIcon
+                  name="i-lucide-book-open"
+                  class="size-4 text-success-600 dark:text-success-400"
+                />
               </div>
               <div class="space-y-0.5 min-w-0">
-                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Player Expectations</p>
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                  Player Expectations
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Define what players expect from your game and track how your design meets it.
                 </p>
@@ -306,7 +317,9 @@ const projectStats = computed(() => ({
                 <UIcon name="i-lucide-chart-no-axes-gantt" class="size-4 text-primary" />
               </div>
               <div class="space-y-0.5 min-w-0">
-                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Player Experience</p>
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                  Player Experience
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Evaluate and iterate on the overall experience your game delivers.
                 </p>
@@ -323,7 +336,9 @@ const projectStats = computed(() => ({
                 <UIcon name="i-lucide-chart-network" class="size-4 text-yellow-500" />
               </div>
               <div class="space-y-0.5 min-w-0">
-                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Charts & Visualisations</p>
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                  Charts & Visualisations
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Understand your data at a glance with interactive sentiment and metric charts.
                 </p>
@@ -340,7 +355,9 @@ const projectStats = computed(() => ({
                 <UIcon name="i-lucide-film" class="size-4 text-secondary-500" />
               </div>
               <div class="space-y-0.5 min-w-0">
-                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Script Evaluator</p>
+                <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                  Script Evaluator
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Evaluate narrative scripts via LLMs for virtual production readiness.
                 </p>
@@ -355,7 +372,9 @@ const projectStats = computed(() => ({
         <div class="flex items-center gap-3">
           <div class="h-6 w-1 rounded-full bg-secondary-500" />
           <div>
-            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Try without an account</h2>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Try without an account
+            </h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               These tools are available immediately — no login required
             </p>
@@ -364,21 +383,23 @@ const projectStats = computed(() => ({
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <UCard
-              v-for="module in standaloneModules"
-              :key="module.id"
-              class="group border border-primary-200 dark:border-primary-900/50 bg-linear-to-br from-primary-50 to-white dark:from-primary-950/40 dark:to-gray-900 hover:shadow-md hover:border-primary hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-              :ui="{
+            v-for="module in standaloneModules"
+            :key="module.id"
+            class="group border border-primary-200 dark:border-primary-900/50 bg-linear-to-br from-primary-50 to-white dark:from-primary-950/40 dark:to-gray-900 hover:shadow-md hover:border-primary hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+            :ui="{
               header: 'px-4 py-3',
               body: 'px-4 py-3 space-y-3',
             }"
-              role="button"
-              tabindex="0"
-              @click="handleCardClick(module)"
-              @keydown.enter="handleCardClick(module)"
+            role="button"
+            tabindex="0"
+            @click="handleCardClick(module)"
+            @keydown.enter="handleCardClick(module)"
           >
             <template #header>
               <div class="flex items-center gap-3">
-                <div class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0">
+                <div
+                  class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0"
+                >
                   <UIcon v-if="module.icon" :name="module.icon" class="size-5 text-primary" />
                 </div>
                 <div class="min-w-0">
@@ -394,7 +415,10 @@ const projectStats = computed(() => ({
             </p>
             <div class="flex items-center gap-1.5 text-xs text-primary font-medium pt-1">
               <span>Launch</span>
-              <UIcon name="i-lucide-arrow-right" class="size-3 group-hover:translate-x-0.5 transition-transform" />
+              <UIcon
+                name="i-lucide-arrow-right"
+                class="size-3 group-hover:translate-x-0.5 transition-transform"
+              />
             </div>
           </UCard>
         </div>
@@ -403,31 +427,33 @@ const projectStats = computed(() => ({
       <!-- ─── Bottom sign-up nudge ──────────────────────────────────────── -->
       <section class="max-w-5xl mx-auto">
         <UCard
-            class="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900"
-            :ui="{ body: 'px-6 py-6' }"
+          class="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900"
+          :ui="{ body: 'px-6 py-6' }"
         >
           <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="space-y-1 text-center sm:text-left">
-              <p class="font-semibold text-gray-900 dark:text-gray-100">Create an account to get started</p>
+              <p class="font-semibold text-gray-900 dark:text-gray-100">
+                Create an account to get started
+              </p>
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 Sign up to manage projects and access all tools.
               </p>
             </div>
             <div class="flex gap-3 shrink-0">
               <UButton
-                  label="Create account"
-                  icon="i-lucide-user-plus"
-                  color="primary"
-                  size="md"
-                  @click="router.push('/login')"
+                label="Create account"
+                icon="i-lucide-user-plus"
+                color="primary"
+                size="md"
+                @click="router.push('/login')"
               />
               <UButton
-                  label="Sign in"
-                  icon="i-lucide-log-in"
-                  color="neutral"
-                  variant="outline"
-                  size="md"
-                  @click="router.push('/login')"
+                label="Sign in"
+                icon="i-lucide-log-in"
+                color="neutral"
+                variant="outline"
+                size="md"
+                @click="router.push('/login')"
               />
             </div>
           </div>
@@ -468,47 +494,47 @@ const projectStats = computed(() => ({
                 <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Your Projects</h2>
               </div>
               <UButton
-                  label="New Project"
-                  icon="i-lucide-plus"
-                  color="primary"
-                  variant="soft"
-                  size="md"
-                  @click="router.push('/create')"
+                label="New Project"
+                icon="i-lucide-plus"
+                color="primary"
+                variant="soft"
+                size="md"
+                @click="router.push('/create')"
               />
             </div>
 
             <!-- Empty state – logged in but no projects yet -->
             <div
-                v-if="projectCards.length === 0"
-                class="flex flex-col items-center gap-4 py-14 text-center"
+              v-if="projectCards.length === 0"
+              class="flex flex-col items-center gap-4 py-14 text-center"
             >
               <p class="text-base text-gray-500 dark:text-gray-400">
                 You don't have any projects yet. Create your first one to get started with pix:e.
               </p>
               <UButton
-                  label="New Project"
-                  icon="i-lucide-plus"
-                  color="primary"
-                  variant="soft"
-                  size="md"
-                  @click="router.push('/create')"
+                label="New Project"
+                icon="i-lucide-plus"
+                color="primary"
+                variant="soft"
+                size="md"
+                @click="router.push('/create')"
               />
             </div>
 
             <!-- Project cards grid -->
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
               <LandingProjectCard
-                  v-for="project in projectCards"
-                  :id="project.id"
-                  :key="project.id"
-                  :label="project.label"
-                  :description="project.description"
-                  :icon="project.icon"
-                  :initials="project.initials"
-                  :updated-at="project.updatedAt"
-                  :is-create-card="project.isCreateCard"
-                  :menu-items="project.isCreateCard ? [] : getProjectMenuItems(project.id)"
-                  @click="handleCardClick(project, $event)"
+                v-for="project in projectCards"
+                :id="project.id"
+                :key="project.id"
+                :label="project.label"
+                :description="project.description"
+                :icon="project.icon"
+                :initials="project.initials"
+                :updated-at="project.updatedAt"
+                :is-create-card="project.isCreateCard"
+                :menu-items="project.isCreateCard ? [] : getProjectMenuItems(project.id)"
+                @click="handleCardClick(project, $event)"
               />
             </div>
           </div>
@@ -518,7 +544,9 @@ const projectStats = computed(() => ({
             <div class="flex items-center gap-3">
               <div class="h-6 w-1 rounded-full bg-secondary-500" />
               <div>
-                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Additional Modules</h2>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Additional Modules
+                </h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   Standalone tools that work independently from your projects
                 </p>
@@ -527,22 +555,22 @@ const projectStats = computed(() => ({
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UCard
-                  v-for="module in standaloneModules"
-                  :key="module.id"
-                  class="group border border-primary-200 dark:border-primary-900/50 bg-linear-to-br from-primary-50 to-white dark:from-primary-950/40 dark:to-gray-900 hover:shadow-md hover:border-primary hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                  :ui="{
+                v-for="module in standaloneModules"
+                :key="module.id"
+                class="group border border-primary-200 dark:border-primary-900/50 bg-linear-to-br from-primary-50 to-white dark:from-primary-950/40 dark:to-gray-900 hover:shadow-md hover:border-primary hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                :ui="{
                   header: 'px-4 py-3',
                   body: 'px-4 py-3 space-y-3',
                 }"
-                  role="button"
-                  tabindex="0"
-                  @click="handleCardClick(module)"
-                  @keydown.enter="handleCardClick(module)"
+                role="button"
+                tabindex="0"
+                @click="handleCardClick(module)"
+                @keydown.enter="handleCardClick(module)"
               >
                 <template #header>
                   <div class="flex items-center gap-3">
                     <div
-                        class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0"
+                      class="rounded-lg p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0"
                     >
                       <UIcon v-if="module.icon" :name="module.icon" class="size-5 text-primary" />
                     </div>
@@ -560,8 +588,8 @@ const projectStats = computed(() => ({
                 <div class="flex items-center gap-1.5 text-xs text-primary font-medium pt-1">
                   <span>Launch</span>
                   <UIcon
-                      name="i-lucide-arrow-right"
-                      class="size-3 group-hover:translate-x-0.5 transition-transform"
+                    name="i-lucide-arrow-right"
+                    class="size-3 group-hover:translate-x-0.5 transition-transform"
                   />
                 </div>
               </UCard>

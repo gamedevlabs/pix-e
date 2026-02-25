@@ -36,11 +36,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // True when there is genuinely no data to show
-const isEmpty = computed(
-  () =>
-    !props.previewItems?.length &&
-    !props.insightItems?.length,
-)
+const isEmpty = computed(() => !props.previewItems?.length && !props.insightItems?.length)
 </script>
 
 <template>
@@ -236,9 +232,7 @@ const isEmpty = computed(
             <template v-if="props.emptyStateDescription">
               {{ props.emptyStateDescription }}
             </template>
-            <template v-else>
-              Nothing here yet.
-            </template>
+            <template v-else> Nothing here yet. </template>
           </p>
         </div>
 

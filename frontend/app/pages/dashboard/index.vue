@@ -141,7 +141,12 @@ const mock_historyData = computed(() => mockRecentActivity)
 const iconIsImage = computed(() => {
   const icon = currentProject.value?.icon
   if (!icon) return false
-  return icon.startsWith('data:') || icon.startsWith('http://') || icon.startsWith('https://') || icon.startsWith('/')
+  return (
+    icon.startsWith('data:') ||
+    icon.startsWith('http://') ||
+    icon.startsWith('https://') ||
+    icon.startsWith('/')
+  )
 })
 </script>
 
@@ -164,7 +169,9 @@ const iconIsImage = computed(() => {
             class="shrink-0 ring-2 ring-primary-200 dark:ring-primary-800"
           />
           <!-- Emoji icon -->
-          <div v-else-if="currentProject?.icon" class="text-5xl leading-none shrink-0">{{ currentProject.icon }}</div>
+          <div v-else-if="currentProject?.icon" class="text-5xl leading-none shrink-0">
+            {{ currentProject.icon }}
+          </div>
           <!-- Initials fallback -->
           <UAvatar
             v-else
