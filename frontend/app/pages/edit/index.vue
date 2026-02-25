@@ -197,35 +197,137 @@ watch(
 </script>
 
 <template>
-  <div>
-    <SimpleContentWrapper>
-      <!-- Loading State -->
-      <div v-if="isLoading" class="flex items-center justify-center min-h-[400px]">
-        <UIcon name="i-lucide-loader-2" class="animate-spin text-4xl text-primary" />
-      </div>
+  <div class="max-w-screen-2xl mx-auto w-full px-2 py-8 space-y-8">
 
-      <!-- Settings Form -->
-      <div v-else class="max-w-3xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold mb-2">Project Settings</h1>
-          <p class="text-gray-500 dark:text-gray-400">
-            Configure your project settings and preferences
-          </p>
-        </div>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex items-center justify-center min-h-100">
+      <UIcon name="i-lucide-loader-2" class="animate-spin size-8 text-primary" />
+    </div>
 
-        <form class="space-y-6" @submit.prevent="handleSubmit">
-          <!-- Basic Information -->
-          <UCard>
-            <template #header>
-              <h2 class="text-xl font-semibold">Basic Information</h2>
-            </template>
+    <template v-else>
+      <!-- ─── Page title ──────────────────────────────────────────────── -->
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100 px-1">Settings</h1>
 
-            <div class="space-y-6">
-              <!-- Avatar and Change Icon Button -->
-              <div
-                class="flex flex-col items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700"
-              >
-                <!-- Larger avatar with hover delete icon -->
+      <form class="space-y-6" @submit.prevent="handleSubmit">
+        <div class="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
+
+          <!-- ─── Left: Main fields ────────────────────────────────────── -->
+          <div class="space-y-6">
+
+            <!-- Basic Information -->
+            <UCard
+              class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+              :ui="{ body: 'p-0' }"
+            >
+              <template #header>
+                <div class="flex items-center gap-3">
+                  <div class="h-5 w-1 rounded-full bg-primary" />
+                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">Basic Information</h2>
+                </div>
+              </template>
+
+              <div class="px-5 pb-5 space-y-5">
+                <!-- Project Name -->
+                <UFormField label="Project Name" required>
+                  <UInput
+                    v-model="formData.name"
+                    placeholder="Enter project name"
+                    size="md"
+                    class="w-full"
+                    required
+                  />
+                </UFormField>
+
+                <!-- Short Description -->
+                <UFormField label="Short Description">
+                  <UTextarea
+                    v-model="formData.shortDescription"
+                    placeholder="Brief description of your project"
+                    :rows="3"
+                    size="md"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+            </UCard>
+
+            <!-- Project Details -->
+            <UCard
+              class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+              :ui="{ body: 'p-0' }"
+            >
+              <template #header>
+                <div class="flex items-center gap-3">
+                  <div class="h-5 w-1 rounded-full bg-secondary-500" />
+                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">Project Details</h2>
+                </div>
+              </template>
+
+              <div class="px-5 pb-5 space-y-5">
+                <!-- Genre -->
+                <UFormField label="Genre">
+                  <div class="space-y-2 w-full">
+                    <UInputTags
+                      v-model="formData.genre"
+                      :placeholder="formData.genre.length === 0 ? 'e.g. Action, Adventure, RPG…' : ''"
+                      size="md"
+                      icon="i-lucide-tag"
+                      :highlight="false"
+                      class="w-full"
+                    />
+                    <div class="flex flex-wrap gap-1.5">
+                      <UButton
+                        v-for="genre in genreSuggestions"
+                        :key="genre"
+                        size="xs"
+                        color="neutral"
+                        variant="soft"
+                        :label="genre"
+                        :disabled="formData.genre.includes(genre)"
+                        @click="selectGenre(genre)"
+                      />
+                    </div>
+                  </div>
+                </UFormField>
+
+                <!-- Target Platform -->
+                <UFormField label="Target Platform">
+                  <UCheckboxGroup
+                    v-model="formData.targetPlatform"
+                    variant="table"
+                    indicator="hidden"
+                    :items="platformConfigs"
+                    class="w-full"
+                  >
+                    <template #label="{ item }">
+                      <div class="flex items-center gap-2">
+                        <UIcon :name="item.icon" class="size-4" />
+                        <span>{{ item.label }}</span>
+                      </div>
+                    </template>
+                  </UCheckboxGroup>
+                </UFormField>
+              </div>
+            </UCard>
+
+          </div>
+
+          <!-- ─── Right: Icon + Metadata ──────────────────────────────── -->
+          <div class="space-y-6">
+
+            <!-- Project Icon -->
+            <UCard
+              class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+              :ui="{ body: 'p-0' }"
+            >
+              <template #header>
+                <div class="flex items-center gap-3">
+                  <div class="h-5 w-1 rounded-full bg-primary" />
+                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">Project Icon</h2>
+                </div>
+              </template>
+
+              <div class="px-5 pb-5 flex flex-col items-center gap-4">
                 <div
                   class="relative"
                   @mouseenter="isIconHovered = true"
@@ -236,222 +338,153 @@ watch(
                     :src="formData.icon"
                     :alt="formData.name"
                     size="2xl"
+                    class="ring-2 ring-primary-200 dark:ring-primary-800"
                   />
                   <UAvatar
                     v-else
                     :alt="formData.name"
                     size="2xl"
                     :text="formData.name.substring(0, 2).toUpperCase()"
+                    class="ring-2 ring-primary-200 dark:ring-primary-800 text-primary bg-primary-100 dark:bg-primary-900/50 font-bold"
                   />
-
-                  <!-- Delete icon overlay when hovering over custom icon -->
                   <div
                     v-if="formData.icon && isIconHovered"
-                    class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity"
+                    class="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer"
                     @click="removeIcon"
                   >
-                    <UIcon name="i-lucide-trash-2" class="text-white text-2xl" />
+                    <UIcon name="i-lucide-trash-2" class="text-white size-5" />
                   </div>
                 </div>
 
-                <!-- Change Icon button below avatar -->
-                <label class="cursor-pointer">
+                <div class="flex gap-2">
+                  <label class="cursor-pointer">
+                    <UButton
+                      label="Upload"
+                      icon="i-lucide-upload"
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      as="span"
+                    />
+                    <input type="file" accept="image/*" class="hidden" @change="handleIconChange" />
+                  </label>
                   <UButton
-                    label="Change Icon"
-                    icon="i-lucide-upload"
-                    color="primary"
-                    variant="outline"
-                    as="span"
-                  />
-                  <input type="file" accept="image/*" class="hidden" @change="handleIconChange" />
-                </label>
-              </div>
-
-              <!-- Project Name -->
-              <div>
-                <label class="block text-sm font-medium mb-2">
-                  Project Name <span class="text-red-500">*</span>
-                </label>
-                <UInput
-                  v-model="formData.name"
-                  placeholder="Enter project name"
-                  size="lg"
-                  required
-                />
-              </div>
-
-              <!-- Short Description -->
-              <div>
-                <label class="block text-sm font-medium mb-2"> Short Description </label>
-                <UTextarea
-                  v-model="formData.shortDescription"
-                  placeholder="Brief description of your project"
-                  :rows="3"
-                  size="lg"
-                />
-              </div>
-            </div>
-          </UCard>
-
-          <!-- Project Details -->
-          <UCard>
-            <template #header>
-              <h2 class="text-xl font-semibold">Project Details</h2>
-            </template>
-
-            <div class="space-y-6">
-              <!-- Genre with Tags -->
-              <div>
-                <label class="block text-sm font-medium mb-2">
-                  Genre <span class="text-red-500">*</span>
-                </label>
-                <UInputTags
-                  v-model="formData.genre"
-                  :placeholder="
-                    formData.genre.length === 0 ? 'e.g., Action, Adventure, RPG...' : ''
-                  "
-                  size="lg"
-                  icon="i-heroicons-tag"
-                  :highlight="false"
-                />
-
-                <!-- Genre Suggestions -->
-                <div class="mt-2 flex flex-wrap gap-2">
-                  <UButton
-                    v-for="genre in genreSuggestions"
-                    :key="genre"
-                    size="xs"
-                    color="neutral"
+                    v-if="formData.icon"
+                    label="Remove"
+                    icon="i-lucide-trash-2"
+                    color="error"
                     variant="soft"
-                    :label="genre"
-                    @click="selectGenre(genre)"
+                    size="sm"
+                    @click="removeIcon"
+                  />
+                </div>
+
+                <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
+                  PNG, JPG or GIF — displayed as your project avatar
+                </p>
+              </div>
+            </UCard>
+
+            <!-- Metadata (read-only) -->
+            <UCard
+              v-if="originalProject"
+              class="border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/60"
+              :ui="{ body: 'p-0' }"
+            >
+              <template #header>
+                <div class="flex items-center gap-3">
+                  <div class="h-5 w-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  <h2 class="text-base font-bold text-gray-900 dark:text-gray-100">Metadata</h2>
+                </div>
+              </template>
+
+              <div class="px-5 pb-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                    <UIcon name="i-lucide-hash" class="size-3.5" />
+                    <span>ID</span>
+                  </div>
+                  <span class="text-xs font-mono text-gray-400 dark:text-gray-500 truncate select-all">
+                    {{ originalProject['id'] }}
+                  </span>
+                </div>
+                <USeparator />
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                    <UIcon name="i-lucide-calendar-plus" class="size-3.5" />
+                    <span>Created</span>
+                  </div>
+                  <span class="text-xs text-gray-400 dark:text-gray-500">
+                    {{ originalProject['created_at'] ? new Date(originalProject['created_at']).toLocaleDateString() : 'N/A' }}
+                  </span>
+                </div>
+                <USeparator />
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                    <UIcon name="i-lucide-calendar-clock" class="size-3.5" />
+                    <span>Updated</span>
+                  </div>
+                  <span class="text-xs text-gray-400 dark:text-gray-500">
+                    {{ originalProject['updated_at'] ? new Date(originalProject['updated_at']).toLocaleDateString() : 'N/A' }}
+                  </span>
+                </div>
+              </div>
+            </UCard>
+
+          </div>
+        </div>
+
+        <!-- ─── Save bar ────────────────────────────────────────────────── -->
+        <Transition name="slide-up">
+          <div
+            v-if="hasChanges"
+            class="sticky bottom-4 z-10"
+          >
+            <UCard
+              class="border border-primary/30 bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow-lg"
+              :ui="{ body: 'px-5 py-3' }"
+            >
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <UIcon name="i-lucide-circle-dot" class="size-3.5 text-primary animate-pulse" />
+                  You have unsaved changes
+                </div>
+                <div class="flex gap-2">
+                  <UButton
+                    label="Discard"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    :disabled="isSaving"
+                    @click="handleCancel"
+                  />
+                  <UButton
+                    label="Save Changes"
+                    icon="i-lucide-save"
+                    color="primary"
+                    size="sm"
+                    type="submit"
+                    :loading="isSaving"
                   />
                 </div>
               </div>
-
-              <!-- Target Platform with Checkboxes -->
-              <div>
-                <label class="block text-sm font-medium mb-2">
-                  Target Platform <span class="text-red-500">*</span>
-                </label>
-                <UCheckboxGroup
-                  v-model="formData.targetPlatform"
-                  variant="table"
-                  indicator="hidden"
-                  :items="platformConfigs"
-                >
-                  <template #label="{ item }">
-                    <div class="flex items-center gap-2">
-                      <UIcon :name="item.icon" class="w-5 h-5" />
-                      <span>{{ item.label }}</span>
-                    </div>
-                  </template>
-                </UCheckboxGroup>
-              </div>
-            </div>
-          </UCard>
-
-          <!-- Project Metadata (Read-only Collapsible) -->
-          <UCollapsible v-if="originalProject" class="flex flex-col gap-2">
-            <UButton
-              class="group bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
-              color="neutral"
-              variant="ghost"
-              block
-              :ui="{
-                trailingIcon:
-                  'group-data-[state=open]:rotate-180 transition-transform duration-200',
-              }"
-            >
-              <template #leading>
-                <UIcon name="i-lucide-info" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              </template>
-              <span class="flex-1 text-left font-semibold text-gray-700 dark:text-gray-300">
-                Project Metadata
-              </span>
-              <template #trailing>
-                <UIcon
-                  name="i-lucide-chevron-down"
-                  class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                />
-              </template>
-            </UButton>
-
-            <template #content>
-              <div
-                class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-              >
-                <div class="space-y-3">
-                  <div
-                    class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700"
-                  >
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      <UIcon name="i-lucide-hash" class="inline-block w-4 h-4 mr-1" />
-                      Project ID
-                    </span>
-                    <span class="text-sm font-mono text-gray-500 dark:text-gray-500 select-all">
-                      {{ originalProject['id'] }}
-                    </span>
-                  </div>
-                  <div
-                    class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700"
-                  >
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      <UIcon name="i-lucide-calendar-plus" class="inline-block w-4 h-4 mr-1" />
-                      Created
-                    </span>
-                    <span class="text-sm text-gray-500 dark:text-gray-500">
-                      {{
-                        originalProject['created_at']
-                          ? new Date(originalProject['created_at']).toLocaleString()
-                          : 'N/A'
-                      }}
-                    </span>
-                  </div>
-                  <div class="flex justify-between items-center py-2">
-                    <span class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      <UIcon name="i-lucide-calendar-clock" class="inline-block w-4 h-4 mr-1" />
-                      Last Updated
-                    </span>
-                    <span class="text-sm text-gray-500 dark:text-gray-500">
-                      {{
-                        originalProject['updated_at']
-                          ? new Date(originalProject['updated_at']).toLocaleString()
-                          : 'N/A'
-                      }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </UCollapsible>
-
-          <!-- Action Buttons -->
-          <div v-if="hasChanges" class="flex justify-end gap-3 pt-4">
-            <UButton
-              label="Cancel"
-              color="neutral"
-              variant="outline"
-              size="lg"
-              :disabled="isSaving"
-              @click="handleCancel"
-            />
-            <UButton
-              label="Save Changes"
-              icon="i-lucide-save"
-              color="primary"
-              size="lg"
-              type="submit"
-              :loading="isSaving"
-              :disabled="isSaving"
-            />
+            </UCard>
           </div>
-        </form>
-      </div>
-    </SimpleContentWrapper>
+        </Transition>
+
+      </form>
+    </template>
   </div>
 </template>
 
 <style scoped>
-/* Minimal scoped styles for transitions */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(0.5rem);
+}
 </style>
