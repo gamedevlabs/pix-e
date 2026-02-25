@@ -101,6 +101,9 @@ onMounted(async () => {
   // Activate the first substep ("Project Information") when the page opens
   await loadForUser()
 
+  // user-onb-2-0: "Open the Create page" — completes as soon as the user lands here
+  await toggleSubstep('user-onb-2', 'user-onb-2-0')
+
   if (duplicateId.value) {
     loadProjectForDuplication()
   }

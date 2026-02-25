@@ -39,6 +39,8 @@ const viewedWorkflowId = computed(() => {
 // Load workflows depending on context:
 // - If user is logged in and has no projects: show onboarding (user-level)
 // - If a project is selected: show project workflows
+// loadForProject/loadForUser are idempotent — they skip the re-load if the
+// same scope is already in memory, so this watch fires safely on every navigation.
 watch(
   [currentProjectId, hasProjects, isLoggedIn],
   async ([newProjectId, _hasAnyProjects, loggedIn]) => {
@@ -54,38 +56,6 @@ watch(
     await projectWorkflow.loadForProject(newProjectId)
   },
   { immediate: true },
-)
-
-// Refresh workflow data
-const refreshWorkflow = async () => {
-  if (!isLoggedIn.value) return
-
-  // If no project is selected, show the standalone onboarding workflow.
-  if (!currentProjectId.value) {
-    await projectWorkflow.loadForUser()
-    return
-  }
-
-  await projectWorkflow.loadForProject(currentProjectId.value)
-}
-
-// Watch for when slideover opens and refresh data
-watch(slideoverOpen, async (isOpen) => {
-  if (isOpen) {
-    await refreshWorkflow()
-  }
-})
-
-// Watch for workflow changes and auto-refresh
-watch(
-  () => projectWorkflow.workflow.value,
-  () => {
-    // Force reactivity update by triggering computed recalculation
-    if (slideoverOpen.value) {
-      // Workflow state changed, computed properties will automatically update
-    }
-  },
-  { deep: true },
 )
 
 // Computed
@@ -219,13 +189,27 @@ watch(
   { immediate: true },
 )
 
-// Handle navigation
-const handleNavigate = (route: string) => {
-  if (route) {
-    navigateTo(route)
-    workflowSlideover.close()
-  }
+// Handle navigation — injects project query param for routes that need it
+const handleNavigate = (rawRoute: string | undefined) => {
+  if (!rawRoute) return
+  const projectRequiredPrefixes = [
+    '/edit', '/dashboard', '/pillars', '/pxcharts', '/pxnodes',
+    '/pxcomponentdefinitions', '/pxcomponents', '/player-expectations',
+    '/player-experience', '/sentiments',
+  ]
+  const needsProject = projectRequiredPrefixes.some((p) => rawRoute.startsWith(p))
+  const projectId = currentProjectId.value
+  const finalRoute =
+    needsProject && projectId && !rawRoute.includes('?id=')
+      ? `${rawRoute}?id=${projectId}`
+      : rawRoute
+  navigateTo(finalRoute)
+  workflowSlideover.close()
 }
+
+/** A substep is navigable only when it has an explicit route and is not yet complete. */
+const substepIsNavigable = (substep: { status: string; route?: string }) =>
+  substep.status !== 'complete' && !!substep.route
 
 // Width is fixed to match a reasonable sidebar size
 
@@ -335,23 +319,20 @@ function workflowLabel(w: WorkflowInstance): string {
                       class="space-y-1 mt-3"
                     >
                       <component
-                        :is="substep.status === 'complete' ? 'div' : 'NuxtLink'"
+                        :is="substepIsNavigable(substep) ? 'NuxtLink' : 'div'"
                         v-for="substep in item.substeps"
                         :key="substep.id"
-                        :to="
-                          substep.status !== 'complete'
-                            ? substep.route || item.route || '#'
-                            : undefined
-                        "
+                        :to="substepIsNavigable(substep) ? substep.route : undefined"
                         class="flex items-start gap-3 py-2 px-3 rounded-lg transition-colors no-underline"
                         :class="[
                           substep.status === 'complete'
                             ? 'opacity-75 cursor-default'
-                            : 'hover:bg-elevated/50 cursor-pointer',
+                            : substepIsNavigable(substep)
+                              ? 'hover:bg-elevated/50 cursor-pointer'
+                              : 'cursor-default',
                         ]"
                         @click.prevent.stop="
-                          substep.status !== 'complete' &&
-                          handleNavigate(substep.route || item.route)
+                          substepIsNavigable(substep) && handleNavigate(substep.route)
                         "
                       >
                         <UIcon

@@ -3,6 +3,7 @@
 // and the localStorage-backed ProjectDataProvider to reduce file count.
 
 import { computed } from 'vue'
+import type { WorkflowStep, StepStatus, Substep, ProjectWorkflow } from '~/utils/workflow'
 
 import type { Project } from '~/utils/project'
 
@@ -219,14 +220,9 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       const existing = readState()
       if (existing) {
         mem = existing
-        if (
-          existing.workflowsState &&
-          (workflowApi as unknown as Record<string, (s: unknown) => void>).importState
-        ) {
+        if (existing.workflowsState) {
           try {
-            ;(workflowApi as unknown as Record<string, (s: unknown) => void>).importState(
-              existing.workflowsState,
-            )
+            workflowApi.importState(existing.workflowsState)
           } catch {
             // ignore
           }
@@ -260,14 +256,10 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
 
   function persist() {
     const state = requireMem()
-    if ((workflowApi as unknown as Record<string, () => unknown>).exportState) {
-      try {
-        state.workflowsState = (
-          workflowApi as unknown as Record<string, () => unknown>
-        ).exportState()
-      } catch {
-        // ignore
-      }
+    try {
+      state.workflowsState = workflowApi.exportState()
+    } catch {
+      // ignore
     }
     writeState(state)
   }
@@ -383,14 +375,9 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         workflowsState: p.workflowsState,
       }
 
-      if (
-        mem.workflowsState &&
-        (workflowApi as unknown as Record<string, (s: unknown) => void>).importState
-      ) {
+      if (mem.workflowsState) {
         try {
-          ;(workflowApi as unknown as Record<string, (s: unknown) => void>).importState(
-            mem.workflowsState,
-          )
+          workflowApi.importState(mem.workflowsState)
         } catch {
           // ignore
         }
@@ -581,7 +568,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         description: 'Learn where things are and what each module does.',
         route: '/dashboard',
         substeps: [
-          { id: 'onb-1-1', name: 'Inspect the sidebar and open any module', route: '/dashboard' },
+          { id: 'onb-1-1', name: 'Have a look at the sidebar', route: undefined },
           { id: 'onb-1-2', name: 'Have a look at the project Settings', route: '/edit' },
           { id: 'onb-1-3', name: 'Have a look at the searchbar', route: '/dashboard' },
         ],
@@ -728,6 +715,7 @@ export const ONBOARDING_TEMPLATE: PhaseTemplate = {
       description: 'Set up a project so you can use the project workflows.',
       route: '/create',
       substeps: [
+        { id: 'user-onb-2-0', name: 'Open the Create page', route: '/create' },
         { id: 'user-onb-2-1', name: 'Project Information', route: '/create' },
         { id: 'user-onb-2-2', name: 'Project Details', route: '/create' },
         { id: 'user-onb-2-3', name: 'Review Project Settings', route: '/create' },
@@ -864,7 +852,49 @@ export class WorkflowApiEmulator {
   private activeWorkflowIds: Record<string, string> = {}
 
   constructor() {
+    // Only seed a fresh onboarding workflow as a default.
+    // importState() will overwrite this if persisted state exists.
     this.userWorkflows['default'] = createOnboardingWorkflow()
+  }
+
+  // ── Persistence ────────────────────────────────────────────────────────────
+
+  exportState(): unknown {
+    return JSON.parse(
+      JSON.stringify({
+        projectWorkflows: this.projectWorkflows,
+        userWorkflows: this.userWorkflows,
+        activeWorkflowIds: this.activeWorkflowIds,
+      }),
+    )
+  }
+
+  importState(state: unknown): void {
+    if (!state || typeof state !== 'object') return
+    const s = state as Record<string, unknown>
+
+    if (s.projectWorkflows && typeof s.projectWorkflows === 'object') {
+      this.projectWorkflows = JSON.parse(JSON.stringify(s.projectWorkflows)) as Record<
+        string,
+        WorkflowInstance[]
+      >
+    }
+    if (s.userWorkflows && typeof s.userWorkflows === 'object') {
+      this.userWorkflows = JSON.parse(JSON.stringify(s.userWorkflows)) as Record<
+        string,
+        WorkflowInstance
+      >
+      // Ensure a default onboarding workflow always exists
+      if (!this.userWorkflows['default']) {
+        this.userWorkflows['default'] = createOnboardingWorkflow()
+      }
+    }
+    if (s.activeWorkflowIds && typeof s.activeWorkflowIds === 'object') {
+      this.activeWorkflowIds = JSON.parse(JSON.stringify(s.activeWorkflowIds)) as Record<
+        string,
+        string
+      >
+    }
   }
 
   // ── Active workflow id ─────────────────────────────────────────────────────
@@ -909,9 +939,9 @@ export class WorkflowApiEmulator {
 
     const list = this.projectWorkflows[workflow.projectId] ?? []
     const idx = list.findIndex((w) => w.id === workflow.id)
-    if (idx === -1) list.push(workflow)
-    else list[idx] = workflow
-    this.projectWorkflows[workflow.projectId] = JSON.parse(JSON.stringify(list))
+    if (idx === -1) list.push(JSON.parse(JSON.stringify(workflow)))
+    else list[idx] = JSON.parse(JSON.stringify(workflow))
+    this.projectWorkflows[workflow.projectId] = list
     return JSON.parse(JSON.stringify(workflow))
   }
 
@@ -942,9 +972,5 @@ export class WorkflowApiEmulator {
         list.unshift(fresh)
       }
     }
-  }
-
-  hasAnyProject(): boolean {
-    return Object.keys(this.projectWorkflows).length > 0
   }
 }

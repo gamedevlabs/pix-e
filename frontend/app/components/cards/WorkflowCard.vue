@@ -1,27 +1,37 @@
 ﻿<script setup lang="ts">
-import { onMounted, computed } from '#imports'
+import { onMounted, computed, watch } from '#imports'
 import type { WorkflowStep } from '~/utils/workflow'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import type { StepperItem } from '@nuxt/ui'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 
 interface Props {
-  projectId?: string
   orientation?: 'horizontal' | 'vertical'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  projectId: 'pixe',
   orientation: 'vertical',
 })
 
+const { currentProjectId } = useProjectHandler()
 const { loading, loadForProject, getSteps, getCurrentStep } = useProjectWorkflow()
 const { open: openSlideover } = useWorkflowSlideover()
 
 const router = useRouter()
 
+// Load workflow for the current project. loadForProject is idempotent —
+// it skips the DB call when the same project is already loaded in memory.
 onMounted(async () => {
-  await loadForProject(props.projectId)
+  if (currentProjectId.value) {
+    await loadForProject(currentProjectId.value)
+  }
+})
+
+// Also react if the project changes after mount
+watch(currentProjectId, async (newId) => {
+  if (newId) {
+    await loadForProject(newId)
+  }
 })
 
 const steps = computed(() => getSteps.value as WorkflowStep[])
