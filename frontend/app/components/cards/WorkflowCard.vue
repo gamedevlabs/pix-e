@@ -9,9 +9,8 @@ interface Props {
   orientation?: 'horizontal' | 'vertical'
 }
 
-const { orientation } = withDefaults(defineProps<Props>(), {
-  orientation: 'vertical',
-})
+// Vue 3.5+: when destructuring props, prefer default values over withDefaults().
+const { orientation = 'vertical' } = defineProps<Props>()
 
 const { currentProjectId } = useProjectHandler()
 const { loading, loadForProject, getSteps, getCurrentStep } = useProjectWorkflow()

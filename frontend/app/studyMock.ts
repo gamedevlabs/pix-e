@@ -1218,4 +1218,3 @@ function idOf(x: unknown): string {
   if (x && typeof x === 'object' && 'id' in x) return String((x as { id?: unknown }).id)
   return ''
 }
-

@@ -89,9 +89,7 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
         const allComponents = (await provider.getEntities('pxcomponents')) as unknown[]
         return {
           ...node,
-          components: allComponents
-            .map(asEntityLike)
-            .filter((c) => String(c.node) === String(id)),
+          components: allComponents.map(asEntityLike).filter((c) => String(c.node) === String(id)),
           charts: [],
         } as T
       }
