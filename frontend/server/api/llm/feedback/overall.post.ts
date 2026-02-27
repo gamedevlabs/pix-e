@@ -2,7 +2,10 @@
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { pillars, designIdea } = body as { pillars: Array<{ id: number; name: string; description: string }>; designIdea?: string }
+  const { pillars, designIdea } = body as {
+    pillars: Array<{ id: number; name: string; description: string }>
+    designIdea?: string
+  }
 
   if (!pillars || !Array.isArray(pillars) || pillars.length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'Missing or empty pillars array' })
@@ -35,11 +38,22 @@ Design Pillars: ${pillarsText}
 If not, add new pillars to cover the missing aspects.`
 
   const [coverage, contradictions, proposedAdditions] = await Promise.all([
-    callStructured<{ pillarFeedback: Array<{ pillarId: number; name: string; reasoning: string }> }>(
+    callStructured<{
+      pillarFeedback: Array<{ pillarId: number; name: string; reasoning: string }>
+    }>(
       coveragePrompt,
       '{ "pillarFeedback": [{ "pillarId": number, "name": string, "reasoning": string }] }',
     ),
-    callStructured<{ hasContradictions: boolean; contradictions: Array<{ pillarOneId: number; pillarTwoId: number; pillarOneTitle: string; pillarTwoTitle: string; reason: string }> }>(
+    callStructured<{
+      hasContradictions: boolean
+      contradictions: Array<{
+        pillarOneId: number
+        pillarTwoId: number
+        pillarOneTitle: string
+        pillarTwoTitle: string
+        reason: string
+      }>
+    }>(
       contradictionsPrompt,
       '{ "hasContradictions": boolean, "contradictions": [{ "pillarOneId": number, "pillarTwoId": number, "pillarOneTitle": string, "pillarTwoTitle": string, "reason": string }] }',
     ),

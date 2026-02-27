@@ -79,7 +79,8 @@ function ensureSingleActiveWithinStep(step: WorkflowStep) {
   const earliestIncomplete = step.substeps.findIndex((ss) => ss.status !== 'complete')
   if (earliestIncomplete !== -1 && earliestIncomplete < keep) {
     step.substeps[keep]!.status = 'pending'
-    if (step.substeps[earliestIncomplete]!.status === 'pending') step.substeps[earliestIncomplete]!.status = 'active'
+    if (step.substeps[earliestIncomplete]!.status === 'pending')
+      step.substeps[earliestIncomplete]!.status = 'active'
   }
 }
 

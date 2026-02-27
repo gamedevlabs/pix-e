@@ -33,8 +33,8 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
-    // Nuxt automatically maps OPENAI_API_KEY env var to this key at runtime
-    openaiApiKey: '',
+    // Server-only. Prefer env at runtime; empty string keeps types stable.
+    openaiApiKey: process.env.OPENAI_API_KEY ?? '',
     public: {
       apiBase: 'http://localhost:8000',
       // mock-only study deployment; no dataMode switching

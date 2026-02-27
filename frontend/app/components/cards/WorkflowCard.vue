@@ -9,7 +9,7 @@ interface Props {
   orientation?: 'horizontal' | 'vertical'
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const { orientation } = withDefaults(defineProps<Props>(), {
   orientation: 'vertical',
 })
 

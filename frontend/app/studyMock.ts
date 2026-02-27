@@ -33,8 +33,15 @@ export interface ProjectDataProvider {
 
   // Generic entity CRUD (pxcharts, pxnodes, pxcomponentdefinitions, pxcomponents, containers, edges)
   getEntities(collection: string): Promise<unknown[]>
-  createEntity(collection: string, payload: Record<string, unknown>): Promise<Record<string, unknown>>
-  updateEntity(collection: string, id: string, patch: Record<string, unknown>): Promise<Record<string, unknown> | null>
+  createEntity(
+    collection: string,
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>
+  updateEntity(
+    collection: string,
+    id: string,
+    patch: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null>
   deleteEntity(collection: string, id: string): Promise<boolean>
 
   // Study/session helpers
@@ -448,11 +455,11 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       await ensureReady()
       const state = requireMem()
       if (collection === 'pillars') {
-        const ps = state.pillarsState ?? defaultPillarsState()
+        const ps = requireMem().pillarsState ?? defaultPillarsState()
         const now = nowIso()
         const nextId =
           (payload.id as string) ??
-          String(ps.pillars.reduce((max, x) => Math.max(max, Number((x as any).id) || 0), 0) + 1)
+          String(ps.pillars.reduce((max, x) => Math.max(max, Number(idOf(x)) || 0), 0) + 1)
         const created: Record<string, unknown> = {
           ...payload,
           id: nextId,
@@ -468,7 +475,7 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       const now = nowIso()
       const nextId =
         (payload.id as string) ??
-        String(list.reduce((max, x) => Math.max(max, Number((x as any).id) || 0), 0) + 1)
+        String(list.reduce((max, x) => Math.max(max, Number(idOf(x)) || 0), 0) + 1)
       const created: Record<string, unknown> = {
         ...payload,
         id: nextId,
@@ -485,12 +492,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       const state = requireMem()
       if (collection === 'pillars') {
         const ps = state.pillarsState ?? defaultPillarsState()
-        const idx = ps.pillars.findIndex((x) => String((x as any).id) === String(id))
+        const idx = ps.pillars.findIndex((x) => idOf(x) === String(id))
         if (idx === -1) return null
         const updated: Record<string, unknown> = {
           ...(ps.pillars[idx] as unknown as Record<string, unknown>),
           ...patch,
-          id: (ps.pillars[idx] as any).id,
+          id: idOf(ps.pillars[idx]),
           updated_at: nowIso(),
         }
         ps.pillars = [
@@ -503,12 +510,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         return { ...updated }
       }
       const list = getEntityCollection(state, collection)
-      const idx = list.findIndex((x) => String((x as any).id) === String(id))
+      const idx = list.findIndex((x) => idOf(x) === String(id))
       if (idx === -1) return null
       const updated: Record<string, unknown> = {
         ...list[idx],
         ...patch,
-        id: (list[idx] as any).id,
+        id: idOf(list[idx]),
         updated_at: nowIso(),
       }
       list[idx] = updated
@@ -522,14 +529,14 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       if (collection === 'pillars') {
         const ps = state.pillarsState ?? defaultPillarsState()
         const before = ps.pillars.length
-        ps.pillars = ps.pillars.filter((x) => String((x as any).id) !== String(id))
+        ps.pillars = ps.pillars.filter((x) => idOf(x) !== String(id))
         state.pillarsState = ps
         persist()
         return ps.pillars.length < before
       }
       const list = getEntityCollection(state, collection)
       const before = list.length
-      state.entities![collection] = list.filter((x) => String((x as any).id) !== String(id))
+      state.entities![collection] = list.filter((x) => idOf(x) !== String(id))
       persist()
       return state.entities![collection]!.length < before
     },
@@ -553,8 +560,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         lastSavedAt: typeof p.lastSavedAt === 'string' ? p.lastSavedAt : null,
         projects: (p.projects as Project[]).map((proj) => ({ ...proj })),
         workflowsState: p.workflowsState,
-        pillarsState: isObject(p.pillarsState) ? (p.pillarsState as OfflinePillarsPayload) : defaultPillarsState(),
-        entities: isObject(p.entities) ? (p.entities as Record<string, Record<string, unknown>[]>) : defaultEntities(),
+        pillarsState: isObject(p.pillarsState)
+          ? (p.pillarsState as OfflinePillarsPayload)
+          : defaultPillarsState(),
+        entities: isObject(p.entities)
+          ? (p.entities as Record<string, Record<string, unknown>[]>)
+          : defaultEntities(),
       }
 
       if (mem.workflowsState) {
@@ -1202,3 +1213,9 @@ export class WorkflowApiEmulator {
     this.activeWorkflowIds = {}
   }
 }
+
+function idOf(x: unknown): string {
+  if (x && typeof x === 'object' && 'id' in x) return String((x as { id?: unknown }).id)
+  return ''
+}
+

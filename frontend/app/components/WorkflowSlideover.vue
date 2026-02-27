@@ -193,9 +193,16 @@ watch(
 const handleNavigate = (rawRoute: string | undefined) => {
   if (!rawRoute) return
   const projectRequiredPrefixes = [
-    '/edit', '/dashboard', '/pillars', '/pxcharts', '/pxnodes',
-    '/pxcomponentdefinitions', '/pxcomponents', '/player-expectations',
-    '/player-experience', '/sentiments',
+    '/edit',
+    '/dashboard',
+    '/pillars',
+    '/pxcharts',
+    '/pxnodes',
+    '/pxcomponentdefinitions',
+    '/pxcomponents',
+    '/player-expectations',
+    '/player-experience',
+    '/sentiments',
   ]
   const needsProject = projectRequiredPrefixes.some((p) => rawRoute.startsWith(p))
   const projectId = currentProjectId.value

@@ -33,9 +33,9 @@ export function useMovieScriptEvaluatorApi() {
       const scripts = await provider.getEntities(
         `movie-script-evaluator:projects:${projectId}:script`,
       )
-      const script = scripts.find((s) => String((s as Record<string, unknown>).id) === String(script_id)) as
-        | Record<string, unknown>
-        | undefined
+      const script = scripts.find(
+        (s) => String((s as Record<string, unknown>).id) === String(script_id),
+      ) as Record<string, unknown> | undefined
 
       if (!script) throw new Error('Script not found in local store')
 
@@ -60,7 +60,10 @@ export function useMovieScriptEvaluatorApi() {
       const collection = `movie-script-evaluator:projects:${projectId}:script-scene-analysis`
       const results: ScriptSceneAnalysis[] = []
       for (const item of items) {
-        const created = await provider.createEntity(collection, item as unknown as Record<string, unknown>)
+        const created = await provider.createEntity(
+          collection,
+          item as unknown as Record<string, unknown>,
+        )
         results.push(created as unknown as ScriptSceneAnalysis)
       }
       return results

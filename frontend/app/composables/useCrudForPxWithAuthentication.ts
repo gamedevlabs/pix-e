@@ -1,5 +1,11 @@
 ﻿import { useProjectDataProvider } from '~/studyMock'
 
+type EntityLike = Record<string, unknown> & { id?: unknown }
+
+function asEntityLike(x: unknown): EntityLike {
+  return (x ?? {}) as EntityLike
+}
+
 // Map an apiUrl to a stable collection key used in the entities store.
 function collectionKey(apiUrl: string): string {
   const clean = apiUrl.replace(/^api\//, '').replace(/\/$/, '')
@@ -29,16 +35,21 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
     loading.value = true
     try {
       const provider = useProjectDataProvider()
-      const list = await provider.getEntities(collection)
+      const list = (await provider.getEntities(collection)) as unknown[]
 
       if (isPxNodesRoot()) {
         // Hydrate each node with its components
-        const allComponents = await provider.getEntities('pxcomponents')
-        items.value = list.map((node: any) => ({
-          ...node,
-          components: allComponents.filter((c: any) => String(c.node) === String(node.id)),
-          charts: [],
-        })) as T[]
+        const allComponents = (await provider.getEntities('pxcomponents')) as unknown[]
+        items.value = list.map((nodeU) => {
+          const node = asEntityLike(nodeU)
+          return {
+            ...node,
+            components: allComponents
+              .map(asEntityLike)
+              .filter((c) => String(c.node) === String(node.id)),
+            charts: [],
+          }
+        }) as T[]
         return
       }
 
@@ -58,8 +69,8 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
 
       if (isPxChartsRoot()) {
         // Hydrate chart with its containers and edges
-        const charts = await provider.getEntities(collection)
-        const chart = charts.find((x: any) => String(x.id) === String(id)) as any
+        const charts = (await provider.getEntities(collection)) as unknown[]
+        const chart = charts.map(asEntityLike).find((x) => String(x.id) === String(id))
         if (!chart) return null
 
         const containersKey = `pxcharts:${id}:pxcontainers`
@@ -72,13 +83,15 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
 
       if (isPxNodesRoot()) {
         // Hydrate node with its components
-        const nodes = await provider.getEntities(collection)
-        const node = nodes.find((x: any) => String(x.id) === String(id)) as any
+        const nodes = (await provider.getEntities(collection)) as unknown[]
+        const node = nodes.map(asEntityLike).find((x) => String(x.id) === String(id))
         if (!node) return null
-        const allComponents = await provider.getEntities('pxcomponents')
+        const allComponents = (await provider.getEntities('pxcomponents')) as unknown[]
         return {
           ...node,
-          components: allComponents.filter((c: any) => String(c.node) === String(id)),
+          components: allComponents
+            .map(asEntityLike)
+            .filter((c) => String(c.node) === String(id)),
           charts: [],
         } as T
       }
@@ -98,7 +111,9 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
   async function createItem(payload: Partial<T>) {
     try {
       const provider = useProjectDataProvider()
-      const created = await provider.createEntity(collection, payload as Record<string, unknown>)
+      const created = asEntityLike(
+        await provider.createEntity(collection, payload as Record<string, unknown>),
+      )
 
       if (isPxNodesRoot()) {
         // Add with empty components/charts arrays
@@ -108,7 +123,7 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
       }
 
       success('Saved locally (mock mode)')
-      return (created as any).id as string
+      return (created.id ?? '') as string
     } catch (err) {
       error.value = err
       errorToast(err)
@@ -119,21 +134,26 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
       const provider = useProjectDataProvider()
-      const updated = await provider.updateEntity(collection, String(id), payload as Record<string, unknown>)
+      const updatedU = await provider.updateEntity(
+        collection,
+        String(id),
+        payload as Record<string, unknown>,
+      )
+      const updated = updatedU ? asEntityLike(updatedU) : null
       if (updated) {
         const idx = (items.value as Array<{ id?: unknown }>).findIndex(
           (x) => String(x.id) === String(id),
         )
         if (idx !== -1) {
           // Preserve hydrated fields (components, charts, containers, edges) from existing item
-          const existing = items.value[idx] as any
+          const existing = asEntityLike(items.value[idx])
           items.value = [
             ...items.value.slice(0, idx),
             {
               ...existing,
               ...updated,
-              components: existing.components ?? [],
-              charts: existing.charts ?? [],
+              components: (existing as Record<string, unknown>).components ?? [],
+              charts: (existing as Record<string, unknown>).charts ?? [],
             } as T,
             ...items.value.slice(idx + 1),
           ]

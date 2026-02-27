@@ -59,7 +59,11 @@ export function useCrud<T>(apiUrl: string) {
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
       const provider = useProjectDataProvider()
-      const updated = await provider.updateEntity(collection, String(id), payload as Record<string, unknown>)
+      const updated = await provider.updateEntity(
+        collection,
+        String(id),
+        payload as Record<string, unknown>,
+      )
       if (updated) {
         const idx = (items.value as Array<{ id?: unknown }>).findIndex(
           (x) => String(x.id) === String(id),

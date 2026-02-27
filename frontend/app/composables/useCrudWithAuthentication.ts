@@ -1,5 +1,11 @@
 ﻿import { useProjectDataProvider } from '~/studyMock'
 
+type EntityLike = Record<string, unknown> & { id?: unknown }
+
+function asEntityLike(x: unknown): EntityLike {
+  return (x ?? {}) as EntityLike
+}
+
 function collectionKey(apiUrl: string): string {
   const clean = apiUrl.replace(/^api\//, '').replace(/\/$/, '')
   const parts = clean.split('/')
@@ -46,10 +52,12 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   async function createItem(payload: Partial<T>) {
     try {
       const provider = useProjectDataProvider()
-      const created = await provider.createEntity(collection, payload as Record<string, unknown>)
+      const created = asEntityLike(
+        await provider.createEntity(collection, payload as Record<string, unknown>),
+      )
       items.value = [...items.value, created as T]
       success('Saved locally (mock mode)')
-      return (created as any).id as string
+      return (created.id ?? '') as string
     } catch (err) {
       error.value = err
       errorToast(err)
@@ -60,17 +68,17 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
       const provider = useProjectDataProvider()
-      const updated = await provider.updateEntity(collection, String(id), payload as Record<string, unknown>)
+      const updated = await provider.updateEntity(
+        collection,
+        String(id),
+        payload as Record<string, unknown>,
+      )
       if (updated) {
         const idx = (items.value as Array<{ id?: unknown }>).findIndex(
           (x) => String(x.id) === String(id),
         )
         if (idx !== -1) {
-          items.value = [
-            ...items.value.slice(0, idx),
-            updated as T,
-            ...items.value.slice(idx + 1),
-          ]
+          items.value = [...items.value.slice(0, idx), updated as T, ...items.value.slice(idx + 1)]
         }
       }
       success('Saved locally (mock mode)')

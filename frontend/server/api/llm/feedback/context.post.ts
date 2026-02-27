@@ -2,7 +2,10 @@
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { pillars, context } = body as { pillars: Array<{ id: number; name: string; description: string }>; context: string }
+  const { pillars, context } = body as {
+    pillars: Array<{ id: number; name: string; description: string }>
+    context: string
+  }
 
   if (!pillars || !context) {
     throw createError({ statusCode: 400, statusMessage: 'Missing pillars or context' })
@@ -17,8 +20,5 @@ Idea: ${context}
 
 Design Pillars: ${pillarsText}`
 
-  return await callStructured(
-    prompt,
-    '{ "rating": number (1-5), "feedback": string }',
-  )
+  return await callStructured(prompt, '{ "rating": number (1-5), "feedback": string }')
 })

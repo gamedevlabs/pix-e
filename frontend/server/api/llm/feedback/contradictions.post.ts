@@ -2,7 +2,10 @@
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { pillars, designIdea } = body as { pillars: Array<{ id: number; name: string; description: string }>; designIdea?: string }
+  const { pillars, designIdea } = body as {
+    pillars: Array<{ id: number; name: string; description: string }>
+    designIdea?: string
+  }
 
   if (!pillars || !Array.isArray(pillars) || pillars.length === 0) {
     throw createError({ statusCode: 400, statusMessage: 'Missing or empty pillars array' })
