@@ -102,6 +102,12 @@ async function onEndStudy() {
   phase.value = 'finished'
   open.value = true
 }
+
+function onContinueExploring() {
+  // Allow the participant to keep using the app after we've shown the "finished" state.
+  // We only expose this action in the finished phase to ensure export happened first.
+  open.value = false
+}
 </script>
 
 <template>
@@ -217,16 +223,29 @@ async function onEndStudy() {
                   </div>
                 </div>
 
-                <UButton
-                  size="sm"
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-download"
-                  class="w-full justify-center"
-                  @click="onExport"
-                >
-                  Download again
-                </UButton>
+                <div class="flex flex-col gap-2">
+                  <UButton
+                    size="sm"
+                    color="primary"
+                    variant="soft"
+                    icon="i-lucide-download"
+                    class="w-full justify-center"
+                    @click="onExport"
+                  >
+                    Download again
+                  </UButton>
+
+                  <UButton
+                    size="sm"
+                    color="neutral"
+                    variant="solid"
+                    icon="i-lucide-arrow-right"
+                    class="w-full justify-center"
+                    @click="onContinueExploring"
+                  >
+                    Continue Exploring
+                  </UButton>
+                </div>
               </div>
             </div>
           </UCard>
