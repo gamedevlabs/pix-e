@@ -1,28 +1,26 @@
-﻿import { useProjectDataProvider } from '~/studyMock'
+﻿import { useProjectDataProvider, getPersistedOfflinePillars } from '~/studyMock'
 
 export function usePillarsApi() {
   // Helper: load current pillars + design idea from the mock store
   async function getContext() {
     const provider = useProjectDataProvider()
     const pillars = (await provider.getEntities('pillars')) as Pillar[]
-    const designState = await provider.getEntities('design')
-    const designIdea =
-      (designState[0] as Record<string, unknown>)?.description as string | undefined ?? ''
+    // Design idea is stored in pillarsState.designIdea, not a generic entity collection
+    const persistedData = getPersistedOfflinePillars()
+    const designIdea = persistedData.designIdea?.description ?? ''
     return { pillars, designIdea }
   }
 
-  // updateDesignIdea is now purely local – persist to mock store
+  // updateDesignIdea: persist to pillarsState via the offline pillars helper
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
-      const provider = useProjectDataProvider()
-      const existing = await provider.getEntities('design')
-      if (existing.length > 0) {
-        const id = String((existing[0] as Record<string, unknown>).id)
-        await provider.updateEntity('design', id, { description: designIdea.trim() })
-      } else {
-        await provider.createEntity('design', { description: designIdea.trim() })
-      }
+      const { setPersistedOfflinePillars, getPersistedOfflinePillars } = await import('~/studyMock')
+      const current = getPersistedOfflinePillars()
+      setPersistedOfflinePillars({
+        ...current,
+        designIdea: { description: designIdea.trim() },
+      })
     } catch (error) {
       console.error('Error saving design idea:', error)
     }
