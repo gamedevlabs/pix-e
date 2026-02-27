@@ -72,9 +72,9 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         description: 'Learn where things are and what each module does.',
         route: '/dashboard',
         substeps: [
-          { id: 'onb-1-1', name: 'Inspect the sidebar and open any module', route: '/dashboard' },
+          { id: 'onb-1-1', name: 'Open any module through the sidebar', route: undefined },
           { id: 'onb-1-2', name: 'Have a look at the project Settings', route: '/edit' },
-          { id: 'onb-1-3', name: 'Use the Search Bar to find the Dashboard', route: '/dashboard' },
+          { id: 'onb-1-3', name: 'Open the searchbar', route: '/dashboard' },
         ],
       },
     ],
@@ -94,22 +94,48 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         substeps: [
           { id: 'pillars-1-1', name: 'Open Design Pillars', route: '/pillars' },
           { id: 'pillars-1-2', name: 'Create a new pillar', route: '/pillars' },
+        ],
+      },
+      {
+        id: 'pillars-2',
+        name: 'LLM Feedback for your Pillar',
+        description: 'Generate and act on LLM feedback for your first pillar.',
+        route: '/pillars',
+        substeps: [
           {
-            id: 'pillars-1-3',
+            id: 'pillars-2-1',
             name: 'Generate LLM feedback for your first pillar',
+            route: '/pillars',
+          },
+          {
+            id: 'pillars-2-2',
+            name: 'Fix a pillar issue with AI',
             route: '/pillars',
           },
         ],
       },
       {
-        id: 'pillars-2',
-        name: 'Utilize LLM for Feedback',
+        id: 'pillars-3',
+        name: 'Get feedback on a new core idea',
+        description: 'Write a core idea, add additional features and generate LLM feedback.',
+        route: '/pillars',
+        substeps: [
+          {
+            id: 'pillars-3-1',
+            name: 'Write a new core idea, add additional features and then generate LLM feedback',
+            route: '/pillars',
+          },
+        ],
+      },
+      {
+        id: 'pillars-4',
+        name: 'Discover additional LLM features',
         description: 'Generate feedback and learn how to interpret it.',
         route: '/pillars',
         substeps: [
-          { id: 'pillars-2-1', name: 'Coverage', route: '/pillars' },
-          { id: 'pillars-2-2', name: 'Contradictions', route: '/pillars' },
-          { id: 'pillars-2-3', name: 'Additions', route: '/pillars' },
+          { id: 'pillars-4-1', name: 'Coverage', route: '/pillars' },
+          { id: 'pillars-4-2', name: 'Contradictions', route: '/pillars' },
+          { id: 'pillars-4-3', name: 'Additions', route: '/pillars' },
         ],
       },
     ],
@@ -177,7 +203,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     title: 'Movie Script Evaluator',
     folder: 'Discover More',
     completionMessage:
-      "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production. 🎉",
+      "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production.",
     steps: [
       {
         id: 'mse-1',
@@ -225,6 +251,7 @@ export const ONBOARDING_TEMPLATE: PhaseTemplate = {
       description: 'Set up a project so you can use the project workflows.',
       route: '/create',
       substeps: [
+        { id: 'user-onb-2-0', name: 'Open the Create page', route: '/create' },
         { id: 'user-onb-2-1', name: 'Project Information', route: '/create' },
         { id: 'user-onb-2-2', name: 'Project Details', route: '/create' },
         { id: 'user-onb-2-3', name: 'Review Project Settings', route: '/create' },
