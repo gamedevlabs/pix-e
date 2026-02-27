@@ -15,6 +15,10 @@
   },
   "private": true,
   "devDependencies": {
+    "@types/node": "^25.3.2",
     "concurrently": "^9.2.0"
+  },
+  "dependencies": {
+    "openai": "^6.25.0"
   }
 }

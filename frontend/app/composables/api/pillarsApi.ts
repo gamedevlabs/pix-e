@@ -1,133 +1,85 @@
-﻿export function usePillarsApi() {
-  const config = useRuntimeConfig()
-  const llm = useLLM()
+﻿import { useProjectDataProvider } from '~/studyMock'
 
+export function usePillarsApi() {
+  // Helper: load current pillars + design idea from the mock store
+  async function getContext() {
+    const provider = useProjectDataProvider()
+    const pillars = (await provider.getEntities('pillars')) as Pillar[]
+    const designState = await provider.getEntities('design')
+    const designIdea =
+      (designState[0] as Record<string, unknown>)?.description as string | undefined ?? ''
+    return { pillars, designIdea }
+  }
+
+  // updateDesignIdea is now purely local – persist to mock store
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
-      await $fetch(`${config.public.apiBase}/llm/design/`, {
-        method: 'PUT',
-        body: {
-          description: designIdea.trim(),
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      })
+      const provider = useProjectDataProvider()
+      const existing = await provider.getEntities('design')
+      if (existing.length > 0) {
+        const id = String((existing[0] as Record<string, unknown>).id)
+        await provider.updateEntity('design', id, { description: designIdea.trim() })
+      } else {
+        await provider.createEntity('design', { description: designIdea.trim() })
+      }
     } catch (error) {
-      console.error('Error fetching:', error)
+      console.error('Error saving design idea:', error)
     }
   }
 
   async function getPillarsInContextAPICall() {
-    return await $fetch<PillarsInContextFeedback>(
-      `${config.public.apiBase}/llm/feedback/overall/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
+    const { pillars, designIdea } = await getContext()
+    return await $fetch<PillarsInContextFeedback>('/api/llm/feedback/overall', {
+      method: 'POST',
+      body: { pillars, designIdea },
+    })
   }
 
   async function getPillarsContradictionsAPICall() {
-    return await $fetch<PillarContradictionsFeedback>(
-      `${config.public.apiBase}/llm/feedback/contradictions/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
+    const { pillars, designIdea } = await getContext()
+    return await $fetch<PillarContradictionsFeedback>('/api/llm/feedback/contradictions', {
+      method: 'POST',
+      body: { pillars, designIdea },
+    })
   }
 
   async function getPillarsCompletenessAPICall() {
-    return await $fetch<PillarCompletenessFeedback>(
-      `${config.public.apiBase}/llm/feedback/completeness/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
+    const { pillars, designIdea } = await getContext()
+    return await $fetch<PillarCompletenessFeedback>('/api/llm/feedback/completeness', {
+      method: 'POST',
+      body: { pillars, designIdea },
+    })
   }
 
   async function getPillarsAdditionsAPICall() {
-    return await $fetch<PillarAdditionsFeedback>(
-      `${config.public.apiBase}/llm/feedback/additions/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
+    const { pillars, designIdea } = await getContext()
+    return await $fetch<PillarAdditionsFeedback>('/api/llm/feedback/additions', {
+      method: 'POST',
+      body: { pillars, designIdea },
+    })
   }
 
   async function validatePillarAPICall(pillar: Pillar) {
-    pillar.llm_feedback = await $fetch<PillarFeedback>(
-      `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
+    pillar.llm_feedback = await $fetch<PillarFeedback>('/api/llm/pillars/validate', {
+      method: 'POST',
+      body: { name: pillar.name, description: pillar.description },
+    })
   }
 
   async function fixPillarWithAIAPICall(pillar: Pillar) {
-    return await $fetch<PillarDTO>(`${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`, {
+    return await $fetch<PillarDTO>('/api/llm/pillars/fix', {
       method: 'POST',
-      body: {
-        model: llm.active_llm,
-      },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
+      body: { name: pillar.name, description: pillar.description },
     })
   }
 
   async function getContextInPillarsAPICall(context: string) {
-    return await $fetch<ContextInPillarsFeedback>(
-      `${config.public.apiBase}/llm/feedback/context/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-          context: context,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-      },
-    )
+    const { pillars } = await getContext()
+    return await $fetch<ContextInPillarsFeedback>('/api/llm/feedback/context', {
+      method: 'POST',
+      body: { pillars, context },
+    })
   }
 
   return {
