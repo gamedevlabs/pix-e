@@ -31,6 +31,12 @@ export interface ProjectDataProvider {
   getActiveWorkflowId(scope: string): string | null
   setActiveWorkflowId(scope: string, id: string | null): void
 
+  // Generic entity CRUD (pxcharts, pxnodes, pxcomponentdefinitions, pxcomponents, containers, edges)
+  getEntities(collection: string): Promise<unknown[]>
+  createEntity(collection: string, payload: Record<string, unknown>): Promise<Record<string, unknown>>
+  updateEntity(collection: string, id: string, patch: Record<string, unknown>): Promise<Record<string, unknown> | null>
+  deleteEntity(collection: string, id: string): Promise<boolean>
+
   // Study/session helpers
   exportState(): Promise<string>
   importState(json: string): Promise<void>
@@ -169,6 +175,10 @@ type StudyState = {
   lastSavedAt: string | null
   projects: Project[]
   workflowsState?: unknown
+  // Persist user-created pillars (mock mode) so CRUD works across navigation/reloads.
+  pillarsState?: OfflinePillarsPayload
+  // Generic entity collections keyed by collection name.
+  entities?: Record<string, Record<string, unknown>[]>
 }
 
 function nowIso() {
@@ -208,6 +218,58 @@ function writeState(state: StudyState) {
   localStorage.setItem(storageKey(), JSON.stringify(state, null, 2))
 }
 
+// Helpers for pillars state persistence
+function defaultPillarsState(): OfflinePillarsPayload {
+  return {
+    schemaVersion: 1,
+    pillars: [],
+    designIdea: { description: '' },
+  }
+}
+
+function getPillarsStateFromMem(state: StudyState | null | undefined): OfflinePillarsPayload {
+  const ps = state?.pillarsState
+  if (ps && typeof ps === 'object' && Array.isArray(ps.pillars)) return ps
+  return defaultPillarsState()
+}
+
+// Helpers for generic entity collections
+function defaultEntities(): Record<string, Record<string, unknown>[]> {
+  return {}
+}
+
+function getEntityCollection(state: StudyState, collection: string): Record<string, unknown>[] {
+  if (!state.entities) state.entities = defaultEntities()
+  if (!state.entities[collection]) state.entities[collection] = []
+  return state.entities[collection]!
+}
+
+export function getPersistedOfflinePillars(): OfflinePillarsPayload {
+  if (!import.meta.client) return defaultPillarsState()
+  const state = readState() as StudyState | null
+  return getPillarsStateFromMem(state)
+}
+
+export function setPersistedOfflinePillars(next: OfflinePillarsPayload) {
+  if (!import.meta.client) return
+  const current = (readState() as StudyState | null) ?? {
+    schemaVersion: STUDY_SCHEMA_VERSION,
+    participantId: '',
+    lastSavedAt: null,
+    projects: [],
+  }
+
+  const updated: StudyState = {
+    ...(current as StudyState),
+    pillarsState: {
+      schemaVersion: next.schemaVersion ?? 1,
+      pillars: Array.isArray(next.pillars) ? next.pillars : [],
+      designIdea: next.designIdea ?? { description: '' },
+    },
+  }
+  writeState(updated)
+}
+
 export function createMockProjectDataProvider(): ProjectDataProvider {
   const workflowApi = new WorkflowApiEmulator()
   let ready: Promise<void> | null = null
@@ -220,6 +282,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       const existing = readState()
       if (existing) {
         mem = existing
+        // Ensure pillarsState exists even for older stored state.
+        mem.pillarsState = getPillarsStateFromMem(mem)
+        // Ensure entities map exists.
+        if (!mem.entities) mem.entities = defaultEntities()
+        // Mirror into localStorage field if missing.
+        setPersistedOfflinePillars(mem.pillarsState)
         if (existing.workflowsState) {
           try {
             workflowApi.importState(existing.workflowsState)
@@ -235,6 +303,8 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         participantId: '',
         lastSavedAt: null,
         projects: [],
+        pillarsState: defaultPillarsState(),
+        entities: defaultEntities(),
       }
 
       writeState(mem)
@@ -249,13 +319,21 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         participantId: '',
         lastSavedAt: null,
         projects: [],
+        pillarsState: defaultPillarsState(),
+        entities: defaultEntities(),
       }
     }
+    // Ensure pillarsState always exists.
+    mem.pillarsState = getPillarsStateFromMem(mem)
+    if (!mem.entities) mem.entities = defaultEntities()
     return mem
   }
 
   function persist() {
     const state = requireMem()
+    // Mirror pillarsState into localStorage on every persist.
+    setPersistedOfflinePillars(state.pillarsState ?? defaultPillarsState())
+
     try {
       state.workflowsState = workflowApi.exportState()
     } catch {
@@ -355,6 +433,108 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       persist()
     },
 
+    // ── Generic entity CRUD ──────────────────────────────────────────────────
+    async getEntities(collection: string) {
+      await ensureReady()
+      if (collection === 'pillars') {
+        const ps = requireMem().pillarsState ?? defaultPillarsState()
+        return ps.pillars.map((x) => ({ ...x }))
+      }
+      const list = getEntityCollection(requireMem(), collection)
+      return list.map((x) => ({ ...x }))
+    },
+
+    async createEntity(collection: string, payload: Record<string, unknown>) {
+      await ensureReady()
+      const state = requireMem()
+      if (collection === 'pillars') {
+        const ps = state.pillarsState ?? defaultPillarsState()
+        const now = nowIso()
+        const nextId =
+          (payload.id as string) ??
+          String(ps.pillars.reduce((max, x) => Math.max(max, Number((x as any).id) || 0), 0) + 1)
+        const created: Record<string, unknown> = {
+          ...payload,
+          id: nextId,
+          created_at: (payload.created_at as string) ?? now,
+          updated_at: now,
+        }
+        ps.pillars = [...ps.pillars, created as unknown as Pillar]
+        state.pillarsState = ps
+        persist()
+        return { ...created }
+      }
+      const list = getEntityCollection(state, collection)
+      const now = nowIso()
+      const nextId =
+        (payload.id as string) ??
+        String(list.reduce((max, x) => Math.max(max, Number((x as any).id) || 0), 0) + 1)
+      const created: Record<string, unknown> = {
+        ...payload,
+        id: nextId,
+        created_at: (payload.created_at as string) ?? now,
+        updated_at: now,
+      }
+      list.push(created)
+      persist()
+      return { ...created }
+    },
+
+    async updateEntity(collection: string, id: string, patch: Record<string, unknown>) {
+      await ensureReady()
+      const state = requireMem()
+      if (collection === 'pillars') {
+        const ps = state.pillarsState ?? defaultPillarsState()
+        const idx = ps.pillars.findIndex((x) => String((x as any).id) === String(id))
+        if (idx === -1) return null
+        const updated: Record<string, unknown> = {
+          ...(ps.pillars[idx] as unknown as Record<string, unknown>),
+          ...patch,
+          id: (ps.pillars[idx] as any).id,
+          updated_at: nowIso(),
+        }
+        ps.pillars = [
+          ...ps.pillars.slice(0, idx),
+          updated as unknown as Pillar,
+          ...ps.pillars.slice(idx + 1),
+        ]
+        state.pillarsState = ps
+        persist()
+        return { ...updated }
+      }
+      const list = getEntityCollection(state, collection)
+      const idx = list.findIndex((x) => String((x as any).id) === String(id))
+      if (idx === -1) return null
+      const updated: Record<string, unknown> = {
+        ...list[idx],
+        ...patch,
+        id: (list[idx] as any).id,
+        updated_at: nowIso(),
+      }
+      list[idx] = updated
+      persist()
+      return { ...updated }
+    },
+
+    async deleteEntity(collection: string, id: string) {
+      await ensureReady()
+      const state = requireMem()
+      if (collection === 'pillars') {
+        const ps = state.pillarsState ?? defaultPillarsState()
+        const before = ps.pillars.length
+        ps.pillars = ps.pillars.filter((x) => String((x as any).id) !== String(id))
+        state.pillarsState = ps
+        persist()
+        return ps.pillars.length < before
+      }
+      const list = getEntityCollection(state, collection)
+      const before = list.length
+      state.entities![collection] = list.filter((x) => String((x as any).id) !== String(id))
+      persist()
+      return state.entities![collection]!.length < before
+    },
+
+    // ── Import / export / reset ──────────────────────────────────────────────
     async exportState() {
       await ensureReady()
       return JSON.stringify(requireMem(), null, 2)
@@ -373,6 +553,8 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         lastSavedAt: typeof p.lastSavedAt === 'string' ? p.lastSavedAt : null,
         projects: (p.projects as Project[]).map((proj) => ({ ...proj })),
         workflowsState: p.workflowsState,
+        pillarsState: isObject(p.pillarsState) ? (p.pillarsState as OfflinePillarsPayload) : defaultPillarsState(),
+        entities: isObject(p.entities) ? (p.entities as Record<string, Record<string, unknown>[]>) : defaultEntities(),
       }
 
       if (mem.workflowsState) {
@@ -384,12 +566,19 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       }
 
       writeState(mem)
+      setPersistedOfflinePillars(mem.pillarsState ?? defaultPillarsState())
     },
     async resetState() {
       if (!import.meta.client) return
+      // Clear persisted storage.
       localStorage.removeItem(storageKey())
+      // Reset in-memory state.
       mem = null
       ready = null
+      // Reset workflow emulator to a clean instance.
+      workflowApi.reset()
+      // Clear the static mock-data cache so fresh data is loaded after reset.
+      cachedMockData = null
       await ensureReady()
     },
 
@@ -403,8 +592,15 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         participantId: '',
         lastSavedAt: null,
         projects: [],
+        pillarsState: defaultPillarsState(),
+        entities: defaultEntities(),
       }
-      const next: StudyState = { ...(state as StudyState), participantId: id }
+      const next: StudyState = {
+        ...(state as StudyState),
+        participantId: id,
+        pillarsState: getPillarsStateFromMem(state as StudyState),
+        entities: (state as StudyState).entities ?? defaultEntities(),
+      }
       writeState(next)
       mem = next
     },
@@ -568,9 +764,9 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         description: 'Learn where things are and what each module does.',
         route: '/dashboard',
         substeps: [
-          { id: 'onb-1-1', name: 'Have a look at the sidebar', route: undefined },
+          { id: 'onb-1-1', name: 'Open any module through the sidebar', route: undefined },
           { id: 'onb-1-2', name: 'Have a look at the project Settings', route: '/edit' },
-          { id: 'onb-1-3', name: 'Have a look at the searchbar', route: '/dashboard' },
+          { id: 'onb-1-3', name: 'Open the searchbar', route: '/dashboard' },
         ],
       },
     ],
@@ -972,5 +1168,11 @@ export class WorkflowApiEmulator {
         list.unshift(fresh)
       }
     }
+  }
+
+  reset() {
+    this.projectWorkflows = {}
+    this.userWorkflows = {}
+    this.activeWorkflowIds = {}
   }
 }

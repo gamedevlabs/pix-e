@@ -45,9 +45,9 @@ if (currentProject.value?.id) {
 
 await pillarsFetchAll()
 
-const { getOfflinePillars } = await import('~/studyMock')
-const offline = await getOfflinePillars()
-designIdea.value = offline.designIdea?.description ?? ''
+const { getPersistedOfflinePillars } = await import('~/studyMock')
+const persistedData = getPersistedOfflinePillars()
+designIdea.value = persistedData.designIdea?.description ?? ''
 
 // pillars-1-1: "Open Design Pillars" — completes as soon as this page mounts
 onMounted(() => {
