@@ -786,22 +786,48 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         substeps: [
           { id: 'pillars-1-1', name: 'Open Design Pillars', route: '/pillars' },
           { id: 'pillars-1-2', name: 'Create a new pillar', route: '/pillars' },
+        ],
+      },
+      {
+        id: 'pillars-2',
+        name: 'LLM Feedback for your Pillar',
+        description: 'Generate and act on LLM feedback for your first pillar.',
+        route: '/pillars',
+        substeps: [
           {
-            id: 'pillars-1-3',
+            id: 'pillars-2-1',
             name: 'Generate LLM feedback for your first pillar',
+            route: '/pillars',
+          },
+          {
+            id: 'pillars-2-2',
+            name: 'Fix a pillar issue with AI',
             route: '/pillars',
           },
         ],
       },
       {
-        id: 'pillars-2',
-        name: 'Utilize LLM for Feedback',
+        id: 'pillars-3',
+        name: 'Get feedback on a new core idea',
+        description: 'Write a core idea, add additional features and generate LLM feedback.',
+        route: '/pillars',
+        substeps: [
+          {
+            id: 'pillars-3-1',
+            name: 'Write a new core idea, add additional features and then generate LLM feedback',
+            route: '/pillars',
+          },
+        ],
+      },
+      {
+        id: 'pillars-4',
+        name: 'Discover additional LLM features',
         description: 'Generate feedback and learn how to interpret it.',
         route: '/pillars',
         substeps: [
-          { id: 'pillars-2-1', name: 'Coverage', route: '/pillars' },
-          { id: 'pillars-2-2', name: 'Contradictions', route: '/pillars' },
-          { id: 'pillars-2-3', name: 'Additions', route: '/pillars' },
+          { id: 'pillars-4-1', name: 'Coverage', route: '/pillars' },
+          { id: 'pillars-4-2', name: 'Contradictions', route: '/pillars' },
+          { id: 'pillars-4-3', name: 'Additions', route: '/pillars' },
         ],
       },
     ],
