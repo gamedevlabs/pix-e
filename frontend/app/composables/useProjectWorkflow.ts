@@ -132,6 +132,12 @@ export const useProjectWorkflow = () => {
     return Math.round((done / substeps.length) * 100)
   })
 
+  const allWorkflowsDone = computed(() => {
+    const list = workflows.value
+    if (!list.length) return false
+    return list.every((w) => isInstanceComplete(w))
+  })
+
   const getCurrentStepProgress = computed(() => {
     const w = workflow.value
     if (!w) return 0
@@ -174,7 +180,8 @@ export const useProjectWorkflow = () => {
     const next = workflows.value.slice(currentIdx + 1).find((x) => !isInstanceComplete(x))
     if (next) {
       activeWorkflowId.value = next.id
-      api.setActiveWorkflowId(w.projectId === 'user' ? null : w.projectId, next.id)
+      const projectKey = w.projectId === 'user' ? 'user' : w.projectId
+      api.setActiveWorkflowId(projectKey, next.id)
     }
   }
 
@@ -372,6 +379,7 @@ export const useProjectWorkflow = () => {
     getProgress,
     getCurrentStepProgress,
     getStepStatus,
+    allWorkflowsDone,
 
     // Mutations
     setCurrentStepIndex,

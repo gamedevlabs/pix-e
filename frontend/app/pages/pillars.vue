@@ -133,25 +133,25 @@ async function handleGetContextInPillarsFeedback() {
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="pillar in pillars" :key="pillar.id">
           <PillarCard
-              :pillar="pillar"
-              :is-being-edited="selectedPillar === pillar.id"
-              show-edit
-              show-delete
-              @edit="selectedPillar = selectedPillar === pillar.id ? -1 : pillar.id"
-              @update="(namedEntityDraft) => handleUpdate(pillar.id, namedEntityDraft)"
-              @delete="deletePillar(pillar.id)"
-              @dismiss="dismissIssue(pillar, $event)"
-              @validate="handleValidatePillar"
-              @fix-with-ai-completed="handleFixWithAICompleted"
+            :pillar="pillar"
+            :is-being-edited="selectedPillar === pillar.id"
+            show-edit
+            show-delete
+            @edit="selectedPillar = selectedPillar === pillar.id ? -1 : pillar.id"
+            @update="(namedEntityDraft) => handleUpdate(pillar.id, namedEntityDraft)"
+            @delete="deletePillar(pillar.id)"
+            @dismiss="dismissIssue(pillar, $event)"
+            @validate="handleValidatePillar"
+            @fix-with-ai-completed="handleFixWithAICompleted"
           />
         </div>
         <div v-if="newItem">
           <NamedEntityCard
-              :named-entity="newItem"
-              :is-being-edited="true"
-              @edit="newItem = null"
-              @update="createItem"
-              @delete="newItem = null"
+            :named-entity="newItem"
+            :is-being-edited="true"
+            @edit="newItem = null"
+            @update="createItem"
+            @delete="newItem = null"
           />
         </div>
       </SimpleCardSection>
@@ -161,12 +161,12 @@ async function handleGetContextInPillarsFeedback() {
         <h2 class="text-2xl font-bold">
           LLM Feedback
           <UButton
-              icon="i-lucide-refresh-cw"
-              label="Refresh All"
-              color="secondary"
-              variant="soft"
-              loading-auto
-              @click="handleGetPillarsInContextFeedback"
+            icon="i-lucide-refresh-cw"
+            label="Refresh All"
+            color="secondary"
+            variant="soft"
+            loading-auto
+            @click="handleGetPillarsInContextFeedback"
           />
         </h2>
 
@@ -174,20 +174,20 @@ async function handleGetContextInPillarsFeedback() {
           <h2 class="text-2xl font-bold">
             Coverage:
             <UButton
-                icon="i-lucide-refresh-cw"
-                label="Refresh"
-                color="secondary"
-                variant="soft"
-                loading-auto
-                @click="handleGetPillarsCompleteness"
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="handleGetPillarsCompleteness"
             />
           </h2>
           <!-- Coverage Feedback -->
           <div class="w-full p-4 gap-4">
             <div
-                v-for="pillar in llmFeedback.coverage.pillarFeedback"
-                :key="pillar.name"
-                class="border-b mb-4 border-neutral-500 pb-4"
+              v-for="pillar in llmFeedback.coverage.pillarFeedback"
+              :key="pillar.name"
+              class="border-b mb-4 border-neutral-500 pb-4"
             >
               <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
               <p>{{ pillar.reasoning }}</p>
@@ -197,19 +197,19 @@ async function handleGetContextInPillarsFeedback() {
           <h2 class="text-2xl font-bold">
             Contradictions:
             <UButton
-                icon="i-lucide-refresh-cw"
-                label="Refresh"
-                color="secondary"
-                variant="soft"
-                loading-auto
-                @click="handleGetPillarContradictions"
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="handleGetPillarContradictions"
             />
           </h2>
           <div class="w-full p-4 gap-4">
             <div
-                v-for="contradiction in llmFeedback.contradictions.contradictions"
-                :key="contradiction.pillarOneId"
-                class="border-b mb-4 border-neutral-500 pb-4"
+              v-for="contradiction in llmFeedback.contradictions.contradictions"
+              :key="contradiction.pillarOneId"
+              class="border-b mb-4 border-neutral-500 pb-4"
             >
               <h3 class="text-lg font-semibold">
                 {{ contradiction.pillarOneTitle + ' vs ' + contradiction.pillarTwoTitle }}
@@ -223,19 +223,19 @@ async function handleGetContextInPillarsFeedback() {
             Additions:
 
             <UButton
-                icon="i-lucide-refresh-cw"
-                label="Refresh"
-                color="secondary"
-                variant="soft"
-                loading-auto
-                @click="handleGetPillarsAdditions"
+              icon="i-lucide-refresh-cw"
+              label="Refresh"
+              color="secondary"
+              variant="soft"
+              loading-auto
+              @click="handleGetPillarsAdditions"
             />
           </h2>
           <div class="w-full p-4 gap-4">
             <div
-                v-for="pillar in llmFeedback.proposedAdditions.additions"
-                :key="pillar.name"
-                class="border-b mb-4 border-neutral-500 pb-4"
+              v-for="pillar in llmFeedback.proposedAdditions.additions"
+              :key="pillar.name"
+              class="border-b mb-4 border-neutral-500 pb-4"
             >
               <h3 class="text-lg font-semibold">{{ pillar.name }}</h3>
               <p>{{ pillar.description }}</p>
@@ -247,42 +247,42 @@ async function handleGetContextInPillarsFeedback() {
 
     <!-- Game Design Idea Section -->
     <div
-        class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
+      class="flex-shrink-0 basis-[20%] min-w-[270px] max-w-[420px] border-l border-neutral-800 p-6"
     >
       <h2 class="text-2xl font-semibold mb-4">Core Design Idea:</h2>
       <UTextarea
-          v-model="designIdea"
-          placeholder="Enter your game design idea here..."
-          variant="outline"
-          color="secondary"
-          size="xl"
-          :rows="25"
-          :max-rows="0"
-          autoresize
-          class="w-full"
-          @focusout="updateDesignIdea"
+        v-model="designIdea"
+        placeholder="Enter your game design idea here..."
+        variant="outline"
+        color="secondary"
+        size="xl"
+        :rows="25"
+        :max-rows="0"
+        autoresize
+        class="w-full"
+        @focusout="updateDesignIdea"
       />
 
       <h2 class="text-2xl font-semibold mt-6 mb-4">Additional Feature:</h2>
       <UTextarea
-          v-model="additionalFeature"
-          placeholder="Describe an additional feature or mechanic..."
-          variant="outline"
-          color="secondary"
-          size="xl"
-          :rows="5"
-          :max-rows="0"
-          autoresize
-          class="w-full"
+        v-model="additionalFeature"
+        placeholder="Describe an additional feature or mechanic..."
+        variant="outline"
+        color="secondary"
+        size="xl"
+        :rows="5"
+        :max-rows="0"
+        autoresize
+        class="w-full"
       />
 
       <UButton
-          icon="i-lucide-refresh-cw"
-          label="Generate Feedback"
-          color="secondary"
-          variant="soft"
-          loading-auto
-          @click="handleGetContextInPillarsFeedback"
+        icon="i-lucide-refresh-cw"
+        label="Generate Feedback"
+        color="secondary"
+        variant="soft"
+        loading-auto
+        @click="handleGetContextInPillarsFeedback"
       />
 
       <h2 class="text-2xl font-semibold mt-6 mb-4">Feature Feedback:</h2>

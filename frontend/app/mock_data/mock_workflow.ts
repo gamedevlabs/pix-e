@@ -19,6 +19,8 @@ export interface WorkflowMeta {
   title: string
   /** Groups workflows into named phases shown in the slideover phase-picker. */
   folder: string
+  /** Short description shown in the slideover below the workflow title. */
+  description?: string
 }
 
 /** A workflow instance tied to a specific project (or the standalone user onboarding). */
@@ -48,6 +50,8 @@ export interface PhaseTemplate {
   title: string
   /** Folder / phase group shown in the slideover. */
   folder: string
+  /** Short description displayed below the workflow title in the slideover. */
+  description?: string
   /** Toast message shown when the user completes this workflow. */
   completionMessage?: string
   steps: StepTemplate[]
@@ -63,6 +67,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'onboarding',
     title: 'Have a Look Around',
     folder: 'Onboarding',
+    description: 'Get familiar with the app — explore the modules and settings before diving in.',
     completionMessage:
       "Nice exploration! You can continue with the Design Pillars phase whenever you're ready.",
     steps: [
@@ -83,6 +88,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'pillars',
     title: 'Design Pillars',
     folder: 'Design & Validation',
+    description: 'Define the core pillars of your game design and validate them with AI feedback.',
     completionMessage:
       'Great work on your Design Pillars! Your pillars are shaping the vision. Check out Player Experience next to start mapping the journey.',
     steps: [
@@ -144,6 +150,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'player-experience',
     title: 'Player Experience',
     folder: 'Design & Validation',
+    description: 'Build PX charts and node graphs to map out the complete player journey.',
     completionMessage:
       'Player Experience complete! Your PX chart and node graph are looking solid. Head over to Player Expectations to validate your design.',
     steps: [
@@ -183,6 +190,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'player-expectations',
     title: 'Player Expectations',
     folder: 'Design & Validation',
+    description: 'Capture and review player expectations with built-in sentiment analysis.',
     completionMessage:
       "Validation done! You've captured and reviewed your player expectations. Why not explore the Movie Script Evaluator next?",
     steps: [
@@ -202,6 +210,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'movie-script-evaluator',
     title: 'Movie Script Evaluator',
     folder: 'Discover More',
+    description: 'Explore the Movie Script Evaluator to analyse scripts for virtual production.',
     completionMessage:
       "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production.",
     steps: [
@@ -232,6 +241,7 @@ export const ONBOARDING_TEMPLATE: PhaseTemplate = {
   id: 'user-onboarding',
   title: 'Getting Started',
   folder: 'Onboarding',
+  description: 'Create your account, log in, and set up your first project to get going.',
   completionMessage:
     "You've completed the Getting Started workflow! Your first project is ready — open it and begin your design journey.",
   steps: [
@@ -312,7 +322,12 @@ function instantiatePhase(
     started_at: now,
     finished_at: null,
     currentStepIndex: 0,
-    meta: { scope: 'project', title: phase.title, folder: phase.folder },
+    meta: {
+      scope: 'project',
+      title: phase.title,
+      folder: phase.folder,
+      description: phase.description,
+    },
     steps: phase.steps.map((s, i) => {
       const step = instantiateStep(s, isFirstPhase && i === 0)
       step.orderIndex = i
@@ -386,7 +401,12 @@ export function createOnboardingWorkflow(): WorkflowInstance {
     started_at: now,
     finished_at: null,
     currentStepIndex: 0,
-    meta: { scope: 'user', title: ONBOARDING_TEMPLATE.title, folder: ONBOARDING_TEMPLATE.folder },
+    meta: {
+      scope: 'user',
+      title: ONBOARDING_TEMPLATE.title,
+      folder: ONBOARDING_TEMPLATE.folder,
+      description: ONBOARDING_TEMPLATE.description,
+    },
     steps: ONBOARDING_TEMPLATE.steps.map((s, i) => {
       const step = instantiateStep(s, i === 0)
       step.orderIndex = i
