@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
-import type { MockWorkflow } from '~/mock_data/mock_workflow'
+import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 import type { StepStatus } from '~/utils/workflow'
 
 // State
@@ -24,7 +24,7 @@ const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
 // Workflows + active selection (additive API)
 const availableWorkflows = computed(
-  () => (projectWorkflow.workflows?.value || []) as MockWorkflow[],
+  () => (projectWorkflow.workflows?.value || []) as WorkflowInstance[],
 )
 const activeWorkflowId = computed(() => projectWorkflow.activeWorkflowId?.value)
 
@@ -91,11 +91,18 @@ watch(
 const currentStepIndex = computed(() => projectWorkflow.workflow.value?.currentStepIndex ?? 0)
 const steps = computed(() => projectWorkflow.getSteps.value || [])
 const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const allWorkflowsDone = computed(() => projectWorkflow.allWorkflowsDone.value)
 
 const activeWorkflowTitle = computed(() => {
   const id = viewedWorkflowId.value ?? activeWorkflowId.value
   const w = availableWorkflows.value.find((x) => x.id === id)
   return w?.meta?.title || 'Workflow'
+})
+
+const activeWorkflowDescription = computed(() => {
+  const id = viewedWorkflowId.value ?? activeWorkflowId.value
+  const w = availableWorkflows.value.find((x) => x.id === id)
+  return w?.meta?.description ?? null
 })
 
 const activeWorkflowPhase = computed(() => {
@@ -105,7 +112,7 @@ const activeWorkflowPhase = computed(() => {
 })
 
 const groupedWorkflows = computed(() => {
-  const groups: Record<string, MockWorkflow[]> = {}
+  const groups: Record<string, WorkflowInstance[]> = {}
   for (const w of availableWorkflows.value) {
     const folder = w.meta?.folder || 'Workflows'
     if (!groups[folder]) groups[folder] = []
@@ -141,7 +148,7 @@ const groupedWorkflows = computed(() => {
 
 const displayPhaseName = (folder: string) => folder.replace(/^\d+\s*-\s*/u, '')
 
-const getWorkflowStatus = (w: MockWorkflow): StepStatus => {
+const getWorkflowStatus = (w: WorkflowInstance): StepStatus => {
   if (w.finished_at) return 'complete'
   if (w.id === activeWorkflowId.value) return 'active'
   const total = w.steps.flatMap((s) => s.substeps).length
@@ -241,10 +248,37 @@ const handleNavigate = (route: string) => {
       <div class="flex flex-col h-full pb-6">
         <!-- MAIN: Active workflow (dominant) -->
         <div class="flex-1 min-h-0 overflow-auto pr-1">
-          <div class="space-y-4">
-            <h3 class="text-lg font-semibold">{{ activeWorkflowTitle }}</h3>
+          <!-- ALL DONE state -->
+          <div
+            v-if="allWorkflowsDone"
+            class="flex flex-col items-center justify-center h-full text-center py-10 px-4"
+          >
+            <div
+              class="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mb-5"
+            >
+              <UIcon name="i-lucide-party-popper" class="w-10 h-10 text-green-500" />
+            </div>
+            <h3 class="text-xl font-bold text-default mb-2">You're all done!</h3>
+            <p class="text-sm text-muted leading-relaxed">
+              Awesome work — you've completed every workflow. Keep exploring pix:e and make the most
+              of your project.
+            </p>
+            <div class="mt-6 flex items-center gap-2 text-xs text-muted">
+              <UIcon name="i-lucide-check-circle" class="w-4 h-4 text-green-500" />
+              <span>All {{ availableWorkflows.length }} workflows complete</span>
+            </div>
+          </div>
 
-            <!-- Overall Progress (kept near top) -->
+          <!-- NORMAL workflow view -->
+          <div v-else class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold">{{ activeWorkflowTitle }}</h3>
+              <p v-if="activeWorkflowDescription" class="text-sm text-muted mt-1">
+                {{ activeWorkflowDescription }}
+              </p>
+            </div>
+
+            <!-- Overall Progress -->
             <div class="space-y-2">
               <div class="flex items-center justify-between text-sm mb-2">
                 <span class="font-medium">Overall Progress</span>
