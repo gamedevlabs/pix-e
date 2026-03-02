@@ -15,7 +15,10 @@ const open = ref(false)
 
 // Study overlay open state (controlled globally)
 const studyOverlayOpen = useState<boolean>('studyOverlayOpen', () => true)
-const studyPhase = useState<'setup' | 'running' | 'paused' | 'finished'>('studyPhase', () => 'setup')
+const studyPhase = useState<'setup' | 'running' | 'paused' | 'finished'>(
+  'studyPhase',
+  () => 'setup',
+)
 const studyRunning = useState<boolean>('studyRunning', () => false)
 
 function openStudyOverlay() {
@@ -108,7 +111,8 @@ const showSidebar = computed(() => {
   const alwaysShowSidebar: string[] = ['dashboard', 'edit']
   const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator', 'create']
 
-  const matches = (p: string): boolean => !!p && (p === name || path === p || (path || '').startsWith(p))
+  const matches = (p: string): boolean =>
+    !!p && (p === name || path === p || (path || '').startsWith(p))
 
   // Hide the root/index page explicitly and when the route has no name
   if (!name || path === '/') {
