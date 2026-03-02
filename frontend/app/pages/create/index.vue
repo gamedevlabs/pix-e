@@ -1,9 +1,11 @@
 ﻿<script setup lang="ts">
 import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
+import type { WorkflowInstance } from '~/studyMock'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
+import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
 const { close: closeSlideover } = useWorkflowSlideover()
@@ -26,6 +28,17 @@ const submitting = ref(false)
 
 // Initialize workflow composable so we can persist substep progress after project creation
 const { loadForUser, toggleSubstep, completeOnboarding } = useProjectWorkflow()
+
+// Workflow button — visible when "Getting Started" is the active workflow
+const projectWorkflow = useProjectWorkflow()
+const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const activeWorkflowTitle = computed(() => {
+  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
+  const activeId = projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === activeId)
+  return w?.meta?.title || 'Getting Started'
+})
+const showWorkflowButton = computed(() => activeWorkflowTitle.value === 'Getting Started')
 
 // Form data
 const form = reactive({
@@ -696,6 +709,18 @@ const platformOptions = platformConfigs
         </div>
       </div>
     </UContainer>
+
+    <!-- Workflow button fixed bottom-left, only shown during "Getting Started" onboarding -->
+    <template v-if="showWorkflowButton">
+      <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
+        <WorkflowSlideOverButton
+          :collapsed="false"
+          :title="activeWorkflowTitle"
+          :progress="overallProgress"
+        />
+      </div>
+      <WorkflowSlideover :collapsed="false" />
+    </template>
 
     <!-- Upload Modal -->
     <div

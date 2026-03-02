@@ -2,6 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { WorkflowInstance } from '~/studyMock'
 import { useAuthentication } from '~/studyMock'
+import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
@@ -67,24 +68,24 @@ const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
 // Load the user-level onboarding workflow when not logged in
 const projectWorkflow = useProjectWorkflow()
-const _overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
-const _activeWorkflowTitle = computed(() => {
+
+// Workflow button — visible on landing page when "Getting Started" is active
+const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
   const activeId = projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === activeId)
   return w?.meta?.title || 'Getting Started'
 })
+const showWorkflowButton = computed(() => activeWorkflowTitle.value === 'Getting Started')
 
 onMounted(async () => {
-  if (!isLoggedIn.value) {
-    await loadForUser()
-  }
+  // Always load user-level workflow so the button is available for both logged-in and logged-out users
+  await loadForUser()
 })
 
-watch(isLoggedIn, async (loggedIn) => {
-  if (!loggedIn) {
-    await loadForUser()
-  }
+watch(isLoggedIn, async () => {
+  await loadForUser()
 })
 
 const getInitials = (name: string): string =>
@@ -192,9 +193,16 @@ const projectStats = computed(() => ({
 
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
-    <!-- Workflow button + slideover for logged-out users -->
-    <template v-if="!isLoggedIn">
-      <WorkflowSlideover />
+    <!-- Workflow button fixed bottom-left, only shown during "Getting Started" onboarding -->
+    <template v-if="showWorkflowButton">
+      <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
+        <WorkflowSlideOverButton
+          :collapsed="false"
+          :title="activeWorkflowTitle"
+          :progress="overallProgress"
+        />
+      </div>
+      <WorkflowSlideover :collapsed="false" />
     </template>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
