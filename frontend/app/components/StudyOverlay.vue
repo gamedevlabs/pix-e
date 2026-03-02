@@ -226,7 +226,7 @@ function onContinueExploring() {
 
                 <div class="flex flex-col gap-2">
                   <UButton
-                    size="sm"
+                    size="md"
                     color="primary"
                     variant="soft"
                     icon="i-lucide-download"
@@ -234,6 +234,17 @@ function onContinueExploring() {
                     @click="onExport"
                   >
                     Download again
+                  </UButton>
+
+                  <UButton
+                    size="md"
+                    color="neutral"
+                    variant="soft"
+                    icon="i-lucide-rotate-ccw"
+                    class="w-full justify-center"
+                    @click="onRestartStudy"
+                  >
+                    Reset & restart
                   </UButton>
 
                   <UButton
