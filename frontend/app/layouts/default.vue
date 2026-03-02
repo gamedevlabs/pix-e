@@ -323,6 +323,21 @@ watch(searchOpen, (isOpen) => {
   hasOpenedSearch.value = true
   tryCompleteSubstep('onb-1', 'onb-1-3')
 })
+
+// Groups for DashboardSearch: build from the full hierarchical links structure
+const groups = computed(() => {
+  // Keep hierarchy so children don't appear twice (top-level + nested).
+  // DashboardSearch can consume NavigationMenuItems with `children`.
+  const allTopLevelItems = links.value.flat()
+
+  return [
+    {
+      id: 'links',
+      label: 'Go to',
+      items: allTopLevelItems,
+    },
+  ]
+})
 </script>
 
 <template>
