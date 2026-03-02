@@ -94,6 +94,13 @@ export function useCrudForPxWithAuthentication<T>(apiUrl: string) {
         } as T
       }
 
+      // In mock/study mode we can't rely on this composable's `items` being populated
+      // (e.g. a component card may fetch a definition by id before the definitions
+      // list has been loaded). Always fall back to the provider store.
+      const list = (await provider.getEntities(collection)) as unknown[]
+      const found = list.map(asEntityLike).find((x) => String(x.id) === String(id))
+      if (found) return found as T
+
       return (
         (items.value as Array<{ id?: unknown }>).find?.((x) => String(x.id) === String(id)) ?? null
       )
