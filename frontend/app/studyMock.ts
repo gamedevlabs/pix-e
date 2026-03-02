@@ -8,6 +8,40 @@ import type { WorkflowStep, StepStatus, Substep, ProjectWorkflow } from '~/utils
 import type { Project } from '~/utils/project'
 
 // ---------------------------------------------------------------------------
+// Local helper types + defaults (study mock only)
+// ---------------------------------------------------------------------------
+
+type User = {
+  username: string
+}
+
+// Minimal pillar shape used by this mock. Keep it intentionally flexible so it
+// can store whatever the UI sends.
+export type Pillar = Record<string, unknown> & {
+  id?: string | number
+  created_at?: string
+  updated_at?: string
+}
+
+function idOf(x: unknown): string {
+  if (!x || typeof x !== 'object') return ''
+  const v = (x as Record<string, unknown>).id
+  return typeof v === 'string' || typeof v === 'number' ? String(v) : ''
+}
+
+function defaultPillarsState(): OfflinePillarsPayload {
+  return {
+    schemaVersion: 1,
+    pillars: [],
+    designIdea: { description: '' },
+  }
+}
+
+function defaultEntities(): Record<string, Record<string, unknown>[]> {
+  return {}
+}
+
+// ---------------------------------------------------------------------------
 // Constants / types (formerly in data/providers/types.ts)
 // ---------------------------------------------------------------------------
 
@@ -43,6 +77,10 @@ export interface ProjectDataProvider {
     patch: Record<string, unknown>,
   ): Promise<Record<string, unknown> | null>
   deleteEntity(collection: string, id: string): Promise<boolean>
+
+  // Project scoping for stored entities (mock mode)
+  getCurrentProjectId(): string | null
+  setCurrentProjectId(id: string | null): void
 
   // Study/session helpers
   exportState(): Promise<string>
@@ -168,10 +206,6 @@ export function useAuthentication() {
   }
 }
 
-// Backwards compatibility: allow the old name to continue working while the codebase
-// uses the canonical `useAuthentication` name.
-export { useAuthentication as useOptionalAuthentication }
-
 // ---------------------------------------------------------------------------
 // Mock provider + provider hook (formerly data/providers/mockProjectDataProvider.ts + useProjectDataProvider.ts)
 // ---------------------------------------------------------------------------
@@ -182,10 +216,19 @@ type StudyState = {
   lastSavedAt: string | null
   projects: Project[]
   workflowsState?: unknown
-  // Persist user-created pillars (mock mode) so CRUD works across navigation/reloads.
+  // Per-project persisted state
+  projectsState?: Record<
+    string,
+    {
+      pillarsState?: OfflinePillarsPayload
+      entities?: Record<string, Record<string, unknown>[]>
+    }
+  >
+  // Legacy (schemaVersion 2): user-scoped persistence
   pillarsState?: OfflinePillarsPayload
-  // Generic entity collections keyed by collection name.
   entities?: Record<string, Record<string, unknown>[]>
+  // Selected project
+  currentProjectId?: string | null
 }
 
 function nowIso() {
@@ -225,27 +268,66 @@ function writeState(state: StudyState) {
   localStorage.setItem(storageKey(), JSON.stringify(state, null, 2))
 }
 
-// Helpers for pillars state persistence
-function defaultPillarsState(): OfflinePillarsPayload {
+// Helpers for project-scoped buckets
+function defaultProjectBucket() {
   return {
-    schemaVersion: 1,
-    pillars: [],
-    designIdea: { description: '' },
+    pillarsState: defaultPillarsState(),
+    entities: defaultEntities(),
   }
 }
 
-function getPillarsStateFromMem(state: StudyState | null | undefined): OfflinePillarsPayload {
+function ensureProjectBucket(state: StudyState, projectId: string) {
+  if (!state.projectsState) state.projectsState = {}
+  if (!state.projectsState[projectId]) state.projectsState[projectId] = defaultProjectBucket()
+  const bucket = state.projectsState[projectId]!
+  if (!bucket.pillarsState) bucket.pillarsState = defaultPillarsState()
+  if (!bucket.entities) bucket.entities = defaultEntities()
+  return bucket
+}
+
+function getCurrentProjectIdFromState(state: StudyState | null | undefined): string | null {
+  const id = state?.currentProjectId
+  return typeof id === 'string' && id.trim() ? id : null
+}
+
+function getLegacyOrDefaultPillarsState(
+  state: StudyState | null | undefined,
+): OfflinePillarsPayload {
   const ps = state?.pillarsState
   if (ps && typeof ps === 'object' && Array.isArray(ps.pillars)) return ps
   return defaultPillarsState()
 }
 
-// Helpers for generic entity collections
-function defaultEntities(): Record<string, Record<string, unknown>[]> {
-  return {}
+function getLegacyOrDefaultEntities(
+  state: StudyState | null | undefined,
+): Record<string, Record<string, unknown>[]> {
+  const e = state?.entities
+  if (e && typeof e === 'object') return e
+  return defaultEntities()
 }
 
+// Helpers for pillars state persistence
+// (kept for compatibility; now maps to the current project bucket when available)
+function getPillarsStateFromMem(state: StudyState | null | undefined): OfflinePillarsPayload {
+  const pid = getCurrentProjectIdFromState(state)
+  if (state && pid) {
+    const bucket = ensureProjectBucket(state, pid)
+    return bucket.pillarsState ?? defaultPillarsState()
+  }
+  return getLegacyOrDefaultPillarsState(state)
+}
+
+// Helpers for generic entity collections
 function getEntityCollection(state: StudyState, collection: string): Record<string, unknown>[] {
+  const pid = getCurrentProjectIdFromState(state)
+  if (pid) {
+    const bucket = ensureProjectBucket(state, pid)
+    if (!bucket.entities) bucket.entities = defaultEntities()
+    if (!bucket.entities[collection]) bucket.entities[collection] = []
+    return bucket.entities[collection]!
+  }
+
+  // Legacy fallback
   if (!state.entities) state.entities = defaultEntities()
   if (!state.entities[collection]) state.entities[collection] = []
   return state.entities[collection]!
@@ -264,16 +346,31 @@ export function setPersistedOfflinePillars(next: OfflinePillarsPayload) {
     participantId: '',
     lastSavedAt: null,
     projects: [],
+    currentProjectId: null,
+    projectsState: {},
   }
 
+  const pid = getCurrentProjectIdFromState(current)
   const updated: StudyState = {
     ...(current as StudyState),
-    pillarsState: {
+  }
+
+  if (pid) {
+    const bucket = ensureProjectBucket(updated, pid)
+    bucket.pillarsState = {
       schemaVersion: next.schemaVersion ?? 1,
       pillars: Array.isArray(next.pillars) ? next.pillars : [],
       designIdea: next.designIdea ?? { description: '' },
-    },
+    }
+  } else {
+    // Legacy
+    updated.pillarsState = {
+      schemaVersion: next.schemaVersion ?? 1,
+      pillars: Array.isArray(next.pillars) ? next.pillars : [],
+      designIdea: next.designIdea ?? { description: '' },
+    }
   }
+
   writeState(updated)
 }
 
@@ -288,16 +385,44 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
     ready = (async () => {
       const existing = readState()
       if (existing) {
-        mem = existing
-        // Ensure pillarsState exists even for older stored state.
-        mem.pillarsState = getPillarsStateFromMem(mem)
-        // Ensure entities map exists.
-        if (!mem.entities) mem.entities = defaultEntities()
+        mem = existing as StudyState
+
+        // Ensure project-scoped buckets exist
+        if (!mem.projectsState) mem.projectsState = {}
+        if (typeof mem.currentProjectId === 'undefined') mem.currentProjectId = null
+
+        // Migration: if we have legacy pillars/entities, move them into the first project bucket
+        // (best-effort; prevents losing existing user-scoped data)
+        const legacyPillars = getLegacyOrDefaultPillarsState(mem)
+        const legacyEntities = getLegacyOrDefaultEntities(mem)
+        const firstProjectId = mem.projects?.[0]?.id
+        if (firstProjectId) {
+          const bucket = ensureProjectBucket(mem, firstProjectId)
+          // Only migrate if bucket is still empty (avoid overwriting)
+          if (
+            (bucket.pillarsState?.pillars?.length ?? 0) === 0 &&
+            (legacyPillars.pillars?.length ?? 0) > 0
+          ) {
+            bucket.pillarsState = legacyPillars
+          }
+          if (
+            Object.keys(bucket.entities ?? {}).length === 0 &&
+            Object.keys(legacyEntities ?? {}).length > 0
+          ) {
+            bucket.entities = legacyEntities
+          }
+          if (!mem.currentProjectId) mem.currentProjectId = firstProjectId
+        }
+
+        // Ensure the active project's state exists
+        if (mem.currentProjectId) ensureProjectBucket(mem, mem.currentProjectId)
+
         // Mirror into localStorage field if missing.
-        setPersistedOfflinePillars(mem.pillarsState)
-        if (existing.workflowsState) {
+        setPersistedOfflinePillars(getPillarsStateFromMem(mem))
+
+        if ((existing as StudyState).workflowsState) {
           try {
-            workflowApi.importState(existing.workflowsState)
+            workflowApi.importState((existing as StudyState).workflowsState)
           } catch {
             // ignore
           }
@@ -310,8 +435,8 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         participantId: '',
         lastSavedAt: null,
         projects: [],
-        pillarsState: defaultPillarsState(),
-        entities: defaultEntities(),
+        currentProjectId: null,
+        projectsState: {},
       }
 
       writeState(mem)
@@ -326,20 +451,20 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         participantId: '',
         lastSavedAt: null,
         projects: [],
-        pillarsState: defaultPillarsState(),
-        entities: defaultEntities(),
+        currentProjectId: null,
+        projectsState: {},
       }
     }
-    // Ensure pillarsState always exists.
-    mem.pillarsState = getPillarsStateFromMem(mem)
-    if (!mem.entities) mem.entities = defaultEntities()
+    if (!mem.projectsState) mem.projectsState = {}
+    if (typeof mem.currentProjectId === 'undefined') mem.currentProjectId = null
+    if (mem.currentProjectId) ensureProjectBucket(mem, mem.currentProjectId)
     return mem
   }
 
   function persist() {
     const state = requireMem()
-    // Mirror pillarsState into localStorage on every persist.
-    setPersistedOfflinePillars(state.pillarsState ?? defaultPillarsState())
+    // Mirror current project's pillarsState into localStorage on every persist.
+    setPersistedOfflinePillars(getPillarsStateFromMem(state))
 
     try {
       state.workflowsState = workflowApi.exportState()
@@ -373,6 +498,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         icon: (payload.icon as string | null) ?? null,
       }
       state.projects.push(created)
+
+      // Ensure a bucket exists for this project
+      ensureProjectBucket(state, created.id)
+      // If no project is selected yet, select this one.
+      if (!state.currentProjectId) state.currentProjectId = created.id
+
       persist()
       return { ...created }
     },
@@ -402,6 +533,13 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       const state = requireMem()
       const before = state.projects.length
       state.projects = state.projects.filter((x) => x.id !== id)
+      if (state.projectsState && state.projectsState[id]) {
+        const { [id]: _removed, ...rest } = state.projectsState
+        state.projectsState = rest
+      }
+      if (state.currentProjectId === id) {
+        state.currentProjectId = state.projects[0]?.id ?? null
+      }
       persist()
       return state.projects.length < before
     },
@@ -440,26 +578,48 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       persist()
     },
 
+    // ── Current project ────────────────────────────────────────────────────
+    getCurrentProjectId() {
+      return getCurrentProjectIdFromState(mem ?? readState())
+    },
+    setCurrentProjectId(id: string | null) {
+      const state = requireMem()
+      state.currentProjectId = typeof id === 'string' && id.trim() ? id : null
+      if (state.currentProjectId) ensureProjectBucket(state, state.currentProjectId)
+      persist()
+    },
+
     // ── Generic entity CRUD ──────────────────────────────────────────────────
     async getEntities(collection: string) {
       await ensureReady()
+      const state = requireMem()
+      const pid = getCurrentProjectIdFromState(state)
+      const bucket = pid ? ensureProjectBucket(state, pid) : null
+
       if (collection === 'pillars') {
-        const ps = requireMem().pillarsState ?? defaultPillarsState()
-        return ps.pillars.map((x) => ({ ...x }))
+        const ps = bucket?.pillarsState ?? state.pillarsState ?? defaultPillarsState()
+        return ps.pillars.map((x: Pillar) => ({ ...x }))
       }
-      const list = getEntityCollection(requireMem(), collection)
-      return list.map((x) => ({ ...x }))
+
+      const list = getEntityCollection(state, collection)
+      return list.map((x: Record<string, unknown>) => ({ ...x }))
     },
 
     async createEntity(collection: string, payload: Record<string, unknown>) {
       await ensureReady()
       const state = requireMem()
+      const pid = getCurrentProjectIdFromState(state)
+      const bucket = pid ? ensureProjectBucket(state, pid) : null
+
       if (collection === 'pillars') {
-        const ps = requireMem().pillarsState ?? defaultPillarsState()
+        const ps = bucket?.pillarsState ?? state.pillarsState ?? defaultPillarsState()
         const now = nowIso()
         const nextId =
           (payload.id as string) ??
-          String(ps.pillars.reduce((max, x) => Math.max(max, Number(idOf(x)) || 0), 0) + 1)
+          String(
+            ps.pillars.reduce((max: number, x: Pillar) => Math.max(max, Number(idOf(x)) || 0), 0) +
+              1,
+          )
         const created: Record<string, unknown> = {
           ...payload,
           id: nextId,
@@ -467,15 +627,22 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
           updated_at: now,
         }
         ps.pillars = [...ps.pillars, created as unknown as Pillar]
-        state.pillarsState = ps
+        if (bucket) bucket.pillarsState = ps
+        else state.pillarsState = ps
         persist()
         return { ...created }
       }
+
       const list = getEntityCollection(state, collection)
       const now = nowIso()
       const nextId =
         (payload.id as string) ??
-        String(list.reduce((max, x) => Math.max(max, Number(idOf(x)) || 0), 0) + 1)
+        String(
+          list.reduce(
+            (max: number, x: Record<string, unknown>) => Math.max(max, Number(idOf(x)) || 0),
+            0,
+          ) + 1,
+        )
       const created: Record<string, unknown> = {
         ...payload,
         id: nextId,
@@ -490,9 +657,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
     async updateEntity(collection: string, id: string, patch: Record<string, unknown>) {
       await ensureReady()
       const state = requireMem()
+      const pid = getCurrentProjectIdFromState(state)
+      const bucket = pid ? ensureProjectBucket(state, pid) : null
+
       if (collection === 'pillars') {
-        const ps = state.pillarsState ?? defaultPillarsState()
-        const idx = ps.pillars.findIndex((x) => idOf(x) === String(id))
+        const ps = bucket?.pillarsState ?? state.pillarsState ?? defaultPillarsState()
+        const idx = ps.pillars.findIndex((x: Pillar) => idOf(x) === String(id))
         if (idx === -1) return null
         const updated: Record<string, unknown> = {
           ...(ps.pillars[idx] as unknown as Record<string, unknown>),
@@ -505,10 +675,12 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
           updated as unknown as Pillar,
           ...ps.pillars.slice(idx + 1),
         ]
-        state.pillarsState = ps
+        if (bucket) bucket.pillarsState = ps
+        else state.pillarsState = ps
         persist()
         return { ...updated }
       }
+
       const list = getEntityCollection(state, collection)
       const idx = list.findIndex((x) => idOf(x) === String(id))
       if (idx === -1) return null
@@ -526,22 +698,35 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
     async deleteEntity(collection: string, id: string) {
       await ensureReady()
       const state = requireMem()
+      const pid = getCurrentProjectIdFromState(state)
+      const bucket = pid ? ensureProjectBucket(state, pid) : null
+
       if (collection === 'pillars') {
-        const ps = state.pillarsState ?? defaultPillarsState()
+        const ps = bucket?.pillarsState ?? state.pillarsState ?? defaultPillarsState()
         const before = ps.pillars.length
-        ps.pillars = ps.pillars.filter((x) => idOf(x) !== String(id))
-        state.pillarsState = ps
+        ps.pillars = ps.pillars.filter((x: Pillar) => idOf(x) !== String(id))
+        if (bucket) bucket.pillarsState = ps
+        else state.pillarsState = ps
         persist()
         return ps.pillars.length < before
       }
+
       const list = getEntityCollection(state, collection)
       const before = list.length
-      state.entities![collection] = list.filter((x) => idOf(x) !== String(id))
+      if (pid) {
+        const b = ensureProjectBucket(state, pid)
+        if (!b.entities) b.entities = defaultEntities()
+        b.entities[collection] = list.filter((x: Record<string, unknown>) => idOf(x) !== String(id))
+      } else {
+        if (!state.entities) state.entities = defaultEntities()
+        state.entities[collection] = list.filter(
+          (x: Record<string, unknown>) => idOf(x) !== String(id),
+        )
+      }
       persist()
-      return state.entities![collection]!.length < before
+      return list.length < before
     },
 
-    // ── Import / export / reset ──────────────────────────────────────────────
     async exportState() {
       await ensureReady()
       return JSON.stringify(requireMem(), null, 2)
@@ -560,13 +745,22 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         lastSavedAt: typeof p.lastSavedAt === 'string' ? p.lastSavedAt : null,
         projects: (p.projects as Project[]).map((proj) => ({ ...proj })),
         workflowsState: p.workflowsState,
+        currentProjectId:
+          typeof p.currentProjectId === 'string' ? (p.currentProjectId as string) : null,
+        projectsState: isObject(p.projectsState)
+          ? (p.projectsState as StudyState['projectsState'])
+          : {},
+        // Legacy fields (keep if present)
         pillarsState: isObject(p.pillarsState)
           ? (p.pillarsState as OfflinePillarsPayload)
-          : defaultPillarsState(),
+          : undefined,
         entities: isObject(p.entities)
           ? (p.entities as Record<string, Record<string, unknown>[]>)
-          : defaultEntities(),
+          : undefined,
       }
+
+      // Ensure any selected project's bucket exists
+      if (mem.currentProjectId) ensureProjectBucket(mem, mem.currentProjectId)
 
       if (mem.workflowsState) {
         try {
@@ -577,7 +771,7 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
       }
 
       writeState(mem)
-      setPersistedOfflinePillars(mem.pillarsState ?? defaultPillarsState())
+      setPersistedOfflinePillars(getPillarsStateFromMem(mem))
     },
     async resetState() {
       if (!import.meta.client) return
@@ -603,8 +797,8 @@ export function createMockProjectDataProvider(): ProjectDataProvider {
         participantId: '',
         lastSavedAt: null,
         projects: [],
-        pillarsState: defaultPillarsState(),
-        entities: defaultEntities(),
+        currentProjectId: null,
+        projectsState: {},
       }
       const next: StudyState = {
         ...(state as StudyState),
@@ -1212,9 +1406,4 @@ export class WorkflowApiEmulator {
     this.userWorkflows = {}
     this.activeWorkflowIds = {}
   }
-}
-
-function idOf(x: unknown): string {
-  if (x && typeof x === 'object' && 'id' in x) return String((x as { id?: unknown }).id)
-  return ''
 }

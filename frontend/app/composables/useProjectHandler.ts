@@ -22,6 +22,8 @@ export const useProjectHandler = () => {
   }
 
   const selectProject = async (projectOrId: string | Project) => {
+    const provider = useProjectDataProvider()
+
     if (typeof projectOrId === 'string') {
       const p = await fetchProjectById(projectOrId)
       if (p) {
@@ -45,11 +47,16 @@ export const useProjectHandler = () => {
       currentProjectId.value = projectOrId.id
       currentProject.value = projectOrId
     }
+
+    // Keep mock/offline persistence in sync with selected project.
+    provider.setCurrentProjectId(currentProjectId.value)
   }
 
   const unselectProject = () => {
+    const provider = useProjectDataProvider()
     currentProjectId.value = null
     currentProject.value = null
+    provider.setCurrentProjectId(null)
   }
 
   const createProject = async (data: Partial<Project>): Promise<Project> => {
@@ -61,6 +68,9 @@ export const useProjectHandler = () => {
     // Seed workflows for the new project.
     // The onboarding phase is pre-completed for any project after the first.
     await provider.seedProjectWorkflows(created.id, !isFirstProject)
+
+    // Automatically select the new project so future saves are scoped correctly.
+    await selectProject(created)
 
     return created
   }
