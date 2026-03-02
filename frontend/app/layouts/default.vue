@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
+import StudyOverlay from '~/components/StudyOverlay.vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import type { PageConfig } from '~/types/page-config'
 import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 import { MOCK_EXTERNAL_LINKS } from '~/mock_data/mock_external-links'
@@ -11,6 +12,26 @@ const route = useRoute()
 const router = useRouter()
 
 const open = ref(false)
+
+// Study overlay open state (controlled globally)
+const studyOverlayOpen = useState<boolean>('studyOverlayOpen', () => true)
+const studyPhase = useState<'setup' | 'running' | 'paused' | 'finished'>('studyPhase', () => 'setup')
+const studyRunning = useState<boolean>('studyRunning', () => false)
+
+function openStudyOverlay() {
+  // Opening Study UI should always pause the study.
+  if (studyPhase.value === 'running') {
+    studyPhase.value = 'paused'
+    studyRunning.value = false
+  }
+  studyOverlayOpen.value = true
+}
+
+onMounted(() => {
+  if (!import.meta.client) return
+  // Always show the study overlay immediately on every app start.
+  studyOverlayOpen.value = true
+})
 
 // Search bar open state (for onb-1-3)
 const searchOpen = ref(false)
@@ -87,18 +108,20 @@ const showSidebar = computed(() => {
   const alwaysShowSidebar: string[] = ['dashboard', 'edit']
   const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator', 'create']
 
+  const matches = (p: string): boolean => !!p && (p === name || path === p || (path || '').startsWith(p))
+
   // Hide the root/index page explicitly and when the route has no name
   if (!name || path === '/') {
     return false
   }
 
   // If the current route is explicitly hidden, return false
-  if (alwaysHideSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))) {
+  if (alwaysHideSidebar.some(matches)) {
     return false
   }
 
   // If the current route is explicitly shown, return true
-  if (alwaysShowSidebar.some((p) => p && (p === name || path === p || path.startsWith(p)))) {
+  if (alwaysShowSidebar.some(matches)) {
     return true
   }
 
@@ -117,7 +140,10 @@ const showSidebar = computed(() => {
 const openNavValue = ref<string | undefined>(undefined)
 
 function normalizePath(p: string) {
-  return (p || '').split('?')[0].replace(/\/$/, '') || '/'
+  const base = String(p || '')
+  const noQuery = base.split('?')[0] || ''
+  const trimmed = noQuery.replace(/\/$/, '')
+  return trimmed || '/'
 }
 
 function isRouteTo(to: unknown): to is string {
@@ -380,6 +406,21 @@ const groups = computed(() => {
       </template>
     </UHeader>
 
+    <!-- Always-visible Study button (fixed, above everything) -->
+    <div class="study-button-fixed">
+      <UButton
+        size="sm"
+        color="primary"
+        variant="solid"
+        icon="i-lucide-flask-conical"
+        label="Study"
+        @click="openStudyOverlay"
+      />
+    </div>
+
+    <!-- Study overlay (teleports to body) -->
+    <StudyOverlay />
+
     <!-- Main content: take remaining height. Pages should not need to handle sizing --- it's done here -->
     <main class="flex-1 min-h-0">
       <!--  PROJECT OVERVIEW: make this area take remaining space and be scrollable -->
@@ -490,5 +531,13 @@ body,
 #app {
   height: 100%;
   margin: 0;
+}
+
+.study-button-fixed {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
 }
 </style>

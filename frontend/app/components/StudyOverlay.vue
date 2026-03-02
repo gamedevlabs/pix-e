@@ -6,7 +6,8 @@ const provider = useProjectDataProvider()
 const authentication = useAuthentication()
 const projectHandler = useProjectHandler()
 
-const open = useState<boolean>('studyOverlayOpen', () => true)
+// Controlled by the layout (Study button + first-open auto-open)
+const open = useState<boolean>('studyOverlayOpen', () => false)
 const phase = useState<'setup' | 'running' | 'paused' | 'finished'>('studyPhase', () => 'setup')
 const isRunning = useState<boolean>('studyRunning', () => false)
 
