@@ -112,157 +112,154 @@ function onContinueExploring() {
 </script>
 
 <template>
-  <teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-100">
-      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+  <ClientOnly>
+    <teleport to="body">
+      <div v-if="open" class="fixed inset-0 z-100">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <div class="absolute inset-0 flex items-center justify-center p-6">
-        <div class="w-full max-w-sm">
-          <UCard
-            class="ring-2 ring-primary-500/60 shadow-2xl overflow-hidden"
-            :ui="{
-              header: 'px-5 py-3 bg-primary-600 dark:bg-primary-700',
-              body: 'px-5 py-4',
-              footer: 'hidden',
-            }"
-          >
-            <template #header>
-              <div class="flex items-center gap-2">
+        <div class="absolute inset-0 flex items-center justify-center p-6">
+          <div class="w-full max-w-sm">
+            <div
+              class="rounded-xl ring-2 ring-primary-500/60 shadow-2xl overflow-hidden bg-white dark:bg-gray-900"
+            >
+              <!-- Header -->
+              <div class="px-5 py-3 bg-primary-600 dark:bg-primary-700 flex items-center gap-2">
                 <UIcon name="i-lucide-flask-conical" class="size-4 text-white/90" />
                 <span class="text-base font-bold text-white tracking-wide">Study Mode</span>
               </div>
-            </template>
 
-            <div class="space-y-4">
-              <!-- SETUP PHASE -->
-              <div v-if="phase === 'setup'" class="space-y-4">
-                <UFormField
-                  label="Participant ID"
-                  name="participantId"
-                  hint="Found on your study sheet"
-                  class="w-full"
-                >
-                  <UInput
-                    :model-value="participantId"
-                    placeholder="e.g. P01"
-                    class="w-full font-mono"
-                    @update:model-value="onParticipantChange"
-                  />
-                </UFormField>
+              <!-- Body -->
+              <div class="px-5 py-4 space-y-4">
+                <!-- SETUP PHASE -->
+                <div v-if="phase === 'setup'" class="space-y-4">
+                  <UFormField
+                    label="Participant ID"
+                    name="participantId"
+                    hint="Found on your study sheet"
+                    class="w-full"
+                  >
+                    <UInput
+                      :model-value="participantId"
+                      placeholder="e.g. P01"
+                      class="w-full font-mono"
+                      @update:model-value="onParticipantChange"
+                    />
+                  </UFormField>
 
-                <UButton
-                  size="md"
-                  color="primary"
-                  variant="solid"
-                  icon="i-lucide-play"
-                  class="w-full justify-center"
-                  @click="onStartStudy"
-                >
-                  Start study
-                </UButton>
-              </div>
-
-              <!-- PAUSED PHASE -->
-              <div v-else-if="phase === 'paused'" class="space-y-3">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Study paused — participant
-                  <span class="font-mono font-semibold text-gray-700 dark:text-gray-200">{{
-                    participantId || '—'
-                  }}</span>
-                </p>
-
-                <div class="flex flex-col gap-2">
                   <UButton
                     size="md"
                     color="primary"
                     variant="solid"
                     icon="i-lucide-play"
                     class="w-full justify-center"
-                    @click="onResumeStudy"
+                    @click="onStartStudy"
                   >
-                    Continue
-                  </UButton>
-                  <UButton
-                    size="md"
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-rotate-ccw"
-                    class="w-full justify-center"
-                    @click="onRestartStudy"
-                  >
-                    Reset & restart
-                  </UButton>
-                  <UButton
-                    size="sm"
-                    color="error"
-                    variant="solid"
-                    icon="i-lucide-flag"
-                    class="w-full justify-center"
-                    @click="onEndStudy"
-                  >
-                    End study & download data
+                    Start study
                   </UButton>
                 </div>
-              </div>
 
-              <!-- FINISHED PHASE -->
-              <div v-else-if="phase === 'finished'" class="space-y-4">
-                <div
-                  class="flex items-start gap-3 p-3 rounded-lg bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800/50"
-                >
-                  <UIcon
-                    name="i-lucide-check-circle"
-                    class="size-5 text-success-500 mt-0.5 shrink-0"
-                  />
-                  <div>
-                    <p class="text-sm font-semibold text-success-700 dark:text-success-400">
-                      Study complete!
-                    </p>
-                    <p class="text-xs text-success-600 dark:text-success-500 mt-0.5">
-                      Data downloaded. Please send the file to the facilitator.
-                    </p>
+                <!-- PAUSED PHASE -->
+                <div v-else-if="phase === 'paused'" class="space-y-3">
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    Study paused — participant
+                    <span class="font-mono font-semibold text-gray-700 dark:text-gray-200">{{
+                      participantId || '—'
+                    }}</span>
+                  </p>
+
+                  <div class="flex flex-col gap-2">
+                    <UButton
+                      size="md"
+                      color="primary"
+                      variant="solid"
+                      icon="i-lucide-play"
+                      class="w-full justify-center"
+                      @click="onResumeStudy"
+                    >
+                      Continue
+                    </UButton>
+                    <UButton
+                      size="md"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-rotate-ccw"
+                      class="w-full justify-center"
+                      @click="onRestartStudy"
+                    >
+                      Reset & restart
+                    </UButton>
+                    <UButton
+                      size="sm"
+                      color="error"
+                      variant="solid"
+                      icon="i-lucide-flag"
+                      class="w-full justify-center"
+                      @click="onEndStudy"
+                    >
+                      End study & download data
+                    </UButton>
                   </div>
                 </div>
 
-                <div class="flex flex-col gap-2">
-                  <UButton
-                    size="md"
-                    color="primary"
-                    variant="soft"
-                    icon="i-lucide-download"
-                    class="w-full justify-center"
-                    @click="onExport"
+                <!-- FINISHED PHASE -->
+                <div v-else-if="phase === 'finished'" class="space-y-4">
+                  <div
+                    class="flex items-start gap-3 p-3 rounded-lg bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800/50"
                   >
-                    Download again
-                  </UButton>
+                    <UIcon
+                      name="i-lucide-check-circle"
+                      class="size-5 text-success-500 mt-0.5 shrink-0"
+                    />
+                    <div>
+                      <p class="text-sm font-semibold text-success-700 dark:text-success-400">
+                        Study complete!
+                      </p>
+                      <p class="text-xs text-success-600 dark:text-success-500 mt-0.5">
+                        Data downloaded. Please send the file to the facilitator.
+                      </p>
+                    </div>
+                  </div>
 
-                  <UButton
-                    size="md"
-                    color="neutral"
-                    variant="soft"
-                    icon="i-lucide-rotate-ccw"
-                    class="w-full justify-center"
-                    @click="onRestartStudy"
-                  >
-                    Reset & restart
-                  </UButton>
+                  <div class="flex flex-col gap-2">
+                    <UButton
+                      size="md"
+                      color="primary"
+                      variant="soft"
+                      icon="i-lucide-download"
+                      class="w-full justify-center"
+                      @click="onExport"
+                    >
+                      Download again
+                    </UButton>
 
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="solid"
-                    icon="i-lucide-arrow-right"
-                    class="w-full justify-center"
-                    @click="onContinueExploring"
-                  >
-                    Continue Exploring
-                  </UButton>
+                    <UButton
+                      size="md"
+                      color="neutral"
+                      variant="soft"
+                      icon="i-lucide-rotate-ccw"
+                      class="w-full justify-center"
+                      @click="onRestartStudy"
+                    >
+                      Reset & restart
+                    </UButton>
+
+                    <UButton
+                      size="sm"
+                      color="neutral"
+                      variant="solid"
+                      icon="i-lucide-arrow-right"
+                      class="w-full justify-center"
+                      @click="onContinueExploring"
+                    >
+                      Continue Exploring
+                    </UButton>
+                  </div>
                 </div>
               </div>
             </div>
-          </UCard>
+          </div>
         </div>
       </div>
-    </div>
-  </teleport>
+    </teleport>
+  </ClientOnly>
 </template>
