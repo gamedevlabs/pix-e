@@ -113,6 +113,39 @@ const showSidebar = computed(() => {
   return checks.hasCurrentProject && checks.userLoggedIn
 })
 
+// Which parent item is currently expanded in the vertical NavigationMenu (Accordion)
+const openNavValue = ref<string | undefined>(undefined)
+
+function normalizePath(p: string) {
+  return (p || '').split('?')[0].replace(/\/$/, '') || '/'
+}
+
+function isRouteTo(to: unknown): to is string {
+  return typeof to === 'string' && !!to && !/^https?:\/\//.test(to)
+}
+
+function computeActiveParentValue(items: NavigationMenuItem[], path: string): string | undefined {
+  const current = normalizePath(path)
+
+  for (const item of items) {
+    const parentValue = typeof item.value === 'string' ? item.value : undefined
+
+    if (item.children?.length) {
+      for (const child of item.children) {
+        const childTo = isRouteTo(child.to) ? normalizePath(child.to) : ''
+        if (childTo && (current === childTo || current.startsWith(childTo + '/'))) {
+          return parentValue
+        }
+      }
+    }
+
+    const itemTo = isRouteTo(item.to) ? normalizePath(item.to) : ''
+    if (itemTo && (current === itemTo || current.startsWith(itemTo + '/'))) {
+      return parentValue
+    }
+  }
+}
+
 // Dynamically build navigation from page metadata
 const links = computed<NavigationMenuItem[][]>(() => {
   const routes = router.getRoutes()
@@ -148,13 +181,26 @@ const links = computed<NavigationMenuItem[][]>(() => {
     const needsProjectQuery = pageConfig.type === 'project-required'
     const to = needsProjectQuery ? `${routePath}${projectQuery.value}` : routePath
 
+    // IMPORTANT: set a stable value for the accordion model
+    const parentValue = normalizePath(routePath)
+
     const navItem: NavigationMenuItem = {
       label: pageConfig.title!,
       icon: pageConfig.icon!,
       to,
+      value: parentValue,
     }
 
     if (childRoutes && childRoutes.length > 0) {
+      // Clicking the parent should:
+      // 1) open its foldout (accordion)
+      // 2) navigate to its route
+      navItem.onSelect = (e: Event) => {
+        e?.preventDefault?.()
+        openNavValue.value = parentValue
+        router.push(to)
+      }
+
       navItem.children = childRoutes.map((childRoute) => {
         const childConfig = childRoute.meta.pageConfig as PageConfig
         const childNeedsProjectQuery = childConfig.type === 'project-required'
@@ -165,7 +211,11 @@ const links = computed<NavigationMenuItem[][]>(() => {
           label: childConfig.title!,
           icon: childConfig.icon!,
           to: childTo,
-        }
+          onSelect: () => {
+            // Ensure the correct parent stays open while navigating
+            openNavValue.value = parentValue
+          },
+        } satisfies NavigationMenuItem
       })
     }
 
@@ -204,13 +254,15 @@ const links = computed<NavigationMenuItem[][]>(() => {
   return [mainItems, toolItems, externalLinks]
 })
 
-const groups = computed(() => [
-  {
-    id: 'links',
-    label: 'Go to',
-    items: links.value.flat(),
+// Keep the right foldout open based on the current route.
+watch(
+  () => route.path,
+  () => {
+    const active = computeActiveParentValue(links.value[0] || [], route.path)
+    openNavValue.value = active
   },
-])
+  { immediate: true },
+)
 
 // ─── Getting Oriented substep auto-completion ─────────────────────────────────
 
@@ -347,9 +399,12 @@ watch(searchOpen, (isOpen) => {
                 </div>
 
                 <UNavigationMenu
+                  v-model="openNavValue"
                   :collapsed="collapsed"
                   :items="links[0]"
                   orientation="vertical"
+                  type="single"
+                  :collapsible="true"
                   tooltip
                   popover
                 />
