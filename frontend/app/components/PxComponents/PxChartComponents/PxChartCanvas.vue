@@ -80,10 +80,12 @@ async function onConnect(connection: Connection) {
 
 async function handleDeletePxGraphContainer(containerId: string) {
   await deleteContainer(containerId, true)
+  fetchPxChartContainers()
 }
 
 async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxChartContainer>) {
   await updateContainer(updatedPxChartContainer)
+  fetchPxChartContainers()
 }
 
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
@@ -153,11 +155,11 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   await addContainer(pos.x, pos.y)
 }
 
-const nodesInPath = computed(() => {
-  const nodes: string[] = []
+const pxNodeIdsInPath = computed(() => {
+  const nodes: Array<string | null> = []
   path.value.forEach((containerId) => {
     const container = pxChartContainers.value.find((container) => container.id === containerId)
-    if (container && container.content) {
+    if (container) {
       nodes.push(container.content)
     }
   })

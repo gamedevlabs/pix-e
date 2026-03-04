@@ -4,24 +4,13 @@ import { computed } from 'vue'
 
 import type { NodeData } from './DiagramUtils'
 
-const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
-const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
-const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
-  usePxComponentDefinitions()
-
-onMounted(() => {
-  fetchPxNodes()
-  fetchPxComponents()
-  fetchPxComponentDefinitions()
-})
-
 definePageMeta({
   middleware: 'authentication',
 })
 
 const props = defineProps({
   nodesInPath: {
-    type: Array<string>,
+    type: Array<string | null>,
     default: () => [],
   },
   pxNodes: {
@@ -49,8 +38,23 @@ async function deleteDiagram(deleteId: string) {
   diagrams.value = diagrams.value.filter((id) => id != deleteId)
 }
 
-function getNodeFromName(name: string) {
-  return pxNodes.value.find((node) => node.name === name)
+const dummyNode: PxNode = {
+    id: '',
+    name: 'null',
+    description: '',
+    components: [],
+    charts: [],
+    created_at: '',
+    updated_at: '',
+    owner: null
+}
+
+function getNodeFromName(name: string | null) {
+  if (name) {
+    return props.pxNodes.find((node) => node.name === name)
+  } else {
+    return dummyNode
+  }
 }
 
 const relevantNodes = computed(() => {
