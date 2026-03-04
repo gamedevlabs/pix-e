@@ -116,6 +116,7 @@ const nodeLabels = computed(() => {
               <PxLineDiagram
                 :node-data="allData"
                 :node-labels="nodeLabels"
+                :px-component-definitions="pxComponentDefinitions"
                 show-edit
                 show-delete
                 @delete="deleteDiagram(d)"

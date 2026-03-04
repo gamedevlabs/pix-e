@@ -18,14 +18,7 @@ import {
 } from './DiagramOptions'
 import { type NodeData, initColorIterator } from './DiagramUtils'
 
-const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
-  usePxComponentDefinitions()
-
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale)
-
-onMounted(() => {
-  fetchPxComponentDefinitions()
-})
 
 const props = defineProps({
   nodeData: {
@@ -35,6 +28,10 @@ const props = defineProps({
   nodeLabels: {
     type: Array<string>,
     default: () => [],
+  },
+  pxComponentDefinitions: {
+    type: Array<PxComponentDefinition>,
+        default: () => [],
   },
   diagramId: {
     type: String,
@@ -47,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 function getNameFromDefinitionId(id: string) {
-  return pxComponentDefinitions.value.find((def) => def.id === id)?.name
+  return props.pxComponentDefinitions.find((def) => def.id === id)?.name
 }
 
 // specify which of the pre-computed data to visualize
@@ -77,7 +74,7 @@ const data = computed(() => {
 })
 
 const numericalComponentDefinitionNames = computed(() => {
-  return pxComponentDefinitions.value.filter((def) => def.type === 'number').map((def) => def.name)
+  return props.pxComponentDefinitions.filter((def) => def.type === 'number').map((def) => def.name)
 })
 
 const selectedDefinitionsX: Ref<string, string> = ref('')
@@ -85,7 +82,7 @@ const selectedDefinitionsY: Ref<string[], string[]> = ref([])
 
 async function handleDefinitionSelectionX(selection: string) {
   // check whether selection is actual component or dummy option for equal spacing
-  const foundId = pxComponentDefinitions.value.find((def) => selection === def.name)?.id
+  const foundId = props.pxComponentDefinitions.find((def) => selection === def.name)?.id
   if (foundId) {
     selectedDefinitionsX.value = foundId
   } else {
@@ -94,7 +91,7 @@ async function handleDefinitionSelectionX(selection: string) {
 }
 
 async function handleDefinitionSelectionY(selection: string[]) {
-  selectedDefinitionsY.value = pxComponentDefinitions.value
+  selectedDefinitionsY.value = props.pxComponentDefinitions
     .filter((def) => selection.includes(def.name))
     .map((def) => def.id)
 }
