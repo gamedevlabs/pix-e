@@ -24,6 +24,18 @@ const props = defineProps({
     type: Array<string>,
     default: () => [],
   },
+  pxNodes: {
+    type: Array<PxNode>,
+    default: () => [],
+  },
+  pxComponents: {
+    type: Array<PxComponent>,
+    default: () => [],
+  },
+  pxComponentDefinitions: {
+    type: Array<PxComponentDefinition>,
+    default: () => [],
+  },
 })
 
 const diagrams = ref(new Array<string>())
@@ -46,7 +58,7 @@ const relevantNodes = computed(() => {
     .map((name) => getNodeFromName(name))
     .filter((node) => node !== undefined)
 
-  if (!relevantNodes.length) relevantNodes = pxNodes.value
+  if (!relevantNodes.length) relevantNodes = props.pxNodes
 
   return relevantNodes
 })
@@ -58,7 +70,7 @@ const allData = computed(() => {
 
   // aggregator for x-axis components
   const sumsXComponents = Object.fromEntries(
-    pxComponentDefinitions.value
+    props.pxComponentDefinitions
       .filter((c) => c.type === 'number')
       .map((c) => ['sum-'.concat(c.id), 0]),
   )
@@ -70,7 +82,7 @@ const allData = computed(() => {
     }
 
     // add values for components, including sums for numerical x-axis components
-    pxComponents.value
+    props.pxComponents
       .filter((c) => c.node === node.id)
       .forEach((c) => {
         nodeData[c.definition] = c.value

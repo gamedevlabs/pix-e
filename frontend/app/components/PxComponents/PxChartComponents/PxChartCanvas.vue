@@ -18,7 +18,10 @@ const { screenToFlowCoordinate, getSelectedNodes } = useVueFlow()
 
 const chartId = props.chartId
 
-const { fetchAll: fetchPxDefinitions } = usePxComponentDefinitions()
+const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
+const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
+const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
+  usePxComponentDefinitions()
 
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
@@ -51,7 +54,9 @@ const edgeTypes = {
 
 onMounted(() => {
   loadGraph()
-  fetchPxDefinitions()
+  fetchPxNodes()
+  fetchPxComponents()
+  fetchPxComponentDefinitions()
   fetchPxChartContainers()
 })
 
@@ -83,10 +88,12 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
 
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
+  fetchPxNodes()
 }
 
 async function handleDeletePxNode(pxGraphContainerId: string) {
   await removeNodeFromContainer(pxGraphContainerId)
+  fetchPxNodes()
 }
 
 // We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
@@ -158,6 +165,11 @@ const nodesInPath = computed(() => {
   return nodes
 })
 
+const pxNodesInChart = computed(() => {
+    const ids = nodes.value.map((vueNode) => vueNode.data.content)
+    return pxNodes.value.filter((pxN) => ids.includes(pxN.id))
+})
+
 async function onSelectionChange(change: NodeSelectionChange) {
   // do something when selected nodes/edges changed
   const previouslySelectedIds = getSelectedNodes.value.map((gn) => gn.id)
@@ -178,7 +190,12 @@ async function onSelectionChange(change: NodeSelectionChange) {
 </script>
 
 <template>
-  <PxDiagrams :nodes-in-path="nodesInPath" />
+  <PxDiagrams 
+    :nodes-in-path="pxNodeIdsInPath" 
+    :px-nodes="pxNodesInChart"
+    :px-components="pxComponents"
+    :px-component-definitions="pxComponentDefinitions"
+  />
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
