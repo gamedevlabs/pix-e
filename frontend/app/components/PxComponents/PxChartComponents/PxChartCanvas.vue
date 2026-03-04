@@ -91,11 +91,13 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
   fetchPxNodes()
+  fetchPxChartContainers()
 }
 
 async function handleDeletePxNode(pxGraphContainerId: string) {
   await removeNodeFromContainer(pxGraphContainerId)
   fetchPxNodes()
+  fetchPxChartContainers()
 }
 
 // We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
