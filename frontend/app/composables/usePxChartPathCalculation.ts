@@ -2,15 +2,19 @@ import type { Edge, Node } from '@vue-flow/core'
 import { getOutgoers } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
 
-export function usePathsApi() {
-  async function dijkstra_path(nodes: Node[], edges: Edge[], sourceId: string, targetId: string) {
+export function usePxChartPath(nodes: Ref<Node[]>, edges: Ref<Edge[]>) {
+  const { error: errorToast } = usePixeToast()
+
+  const path = ref<string[]>([])
+
+  async function dijkstraInChart(sourceId: string, targetId: string) {
     // initialize
     const q = [{ id: sourceId, prio: 0 }]
     const dist = new Map<string, number>()
     dist.set(sourceId, 0)
     const prev = new Map<string, string>()
 
-    for (const node of nodes) {
+    for (const node of nodes.value) {
       if (node.id != sourceId) {
         dist.set(node.id, Infinity)
         q.push({ id: node.id, prio: Infinity })
@@ -27,7 +31,7 @@ export function usePathsApi() {
       if (!node) {
         break
       }
-      const outs = getOutgoers(node.id, nodes, edges)
+      const outs = getOutgoers(node.id, nodes.value, edges.value)
       for (const out of outs) {
         const alt = dist.get(node.id)! + 1
         if (alt < dist.get(out.id)!) {
@@ -59,7 +63,7 @@ export function usePathsApi() {
     return seq.reverse()
   }
 
-  async function dijkstra_multiple(nodes: Node[], edges: Edge[], selected: string[]) {
+  async function dijkstraInChartMultiple(selected: string[]) {
     let fullPath: string[] = []
 
     if (selected.length < 2) {
@@ -69,7 +73,7 @@ export function usePathsApi() {
     fullPath.push(selected[0]!)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const nextSeq = await dijkstra_path(nodes, edges, selected[i]!, selected[i + 1]!)
+      const nextSeq = await dijkstraInChart(selected[i]!, selected[i + 1]!)
       if (!nextSeq.length) {
         return []
       }
@@ -79,23 +83,52 @@ export function usePathsApi() {
     return fullPath
   }
 
-  async function calculate_path(
-    nodes: Node[],
-    edges: Edge[],
-    selected: string[],
-  ): Promise<string[]> {
+  async function calculatePathFromSelection(selected: string[]) {
+    console.log(`Starting path calculation...`)
+    console.log(`Found ${nodes.value.length} nodes.`)
+    console.log(`Input (length ${selected.length}): ${selected.toString()}`)
+    let newPath: string[] = []
     if (selected.length == 2 && selected[0] && selected[1]) {
-      let path = dijkstra_path(nodes, edges, selected[0], selected[1])
-      if (!(await path).length) {
-        path = dijkstra_path(nodes, edges, selected[1], selected[0])
+      newPath = await dijkstraInChart(selected[0], selected[1])
+      if (!newPath.length) {
+        newPath = await dijkstraInChart(selected[1], selected[0])
       }
-      return path
     } else {
-      return dijkstra_multiple(nodes, edges, selected)
+      newPath = await dijkstraInChartMultiple(selected)
+    }
+
+    if (!newPath.length) {
+      errorToast('Failed to calculate path between selected nodes.')
+    }
+    path.value = newPath
+    console.log(
+      `Finished path calculation!\nResult (length ${path.value.length}): ${path.value.toString()}`,
+    )
+  }
+
+  async function resetPathValue() {
+    // reset path itself
+    path.value = []
+  }
+
+  async function updatePathHighlight() {
+    const pathStyle = {
+      color: 'var(--ui-primary)',
+      border: '3px solid var(--ui-primary)',
+      borderRadius: '10px',
+      boxShadow: '0 0 10px var(--ui-primary)',
+    }
+
+    // set style of nodes in calculated path
+    for (const node of nodes.value) {
+      node.style = path.value.includes(node.id) ? pathStyle : undefined
     }
   }
 
   return {
-    calculate_path,
+    path,
+    calculatePathFromSelection,
+    resetPathValue,
+    updatePathHighlight,
   }
 }

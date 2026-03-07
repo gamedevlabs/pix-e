@@ -14,7 +14,7 @@ import { PxChartEdge } from '#components'
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
-const { screenToFlowCoordinate, getSelectedNodes } = useVueFlow()
+const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
 
@@ -31,7 +31,6 @@ const {
   nodes,
   edges,
   error,
-  path,
   pxChartError,
   loadGraph,
   addContainer,
@@ -43,10 +42,12 @@ const {
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
-  calculatePathFromSelection,
-  resetPathValue,
-  updatePathHighlight,
 } = usePxChartsCanvasApi(chartId)
+
+const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } = usePxChartPath(
+  nodes,
+  edges,
+)
 
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
@@ -185,7 +186,7 @@ async function updatePath() {
 const selectedNodesInOrder: Ref<string[]> = ref([])
 
 async function removeFromSelected(idToRemove: string) {
-    selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != idToRemove)
+  selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != idToRemove)
 }
 
 async function onSelectionChange(change: NodeSelectionChange) {
