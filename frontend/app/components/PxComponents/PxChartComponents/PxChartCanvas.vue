@@ -82,6 +82,7 @@ async function onConnect(connection: Connection) {
 async function handleDeletePxGraphContainer(containerId: string) {
   await deleteContainer(containerId, true)
   fetchPxChartContainers()
+  removeFromSelected(containerId)
 }
 
 async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxChartContainer>) {
@@ -183,12 +184,16 @@ async function updatePath() {
 
 const selectedNodesInOrder: Ref<string[]> = ref([])
 
+async function removeFromSelected(idToRemove: string) {
+    selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != idToRemove)
+}
+
 async function onSelectionChange(change: NodeSelectionChange) {
   // update record of selected nodes
   if (change.selected) {
     selectedNodesInOrder.value.push(change.id)
   } else {
-    selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != change.id)
+    removeFromSelected(change.id)
   }
 
   // update path based on current selection
