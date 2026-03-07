@@ -165,13 +165,12 @@ const pxNodeIdsInPath = computed(() => {
       nodes.push(container.content)
     }
   })
-
   return nodes
 })
 
 const pxNodesInChart = computed(() => {
-    const ids = nodes.value.map((vueNode) => vueNode.data.content)
-    return pxNodes.value.filter((pxN) => ids.includes(pxN.id))
+  const ids = nodes.value.map((vueNode) => vueNode.data.content)
+  return pxNodes.value.filter((pxN) => ids.includes(pxN.id))
 })
 
 async function onSelectionChange(change: NodeSelectionChange) {
@@ -194,8 +193,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
 </script>
 
 <template>
-  <PxDiagrams 
-    :nodes-in-path="pxNodeIdsInPath" 
+  <PxDiagrams
+    :nodes-in-path="pxNodeIdsInPath"
     :px-nodes="pxNodesInChart"
     :px-components="pxComponents"
     :px-component-definitions="pxComponentDefinitions"

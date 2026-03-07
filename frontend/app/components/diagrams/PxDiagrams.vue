@@ -39,14 +39,14 @@ async function deleteDiagram(deleteId: string) {
 }
 
 const dummyNode: PxNode = {
-    id: '',
-    name: 'null',
-    description: '',
-    components: [],
-    charts: [],
-    created_at: '',
-    updated_at: '',
-    owner: null
+  id: '',
+  name: 'null',
+  description: '',
+  components: [],
+  charts: [],
+  created_at: '',
+  updated_at: '',
+  owner: null,
 }
 
 function getNodeFromName(name: string | null) {

@@ -31,7 +31,7 @@ const props = defineProps({
   },
   pxComponentDefinitions: {
     type: Array<PxComponentDefinition>,
-        default: () => [],
+    default: () => [],
   },
   diagramId: {
     type: String,
