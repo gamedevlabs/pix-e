@@ -298,23 +298,16 @@ export function usePxChartsCanvasApi(chartId: string) {
     const newPath = await calculate_path(nodes.value, edges.value, selected)
     if (!newPath.length) {
       errorToast('Failed to calculate path between selected nodes.')
-    } else {
-      path.value = newPath
     }
+    path.value = newPath
   }
 
-  async function resetPath() {
-    // reset style of nodes in path
-    for (const node of nodes.value) {
-      if (path.value.includes(node.id)) {
-        node.style = undefined
-      }
-    }
+  async function resetPathValue() {
     // reset path itself
     path.value = []
   }
 
-  async function highlightPath() {
+  async function updatePathHighlight() {
     const pathStyle = {
       color: 'var(--ui-primary)',
       border: '3px solid var(--ui-primary)',
@@ -322,13 +315,9 @@ export function usePxChartsCanvasApi(chartId: string) {
       boxShadow: '0 0 10px var(--ui-primary)',
     }
 
-    if (path.value.length) {
-      // set style of nodes in calculated path
-      for (const node of nodes.value) {
-        if (path.value.includes(node.id)) {
-          node.style = pathStyle
-        }
-      }
+    // set style of nodes in calculated path
+    for (const node of nodes.value) {
+      node.style = path.value.includes(node.id) ? pathStyle : undefined
     }
   }
 
@@ -350,7 +339,7 @@ export function usePxChartsCanvasApi(chartId: string) {
     applyDefaultEdgeChanges,
     deleteEdge,
     calculatePathFromSelection,
-    resetPath,
-    highlightPath,
+    resetPathValue,
+    updatePathHighlight
   }
 }

@@ -44,8 +44,8 @@ const {
   applyDefaultEdgeChanges,
   deleteEdge,
   calculatePathFromSelection,
-  resetPath,
-  highlightPath,
+  resetPathValue,
+  updatePathHighlight,
 } = usePxChartsCanvasApi(chartId)
 
 const edgeTypes = {
@@ -76,6 +76,7 @@ async function onNodeDragStop(event: NodeDragEvent) {
 
 async function onConnect(connection: Connection) {
   await addEdge(connection)
+  updatePath()
 }
 
 async function handleDeletePxGraphContainer(containerId: string) {
@@ -173,22 +174,30 @@ const pxNodesInChart = computed(() => {
   return pxNodes.value.filter((pxN) => ids.includes(pxN.id))
 })
 
-async function onSelectionChange(change: NodeSelectionChange) {
-  // do something when selected nodes/edges changed
-  const previouslySelectedIds = getSelectedNodes.value.map((gn) => gn.id)
-  if (
-    previouslySelectedIds.length >= 1 &&
-    previouslySelectedIds[0] &&
-    previouslySelectedIds[0] != change.id &&
-    !previouslySelectedIds.includes(change.id) &&
-    change.selected
-  ) {
-    const ids = [...previouslySelectedIds, change.id]
-    await calculatePathFromSelection(ids)
-    await highlightPath()
-  } else {
-    await resetPath()
+async function updatePath() {
+  if (selectedNodesInOrder.value.length >= 2) {
+    await calculatePathFromSelection(selectedNodesInOrder.value)
+    await updatePathHighlight()
   }
+}
+
+const selectedNodesInOrder: Ref<string[]> = ref([])
+
+async function onSelectionChange(change: NodeSelectionChange) {
+  // update record of selected nodes
+  if (change.selected) {
+    selectedNodesInOrder.value.push(change.id)
+  } else {
+    selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != change.id)
+  }
+
+  // update path based on current selection
+  if (selectedNodesInOrder.value.length >= 2) {
+    await calculatePathFromSelection(selectedNodesInOrder.value)
+  } else {
+    await resetPathValue()
+  }
+  await updatePathHighlight()
 }
 </script>
 
