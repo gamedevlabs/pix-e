@@ -44,10 +44,8 @@ const {
   deleteEdge,
 } = usePxChartsCanvasApi(chartId)
 
-const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } = usePxChartPathCalculation(
-  nodes,
-  edges,
-)
+const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } =
+  usePxChartPathCalculation(nodes, edges)
 
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
