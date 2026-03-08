@@ -2,7 +2,7 @@ import type { Edge, Node } from '@vue-flow/core'
 import { getOutgoers } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
 
-export function usePxChartPath(nodes: Ref<Node[]>, edges: Ref<Edge[]>) {
+export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>) {
   const { error: errorToast } = usePixeToast()
 
   const path = ref<string[]>([])

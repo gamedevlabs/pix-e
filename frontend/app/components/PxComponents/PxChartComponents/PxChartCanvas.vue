@@ -44,7 +44,7 @@ const {
   deleteEdge,
 } = usePxChartsCanvasApi(chartId)
 
-const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } = usePxChartPath(
+const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } = usePxChartPathCalculation(
   nodes,
   edges,
 )
