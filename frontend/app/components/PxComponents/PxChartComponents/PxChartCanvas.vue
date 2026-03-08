@@ -158,6 +158,7 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   // for now, just create a container
   const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
   await addContainer(pos.x, pos.y)
+  fetchPxChartContainers()
 }
 
 const pxNodeIdsInPath = computed(() => {
