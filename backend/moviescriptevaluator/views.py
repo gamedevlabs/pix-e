@@ -252,14 +252,16 @@ class MovieProjectView(viewsets.ModelViewSet):
             item_in_db = ScriptSceneAnalysisResult.objects.filter(
                 project=pk, asset_name=item.asset_name
             ).first()
-            item_in_db.asset_coverage = AssetUsagePurpose.NOT_FOUND
-            item_in_db.save(update_fields=["asset_coverage"])
+
+            if item is not None:
+                item_in_db.asset_coverage = AssetUsagePurpose.NOT_FOUND
+                item_in_db.save(update_fields=["asset_coverage"])
 
         # fetch the query again to get the updated items as well
         items_needed = list(ScriptSceneAnalysisResult.objects.filter(project=pk))
 
         for item in items_needed:
-            if item.asset_coverage != AssetUsagePurpose.NOT_FOUND:
+            if item is not None and item.asset_coverage != AssetUsagePurpose.NOT_FOUND:
                 item.asset_coverage = AssetUsagePurpose.FOUND
                 item.save(update_fields=["asset_coverage"])
 
