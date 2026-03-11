@@ -7,6 +7,7 @@ export function usePxChartsCanvasApi(chartId: string) {
   const edges = ref<Edge[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const path = ref<string[]>([])
 
   const { error: pxChartError, fetchById: fetchPxChart } = usePxCharts()
   const {
@@ -294,6 +295,7 @@ export function usePxChartsCanvasApi(chartId: string) {
     edges,
     loading,
     error,
+    path,
     pxChartError,
     loadGraph,
     addContainer,

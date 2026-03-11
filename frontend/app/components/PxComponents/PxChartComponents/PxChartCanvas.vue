@@ -7,6 +7,7 @@ import {
   type Connection,
   type EdgeChange,
   type NodeChange,
+  type NodeSelectionChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
@@ -16,6 +17,15 @@ const props = defineProps({ chartId: { type: String, default: -1 } })
 const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
+
+const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
+const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
+const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
+  usePxComponentDefinitions()
+
+const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
+  props.chartId,
+)
 
 const {
   nodes,
@@ -34,12 +44,19 @@ const {
   deleteEdge,
 } = usePxChartsCanvasApi(chartId)
 
+const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } =
+  usePxChartPathCalculation(nodes, edges)
+
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
 }
 
 onMounted(() => {
   loadGraph()
+  fetchPxNodes()
+  fetchPxComponents()
+  fetchPxComponentDefinitions()
+  fetchPxChartContainers()
 })
 
 async function onNodeDragStop(event: NodeDragEvent) {
@@ -58,22 +75,30 @@ async function onNodeDragStop(event: NodeDragEvent) {
 
 async function onConnect(connection: Connection) {
   await addEdge(connection)
+  updatePath()
 }
 
 async function handleDeletePxGraphContainer(containerId: string) {
   await deleteContainer(containerId, true)
+  fetchPxChartContainers()
+  removeFromSelected(containerId)
 }
 
 async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxChartContainer>) {
   await updateContainer(updatedPxChartContainer)
+  fetchPxChartContainers()
 }
 
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
+  fetchPxNodes()
+  fetchPxChartContainers()
 }
 
 async function handleDeletePxNode(pxGraphContainerId: string) {
   await removeNodeFromContainer(pxGraphContainerId)
+  fetchPxNodes()
+  fetchPxChartContainers()
 }
 
 // We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
@@ -98,6 +123,7 @@ async function onNodesChange(changes: NodeChange[]) {
         break
       case 'select':
         defaultChanges.push(change)
+        await onSelectionChange(change)
         break
     }
   }
@@ -130,10 +156,63 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   // for now, just create a container
   const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
   await addContainer(pos.x, pos.y)
+  fetchPxChartContainers()
+}
+
+const pxNodeIdsInPath = computed(() => {
+  const nodes: Array<string | null> = []
+  path.value.forEach((containerId) => {
+    const container = pxChartContainers.value.find((container) => container.id === containerId)
+    if (container) {
+      nodes.push(container.content)
+    }
+  })
+  return nodes
+})
+
+const pxNodesInChart = computed(() => {
+  const ids = nodes.value.map((vueNode) => vueNode.data.content)
+  return pxNodes.value.filter((pxN) => ids.includes(pxN.id))
+})
+
+async function updatePath() {
+  if (selectedNodesInOrder.value.length >= 2) {
+    await calculatePathFromSelection(selectedNodesInOrder.value)
+    await updatePathHighlight()
+  }
+}
+
+const selectedNodesInOrder: Ref<string[]> = ref([])
+
+async function removeFromSelected(idToRemove: string) {
+  selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != idToRemove)
+}
+
+async function onSelectionChange(change: NodeSelectionChange) {
+  // update record of selected nodes
+  if (change.selected) {
+    selectedNodesInOrder.value.push(change.id)
+  } else {
+    removeFromSelected(change.id)
+  }
+
+  // update path based on current selection
+  if (selectedNodesInOrder.value.length >= 2) {
+    await calculatePathFromSelection(selectedNodesInOrder.value)
+  } else {
+    await resetPathValue()
+  }
+  await updatePathHighlight()
 }
 </script>
 
 <template>
+  <PxDiagrams
+    :nodes-in-path="pxNodeIdsInPath"
+    :px-nodes="pxNodesInChart"
+    :px-components="pxComponents"
+    :px-component-definitions="pxComponentDefinitions"
+  />
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
