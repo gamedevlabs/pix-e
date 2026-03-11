@@ -71,6 +71,9 @@ definePageMeta({
 - `/pillars` - Design pillars
 - `/player-expectations` - Player expectations dashboard
 - `/sentiments` - Sentiment analysis
+- `/player-expectations-new/dashboard` - Player expectations dashboard
+- `/player-expectations-new/dataset-explorer` - Player expectations Dataset Explorer
+- `/player-expectations-new/prior-findings` - Player expectations Prior Findings
 - `/pxcharts` - PxCharts module and detail pages
 - `/pxnodes` - PxNodes module and detail pages
 - `/pxcomponents` - PxComponents module and detail pages
