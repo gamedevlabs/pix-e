@@ -14,9 +14,9 @@ export const useLLM = defineStore('llm', () => {
       icon: 'i-simple-icons-openai',
     },
     {
-      label: 'Unknown Local Model',
-      value: 'local1',
-      icon: 'i-lucide-circle-help',
+      label: 'Local Model (Ollama)',
+      value: 'ollama',
+      icon: 'i-simple-icons-ollama',
     },
   ] satisfies SelectItem[])
   const active_llm = ref(llm_models.value[0]?.value)

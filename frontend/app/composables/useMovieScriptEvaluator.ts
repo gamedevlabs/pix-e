@@ -4,6 +4,7 @@ import type {
   MovieProject,
   MovieScript,
   MovieScriptAnalysisResponse,
+  RequiredAsset,
 } from '../utils/movie-script-evaluator.d.ts'
 import { useMovieScriptEvaluatorApi } from './api/movieScriptEvaluatorApi.js'
 
@@ -41,18 +42,35 @@ export function useMovieScriptEvaluator() {
       return await movieScriptAPI.createScriptSceneAnalysisBulk(projectId, items)
     }
 
+    const getRecommendations = async () => {
+      return await movieScriptAPI.getRecommendations(projectId)
+    }
+
+    const evaluateMissingItems = async () => {
+      return await movieScriptAPI.evaluateMissingItems(projectId)
+    }
+
     const crud = useCrudWithAuthentication<ScriptSceneAnalysis>(
       'movie-script-evaluator/projects/' + projectId + '/script-scene-analysis/',
     )
 
     return {
+      evaluateMissingItems,
       createAll,
+      getRecommendations,
       ...crud,
     }
   }
 
+  function useRequiredAssets(projectId: string) {
+    return useCrudWithAuthentication<RequiredAsset>(
+      'movie-script-evaluator/projects/' + projectId + '/required-assets/',
+    )
+  }
+
   return {
     ...movieScriptProjects,
+    useRequiredAssets,
     uploadMovieScript,
     useAssets,
     useAnalyzeMovieScript,
