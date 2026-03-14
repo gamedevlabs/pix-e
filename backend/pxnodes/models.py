@@ -341,7 +341,6 @@ class ContextArtifact(models.Model):
     content_hash = models.CharField(max_length=64, db_index=True)
     source_hash = models.CharField(max_length=64, db_index=True)
     metadata = models.JSONField(default=dict, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -383,3 +382,70 @@ class ArtifactEmbedding(models.Model):
 
     def __str__(self) -> str:
         return f"ArtifactEmbedding({self.embedding_model}:{self.embedding_dim})"
+
+
+class PxKeyDefinition(models.Model):
+
+    id = models.UUIDField(primary_key=True, editable=False)
+
+    name = models.CharField(max_length=255)
+    
+    TYPE_CHOICES = [("item", "Item"), ("ability", "Ability")]
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    
+    consumable = models.BooleanField()
+    fixed = models.BooleanField()
+    unique = models.BooleanField()
+
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["owner", "id"]
+
+    def __str__(self):
+        return f"{self.name} ({self.type})"
+
+
+class PxKeyAssignment(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
+    node = models.ForeignKey(
+        "PxNode", on_delete=models.CASCADE, related_name="keys"
+    )
+
+    definition = models.ForeignKey("PxKeyDefinition", on_delete=models.CASCADE)
+    count = models.IntegerField()
+
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["owner", "id"]
+
+    def __str__(self):
+        return f"{self.node.name} - {self.definition.name}: ({self.count})"
+
+
+class PxLockDefinition(models.Model):
+
+    id = models.UUIDField(primary_key=True, editable=False)
+
+    name = models.CharField(max_length=255)
+    
+    unlocked_by = models.ManyToManyField(PxKeyDefinition)
+
+    UNLOCK_MODE_CHOICES = [("permanent", "Permanent"), ("temporary", "Temporary"), ("reversible", "Reversible")]
+    unlock_mode = models.CharField(max_length=20, choices=UNLOCK_MODE_CHOICES)
+
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["owner", "id"]
+
+    def __str__(self):
+            return f"{self.name} ({self.type})"

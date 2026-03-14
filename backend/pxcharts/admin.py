@@ -1,7 +1,8 @@
 from django.contrib import admin
 
-from pxcharts.models import PxChart, PxChartContainer, PxChartEdge
+from pxcharts.models import PxChart, PxChartContainer, PxChartEdge, PxLockAssignment
 
 admin.site.register(PxChart)
 admin.site.register(PxChartContainer)
 admin.site.register(PxChartEdge)
+admin.site.register(PxLockAssignment)

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from pxnodes.models import PxNode
+from pxnodes.models import PxNode, PxLockDefinition
 
 User = get_user_model()
 
@@ -106,3 +106,26 @@ class PxChartEdge(models.Model):
 
     def __str__(self):
         return f"{self.px_chart.name}: {self.source.name} --- ({self.target.name})"
+
+
+class PxLockAssignment(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
+    px_chart = models.ForeignKey(
+        PxChart, on_delete=models.CASCADE, related_name="locks"
+    )
+
+    edge = models.ForeignKey(PxChartEdge, on_delete=models.CASCADE)
+    definition = models.ForeignKey(PxLockDefinition, on_delete=models.CASCADE)
+
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["owner", "id"]
+
+    def __str__(self):
+        # TODO: improve str
+        return f"{self.node.name} - {self.definition.name}: ({self.count})"
+
