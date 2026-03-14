@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import PxChart, PxChartContainer, PxChartContainerLayout, PxChartEdge
+from .models import PxChart, PxChartContainer, PxChartContainerLayout, PxChartEdge, PxLockAssignment
 
 
 class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
@@ -185,3 +185,33 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class PxLockAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PxLockAssignment
+        fields = [
+            "id",
+            "edge",
+            "definition",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["owner", "created_at", "updated_at"]
+
+    def validate(self, data):
+        chart_id = self.context["view"].kwargs.get("px_chart_pk")
+
+        if str(data["edge"].px_chart_id) != chart_id:
+            raise serializers.ValidationError(
+                "Edge does not belong to the chart."
+            )
+        return data
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)

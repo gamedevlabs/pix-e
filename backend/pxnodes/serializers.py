@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from pxcharts.serializers import PxChartSerializer
 
-from .models import PxComponent, PxComponentDefinition, PxNode
+from .models import PxComponent, PxComponentDefinition, PxNode, PxKeyDefinition, PxKeyAssignment, PxLockDefinition
 
 
 class PxComponentSerializer(serializers.ModelSerializer):
@@ -80,3 +80,43 @@ class PxNodeDetailSerializer(serializers.ModelSerializer):
                 {"id": "Cannot update ID after creation."}
             )
         return super().update(instance, validated_data)
+
+
+class PxKeyDefinitionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PxKeyDefinition
+        fields = "__all__"
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)
+
+
+class PxKeyAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PxKeyAssignment
+        fields = "__all__"
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)
+
+
+class PxLockDefinitionSerializer(serializers.ModelSerializer):
+    class Meta:
+            model = PxLockDefinition
+            fields = "__all__"
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)
+
