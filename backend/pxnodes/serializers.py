@@ -110,8 +110,8 @@ class PxKeyAssignmentSerializer(serializers.ModelSerializer):
 
 class PxLockDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
-            model = PxLockDefinition
-            fields = "__all__"
+        model = PxLockDefinition
+        fields = "__all__"
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:

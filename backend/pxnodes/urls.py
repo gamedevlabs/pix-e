@@ -9,6 +9,9 @@ from .views import (
     ContextStrategiesView,
     PxComponentDefinitionViewSet,
     PxComponentViewSet,
+    PxKeyAssignmentViewSet,
+    PxKeyDefinitionViewSet,
+    PxLockDefinitionViewSet,
     PxNodeViewSet,
     StrategyCompareView,
     StrategyEvaluateView,
@@ -23,6 +26,24 @@ router.register(
     r"pxcomponentdefinitions",
     PxComponentDefinitionViewSet,
     basename="pxcomponentdefinition",
+)
+
+router.register(
+    r"pxkeydefinitions",
+    PxKeyDefinitionViewSet,
+    basename="pxkeydefinition"
+)
+
+router.register(
+    r"pxkeys",
+    PxKeyAssignmentViewSet,
+    basename="pxkeys"
+)
+
+router.register(
+    r"pxlockdefinitions",
+    PxLockDefinitionViewSet,
+    basename="pxlockdefinition"
 )
 
 urlpatterns = [

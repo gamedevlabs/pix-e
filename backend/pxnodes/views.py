@@ -24,6 +24,9 @@ from .models import (
     HMEMLayerEmbedding,
     PxComponent,
     PxComponentDefinition,
+    PxKeyAssignment,
+    PxKeyDefinition,
+    PxLockDefinition,
     PxNode,
     StructuralMemoryState,
 )
@@ -33,6 +36,9 @@ from .serializers import (
     PxComponentSerializer,
     PxNodeDetailSerializer,
     PxNodeSerializer,
+    PxKeyDefinitionSerializer,
+    PxKeyAssignmentSerializer,
+    PxLockDefinitionSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -1183,3 +1189,42 @@ class ContextBuildView(APIView):
                     {"error": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
+
+
+class PxKeyDefinitionViewSet(viewsets.ModelViewSet):
+    serializer_class = PxKeyDefinitionSerializer
+    permission_classes = [IsAuthenticated, IsOwnerPermission]
+
+    def get_queryset(self):
+        if self.action == "list":
+            return PxKeyDefinition.objects.filter(owner=self.request.user)
+        return PxKeyDefinition.objects.order_by("created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)
+
+
+class PxKeyAssignmentViewSet(viewsets.ModelViewSet):
+    serializer_class = PxKeyAssignmentSerializer
+    permission_classes = [IsAuthenticated, IsOwnerPermission]
+
+    def get_queryset(self):
+        if self.action == "list":
+            return PxKeyAssignment.objects.filter(owner=self.request.user)
+        return PxKeyAssignment.objects.order_by("created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)
+
+
+class PxLockDefinitionViewSet(viewsets.ModelViewSet):
+    serializer_class = PxLockDefinitionSerializer
+    permission_classes = [IsAuthenticated, IsOwnerPermission]
+
+    def get_queryset(self):
+        if self.action == "list":
+            return PxLockDefinition.objects.filter(owner=self.request.user)
+        return PxLockDefinition.objects.order_by("created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(id=uuid.uuid4(), owner=self.request.user)
