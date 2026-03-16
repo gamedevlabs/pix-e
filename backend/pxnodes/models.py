@@ -437,7 +437,7 @@ class PxLockDefinition(models.Model):
     
     unlocked_by = models.ManyToManyField(PxKeyDefinition)
 
-    UNLOCK_MODE_CHOICES = [("permanent", "Permanent"), ("temporary", "Temporary"), ("reversible", "Reversible")]
+    UNLOCK_MODE_CHOICES = [("permanent", "Permanent"), ("temporary", "Temporary"), ("reversible", "Reversible"), ("collapsible", "Collapsible")]
     unlock_mode = models.CharField(max_length=20, choices=UNLOCK_MODE_CHOICES)
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
