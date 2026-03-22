@@ -1,7 +1,10 @@
 ﻿<script setup lang="ts">
-import type { PxKeySelectMenuItem } from '~/pages/pxlockkeydefinitions.vue';
+import type { PxKeySelectMenuItem } from '~/pages/pxlockkeydefinitions.vue'
 
-const props = defineProps<{ definition: PxLockDefinition, keysForSelection: PxKeySelectMenuItem[] }>()
+const props = defineProps<{
+  definition: PxLockDefinition
+  keysForSelection: PxKeySelectMenuItem[]
+}>()
 
 const emit = defineEmits<{
   (e: 'edit', updatedDefinition: PxLockDefinition): void
@@ -12,10 +15,10 @@ const isBeingEdited = ref(false)
 
 type EditableLockDefinition = Pick<PxLockDefinition, 'name' | 'unlocked_by' | 'unlock_mode'>
 
-const editForm : Ref<EditableLockDefinition> = ref({
+const editForm: Ref<EditableLockDefinition> = ref({
   name: props.definition.name,
   unlock_mode: props.definition.unlock_mode,
-  unlocked_by: props.definition.unlocked_by
+  unlocked_by: props.definition.unlocked_by,
 })
 
 function startEdit() {
@@ -39,20 +42,22 @@ function emitDelete() {
 const unlockModes = ref(['permanent', 'temporary', 'reversible', 'collapsible'])
 
 const unlockedByKeyNames = computed(() => {
-    return props.keysForSelection.filter((key) => props.definition.unlocked_by.includes(key.value)).map(key => key.label)
+  return props.keysForSelection
+    .filter((key) => props.definition.unlocked_by.includes(key.value))
+    .map((key) => key.label)
 })
 </script>
 <template>
   <UCard class="hover:shadow-lg transition">
     <template #header>
-        <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-lock-keyhole" class="size-5" />
-                <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
-                    <NuxtLink :to="{ name: 'pxlockdefinitions-id', params: { id: props.definition.id } }">
-                    {{ props.definition.name }}
-                    </NuxtLink>
-                </h2>
-                <UTextarea v-else v-model="editForm.name" :rows="1"/>
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-lock-keyhole" class="size-5" />
+        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
+          <NuxtLink :to="{ name: 'pxlockdefinitions-id', params: { id: props.definition.id } }">
+            {{ props.definition.name }}
+          </NuxtLink>
+        </h2>
+        <UTextarea v-else v-model="editForm.name" :rows="1" size="lg" />
       </div>
     </template>
 
@@ -61,17 +66,21 @@ const unlockedByKeyNames = computed(() => {
         <b>Unlock Mode</b>
         {{ definition.unlock_mode }}
         <b>Unlocked By</b>
-        <p>
-            <div v-for="name in unlockedByKeyNames" :key="name">
-                {{ name }}
-            </div>
-        </p>
+        <ul>
+          <li v-for="name in unlockedByKeyNames" :key="name">{{ name }}</li>
+        </ul>
       </div>
       <div v-else class="grid grid-cols-2 gap-6">
         <b>Unlock Mode</b>
-        <USelectMenu v-model="editForm.unlock_mode" :items="unlockModes" :search-input="false"/>
+        <USelectMenu v-model="editForm.unlock_mode" :items="unlockModes" :search-input="false" />
         <b>Unlocked By</b>
-        <USelectMenu v-model="editForm.unlocked_by" :items="keysForSelection" :value-key="'value'" multiple :search-input="false"  />
+        <USelectMenu
+          v-model="editForm.unlocked_by"
+          :items="keysForSelection"
+          :value-key="'value'"
+          multiple
+          :search-input="false"
+        />
       </div>
     </template>
 

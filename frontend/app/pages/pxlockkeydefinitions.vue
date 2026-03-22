@@ -69,10 +69,10 @@ async function handleUpdateKey(updatedDefinition: PxKeyDefinition) {
 
 const unlockModes = ref(['permanent', 'temporary', 'reversible', 'collapsible'])
 
-export type PxKeySelectMenuItem = SelectMenuItem & { label: string, value: string }
+export type PxKeySelectMenuItem = SelectMenuItem & { label: string; value: string }
 
-const keysForSelection : Ref<PxKeySelectMenuItem[]> = computed(() => {
-  return pxKeyDefinitions.value.map((def) => ({label: def.name, value: def.id}))
+const keysForSelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
+  return pxKeyDefinitions.value.map((def) => ({ label: def.name, value: def.id }))
 })
 
 interface LockState {
@@ -114,16 +114,28 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           <UFormField label="Type" name="type" orientation="horizontal">
             <USelectMenu v-model="keyState.type" :items="keyTypes" :search-input="false" />
           </UFormField>
-          <UFormField label="Consumable" orientation="horizontal" description="Keys that can only be used once.">
+          <UFormField
+            label="Consumable"
+            orientation="horizontal"
+            description="Keys that can only be used once."
+          >
             <UCheckbox v-model="keyState.consumable" />
           </UFormField>
-          <UFormField label="Fixed" orientation="horizontal" description="Keys that are part of the environment, e.g. levers.">
+          <UFormField
+            label="Fixed"
+            orientation="horizontal"
+            description="Keys that are part of the environment, e.g. levers."
+          >
             <UCheckbox v-model="keyState.fixed" />
           </UFormField>
-          <UFormField label="Unique" orientation="horizontal" description="Keys that only exist once.">
-            <UCheckbox v-model="keyState.unique"  />
+          <UFormField
+            label="Unique"
+            orientation="horizontal"
+            description="Keys that only exist once."
+          >
+            <UCheckbox v-model="keyState.unique" />
           </UFormField>
-          <UButton type="submit" class="bottom-full">Create Key</UButton>
+          <UButton type="submit" :block="true" class="mt-4">Create Key</UButton>
         </UForm>
         <UScrollArea
           v-if="pxKeyDefinitions.length"
@@ -133,11 +145,11 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           class="w-full data-[orientation=horizontal]:h-96"
           :ui="{ viewport: 'gap-8 p-1' }"
         >
-            <PxKeyDefinitionCardDetailed
-              :definition="item"
-              @edit="handleUpdateKey"
-              @delete="deletePxKeyDefinition"
-            />
+          <PxKeyDefinitionCardDetailed
+            :definition="item"
+            @edit="handleUpdateKey"
+            @delete="deletePxKeyDefinition"
+          />
         </UScrollArea>
       </div>
     </div>
@@ -150,12 +162,23 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
             <UInput v-model="lockState.name" type="text" placeholder="Name" />
           </UFormField>
           <UFormField label="Unlock Mode" orientation="horizontal">
-            <USelectMenu v-model="lockState.unlock_mode" :items="unlockModes" :search-input="false" />
+            <USelectMenu
+              v-model="lockState.unlock_mode"
+              :items="unlockModes"
+              :search-input="false"
+            />
           </UFormField>
           <UFormField label="Unlocked By" orientation="horizontal">
-            <USelectMenu v-model="lockState.unlocked_by" :items="keysForSelection" :value-key="'value'" multiple :search-input="false" placeholder="Select Keys" />
+            <USelectMenu
+              v-model="lockState.unlocked_by"
+              :items="keysForSelection"
+              :value-key="'value'"
+              multiple
+              :search-input="false"
+              placeholder="Select Keys"
+            />
           </UFormField>
-          <UButton type="submit">Create Lock</UButton>
+          <UButton type="submit" :block="true" class="mt-4">Create Lock</UButton>
         </UForm>
 
         <UScrollArea
@@ -167,11 +190,11 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           :ui="{ viewport: 'gap-8 p-1' }"
         >
           <PxLockDefinitionCardDetailed
-              :definition="item"
-              :keys-for-selection="keysForSelection"
-              @edit="handleUpdateLock"
-              @delete="deletePxLockDefinition"
-            />
+            :definition="item"
+            :keys-for-selection="keysForSelection"
+            @edit="handleUpdateLock"
+            @delete="deletePxLockDefinition"
+          />
         </UScrollArea>
       </div>
     </div>

@@ -1,5 +1,4 @@
 ﻿<script setup lang="ts">
-
 const props = defineProps<{
   definition: PxKeyDefinition
 }>()
@@ -11,14 +10,17 @@ const emit = defineEmits<{
 
 const isBeingEdited = ref(false)
 
-type EditableKeyDefinition = Pick<PxKeyDefinition, 'name' | 'type' | 'consumable' | 'fixed' | 'unique'>
+type EditableKeyDefinition = Pick<
+  PxKeyDefinition,
+  'name' | 'type' | 'consumable' | 'fixed' | 'unique'
+>
 
-const editForm : Ref<EditableKeyDefinition> = ref({
+const editForm: Ref<EditableKeyDefinition> = ref({
   name: props.definition.name,
   type: props.definition.type,
   consumable: props.definition.consumable,
   fixed: props.definition.fixed,
-  unique: props.definition.unique
+  unique: props.definition.unique,
 })
 
 function startEdit() {
@@ -32,7 +34,7 @@ function confirmEdit() {
 
 function cancelEdit() {
   isBeingEdited.value = !isBeingEdited.value
-  editForm.value = {...props.definition}
+  editForm.value = { ...props.definition }
 }
 
 function emitDelete() {
@@ -45,14 +47,14 @@ const keyTypes = ref(['item', 'ability'])
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-key" class="size-5" />
-            <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
-                <NuxtLink :to="{ name: 'pxkeydefinitions-id', params: { id: props.definition.id } }">
-                {{ props.definition.name }}
-                </NuxtLink>
-            </h2>
-            <UTextarea v-else v-model="editForm.name" :rows="1" size="lg"/>
-        </div>
+        <UIcon name="i-lucide-key" class="size-5" />
+        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
+          <NuxtLink :to="{ name: 'pxkeydefinitions-id', params: { id: props.definition.id } }">
+            {{ props.definition.name }}
+          </NuxtLink>
+        </h2>
+        <UTextarea v-else v-model="editForm.name" :rows="1" size="lg" />
+      </div>
     </template>
 
     <template #default>
@@ -64,21 +66,21 @@ const keyTypes = ref(['item', 'ability'])
             this is a bit unclean as the value should be based on props.definition, 
             however props should not be used as v-model 
         -->
-        <UCheckbox v-model="editForm.consumable" :disabled="true" color="neutral"/>
+        <UCheckbox v-model="editForm.consumable" :disabled="true" color="neutral" />
         <b>Fixed</b>
-        <UCheckbox v-model="editForm.fixed" :disabled="true" color="neutral"/>
+        <UCheckbox v-model="editForm.fixed" :disabled="true" color="neutral" />
         <b>Unique</b>
-        <UCheckbox v-model="editForm.unique" :disabled="true" color="neutral"/>
+        <UCheckbox v-model="editForm.unique" :disabled="true" color="neutral" />
       </div>
       <div v-else class="grid grid-cols-2 gap-6">
         <b>Type</b>
-        <USelectMenu v-model="editForm.type" :items="keyTypes" :search-input="false"/>
+        <USelectMenu v-model="editForm.type" :items="keyTypes" :search-input="false" />
         <b>Consumable</b>
-        <UCheckbox v-model="editForm.consumable"/>
+        <UCheckbox v-model="editForm.consumable" />
         <b>Fixed</b>
-        <UCheckbox v-model="editForm.fixed"/>
+        <UCheckbox v-model="editForm.fixed" />
         <b>Unique</b>
-        <UCheckbox v-model="editForm.unique"/>
+        <UCheckbox v-model="editForm.unique" />
       </div>
     </template>
 
