@@ -18,6 +18,7 @@ const {
 } = usePxNodes()
 
 const { fetchById: fetchComponentById } = usePxComponents()
+const { fetchById: fetchPxKeyById } = usePxKeys()
 
 const emit = defineEmits<{
   (e: 'addForeignComponent', nodeId: string, componentId: string): void
@@ -65,6 +66,28 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
     fetchedNode.value.components.splice(index, 1)
   }
 }
+
+async function handleAddKey(nodeId: string, keyId: string) {
+  if (nodeId !== fetchedNode.value.id) {
+    emit('addForeignComponent', nodeId, keyId)
+    return
+  }
+
+  let addedKey
+  try {
+    addedKey = await fetchPxKeyById(keyId)
+  } catch (err) {
+    console.error(err)
+  }
+  fetchedNode.value.keys.push(addedKey!)
+}
+
+async function handleDeleteKey(nodeId: string, keyId: string) {
+  const index = fetchedNode.value.keys.findIndex((key) => key.id === keyId)
+  if (index > -1) {
+    fetchedNode.value.keys.splice(index, 1)
+  }
+}
 </script>
 
 <template>
@@ -80,6 +103,8 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
     :node="fetchedNode"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
+    @delete-key="handleDeleteKey"
+    @add-key="handleAddKey"
     @update="handleUpdate"
   />
 </template>

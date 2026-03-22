@@ -37,6 +37,7 @@ interface PxNode extends NamedEntity {
   name: string
   description: string
   components: PxComponent[]
+  keys: PxKey[]
   charts: PxChart[]
   created_at: string
   updated_at: string

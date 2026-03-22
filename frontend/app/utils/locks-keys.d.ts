@@ -31,6 +31,7 @@ interface PxLock {
   px_chart: string
   definition: string
   edge: string
+  count: number
   created_at: string
   updated_at: string
   owner: number | null
@@ -40,6 +41,7 @@ interface PxKey {
   id: string
   definition: string
   node: string
+  count: number
   created_at: string
   updated_at: string
   owner: number | null

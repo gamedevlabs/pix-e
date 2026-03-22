@@ -1,5 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { PxComponentCreationForm, PxNodeFixModal } from '#components'
+import PxKeyCreationForm from './PxLockKeyComponents/PxKeyCreationForm.vue';
 
 const props = defineProps<{
   node: PxNode
@@ -9,6 +10,7 @@ const emit = defineEmits<{
   (e: 'update', updatedNode: PxNode): void
   (e: 'delete', nodeId: string): void
   (e: 'deleteComponent' | 'addComponent', nodeId: string, componentId: string): void
+  (e: 'deleteKey' | 'addKey', nodeId: string, keyId: string): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -17,6 +19,7 @@ const pxNodesLLM = usePxNodesLLM()
 
 const overlay = useOverlay()
 const modal = overlay.create(PxComponentCreationForm)
+const keyModal = overlay.create(PxKeyCreationForm)
 
 const editForm = ref({
   name: props.node.name,
@@ -114,6 +117,16 @@ async function openFixModal() {
   })
   fixModal.open()
 }
+
+function handleDeleteKey(keyId: string) {
+  emit('deleteKey', props.node.id, keyId)
+}
+
+async function handleAddKey() {
+  const { nodeId, keyId } = await keyModal.open({ selectedNodeId: props.node.id }).result
+
+  emit('addKey', nodeId, keyId)
+}
 </script>
 
 <template>
@@ -140,6 +153,18 @@ async function openFixModal() {
               visualization-style="preview"
               :component="component"
               @delete="handleDeleteComponent"
+            />
+          </div>
+        </section>
+        <br />
+        <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
+        <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
+        <section class="grid grid-cols-1 gap-6">
+          <div v-for="pxKey in node.keys" :key="pxKey.id">
+            <PxKeyCard
+              visualization-style="preview"
+              :pxkey="pxKey"
+              @delete="handleDeleteKey"
             />
           </div>
         </section>
@@ -234,6 +259,7 @@ async function openFixModal() {
           <UButton color="primary" variant="soft" @click="handleAddComponent">
             Add Component
           </UButton>
+          <UButton color="primary" variant="soft" @click="handleAddKey">Add Key</UButton>
           <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>
