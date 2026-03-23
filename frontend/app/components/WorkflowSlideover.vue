@@ -8,6 +8,7 @@ import type { StepStatus } from '~/utils/workflow'
 const workflowSlideover = useWorkflowSlideover()
 const slideoverOpen = workflowSlideover.isOpen
 const openSteps = ref<Set<string>>(new Set())
+const isPinned = ref(true)
 
 // Phases picker should be less prominent; collapse by default.
 const phasesOpen = ref(false)
@@ -232,17 +233,41 @@ const handleNavigate = (route: string) => {
 <template>
   <USlideover
     v-model:open="slideoverOpen"
-    side="left"
+    side="right"
     :overlay="false"
     :modal="false"
-    :dismissible="false"
-    :close="{ icon: 'i-lucide-arrow-left' }"
-    title="Workflow Guide"
-    description="Pick a phase and continue your current step. Your progress is saved automatically."
+    :dismissible="!isPinned"
+    :close="false"
     :ui="{ content: 'max-w-xs xl:max-w-sm 2xl:max-w-sm' }"
     @update:open="(v) => (v ? workflowSlideover.open() : workflowSlideover.close())"
     @close="workflowSlideover.close()"
   >
+    <template #header>
+      <div class="w-full flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Workflow Guide</h3>
+          <div class="flex items-center gap-1">
+            <UButton
+              :icon="isPinned ? 'i-lucide-pin' : 'i-lucide-pin-off'"
+              :color="isPinned ? 'primary' : 'neutral'"
+              :variant="isPinned ? 'soft' : 'ghost'"
+              size="sm"
+              @click="isPinned = !isPinned"
+            />
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              @click="workflowSlideover.close()"
+            />
+          </div>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Pick a phase and continue your current step. Your progress is saved automatically.
+        </p>
+      </div>
+    </template>
     <template #body>
       <!-- Use a vertical layout where the active workflow takes most space, and phases are at the bottom. -->
       <div class="flex flex-col h-full pb-6">
