@@ -144,10 +144,11 @@ async function handleAddKey() {
       <div v-if="!isBeingEdited">
         <h2 class="font-semibold text-lg mb-2">Description</h2>
         <p>{{ props.node.description }}</p>
+        <USeparator class="mt-6" />
         <br />
         <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
         <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
-        <section class="grid grid-cols-1 gap-6">
+        <section class="flex flex-wrap gap-4">
           <div v-for="component in node.components" :key="component.id">
             <PxComponentCard
               visualization-style="preview"
@@ -156,6 +157,7 @@ async function handleAddKey() {
             />
           </div>
         </section>
+        <USeparator class="mt-6" />
         <br />
         <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
         <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
@@ -168,6 +170,7 @@ async function handleAddKey() {
             />
           </div>
         </section>
+        <USeparator class="mt-6" />
         <br />
         <h2 v-if="node.charts.length === 0" class="italic">
           This node is not associated to any charts.
