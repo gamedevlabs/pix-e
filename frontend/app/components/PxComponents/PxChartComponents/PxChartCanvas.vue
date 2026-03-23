@@ -171,7 +171,6 @@ async function handleAddContainerFromPanel() {
   emit('containerAdded')
 }
 
-
 const pxNodeIdsInPath = computed(() => {
   const nodes: Array<string | null> = []
   path.value.forEach((containerId) => {
