@@ -52,9 +52,22 @@ export interface ScriptSceneAnalysis {
   fab_search_keyword: string
   notes: string
 
+  asset_coverage: 'FOUND' | 'NOT_FOUND' | 'NOT_ANALYZED'
+
   created_at?: Date
   updated_at?: Date
 }
 export interface MovieScriptAnalysisResponse {
   result: ScriptSceneAnalysis[]
+}
+
+export interface RequiredAsset {
+  id: string
+  asset: string
+  project: string
+  name: string
+  purpose: string
+  description: string
+  create_at?: Date
+  updated_at?: Date
 }

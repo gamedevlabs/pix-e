@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from backend.llm import LLMOrchestrator, get_config
+from backend.llm import LLMOrchestrator, get_model_id
 from backend.llm.types import LLMRequest
 
 # Import handlers to trigger auto-registration
@@ -14,12 +14,6 @@ from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
 # Create your views here.
-
-
-def get_model_id(model_name: str) -> str:
-    """Map frontend model names to actual model IDs using orchestrator config."""
-    config = get_config()
-    return config.resolve_model_alias(model_name)
 
 
 def format_pillars_text(pillars: list[Pillar]) -> str:

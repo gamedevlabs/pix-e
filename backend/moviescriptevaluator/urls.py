@@ -5,6 +5,7 @@ from moviescriptevaluator.views import (
     MovieProjectView,
     MovieScriptAssets,
     MovieScriptViewSet,
+    RequiredAssetViewSet,
     ScriptSceneAnalysisViewSet,
 )
 
@@ -20,6 +21,9 @@ project_routers.register(
     r"script-scene-analysis",
     ScriptSceneAnalysisViewSet,
     basename="script-scene-analysis",
+)
+project_routers.register(
+    r"required-assets", RequiredAssetViewSet, basename="required-assets"
 )
 
 urlpatterns = [

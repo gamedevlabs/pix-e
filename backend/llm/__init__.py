@@ -6,7 +6,7 @@ Provides orchestration, model management, and operation handling.
 """
 
 # Configuration
-from llm.config import Config, get_config
+from llm.config import Config, get_config, get_model_id
 
 # Exceptions
 from llm.exceptions import (
@@ -57,6 +57,7 @@ __all__ = [
     # Configuration
     "Config",
     "get_config",
+    "get_model_id",
     # Exceptions
     "OrchestratorError",
     "ProviderError",

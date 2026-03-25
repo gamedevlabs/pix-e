@@ -8,6 +8,7 @@ Supports loading configuration from:
 - Direct initialization (for testing)
 """
 
+import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -75,6 +76,7 @@ class Config:
         default_factory=lambda: {
             "gemini": "gemini-2.0-flash-exp",
             "openai": "gpt-4o-mini",
+            "ollama": "gemma3:4b",
         }
     )
 
@@ -203,6 +205,8 @@ class Config:
                 return Path(env_value)
             elif cast_type == list:
                 return [s.strip() for s in env_value.split(",")]
+            elif cast_type == dict:
+                return json.loads(env_value)
             else:
                 return env_value
 
@@ -229,7 +233,11 @@ class Config:
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             model_aliases=get_setting(
                 "model_aliases",
-                {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini"},
+                {
+                    "gemini": "gemini-2.0-flash-exp",
+                    "openai": "gpt-4o-mini",
+                    "ollama": "gemma3:4b",
+                },
                 dict,
             ),
             # Storage
@@ -413,6 +421,12 @@ class Config:
 
 # This is loaded once and can be overridden
 _default_config: Optional[Config] = None
+
+
+def get_model_id(model_name: str) -> str:
+    """Map frontend model names to actual model IDs using orchestrator config."""
+    config = get_config()
+    return config.resolve_model_alias(model_name)
 
 
 def get_config() -> Config:
