@@ -97,13 +97,7 @@ export const useProjectWorkflow = () => {
 
     const newStatus: StepStatus = substep.status === 'complete' ? 'active' : 'complete'
 
-    const updated = await api.updateSubstepStatus(
-      'default',
-      targetId,
-      stepId,
-      substepId,
-      newStatus,
-    )
+    const updated = await api.updateSubstepStatus('default', targetId, stepId, substepId, newStatus)
 
     if (updated) {
       const idx = workflows.value.findIndex((w) => w.id === targetId)

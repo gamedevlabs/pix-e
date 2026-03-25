@@ -21,9 +21,7 @@ definePageMeta({
   <UContainer class="py-10 space-y-10">
     <!-- Hero Section -->
     <section class="text-center">
-      <h1 class="text-4xl font-bold mb-4">
-        Welcome to the player expectations section of pix:e 
-      </h1>
+      <h1 class="text-4xl font-bold mb-4">Welcome to the player expectations section of pix:e</h1>
       <p class="text-gray-500 dark:text-gray-400 mb-4">
         A data driven analytics platform that transforms unstructured Steam reviews into actionable
         player expectation insights.

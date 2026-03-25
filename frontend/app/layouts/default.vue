@@ -26,13 +26,14 @@ const projectWorkflow = useProjectWorkflow()
 const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
 const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const selectedId = projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
+  const selectedId =
+    projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === selectedId)
   return w?.meta?.title || 'Onboarding Wizard'
 })
 
 // PROJECT
-const { currentProjectId, currentProject, unselectProject, syncProjectFromUrl } = useProjectHandler()
+const { currentProjectId, syncProjectFromUrl } = useProjectHandler()
 syncProjectFromUrl()
 const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProjectId.value}` : ''))
 
@@ -402,7 +403,11 @@ const groups = computed(() => {
             <template #header="{ collapsed }">
               <!-- Keep header minimal to prevent overlap with body padding/scroll area -->
               <div class="w-full flex items-center">
-                <UIcon v-if="collapsed" name="i-lucide-panels-left-bottom" class="size-5 text-primary mx-auto" />
+                <UIcon
+                  v-if="collapsed"
+                  name="i-lucide-panels-left-bottom"
+                  class="size-5 text-primary mx-auto"
+                />
               </div>
             </template>
 

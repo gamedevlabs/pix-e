@@ -481,7 +481,7 @@ const handleCardClick = async (card: Card, event?: MouseEvent) => {
               :ui="{
                 body: 'p-5 flex-1 flex flex-col gap-4',
                 header: '',
-                footer: ''
+                footer: '',
               }"
               role="button"
               tabindex="0"
@@ -490,32 +490,41 @@ const handleCardClick = async (card: Card, event?: MouseEvent) => {
             >
               <!-- Top -->
               <div class="flex items-start justify-between gap-3">
-                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="rounded-lg p-2 bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 shrink-0">
-                       <UIcon v-if="module.icon" :name="module.icon" class="size-5" />
-                    </div>
-                    <div>
-                      <h3 class="font-semibold text-base text-gray-900 dark:text-white truncate">
-                        {{ module.label }}
-                      </h3>
-                      <p class="text-[10px] items-center font-medium text-primary-600 dark:text-primary-400 uppercase tracking-wider">Independent Module</p>
-                    </div>
-                 </div>
+                <div class="flex items-center gap-3 min-w-0">
+                  <div
+                    class="rounded-lg p-2 bg-primary-50 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 shrink-0"
+                  >
+                    <UIcon v-if="module.icon" :name="module.icon" class="size-5" />
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-base text-gray-900 dark:text-white truncate">
+                      {{ module.label }}
+                    </h3>
+                    <p
+                      class="text-[10px] items-center font-medium text-primary-600 dark:text-primary-400 uppercase tracking-wider"
+                    >
+                      Independent Module
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <!-- Content -->
-              <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed flex-1 line-clamp-2">
+              <p
+                class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed flex-1 line-clamp-2"
+              >
                 {{ module.description }}
               </p>
 
               <!-- Bottom -->
-              <div class="flex items-center justify-end pt-2 border-t border-gray-100 dark:border-gray-800/50 mt-auto">
-                <div class="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-1 group-hover:translate-x-0">
+              <div
+                class="flex items-center justify-end pt-2 border-t border-gray-100 dark:border-gray-800/50 mt-auto"
+              >
+                <div
+                  class="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-1 group-hover:translate-x-0"
+                >
                   <span>Launch Tool</span>
-                  <UIcon
-                    name="i-lucide-arrow-right"
-                    class="size-3"
-                  />
+                  <UIcon name="i-lucide-arrow-right" class="size-3" />
                 </div>
               </div>
             </UCard>

@@ -57,9 +57,16 @@ const formatRelativeTime = (dateString: string): string => {
     <div
       class="rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30 p-4 transition-colors duration-200"
     >
-      <UIcon name="i-lucide-plus" class="size-6 text-gray-400 group-hover:text-primary-600 dark:text-gray-500 dark:group-hover:text-primary-400" />
+      <UIcon
+        name="i-lucide-plus"
+        class="size-6 text-gray-400 group-hover:text-primary-600 dark:text-gray-500 dark:group-hover:text-primary-400"
+      />
     </div>
-    <p class="text-sm font-medium text-gray-500 group-hover:text-primary-600 dark:text-gray-400 dark:group-hover:text-primary-400 transition-colors">Create Project</p>
+    <p
+      class="text-sm font-medium text-gray-500 group-hover:text-primary-600 dark:text-gray-400 dark:group-hover:text-primary-400 transition-colors"
+    >
+      Create Project
+    </p>
   </UCard>
 
   <!-- Regular Project Card -->
@@ -69,8 +76,8 @@ const formatRelativeTime = (dateString: string): string => {
       :ui="{
         root: 'h-full flex flex-col',
         body: 'flex-1 p-5 flex flex-col gap-4',
-        header: '',     // No header slot
-        footer: ''      // No footer slot
+        header: '', // No header slot
+        footer: '', // No footer slot
       }"
       role="button"
       tabindex="0"
@@ -94,7 +101,7 @@ const formatRelativeTime = (dateString: string): string => {
             :text="props.initials || 'PR'"
             class="shrink-0 text-primary-700 bg-primary-100 dark:text-primary-200 dark:bg-primary-900/30 font-semibold ring-1 ring-primary-200 dark:ring-primary-900"
           />
-          
+
           <h3 class="font-semibold text-base text-gray-900 dark:text-white truncate">
             {{ props.label }}
           </h3>
@@ -102,7 +109,7 @@ const formatRelativeTime = (dateString: string): string => {
 
         <!-- 3-dot dropdown (only visible on hover/focus to keep it clean) -->
         <div class="shrink-0 -mr-2 -mt-2">
-           <UDropdownMenu :items="props.menuItems" class="project-menu-button">
+          <UDropdownMenu :items="props.menuItems" class="project-menu-button">
             <UButton
               icon="i-lucide-more-vertical"
               color="neutral"
@@ -123,19 +130,21 @@ const formatRelativeTime = (dateString: string): string => {
         >
           {{ props.description }}
         </p>
-        <p v-else class="text-sm text-gray-400 dark:text-gray-600 italic">
-          No description
-        </p>
+        <p v-else class="text-sm text-gray-400 dark:text-gray-600 italic">No description</p>
       </div>
 
       <!-- Bottom Meta -->
-      <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800/50 mt-auto">
+      <div
+        class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800/50 mt-auto"
+      >
         <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
           <UIcon name="i-lucide-clock" class="size-3" />
           <span>{{ props.updatedAt ? formatRelativeTime(props.updatedAt) : '—' }}</span>
         </div>
 
-        <div class="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-1 group-hover:translate-x-0">
+        <div
+          class="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-1 group-hover:translate-x-0"
+        >
           <span>Open</span>
           <UIcon name="i-lucide-arrow-right" class="size-3" />
         </div>

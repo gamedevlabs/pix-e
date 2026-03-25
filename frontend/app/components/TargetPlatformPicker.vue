@@ -16,6 +16,8 @@ const props = withDefaults(
   {
     label: 'Target Platforms',
     required: false,
+    error: '',
+    hint: '',
   },
 )
 
