@@ -53,7 +53,7 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
 <template>
   <div>
     <SimpleContentWrapper>
-      <template #header>Px Charts</template>
+      <template #header>Charts</template>
 
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="chart in pxCharts" :key="chart.id">

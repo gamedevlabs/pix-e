@@ -59,7 +59,7 @@ async function handleAddComponent() {
 <template>
   <div>
     <SimpleContentWrapper>
-      <template #header>Px Nodes</template>
+      <template #header>Nodes</template>
 
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="node in pxNodes" :key="node.id">

@@ -28,7 +28,7 @@ function handleDelete(id: string) {
 <template>
   <div>
     <SimpleContentWrapper>
-      <template #header>Px Components</template>
+      <template #header>Components</template>
 
       <SimpleCardSection>
         <div v-for="component in pxComponents" :key="component.id">
