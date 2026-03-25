@@ -32,7 +32,7 @@ const activeWorkflowTitle = computed(() => {
 })
 
 // PROJECT
-const { currentProjectId, syncProjectFromUrl } = useProjectHandler()
+const { currentProjectId, currentProject, unselectProject, syncProjectFromUrl } = useProjectHandler()
 syncProjectFromUrl()
 const projectQuery = computed(() => (currentProjectId.value ? `?id=${currentProjectId.value}` : ''))
 
@@ -118,7 +118,8 @@ const openNavValue = ref<string | undefined>(undefined)
 
 function normalizePath(p?: string) {
   const v = p ?? ''
-  return v.split('?')[0].replace(/\/$/, '') || '/'
+  const head = v.split('?')[0] ?? ''
+  return head.replace(/\/$/, '') || '/'
 }
 
 function isRouteTo(to: unknown): to is string {
@@ -397,20 +398,24 @@ const groups = computed(() => {
             resizable
             class="bg-elevated/25 relative"
             :ui="{ footer: 'lg:border-t lg:border-default' }"
-            style="margin-top: 52px"
           >
             <template #header="{ collapsed }">
-              <UDashboardSearchButton
-                :collapsed="collapsed"
-                class="w-full bg-transparent ring-default"
-              />
+              <!-- Keep header minimal to prevent overlap with body padding/scroll area -->
+              <div class="w-full flex items-center">
+                <UIcon v-if="collapsed" name="i-lucide-panels-left-bottom" class="size-5 text-primary mx-auto" />
+              </div>
             </template>
 
             <template #default="{ collapsed }">
-              <div class="flex flex-col h-full relative">
-                <USeparator class="my-2" />
-                <div class="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-2 mx-2 mb-2">
-                  <ProjectSelector :collapsed="collapsed" />
+              <div class="flex flex-col h-full">
+                <!-- Order: Project -> Search -> Modules -->
+                <div class="pt-2 flex flex-col gap-3">
+                  <ProjectSelector :collapsed="collapsed" variant="brand" />
+
+                  <UDashboardSearchButton
+                    :collapsed="collapsed"
+                    class="w-full bg-transparent ring-default"
+                  />
                 </div>
 
                 <UNavigationMenu
@@ -422,11 +427,12 @@ const groups = computed(() => {
                   :collapsible="true"
                   tooltip
                   popover
+                  class="mt-3"
                 />
 
                 <USeparator
                   :label="collapsed ? undefined : 'Standalone Tools'"
-                  class="my-2"
+                  class="my-3"
                   :ui="{ label: 'text-xs text-gray-400 dark:text-gray-500 px-2' }"
                 />
 
@@ -438,7 +444,7 @@ const groups = computed(() => {
                   popover
                 />
 
-                <div class="mt-auto w-full flex flex-col items-start px-2">
+                <div class="mt-auto w-full flex flex-col items-start">
                   <!-- Workflow trigger + Slideover -->
                   <OnboardingSlideOverButton
                     :collapsed="collapsed"
@@ -467,8 +473,8 @@ const groups = computed(() => {
 
           <UDashboardSearch v-model:open="searchOpen" :groups="groups" />
 
-          <!-- Panel wrapper: leave top margin to account for header; make this area fill vertical space and contain a scrollable slot -->
-          <div class="flex-1 min-h-0 overflow-hidden" style="margin-top: 52px">
+          <!-- Panel wrapper: make this area fill vertical space and contain a scrollable slot -->
+          <div class="flex-1 min-h-0 overflow-hidden">
             <UDashboardPanel class="h-full relative">
               <!-- Full-height scrollable content for any page that renders inside the dashboard -->
               <div class="h-full min-h-0 overflow-auto p-6">
