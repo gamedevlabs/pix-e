@@ -64,6 +64,35 @@ export interface PhaseTemplate {
 
 export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   {
+    id: 'user-onboarding',
+    title: 'Getting Started',
+    folder: 'Onboarding',
+    description: 'Create your account, log in, and set up your first project to get going.',
+    completionMessage:
+      "You've completed the Getting Started workflow! Your first project is ready — open it and begin your design journey.",
+    steps: [
+      {
+        id: 'user-onb-2',
+        name: 'Create your first project',
+        description: 'Set up a project so you can use the project workflows.',
+        route: '/create',
+        substeps: [
+          { id: 'user-onb-2-0', name: 'Open the Create page', route: '/create', description: 'Start the process of setting up your first project.' },
+          { id: 'user-onb-2-1', name: 'Project Information', route: '/create', description: 'Provide basic information for your new project.' },
+          { id: 'user-onb-2-2', name: 'Project Details', route: '/create', description: 'Fill in specific details about what your project entails.' },
+          { id: 'user-onb-2-3', name: 'Review Project Settings', route: '/create', description: 'Finalize and review your project configuration before creation.' },
+        ],
+      },
+      {
+        id: 'user-onb-3',
+        name: 'Done',
+        description: "You're ready to go!",
+        route: '/dashboard',
+        substeps: [],
+      },
+    ],
+  },
+  {
     id: 'onboarding',
     title: 'Have a Look Around',
     folder: 'Onboarding',
@@ -83,21 +112,21 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'onb-1-1',
             name: 'Open any module through the sidebar',
             route: undefined,
-            longDescription:
+            description:
                 'The sidebar is your main navigation tool. Each module represents a different part of your design process. Opening modules helps you understand how the tool is structured and how workflows are separated.',
           },
           {
             id: 'onb-1-2',
             name: 'Explore the project settings',
             route: '/edit',
-            longDescription:
+            description:
                 'Project settings define global parameters of your project. This includes naming, structure, and configuration that affect all modules. Understanding this helps you see how everything is connected.',
           },
           {
             id: 'onb-1-3',
             name: 'Try the search functionality',
             route: '/dashboard',
-            longDescription:
+            description:
                 'The search bar allows you to quickly find elements across your project. This becomes especially important as your project grows in complexity.',
           },
         ],
@@ -125,14 +154,14 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'pillars-1-1',
             name: 'Open Design Pillars',
             route: '/pillars',
-            longDescription:
+            description:
                 'This module is where you define your core design ideas. Each pillar represents a fundamental concept that should be reflected throughout your game.',
           },
           {
             id: 'pillars-1-2',
             name: 'Create a new pillar',
             route: '/pillars',
-            longDescription:
+            description:
                 'Create a pillar that represents a key aspect of your game (e.g., “Fast-paced combat” or “Emotional storytelling”). This will guide later design decisions.',
           },
         ],
@@ -148,14 +177,14 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'pillars-2-1',
             name: 'Generate feedback for your pillar',
             route: '/pillars',
-            longDescription:
+            description:
                 'The AI analyzes your pillar and provides feedback on clarity, completeness, and potential issues. This helps you identify weaknesses early.',
           },
           {
             id: 'pillars-2-2',
             name: 'Improve your pillar based on feedback',
             route: '/pillars',
-            longDescription:
+            description:
                 'Use the generated feedback to refine your pillar. This step helps you turn vague ideas into strong, actionable design principles.',
           },
         ],
@@ -171,7 +200,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'pillars-3-1',
             name: 'Write a detailed idea and generate feedback',
             route: '/pillars',
-            longDescription:
+            description:
                 'Expand your pillar with additional features or variations. Then generate feedback again to validate if your idea remains consistent and strong.',
           },
         ],
@@ -187,21 +216,21 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'pillars-4-1',
             name: 'Check coverage',
             route: '/pillars',
-            longDescription:
+            description:
                 'Coverage shows how well your pillars describe your game. Missing coverage may indicate unclear or incomplete design areas.',
           },
           {
             id: 'pillars-4-2',
             name: 'Identify contradictions',
             route: '/pillars',
-            longDescription:
+            description:
                 'Contradictions highlight conflicts between your pillars. Resolving these ensures a more coherent design.',
           },
           {
             id: 'pillars-4-3',
             name: 'Explore suggested additions',
             route: '/pillars',
-            longDescription:
+            description:
                 'The AI suggests additional ideas or improvements that could strengthen your design. These are optional but useful inspirations.',
           },
         ],
@@ -229,42 +258,42 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'px-1-1',
             name: 'Open Charts page',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Charts represent player journeys. Each chart is a high-level structure of how players move through your game.',
           },
           {
             id: 'px-1-2',
             name: 'Create a new chart',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Create a chart to start mapping your player experience. This acts as a container for your gameplay flow.',
           },
           {
             id: 'px-1-3',
             name: 'Open your chart',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Opening the chart brings you into the canvas where you can visually structure player flow.',
           },
           {
             id: 'px-1-4',
             name: 'Add a container',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Containers represent stages or segments of gameplay (e.g., tutorial, combat, exploration).',
           },
           {
             id: 'px-1-5',
             name: 'Add another container',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Adding multiple containers allows you to define progression or different gameplay phases.',
           },
           {
             id: 'px-1-6',
             name: 'Connect containers',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Connections define how players move between stages. This creates a flow of the experience.',
           },
         ],
@@ -280,28 +309,28 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'px-2-1',
             name: 'Create a component definition',
             route: '/pxcomponentdefinitions',
-            longDescription:
+            description:
                 'Component Definitions describe reusable gameplay elements (e.g., combat, dialogue, puzzle mechanics). These are building blocks for your nodes.',
           },
           {
             id: 'px-2-2',
             name: 'Create your first node',
             route: '/pxnodes',
-            longDescription:
+            description:
                 'A node represents a specific gameplay moment or interaction. Think of it as a concrete instance in your player experience.',
           },
           {
             id: 'px-2-3',
             name: 'Add a component to your node',
             route: '/pxnodes',
-            longDescription:
+            description:
                 'Attaching components defines what happens in that moment (e.g., player fights, explores, interacts).',
           },
           {
             id: 'px-2-4',
             name: 'Place a node inside a chart',
             route: '/pxcharts',
-            longDescription:
+            description:
                 'Placing nodes into containers connects your gameplay elements to the overall player journey.',
           },
         ],
@@ -329,14 +358,14 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'pe-1-1',
             name: 'Open Player Expectations',
             route: '/player-expectations',
-            longDescription:
+            description:
                 'This module collects and analyzes how players might interpret your design based on your inputs.',
           },
           {
             id: 'pe-1-2',
             name: 'Review sentiment analysis',
             route: '/sentiments',
-            longDescription:
+            description:
                 'Sentiment analysis shows whether elements are perceived positively, negatively, or neutrally. This helps you detect mismatches between intention and perception.',
           },
         ],
@@ -364,7 +393,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
             id: 'mse-1-1',
             name: 'Open Movie Script Evaluator',
             route: '/movie-script-evaluator',
-            longDescription:
+            description:
                 'This tool analyzes scripts and extracts structural and narrative insights. It’s useful for storytelling and virtual production workflows.',
           },
         ],
@@ -373,52 +402,6 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
   },
 ];
 
-
-// ─── Standalone onboarding template ──────────────────────────────────────────
-//
-// Shown to a user who has no projects yet.
-// Once the user creates their first project this is marked complete,
-// and subsequent projects skip it (the onboarding phase is pre-completed).
-
-export const ONBOARDING_TEMPLATE: PhaseTemplate = {
-  id: 'user-onboarding',
-  title: 'Getting Started',
-  folder: 'Onboarding',
-  description: 'Create your account, log in, and set up your first project to get going.',
-  completionMessage:
-    "You've completed the Getting Started workflow! Your first project is ready — open it and begin your design journey.",
-  steps: [
-    {
-      id: 'user-onb-1',
-      name: 'Create Account and Log In',
-      description: 'Sign up for a free account and log in to pix:e.',
-      route: '/login',
-      substeps: [
-        { id: 'user-onb-1-1', name: 'Open the login page', route: '/login' },
-        { id: 'user-onb-1-2', name: 'Create an account or log in', route: '/login' },
-      ],
-    },
-    {
-      id: 'user-onb-2',
-      name: 'Create your first project',
-      description: 'Set up a project so you can use the project workflows.',
-      route: '/create',
-      substeps: [
-        { id: 'user-onb-2-0', name: 'Open the Create page', route: '/create' },
-        { id: 'user-onb-2-1', name: 'Project Information', route: '/create' },
-        { id: 'user-onb-2-2', name: 'Project Details', route: '/create' },
-        { id: 'user-onb-2-3', name: 'Review Project Settings', route: '/create' },
-      ],
-    },
-    {
-      id: 'user-onb-3',
-      name: 'Done',
-      description: "You're ready to go!",
-      route: '/dashboard',
-      substeps: [],
-    },
-  ],
-}
 
 // ─── Instantiation helpers ────────────────────────────────────────────────────
 
@@ -452,21 +435,20 @@ function instantiateStep(t: StepTemplate, isFirst: boolean): WorkflowStep {
   }
 }
 
-/** Instantiate a single phase template into a WorkflowInstance for a given project. */
+/** Instantiate a single phase template into a WorkflowInstance. */
 function instantiatePhase(
   phase: PhaseTemplate,
-  projectId: string,
   isFirstPhase: boolean,
 ): WorkflowInstance {
   const now = new Date().toISOString()
   return {
-    id: `wf-${projectId}-${phase.id}`,
-    projectId,
+    id: `wf-user-${phase.id}`,
+    projectId: 'user',
     started_at: now,
     finished_at: null,
     currentStepIndex: 0,
     meta: {
-      scope: 'project',
+      scope: 'user',
       title: phase.title,
       folder: phase.folder,
       description: phase.description,
@@ -476,6 +458,111 @@ function instantiatePhase(
       step.orderIndex = i
       return step
     }),
+  }
+}
+
+/**
+ * Create a fresh set of WorkflowInstances for a user from the template.
+ */
+export function createUserWorkflows(): WorkflowInstance[] {
+  return WORKFLOW_TEMPLATE.map((phase, index) => {
+    return instantiatePhase(phase, index === 0)
+  })
+}
+
+// ─── In-memory emulator ───────────────────────────────────────────────────────
+
+export class WorkflowApiEmulator {
+  /** user id → list of phase workflow instances */
+  private userWorkflows: Record<string, WorkflowInstance[]> = {}
+  /** user id → active workflow id */
+  private activeWorkflowIds: Record<string, string> = {}
+
+  constructor() {
+    // Seed the workflows for the default user.
+    this.userWorkflows['default'] = createUserWorkflows()
+  }
+
+  // ── Active workflow id ─────────────────────────────────────────────────────
+
+  getActiveWorkflowId(scopeKey: string): string | null {
+    return this.activeWorkflowIds[scopeKey] ?? null
+  }
+
+  setActiveWorkflowId(scopeKey: string, id: string | null): void {
+    if (id) {
+      this.activeWorkflowIds[scopeKey] = id
+    } else {
+      const { [scopeKey]: _, ...rest } = this.activeWorkflowIds
+      this.activeWorkflowIds = rest
+    }
+  }
+
+  // ── User workflows ──────────────────────────────────────────────────────
+
+  /** Return all phase workflows for the user. */
+  async getUserWorkflows(userId: string = 'default'): Promise<WorkflowInstance[]> {
+    const list = this.userWorkflows[userId]
+    if (!list) {
+      this.userWorkflows[userId] = createUserWorkflows()
+      return JSON.parse(JSON.stringify(this.userWorkflows[userId]))
+    }
+    return JSON.parse(JSON.stringify(list))
+  }
+
+  async updateSubstepStatus(
+    userId: string,
+    workflowId: string,
+    stepId: string,
+    substepId: string,
+    status: StepStatus,
+  ): Promise<WorkflowInstance | null> {
+    const list = this.userWorkflows[userId]
+    if (!list) return null
+
+    const wf = list.find((w) => w.id === workflowId)
+    if (!wf) return null
+
+    const step = wf.steps.find((s) => s.id === stepId)
+    if (!step) return null
+
+    const substep = step.substeps.find((ss) => ss.id === substepId)
+    if (!substep) return null
+
+    const now = new Date().toISOString()
+    substep.status = status
+    if (status === 'complete') {
+      substep.finished_at = now
+    } else if (status === 'active') {
+      substep.started_at = now
+    }
+
+    // Update parent step status
+    const allSubsteps = step.substeps
+    if (allSubsteps.every((ss) => ss.status === 'complete')) {
+      step.status = 'complete'
+      step.finished_at = now
+    } else if (allSubsteps.some((ss) => ss.status === 'active' || ss.status === 'complete')) {
+      step.status = 'active'
+      step.started_at = step.started_at ?? now
+    }
+
+    // Update workflow status if all steps complete
+    if (wf.steps.every((s) => s.status === 'complete')) {
+      wf.finished_at = now
+    }
+
+    return JSON.parse(JSON.stringify(wf))
+  }
+
+  /** Mark a specific workflow as complete. */
+  async completeWorkflow(userId: string, workflowId: string): Promise<void> {
+    const list = this.userWorkflows[userId]
+    if (!list) return
+    const index = list.findIndex((w) => w.id === workflowId)
+    if (index !== -1 && list[index]) {
+      list[index] = markPhaseComplete(list[index])
+    }
   }
 }
 
@@ -498,169 +585,5 @@ function markPhaseComplete(instance: WorkflowInstance): WorkflowInstance {
         finished_at: now,
       })),
     })),
-  }
-}
-
-/**
- * Create a fresh set of WorkflowInstances for a project from the template.
- * The completed user-onboarding workflow is always prepended as the first entry
- * so it remains visible in the project's phase picker (marked done).
- */
-export function createProjectWorkflows(
-  projectId: string,
-  onboardingAlreadyDone: boolean,
-  completedUserOnboarding?: WorkflowInstance,
-): WorkflowInstance[] {
-  // Build the project-level phase instances
-  const phaseInstances = WORKFLOW_TEMPLATE.map((phase, index) => {
-    const isFirstPhase = index === 0
-    const instance = instantiatePhase(phase, projectId, isFirstPhase && !onboardingAlreadyDone)
-    if (isFirstPhase && onboardingAlreadyDone) {
-      return markPhaseComplete(instance)
-    }
-    return instance
-  })
-
-  // Prepend the completed user-onboarding snapshot so it always shows as the first phase
-  if (completedUserOnboarding) {
-    // Re-id it for this project so it doesn't clash across projects
-    const snapshot: WorkflowInstance = {
-      ...JSON.parse(JSON.stringify(completedUserOnboarding)),
-      id: `wf-${projectId}-user-onboarding`,
-      projectId,
-    }
-    return [snapshot, ...phaseInstances]
-  }
-
-  return phaseInstances
-}
-
-/** Create a fresh standalone onboarding WorkflowInstance for the user. */
-export function createOnboardingWorkflow(): WorkflowInstance {
-  const now = new Date().toISOString()
-  return {
-    id: 'wf-user-onboarding',
-    projectId: 'user',
-    started_at: now,
-    finished_at: null,
-    currentStepIndex: 0,
-    meta: {
-      scope: 'user',
-      title: ONBOARDING_TEMPLATE.title,
-      folder: ONBOARDING_TEMPLATE.folder,
-      description: ONBOARDING_TEMPLATE.description,
-    },
-    steps: ONBOARDING_TEMPLATE.steps.map((s, i) => {
-      const step = instantiateStep(s, i === 0)
-      step.orderIndex = i
-      return step
-    }),
-  }
-}
-
-// ─── In-memory emulator ───────────────────────────────────────────────────────
-
-export class WorkflowApiEmulator {
-  /** project id → list of phase workflow instances */
-  private projectWorkflows: Record<string, WorkflowInstance[]> = {}
-  /** user id → standalone onboarding instance */
-  private userWorkflows: Record<string, WorkflowInstance> = {}
-  /** project id (or 'user') → active workflow id */
-  private activeWorkflowIds: Record<string, string> = {}
-
-  constructor() {
-    // Seed the standalone onboarding workflow for the default user.
-    this.userWorkflows['default'] = createOnboardingWorkflow()
-  }
-
-  // ── Active workflow id ─────────────────────────────────────────────────────
-
-  getActiveWorkflowId(scopeKey: string): string | null {
-    return this.activeWorkflowIds[scopeKey] ?? null
-  }
-
-  setActiveWorkflowId(scopeKey: string, id: string | null): void {
-    if (id) {
-      this.activeWorkflowIds[scopeKey] = id
-    } else {
-      const { [scopeKey]: _, ...rest } = this.activeWorkflowIds
-      this.activeWorkflowIds = rest
-    }
-  }
-
-  // ── Project workflows ──────────────────────────────────────────────────────
-
-  /** Return all phase workflows for a project, or an empty array if none exist yet. */
-  async getWorkflowsByProjectId(projectId: string): Promise<WorkflowInstance[]> {
-    const list = this.projectWorkflows[projectId]
-    return list ? JSON.parse(JSON.stringify(list)) : []
-  }
-
-  /**
-   * Seed a project with a full set of workflows from the template.
-   * Pass `onboardingAlreadyDone: true` for projects created after the first one.
-   * Always prepends the current (completed) user-onboarding as the first phase.
-   */
-  async seedProject(
-    projectId: string,
-    onboardingAlreadyDone: boolean,
-  ): Promise<WorkflowInstance[]> {
-    const completedOnboarding = this.userWorkflows['default']
-      ? markPhaseComplete(JSON.parse(JSON.stringify(this.userWorkflows['default'])))
-      : undefined
-    const instances = createProjectWorkflows(projectId, onboardingAlreadyDone, completedOnboarding)
-    this.projectWorkflows[projectId] = JSON.parse(JSON.stringify(instances))
-    return JSON.parse(JSON.stringify(instances))
-  }
-
-  /** Persist a single workflow instance (upsert by id). */
-  async saveWorkflow(workflow: WorkflowInstance): Promise<WorkflowInstance> {
-    if (workflow.projectId === 'user') {
-      this.userWorkflows['default'] = JSON.parse(JSON.stringify(workflow))
-      return JSON.parse(JSON.stringify(workflow))
-    }
-
-    const list = this.projectWorkflows[workflow.projectId] ?? []
-    const idx = list.findIndex((w) => w.id === workflow.id)
-    if (idx === -1) list.push(workflow)
-    else list[idx] = workflow
-    this.projectWorkflows[workflow.projectId] = JSON.parse(JSON.stringify(list))
-    return JSON.parse(JSON.stringify(workflow))
-  }
-
-  // ── User onboarding workflow ───────────────────────────────────────────────
-
-  async getUserOnboardingWorkflow(userId = 'default'): Promise<WorkflowInstance | null> {
-    const w = this.userWorkflows[userId]
-    return w ? JSON.parse(JSON.stringify(w)) : null
-  }
-
-  /** Mark the standalone onboarding workflow as fully complete. */
-  async completeOnboardingWorkflow(userId = 'default'): Promise<void> {
-    const w = this.userWorkflows[userId]
-    if (!w) return
-    const completed = markPhaseComplete(w)
-    this.userWorkflows[userId] = completed
-
-    // Refresh the embedded snapshot in every project that was already seeded
-    for (const [projectId, list] of Object.entries(this.projectWorkflows)) {
-      const snapshotId = `wf-${projectId}-user-onboarding`
-      const idx = list.findIndex((x) => x.id === snapshotId)
-      const fresh: WorkflowInstance = {
-        ...JSON.parse(JSON.stringify(completed)),
-        id: snapshotId,
-        projectId,
-      }
-      if (idx !== -1) {
-        list[idx] = fresh
-      } else {
-        list.unshift(fresh)
-      }
-    }
-  }
-
-  /** Returns true if the user has at least one project seeded (i.e. has created a project). */
-  hasAnyProject(): boolean {
-    return Object.keys(this.projectWorkflows).length > 0
   }
 }

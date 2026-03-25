@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
@@ -59,32 +58,11 @@ onMounted(() => {
 })
 
 const { switchProject, projects, deleteProject } = useProjectHandler()
-const { loadForUser } = useProjectWorkflow()
 
 const username = computed(() => authentication.user.value?.username || 'Guest')
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
-// Load the user-level onboarding workflow when not logged in
-const projectWorkflow = useProjectWorkflow()
-const _overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
-const _activeWorkflowTitle = computed(() => {
-  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const activeId = projectWorkflow.activeWorkflowId?.value
-  const w = list.find((x) => x.id === activeId)
-  return w?.meta?.title || 'Getting Started'
-})
-
-onMounted(async () => {
-  if (!isLoggedIn.value) {
-    await loadForUser()
-  }
-})
-
-watch(isLoggedIn, async (loggedIn) => {
-  if (!loggedIn) {
-    await loadForUser()
-  }
-})
+// Onboarding wizard is only available when logged in, so we don't load workflows here
 
 const getInitials = (name: string): string =>
   name
@@ -191,8 +169,8 @@ const projectStats = computed(() => ({
 
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
-    <!-- Workflow button + slideover for logged-out users -->
-    <template v-if="!isLoggedIn">
+    <!-- Onboarding wizard is only available when logged in -->
+    <template v-if="isLoggedIn">
       <OnboardingSlideover />
     </template>
 

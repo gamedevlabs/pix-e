@@ -31,9 +31,7 @@ const activeWorkflowId = computed(() => projectWorkflow.activeWorkflowId?.value)
 
 // The workflow currently being *viewed* in the panel (may differ from activeWorkflowId)
 const viewedWorkflowId = computed(() => {
-  // Expose viewedWorkflowId from the composable if set, otherwise fall back to activeWorkflowId
-  // We read from the workflow itself since viewedWorkflowId is internal to the composable
-  return projectWorkflow.workflow.value?.id ?? activeWorkflowId.value
+  return projectWorkflow.viewedWorkflowId?.value ?? activeWorkflowId.value
 })
 
 // Load workflows depending on context:
@@ -151,7 +149,8 @@ const displayPhaseName = (folder: string) => folder.replace(/^\d+\s*-\s*/u, '')
 
 const getWorkflowStatus = (w: WorkflowInstance): StepStatus => {
   if (w.finished_at) return 'complete'
-  if (w.id === activeWorkflowId.value) return 'active'
+  // No single active phase anymore; highlight the currently viewed one.
+  if (w.id === viewedWorkflowId.value) return 'active'
   const total = w.steps.flatMap((s) => s.substeps).length
   const completed = w.steps
     .flatMap((s) => s.substeps)
@@ -470,12 +469,7 @@ const handleNavigate = (route: string) => {
                         </span>
 
                         <template #trailing>
-                          <span
-                            v-if="w.id === activeWorkflowId"
-                            class="text-[11px] text-primary font-semibold"
-                          >
-                            Active
-                          </span>
+                          <!-- No active state for phases/workflows anymore -->
                         </template>
                       </UButton>
                     </div>
