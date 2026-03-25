@@ -293,7 +293,7 @@ async function createNewProject() {
     // the new project's workflow list as the first phase.
     try {
       await toggleSubstep('user-onb-2', 'user-onb-2-3')
-      await completeOnboarding(created.id)
+      await completeOnboarding()
     } catch (e) {
       console.warn('Failed to complete onboarding workflow:', e)
     }
@@ -325,11 +325,11 @@ const platformOptions = platformConfigs
 
 // WORKFLOW (for workflow button)
 const projectWorkflow = useProjectWorkflow()
-const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
 const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const activeId = projectWorkflow.activeWorkflowId?.value
-  const w = list.find((x) => x.id === activeId)
+  const selectedId = projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === selectedId)
   return w?.meta?.title || 'Onboarding Wizard'
 })
 </script>

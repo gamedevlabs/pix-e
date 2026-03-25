@@ -73,7 +73,7 @@ const progressPercent = computed(() => {
 })
 
 const overallProgress = computed(() => {
-  return projectWorkflow.getProgress.value || 0
+  return projectWorkflow.getSelectedWorkflowProgress.value || 0
 })
 
 const currentStepIndex = computed(() => {

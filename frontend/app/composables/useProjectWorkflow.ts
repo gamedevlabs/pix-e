@@ -73,7 +73,7 @@ export const useProjectWorkflow = () => {
   /**
    * Marks a workflow phase as complete.
    */
-  const completeOnboarding = async () => {
+  const completeOnboarding = async (_projectId?: string) => {
     if (activeWorkflowId.value) {
       await api.completeWorkflow('default', activeWorkflowId.value)
       await loadForUser()
@@ -83,12 +83,12 @@ export const useProjectWorkflow = () => {
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   const toggleSubstep = async (stepId: string, substepId: string) => {
-    // IMPORTANT: mutations always apply to the *active* workflow instance
-    const list = workflows.value
-    const activeId = activeWorkflowId.value
-    if (!activeId) return
+    // Mutations should apply to the workflow the user is currently working on.
+    // If they selected a workflow in the slideover, that becomes the target.
+    const targetId = (viewedWorkflowId.value ?? activeWorkflowId.value) as string | null
+    if (!targetId) return
 
-    const wf = list.find((w) => w.id === activeId)
+    const wf = workflows.value.find((w) => w.id === targetId)
     if (!wf) return
 
     const step = wf.steps.find((s) => s.id === stepId)
@@ -99,14 +99,14 @@ export const useProjectWorkflow = () => {
 
     const updated = await api.updateSubstepStatus(
       'default',
-      activeId,
+      targetId,
       stepId,
       substepId,
-      newStatus
+      newStatus,
     )
 
     if (updated) {
-      const idx = workflows.value.findIndex((w) => w.id === activeId)
+      const idx = workflows.value.findIndex((w) => w.id === targetId)
       if (idx !== -1) {
         workflows.value[idx] = updated
       }
@@ -139,12 +139,32 @@ export const useProjectWorkflow = () => {
 
     // Selectors
     getProgress: computed(() => {
-      // Overall progress should be calculated across ALL phases, regardless of what is viewed.
+      // Back-compat: overall progress across ALL workflows.
       const all = workflows.value.flatMap((w) => w.steps.flatMap((s) => s.substeps))
       if (all.length === 0) return 0
       const completed = all.filter((ss) => ss.status === 'complete').length
       return Math.round((completed / all.length) * 100)
     }),
+
+    /** Progress for the currently selected workflow (viewed if set, otherwise active). */
+    getSelectedWorkflowProgress: computed(() => {
+      const wf = workflow.value
+      if (!wf) return 0
+      const all = wf.steps.flatMap((s) => s.substeps)
+      if (all.length === 0) return 0
+      const completed = all.filter((ss) => ss.status === 'complete').length
+      return Math.round((completed / all.length) * 100)
+    }),
+
+    /** Progress for a specific workflow id. */
+    getWorkflowProgressById: (id: string) => {
+      const wf = workflows.value.find((w) => w.id === id)
+      if (!wf) return 0
+      const all = wf.steps.flatMap((s) => s.substeps)
+      if (all.length === 0) return 0
+      const completed = all.filter((ss) => ss.status === 'complete').length
+      return Math.round((completed / all.length) * 100)
+    },
 
     getCurrentStep: computed(() => {
       // Current step is derived from the *viewed* workflow so steps show when selecting a phase.

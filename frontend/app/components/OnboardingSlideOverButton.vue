@@ -24,6 +24,7 @@ const workflowSlideover = useWorkflowSlideover()
 
 const pillLabel = computed(() => {
   if (props.progress === null || props.progress === undefined) return props.pillText
+  if (props.progress >= 100) return '✓'
   return `${props.progress}%`
 })
 </script>

@@ -23,11 +23,11 @@ const llmStore = useLLM()
 
 // WORKFLOW (for sidebar button)
 const projectWorkflow = useProjectWorkflow()
-const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
 const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const activeId = projectWorkflow.activeWorkflowId?.value
-  const w = list.find((x) => x.id === activeId)
+  const selectedId = projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === selectedId)
   return w?.meta?.title || 'Onboarding Wizard'
 })
 
@@ -116,8 +116,9 @@ const showSidebar = computed(() => {
 // Which parent item is currently expanded in the vertical NavigationMenu (Accordion)
 const openNavValue = ref<string | undefined>(undefined)
 
-function normalizePath(p: string) {
-  return (p || '').split('?')[0].replace(/\/$/, '') || '/'
+function normalizePath(p?: string) {
+  const v = p ?? ''
+  return v.split('?')[0].replace(/\/$/, '') || '/'
 }
 
 function isRouteTo(to: unknown): to is string {
@@ -258,8 +259,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
 watch(
   () => route.path,
   () => {
-    const active = computeActiveParentValue(links.value[0] || [], route.path)
-    openNavValue.value = active
+    openNavValue.value = computeActiveParentValue(links.value[0] || [], route.path)
   },
   { immediate: true },
 )

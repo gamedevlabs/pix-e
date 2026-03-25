@@ -21,11 +21,11 @@ const show = ref(false)
 const { loadForUser, toggleSubstep } = useProjectWorkflow()
 const projectWorkflow = useProjectWorkflow()
 
-const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
 const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const activeId = projectWorkflow.activeWorkflowId?.value
-  const w = list.find((x) => x.id === activeId)
+  const selectedId = projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
+  const w = list.find((x) => x.id === selectedId)
   return w?.meta?.title || 'Getting Started'
 })
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)

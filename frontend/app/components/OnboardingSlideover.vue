@@ -89,7 +89,7 @@ watch(
 // Computed
 const currentStepIndex = computed(() => projectWorkflow.workflow.value?.currentStepIndex ?? 0)
 const steps = computed(() => projectWorkflow.getSteps.value || [])
-const overallProgress = computed(() => projectWorkflow.getProgress.value || 0)
+const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
 const allWorkflowsDone = computed(() => projectWorkflow.allWorkflowsDone.value)
 
 const activeWorkflowTitle = computed(() => {
