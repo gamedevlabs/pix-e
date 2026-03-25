@@ -67,169 +67,312 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
     id: 'onboarding',
     title: 'Have a Look Around',
     folder: 'Onboarding',
-    description: 'Get familiar with the app — explore the modules and settings before diving in.',
+    description:
+        'Get familiar with how the app is structured. This phase helps you understand where to find things and how the different modules connect.',
     completionMessage:
-      "Nice exploration! You can continue with the Design Pillars phase whenever you're ready.",
+        "Nice exploration! You now have a basic understanding of the workspace. Continue with the Design Pillars phase to start shaping your game.",
     steps: [
       {
         id: 'onb-1',
-        name: 'Getting oriented',
-        description: 'Learn where things are and what each module does.',
+        name: 'Understand the Interface',
+        description:
+            'Before creating anything, learn how to navigate the system and where key features are located.',
         route: '/dashboard',
         substeps: [
-          { id: 'onb-1-1', name: 'Open any module through the sidebar', route: undefined },
-          { id: 'onb-1-2', name: 'Have a look at the project Settings', route: '/edit' },
-          { id: 'onb-1-3', name: 'Open the searchbar', route: '/dashboard' },
+          {
+            id: 'onb-1-1',
+            name: 'Open any module through the sidebar',
+            route: undefined,
+            longDescription:
+                'The sidebar is your main navigation tool. Each module represents a different part of your design process. Opening modules helps you understand how the tool is structured and how workflows are separated.',
+          },
+          {
+            id: 'onb-1-2',
+            name: 'Explore the project settings',
+            route: '/edit',
+            longDescription:
+                'Project settings define global parameters of your project. This includes naming, structure, and configuration that affect all modules. Understanding this helps you see how everything is connected.',
+          },
+          {
+            id: 'onb-1-3',
+            name: 'Try the search functionality',
+            route: '/dashboard',
+            longDescription:
+                'The search bar allows you to quickly find elements across your project. This becomes especially important as your project grows in complexity.',
+          },
         ],
       },
     ],
   },
+
   {
     id: 'pillars',
     title: 'Design Pillars',
     folder: 'Design & Validation',
-    description: 'Define the core pillars of your game design and validate them with AI feedback.',
+    description:
+        'Define the core ideas of your game. Design Pillars act as guiding principles that influence all later design decisions.',
     completionMessage:
-      'Great work on your Design Pillars! Your pillars are shaping the vision. Check out Player Experience next to start mapping the journey.',
+        'Great work! Your design pillars now define the foundation of your game. Next, you can map how players will experience these ideas.',
     steps: [
       {
         id: 'pillars-1',
         name: 'Create your first pillar',
-        description: 'Add a pillar and learn how the editor works.',
+        description:
+            'Start by defining a core idea that represents what your game is about.',
         route: '/pillars',
         substeps: [
-          { id: 'pillars-1-1', name: 'Open Design Pillars', route: '/pillars' },
-          { id: 'pillars-1-2', name: 'Create a new pillar', route: '/pillars' },
+          {
+            id: 'pillars-1-1',
+            name: 'Open Design Pillars',
+            route: '/pillars',
+            longDescription:
+                'This module is where you define your core design ideas. Each pillar represents a fundamental concept that should be reflected throughout your game.',
+          },
+          {
+            id: 'pillars-1-2',
+            name: 'Create a new pillar',
+            route: '/pillars',
+            longDescription:
+                'Create a pillar that represents a key aspect of your game (e.g., “Fast-paced combat” or “Emotional storytelling”). This will guide later design decisions.',
+          },
         ],
       },
       {
         id: 'pillars-2',
-        name: 'LLM Feedback for your Pillar',
-        description: 'Generate and act on LLM feedback for your first pillar.',
+        name: 'Validate your pillar with AI',
+        description:
+            'Use AI feedback to refine and strengthen your idea.',
         route: '/pillars',
         substeps: [
           {
             id: 'pillars-2-1',
-            name: 'Generate LLM feedback for your first pillar',
+            name: 'Generate feedback for your pillar',
             route: '/pillars',
+            longDescription:
+                'The AI analyzes your pillar and provides feedback on clarity, completeness, and potential issues. This helps you identify weaknesses early.',
           },
           {
             id: 'pillars-2-2',
-            name: 'Fix a pillar issue with AI',
+            name: 'Improve your pillar based on feedback',
             route: '/pillars',
+            longDescription:
+                'Use the generated feedback to refine your pillar. This step helps you turn vague ideas into strong, actionable design principles.',
           },
         ],
       },
       {
         id: 'pillars-3',
-        name: 'Get feedback on a new core idea',
-        description: 'Write a core idea, add additional features and generate LLM feedback.',
+        name: 'Expand your core idea',
+        description:
+            'Add more detail and explore how your idea could evolve.',
         route: '/pillars',
         substeps: [
           {
             id: 'pillars-3-1',
-            name: 'Write a new core idea, add additional features and then generate LLM feedback',
+            name: 'Write a detailed idea and generate feedback',
             route: '/pillars',
+            longDescription:
+                'Expand your pillar with additional features or variations. Then generate feedback again to validate if your idea remains consistent and strong.',
           },
         ],
       },
       {
         id: 'pillars-4',
-        name: 'Discover additional LLM features',
-        description: 'Generate feedback and learn how to interpret it.',
+        name: 'Understand AI analysis tools',
+        description:
+            'Learn how to interpret different types of AI feedback.',
         route: '/pillars',
         substeps: [
-          { id: 'pillars-4-1', name: 'Coverage', route: '/pillars' },
-          { id: 'pillars-4-2', name: 'Contradictions', route: '/pillars' },
-          { id: 'pillars-4-3', name: 'Additions', route: '/pillars' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'player-experience',
-    title: 'Player Experience',
-    folder: 'Design & Validation',
-    description: 'Build PX charts and node graphs to map out the complete player journey.',
-    completionMessage:
-      'Player Experience complete! Your PX chart and node graph are looking solid. Head over to Player Expectations to validate your design.',
-    steps: [
-      {
-        id: 'px-1',
-        name: 'Create your first chart',
-        description: 'Build your first chart and understand the canvas.',
-        route: '/pxcharts',
-        substeps: [
-          { id: 'px-1-1', name: 'Open Charts page', route: '/pxcharts' },
-          { id: 'px-1-2', name: 'Create a new chart', route: '/pxcharts' },
-          { id: 'px-1-3', name: 'Open chart by clicking on its name', route: '/pxcharts' },
-          { id: 'px-1-4', name: 'Add a new container via the Add Icon', route: '/pxcharts' },
-          { id: 'px-1-5', name: 'Add another container', route: '/pxcharts' },
-          { id: 'px-1-6', name: 'Connect both containers', route: '/pxcharts' },
-        ],
-      },
-      {
-        id: 'px-2',
-        name: 'Setup your first node',
-        description: 'Add nodes, connect them, and attach components.',
-        route: '/pxnodes',
-        substeps: [
-          { id: 'px-2-1', name: 'Add a Component Definition', route: '/pxcomponentdefinitions' },
-          { id: 'px-2-2', name: 'Create your first node', route: '/pxnodes' },
-          { id: 'px-2-3', name: 'Add a component to your new node', route: '/pxnodes' },
           {
-            id: 'px-2-4',
-            name: 'Open a chart and add a node to any container',
-            route: '/pxcharts',
+            id: 'pillars-4-1',
+            name: 'Check coverage',
+            route: '/pillars',
+            longDescription:
+                'Coverage shows how well your pillars describe your game. Missing coverage may indicate unclear or incomplete design areas.',
+          },
+          {
+            id: 'pillars-4-2',
+            name: 'Identify contradictions',
+            route: '/pillars',
+            longDescription:
+                'Contradictions highlight conflicts between your pillars. Resolving these ensures a more coherent design.',
+          },
+          {
+            id: 'pillars-4-3',
+            name: 'Explore suggested additions',
+            route: '/pillars',
+            longDescription:
+                'The AI suggests additional ideas or improvements that could strengthen your design. These are optional but useful inspirations.',
           },
         ],
       },
     ],
   },
+
   {
-    id: 'player-expectations',
-    title: 'Player Expectations',
+    id: 'player-experience',
+    title: 'Player Experience',
     folder: 'Design & Validation',
-    description: 'Capture and review player expectations with built-in sentiment analysis.',
+    description:
+        'Map how players move through your game. This phase helps you structure gameplay flow and interactions.',
     completionMessage:
-      "Validation done! You've captured and reviewed your player expectations. Why not explore the Movie Script Evaluator next?",
+        'Great! You’ve mapped out how players experience your game. Now you can validate whether this aligns with expectations.',
     steps: [
       {
-        id: 'pe-1',
-        name: 'Check out Player Expectations',
-        description: 'Open the page and inspect the sentiment analysis.',
-        route: '/player-expectations',
+        id: 'px-1',
+        name: 'Create your first experience flow',
+        description:
+            'Build a chart that represents how players move through your game.',
+        route: '/pxcharts',
         substeps: [
-          { id: 'pe-1-1', name: 'Open Player Expectations Page', route: '/player-expectations' },
-          { id: 'pe-1-2', name: 'Inspect Sentiment Analysis', route: '/sentiments' },
+          {
+            id: 'px-1-1',
+            name: 'Open Charts page',
+            route: '/pxcharts',
+            longDescription:
+                'Charts represent player journeys. Each chart is a high-level structure of how players move through your game.',
+          },
+          {
+            id: 'px-1-2',
+            name: 'Create a new chart',
+            route: '/pxcharts',
+            longDescription:
+                'Create a chart to start mapping your player experience. This acts as a container for your gameplay flow.',
+          },
+          {
+            id: 'px-1-3',
+            name: 'Open your chart',
+            route: '/pxcharts',
+            longDescription:
+                'Opening the chart brings you into the canvas where you can visually structure player flow.',
+          },
+          {
+            id: 'px-1-4',
+            name: 'Add a container',
+            route: '/pxcharts',
+            longDescription:
+                'Containers represent stages or segments of gameplay (e.g., tutorial, combat, exploration).',
+          },
+          {
+            id: 'px-1-5',
+            name: 'Add another container',
+            route: '/pxcharts',
+            longDescription:
+                'Adding multiple containers allows you to define progression or different gameplay phases.',
+          },
+          {
+            id: 'px-1-6',
+            name: 'Connect containers',
+            route: '/pxcharts',
+            longDescription:
+                'Connections define how players move between stages. This creates a flow of the experience.',
+          },
+        ],
+      },
+      {
+        id: 'px-2',
+        name: 'Define gameplay building blocks',
+        description:
+            'Use nodes and components to describe what actually happens in your game.',
+        route: '/pxnodes',
+        substeps: [
+          {
+            id: 'px-2-1',
+            name: 'Create a component definition',
+            route: '/pxcomponentdefinitions',
+            longDescription:
+                'Component Definitions describe reusable gameplay elements (e.g., combat, dialogue, puzzle mechanics). These are building blocks for your nodes.',
+          },
+          {
+            id: 'px-2-2',
+            name: 'Create your first node',
+            route: '/pxnodes',
+            longDescription:
+                'A node represents a specific gameplay moment or interaction. Think of it as a concrete instance in your player experience.',
+          },
+          {
+            id: 'px-2-3',
+            name: 'Add a component to your node',
+            route: '/pxnodes',
+            longDescription:
+                'Attaching components defines what happens in that moment (e.g., player fights, explores, interacts).',
+          },
+          {
+            id: 'px-2-4',
+            name: 'Place a node inside a chart',
+            route: '/pxcharts',
+            longDescription:
+                'Placing nodes into containers connects your gameplay elements to the overall player journey.',
+          },
         ],
       },
     ],
   },
+
+  {
+    id: 'player-expectations',
+    title: 'Player Expectations',
+    folder: 'Design & Validation',
+    description:
+        'Validate how players might perceive your game using sentiment analysis and expectation modeling.',
+    completionMessage:
+        "Great validation work! You now understand how your design might be perceived by players.",
+    steps: [
+      {
+        id: 'pe-1',
+        name: 'Explore player expectations',
+        description:
+            'Understand how your design aligns with player perception.',
+        route: '/player-expectations',
+        substeps: [
+          {
+            id: 'pe-1-1',
+            name: 'Open Player Expectations',
+            route: '/player-expectations',
+            longDescription:
+                'This module collects and analyzes how players might interpret your design based on your inputs.',
+          },
+          {
+            id: 'pe-1-2',
+            name: 'Review sentiment analysis',
+            route: '/sentiments',
+            longDescription:
+                'Sentiment analysis shows whether elements are perceived positively, negatively, or neutrally. This helps you detect mismatches between intention and perception.',
+          },
+        ],
+      },
+    ],
+  },
+
   {
     id: 'movie-script-evaluator',
     title: 'Movie Script Evaluator',
     folder: 'Discover More',
-    description: 'Explore the Movie Script Evaluator to analyse scripts for virtual production.',
+    description:
+        'Explore an additional tool for analyzing scripts and narratives in virtual production contexts.',
     completionMessage:
-      "You've completed the Movie Script Evaluator workflow! You're now fully equipped to evaluate scripts for virtual production.",
+        "Nice! You've explored all major features of the platform.",
     steps: [
       {
         id: 'mse-1',
-        name: 'Have a look at Movie Script Evaluator',
-        description: 'Open the Movie Script Evaluator and explore.',
+        name: 'Explore the evaluator',
+        description:
+            'Take a quick look at how scripts can be analyzed.',
         route: '/movie-script-evaluator',
         substeps: [
           {
             id: 'mse-1-1',
             name: 'Open Movie Script Evaluator',
             route: '/movie-script-evaluator',
+            longDescription:
+                'This tool analyzes scripts and extracts structural and narrative insights. It’s useful for storytelling and virtual production workflows.',
           },
         ],
       },
     ],
   },
-]
+];
+
 
 // ─── Standalone onboarding template ──────────────────────────────────────────
 //
