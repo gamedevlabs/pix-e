@@ -245,7 +245,7 @@ const handleNavigate = (route: string) => {
     <template #header>
       <div class="w-full flex flex-col gap-1">
         <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-gray-900 dark:text-white">Workflow Guide</h3>
+          <h3 class="font-semibold text-gray-900 dark:text-white">Onboarding Wizard</h3>
           <div class="flex items-center gap-1">
             <UButton
               :icon="isPinned ? 'i-lucide-pin' : 'i-lucide-pin-off'"

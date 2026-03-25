@@ -4,7 +4,7 @@ import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
 import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
-import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
+import OnboardingSlideOverButton from '~/components/OnboardingSlideOverButton.vue'
 import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
@@ -330,7 +330,7 @@ const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
   const activeId = projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === activeId)
-  return w?.meta?.title || 'Workflow Guide'
+  return w?.meta?.title || 'Onboarding Wizard'
 })
 </script>
 
@@ -338,11 +338,11 @@ const activeWorkflowTitle = computed(() => {
   <div>
     <!-- Workflow toggle button (bottom-left) styled like the sidebar trigger. -->
     <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
-      <WorkflowSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
+      <OnboardingSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
     </div>
 
     <!-- This ensures the actual slideover exists on this page (sidebar is hidden here). -->
-    <WorkflowSlideover />
+    <OnboardingSlideover />
 
     <UContainer class="py-10">
       <div class="max-w-3xl mx-auto">

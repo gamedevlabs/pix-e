@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import WorkflowSlideOverButton from '~/components/WorkflowSlideOverButton.vue'
+import OnboardingSlideOverButton from '~/components/OnboardingSlideOverButton.vue'
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed, ref, watch } from 'vue'
 import type { PageConfig } from '~/types/page-config'
@@ -28,7 +28,7 @@ const activeWorkflowTitle = computed(() => {
   const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
   const activeId = projectWorkflow.activeWorkflowId?.value
   const w = list.find((x) => x.id === activeId)
-  return w?.meta?.title || 'Workflow Guide'
+  return w?.meta?.title || 'Onboarding Wizard'
 })
 
 // PROJECT
@@ -440,12 +440,12 @@ const groups = computed(() => {
 
                 <div class="mt-auto w-full flex flex-col items-start px-2">
                   <!-- Workflow trigger + Slideover -->
-                  <WorkflowSlideOverButton
+                  <OnboardingSlideOverButton
                     :collapsed="collapsed"
                     :title="activeWorkflowTitle"
                     :progress="overallProgress"
                   />
-                  <WorkflowSlideover :collapsed="collapsed" />
+                  <OnboardingSlideover :collapsed="collapsed" />
 
                   <UNavigationMenu
                     :collapsed="collapsed"

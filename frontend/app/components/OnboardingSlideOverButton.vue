@@ -15,7 +15,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   collapsed: false,
-  title: 'Workflow Guide',
+  title: 'Onboarding Wizard',
   progress: null,
   pillText: 'Show',
 })

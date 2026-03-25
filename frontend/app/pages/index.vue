@@ -193,7 +193,7 @@ const projectStats = computed(() => ({
   <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
     <!-- Workflow button + slideover for logged-out users -->
     <template v-if="!isLoggedIn">
-      <WorkflowSlideover />
+      <OnboardingSlideover />
     </template>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
