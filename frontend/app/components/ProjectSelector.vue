@@ -56,17 +56,22 @@ const selectedTeam = computed(() => {
 
 const items = computed<DropdownMenuItem[][]>(() => {
   return [
-    projects.value.map((proj) => ({
-      label: proj.name,
-      avatar: {
-        src: proj.icon || undefined,
-        text: proj.icon ? undefined : getInitials(proj.name),
-        alt: proj.name,
-      },
-      onSelect() {
-        void switchProject(proj.id)
-      },
-    })),
+    projects.value.map((proj) => {
+      const isSelected = currentProject.value?.id === proj.id
+      return {
+        label: proj.name,
+        avatar: {
+          src: proj.icon || undefined,
+          text: proj.icon ? undefined : getInitials(proj.name),
+          alt: proj.name,
+        },
+        trailingIcon: isSelected ? 'i-lucide-check' : undefined,
+        class: isSelected ? 'bg-gray-100 dark:bg-gray-800' : undefined,
+        onSelect() {
+          void switchProject(proj.id)
+        },
+      }
+    }),
     [
       {
         label: 'New Project',
