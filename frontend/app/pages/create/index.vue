@@ -1,10 +1,11 @@
 ﻿<script setup lang="ts">
 import { reactive, ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
-import { genreSuggestions, platformConfigs, getPlatformConfig } from '~/utils/platformConfig'
+import { genreSuggestions, getPlatformConfig } from '~/utils/platformConfig'
 import { useProjectWorkflow } from '~/composables/useProjectWorkflow'
 import { useWorkflowSlideover } from '~/composables/useWorkflowSlideover'
 import OnboardingSlideOverButton from '~/components/OnboardingSlideOverButton.vue'
+import TargetPlatformPicker from '~/components/TargetPlatformPicker.vue'
 import type { WorkflowInstance } from '~/mock_data/mock_workflow'
 
 const { createProject, switchProject, fetchProjectById } = useProjectHandler()
@@ -320,9 +321,6 @@ function selectGenre(genre: string) {
   }
 }
 
-// Platform options now uses the shared configuration with icons
-const platformOptions = platformConfigs
-
 // WORKFLOW (for workflow button)
 const projectWorkflow = useProjectWorkflow()
 const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
@@ -514,25 +512,13 @@ const activeWorkflowTitle = computed(() => {
               <!-- Genre Suggestions -->
 
               <UFormField label="Target Platforms" required :error="errors.targetPlatform">
-                <UCheckboxGroup
+                <TargetPlatformPicker
                   v-model="form.targetPlatform"
-                  variant="table"
-                  indicator="hidden"
-                  :items="platformOptions"
                   :disabled="submitting"
-                >
-                  <template #label="{ item }">
-                    <div class="flex items-center gap-2">
-                      <UIcon :name="(item as any).icon" class="w-5 h-5" />
-                      <span>{{ (item as any).label }}</span>
-                    </div>
-                  </template>
-                </UCheckboxGroup>
-                <template #hint>
-                  <p class="text-xs text-gray-500 mt-2">
-                    Select the platforms you intend to release your game on.
-                  </p>
-                </template>
+                  required
+                  :error="errors.targetPlatform"
+                  hint="Select the platforms you intend to release your game on."
+                />
               </UFormField>
             </div>
 

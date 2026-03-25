@@ -1,7 +1,8 @@
 ﻿<script setup lang="ts">
 import { reactive, ref, computed, watch, onMounted } from 'vue'
 import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
-import { genreSuggestions, platformConfigs } from '~/utils/platformConfig'
+import { genreSuggestions } from '~/utils/platformConfig'
+import TargetPlatformPicker from '~/components/TargetPlatformPicker.vue'
 
 const { updateProject, fetchProjectById, syncProjectFromUrl, selectProject } = useProjectHandler()
 const router = useRouter()
@@ -294,22 +295,7 @@ watch(
                 </UFormField>
 
                 <!-- Target Platform -->
-                <UFormField label="Target Platform">
-                  <UCheckboxGroup
-                    v-model="formData.targetPlatform"
-                    variant="table"
-                    indicator="hidden"
-                    :items="platformConfigs"
-                    class="w-full"
-                  >
-                    <template #label="{ item }">
-                      <div class="flex items-center gap-2">
-                        <UIcon :name="item.icon" class="size-4" />
-                        <span>{{ item.label }}</span>
-                      </div>
-                    </template>
-                  </UCheckboxGroup>
-                </UFormField>
+                <TargetPlatformPicker v-model="formData.targetPlatform" label="Target Platform" />
               </div>
             </UCard>
           </div>
