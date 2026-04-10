@@ -13,7 +13,7 @@ from pxcharts.serializers import (
     PxChartDetailSerializer,
     PxChartEdgeSerializer,
     PxChartSerializer,
-    PxLockAssignmentSerializer
+    PxLockAssignmentSerializer,
 )
 
 

@@ -1,3 +1,3 @@
-export function usePxLocks() {
-  return useCrudForPxWithAuthentication<PxLock>('pxlocks/')
+export function usePxLocks(chartId: string | number) {
+  return useCrudForPxWithAuthentication<PxLock>(`api/pxcharts/${chartId}/pxlocks/`)
 }

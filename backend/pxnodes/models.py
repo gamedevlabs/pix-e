@@ -389,10 +389,10 @@ class PxKeyDefinition(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
 
     name = models.CharField(max_length=255)
-    
+
     TYPE_CHOICES = [("item", "Item"), ("ability", "Ability")]
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    
+
     consumable = models.BooleanField()
     fixed = models.BooleanField()
     unique = models.BooleanField()
@@ -411,9 +411,7 @@ class PxKeyDefinition(models.Model):
 class PxKeyAssignment(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
 
-    node = models.ForeignKey(
-        "PxNode", on_delete=models.CASCADE, related_name="keys"
-    )
+    node = models.ForeignKey("PxNode", on_delete=models.CASCADE, related_name="keys")
 
     definition = models.ForeignKey("PxKeyDefinition", on_delete=models.CASCADE)
     count = models.IntegerField()
@@ -434,10 +432,15 @@ class PxLockDefinition(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
 
     name = models.CharField(max_length=255)
-    
+
     unlocked_by = models.ManyToManyField(PxKeyDefinition)
 
-    UNLOCK_MODE_CHOICES = [("permanent", "Permanent"), ("temporary", "Temporary"), ("reversible", "Reversible"), ("collapsible", "Collapsible")]
+    UNLOCK_MODE_CHOICES = [
+        ("permanent", "Permanent"),
+        ("temporary", "Temporary"),
+        ("reversible", "Reversible"),
+        ("collapsible", "Collapsible"),
+    ]
     unlock_mode = models.CharField(max_length=20, choices=UNLOCK_MODE_CHOICES)
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -448,4 +451,4 @@ class PxLockDefinition(models.Model):
         unique_together = ["owner", "id"]
 
     def __str__(self):
-            return f"{self.name} ({self.type})"
+        return f"{self.name}"

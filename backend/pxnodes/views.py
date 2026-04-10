@@ -34,11 +34,11 @@ from .permissions import IsOwnerPermission
 from .serializers import (
     PxComponentDefinitionSerializer,
     PxComponentSerializer,
+    PxKeyAssignmentSerializer,
+    PxKeyDefinitionSerializer,
+    PxLockDefinitionSerializer,
     PxNodeDetailSerializer,
     PxNodeSerializer,
-    PxKeyDefinitionSerializer,
-    PxKeyAssignmentSerializer,
-    PxLockDefinitionSerializer
 )
 
 logger = logging.getLogger(__name__)

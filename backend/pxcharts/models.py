@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from pxnodes.models import PxNode, PxLockDefinition
+from pxnodes.models import PxLockDefinition, PxNode
 
 User = get_user_model()
 
@@ -117,6 +117,7 @@ class PxLockAssignment(models.Model):
 
     edge = models.ForeignKey(PxChartEdge, on_delete=models.CASCADE)
     definition = models.ForeignKey(PxLockDefinition, on_delete=models.CASCADE)
+    count = models.IntegerField()
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

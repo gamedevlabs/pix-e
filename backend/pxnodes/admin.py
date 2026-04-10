@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import PxComponent, PxComponentDefinition, PxNode, PxKeyDefinition, PxKeyAssignment, PxLockDefinition
+from .models import (
+    PxComponent,
+    PxComponentDefinition,
+    PxKeyAssignment,
+    PxKeyDefinition,
+    PxLockDefinition,
+    PxNode,
+)
 
 admin.site.register(PxNode)
 admin.site.register(PxComponent)

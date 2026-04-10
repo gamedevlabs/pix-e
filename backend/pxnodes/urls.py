@@ -28,22 +28,12 @@ router.register(
     basename="pxcomponentdefinition",
 )
 
-router.register(
-    r"pxkeydefinitions",
-    PxKeyDefinitionViewSet,
-    basename="pxkeydefinition"
-)
+router.register(r"pxkeydefinitions", PxKeyDefinitionViewSet, basename="pxkeydefinition")
+
+router.register(r"pxkeys", PxKeyAssignmentViewSet, basename="pxkeys")
 
 router.register(
-    r"pxkeys",
-    PxKeyAssignmentViewSet,
-    basename="pxkeys"
-)
-
-router.register(
-    r"pxlockdefinitions",
-    PxLockDefinitionViewSet,
-    basename="pxlockdefinition"
+    r"pxlockdefinitions", PxLockDefinitionViewSet, basename="pxlockdefinition"
 )
 
 urlpatterns = [

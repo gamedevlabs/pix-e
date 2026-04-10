@@ -2,7 +2,14 @@ from rest_framework import serializers
 
 from pxcharts.serializers import PxChartSerializer
 
-from .models import PxComponent, PxComponentDefinition, PxNode, PxKeyDefinition, PxKeyAssignment, PxLockDefinition
+from .models import (
+    PxComponent,
+    PxComponentDefinition,
+    PxKeyAssignment,
+    PxKeyDefinition,
+    PxLockDefinition,
+    PxNode,
+)
 
 
 class PxComponentSerializer(serializers.ModelSerializer):
@@ -156,7 +163,7 @@ class PxNodeDetailSerializer(serializers.ModelSerializer):
                 {"id": "Cannot update ID after creation."}
             )
         return super().update(instance, validated_data)
-    
+
 
 class PxLockDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -169,4 +176,3 @@ class PxLockDefinitionSerializer(serializers.ModelSerializer):
                 {"id": "Cannot update ID after creation."}
             )
         return super().update(instance, validated_data)
-
