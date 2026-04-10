@@ -15,7 +15,10 @@ export function usePxChartsCanvasApi(chartId: string) {
     createItem: createPxChartContainer,
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
-  const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+  const {
+    createItem: createPxEdge,
+    deleteItem: deletePxEdge,
+  } = usePxChartEdges(chartId)
 
   const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
 
@@ -37,6 +40,10 @@ export function usePxChartsCanvasApi(chartId: string) {
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
+    },
+    data: {
+      px_chart: chartId,
+      locks: [],
     },
   }
 
@@ -81,6 +88,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: e.targetHandle,
       markerEnd: edgeDefaultValues.markerEnd,
       type: edgeDefaultValues.type,
+      data: edgeDefaultValues.data,
     }))
   }
 
@@ -267,6 +275,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: connection.targetHandle,
       type: edgeDefaultValues.type,
       markerEnd: edgeDefaultValues.markerEnd,
+      data: edgeDefaultValues.data,
     })
   }
 
