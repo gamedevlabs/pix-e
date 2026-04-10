@@ -11,15 +11,16 @@ import {
   type NodeSelectionChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import { PxChartEdge } from '#components'
+import { PxChartEdge, PxLockEditForm } from '#components'
 const config = useRuntimeConfig()
-const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
   (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
 }>()
 
-const { screenToFlowCoordinate } = useVueFlow()
+const { screenToFlowCoordinate, onPaneReady, getSelectedEdges } = useVueFlow()
+
+const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const chartId = props.chartId
 const BASE_URL = config.public.apiBase + '/api'
@@ -29,6 +30,8 @@ const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
+
+const { items: pxChartEdges, fetchAll: fetchPxChartEdges } = usePxChartEdges(props.chartId)
 
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
@@ -49,10 +52,14 @@ const {
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
+  updateEdge,
 } = usePxChartsCanvasApi(chartId)
 
 const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } =
   usePxChartPathCalculation(nodes, edges)
+
+const overlay = useOverlay()
+const lockModal = overlay.create(PxLockEditForm)
 
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
@@ -171,6 +178,7 @@ onMounted(() => {
   fetchPxComponents()
   fetchPxComponentDefinitions()
   fetchPxChartContainers()
+  fetchPxChartEdges()
 })
 
 async function onNodeDragStop(event: NodeDragEvent) {
@@ -239,7 +247,7 @@ async function onNodesChange(changes: NodeChange[]) {
         break
       case 'select':
         defaultChanges.push(change)
-        await onSelectionChange(change)
+        await onNodeSelectionChange(change)
         break
     }
   }
@@ -310,7 +318,7 @@ async function removeFromSelected(idToRemove: string) {
   selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != idToRemove)
 }
 
-async function onSelectionChange(change: NodeSelectionChange) {
+async function onNodeSelectionChange(change: NodeSelectionChange) {
   // update record of selected nodes
   if (change.selected) {
     selectedNodesInOrder.value.push(change.id)
@@ -325,6 +333,15 @@ async function onSelectionChange(change: NodeSelectionChange) {
     await resetPathValue()
   }
   await updatePathHighlight()
+}
+
+async function handleEditLocks() {
+  if (!getSelectedEdges.value.length) return
+
+  const selectedEdge = getSelectedEdges.value[0]!
+  const pxChartEdge = pxChartEdges.value.find((pxEdge) => pxEdge.id === selectedEdge.id)!
+
+  const { _edgeId } = await lockModal.open({ selectedEdge: pxChartEdge, chartId: chartId }).result
 }
 </script>
 
@@ -343,6 +360,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
     v-else
     v-model:nodes="nodes"
     v-model:edges="edges"
+    class="max-h-full"
     :edge-types="edgeTypes"
     :apply-default="false"
     @node-drag-stop="onNodeDragStop"
@@ -378,7 +396,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
       />
     </template>
 
-    <Panel :position="'bottom-left'">
+    <Panel :position="'top-left'">
       <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
         <UButton
           size="xl"
@@ -386,6 +404,13 @@ async function onSelectionChange(change: NodeSelectionChange) {
           color="primary"
           @click="handleAddContainerFromPanel"
         />
+      </UTooltip>
+      <UTooltip
+        v-if="getSelectedEdges.length === 1"
+        text="Add or Edit Locks"
+        :content="{ align: 'center', side: 'right' }"
+      >
+        <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
       </UTooltip>
     </Panel>
 
