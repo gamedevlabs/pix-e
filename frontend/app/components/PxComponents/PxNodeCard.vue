@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { VNodeChild } from 'vue'
+
 const props = defineProps({
   nodeId: {
     type: String as PropType<string>,

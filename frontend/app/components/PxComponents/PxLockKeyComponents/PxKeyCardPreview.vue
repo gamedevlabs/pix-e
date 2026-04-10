@@ -11,8 +11,9 @@ function emitDelete() {
 </script>
 <template>
   <UFieldGroup>
-    <UButton :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }" variant="outline" >
-      <p>{{ props.pxkey.count }}x</p><p class="font-semibold">{{ props.definition.name }}</p></UButton
+    <UButton :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }" variant="outline">
+      <p>{{ props.pxkey.count }}x</p>
+      <p class="font-semibold">{{ props.definition.name }}</p></UButton
     >
     <UButton color="error" icon="i-lucide-trash-2" :on-click="emitDelete" variant="subtle" />
   </UFieldGroup>

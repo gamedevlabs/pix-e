@@ -163,11 +163,7 @@ async function handleAddKey() {
         <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
         <section class="grid grid-cols-1 gap-6">
           <div v-for="pxKey in node.keys" :key="pxKey.id">
-            <PxKeyCard
-              visualization-style="preview"
-              :pxkey="pxKey"
-              @delete="handleDeleteKey"
-            />
+            <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
           </div>
         </section>
         <USeparator class="mt-6" />

@@ -31,12 +31,8 @@ function handleDelete(id: string) {
       <template #header>Px Keys</template>
 
       <SimpleCardSection>
-        <div v-for="component in pxKeys" :key="component.id">
-          <PxKeyCard
-            visualization-style="detailed"
-            :pxkey="component"
-            @delete="handleDelete"
-          />
+        <div v-for="pxkey in pxKeys" :key="pxkey.id">
+          <PxKeyCard visualization-style="detailed" :pxkey="pxkey" @delete="handleDelete" />
         </div>
       </SimpleCardSection>
     </SimpleContentWrapper>

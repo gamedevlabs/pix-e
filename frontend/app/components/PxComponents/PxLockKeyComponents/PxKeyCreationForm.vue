@@ -46,7 +46,7 @@ async function onSubmit() {
 
   if (enteredValue === undefined) return
 
-  const keyId : string = await createPxKey({
+  const keyId: string = await createPxKey({
     node: state.value.nodeRef,
     definition: state.value.definitionRef,
     count: enteredValue,
