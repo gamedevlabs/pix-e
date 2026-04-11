@@ -52,7 +52,7 @@ const {
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
-  updateEdge,
+  updateLocksOnEdge,
 } = usePxChartsCanvasApi(chartId)
 
 const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } =
@@ -341,7 +341,8 @@ async function handleEditLocks() {
   const selectedEdge = getSelectedEdges.value[0]!
   const pxChartEdge = pxChartEdges.value.find((pxEdge) => pxEdge.id === selectedEdge.id)!
 
-  const { _edgeId } = await lockModal.open({ selectedEdge: pxChartEdge, chartId: chartId }).result
+  const { edgeId } = await lockModal.open({ selectedEdge: pxChartEdge, chartId: chartId }).result
+  await updateLocksOnEdge(edgeId)
 }
 </script>
 

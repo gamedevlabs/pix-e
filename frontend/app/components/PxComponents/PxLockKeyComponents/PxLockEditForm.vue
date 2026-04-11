@@ -40,6 +40,7 @@ async function initialize() {
   await fetchPxLocks()
   //console.log('initializing state...')
 
+  let lockCount = 0
   pxLockDefinitions.value.forEach((def) => {
     const instance = pxLocks.value.find(
       (lock) => lock.edge === props.selectedEdge.id && lock.definition === def.id,
@@ -52,6 +53,7 @@ async function initialize() {
         newCount: instance.count,
         lockId: instance.id,
       }
+      lockCount += instance.count
     } else {
       state.value[def.id] = {
         defId: def.id,
@@ -63,8 +65,8 @@ async function initialize() {
     }
   })
 
-  //console.log(`successfully initialized state. found ${Object.entries(state.value).length} locks for edge with id ${props.selectedEdge.id}`)
-  //console.log(`state: ${JSON.stringify(state.value)}`)
+  console.log(`successfully initialized state. found ${lockCount} locks for edge with id ${props.selectedEdge.id}`)
+  console.log(`initial state: ${JSON.stringify(state.value)}`)
 }
 
 async function onSubmit() {
@@ -78,9 +80,11 @@ async function onSubmit() {
         count: info.newCount,
       })
       info.lockId = lockId
+      console.log(`Created new lock with id ${lockId}`)
     } else if (info.lockId && info.currentCount > 0 && info.newCount === 0) {
       // delete existing lock
       await deletePxLock(info.lockId)
+      console.log(`Deleted lock with id ${info.lockId}`)
       info.lockId = undefined
     } else if (info.lockId && info.currentCount !== info.newCount) {
       // update existing lock
@@ -89,16 +93,21 @@ async function onSubmit() {
         definition: info.defId,
         count: info.newCount,
       })
+      console.log(`Updated lock with id ${info.lockId}`)
     }
     info.currentCount = info.newCount
   })
 
   emit('close', { edgeId: props.selectedEdge.id })
+  console.log(`updated state: ${JSON.stringify(state.value)}`)
 }
 </script>
 
 <template>
-  <UModal :title="'Add/Edit Locks'">
+  <UModal 
+  :title="'Add/Edit Locks'"
+  :close="{ onClick: () => emit('close', { edgeId: selectedEdge.id }) }"
+  >
     <template #body>
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
         <div v-for="entry in Object.entries(state)" :key="entry[0]">
