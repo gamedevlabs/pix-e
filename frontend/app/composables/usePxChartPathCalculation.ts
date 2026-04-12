@@ -5,6 +5,7 @@ import findIndex from 'lodash.findindex'
 export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>) {
   const { error: errorToast } = usePixeToast()
   const { items: pxLockDefinitions, fetchAll: fetchPxLockDefinitions } = usePxLockDefinitions()
+  const { items: pxKeyDefinitions, fetchAll: fetchPxKeyDefinitions } = usePxKeyDefinitions()
 
   const path = ref<string[]>([])
   //const pathIgnoringLocks = ref<string[]>([])
@@ -51,6 +52,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     // initialize
     if (!ignoreLocks) {
       await fetchPxLockDefinitions()
+      await fetchPxKeyDefinitions()
     }
 
     const q = [{ id: sourceId, prio: 0, keys: getKeys(sourceId) }]
@@ -101,6 +103,9 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
         const unlockedOutNodeIds = unlockedOutEdges.map((edge) => edge.target)
         outs = outs.filter((node) => unlockedOutNodeIds.includes(node.id))
+
+        // clean up inventory
+        inventory = inventory.filter(key => !pxKeyDefinitions.value.find(def => def.id === key.definition)!.fixed)
       }
 
       for (const out of outs) {
