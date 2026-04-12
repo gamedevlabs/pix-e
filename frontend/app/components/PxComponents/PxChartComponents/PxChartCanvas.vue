@@ -18,7 +18,7 @@ const emit = defineEmits<{
   (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
 }>()
 
-const { screenToFlowCoordinate, onPaneReady, getSelectedEdges } = useVueFlow()
+const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
 
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -55,8 +55,13 @@ const {
   updateLocksOnEdge,
 } = usePxChartsCanvasApi(chartId)
 
-const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } =
-  usePxChartPathCalculation(nodes, edges)
+const {
+  path,
+  calculatePathFromSelection,
+  resetPathCalculation,
+  updatePathHighlight,
+  updateEdgeStyling,
+} = usePxChartPathCalculation(nodes, edges)
 
 const overlay = useOverlay()
 const lockModal = overlay.create(PxLockEditForm)
@@ -198,6 +203,7 @@ async function onNodeDragStop(event: NodeDragEvent) {
 async function onConnect(connection: Connection) {
   await addEdge(connection)
   emit('edgeConnected')
+  fetchPxChartEdges()
   updatePath()
 }
 
@@ -330,9 +336,10 @@ async function onNodeSelectionChange(change: NodeSelectionChange) {
   if (selectedNodesInOrder.value.length >= 2) {
     await calculatePathFromSelection(selectedNodesInOrder.value)
   } else {
-    await resetPathValue()
+    await resetPathCalculation()
   }
   await updatePathHighlight()
+  await updateEdgeStyling()
 }
 
 async function handleEditLocks() {

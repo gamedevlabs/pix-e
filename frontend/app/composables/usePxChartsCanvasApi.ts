@@ -15,19 +15,10 @@ export function usePxChartsCanvasApi(chartId: string) {
     createItem: createPxChartContainer,
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
-  const {
-    createItem: createPxEdge,
-    deleteItem: deletePxEdge,
-  } = usePxChartEdges(chartId)
-  const {
-    fetchById: fetchPxNode,
-    fetchAll: fetchPxNodes,
-    items: pxNodes
-  } = usePxNodes()
-  const {
-    fetchAll: fetchPxLocks,
-    items: pxLocks
-  } = usePxLocks(chartId)
+  const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+  const { fetchById: fetchPxNode, fetchAll: fetchPxNodes, items: _pxNodes } = usePxNodes()
+  const { fetchAll: fetchPxLocks, items: pxLocks } = usePxLocks(chartId)
+  const { fetchAll: fetchPxKeys, items: pxKeys } = usePxKeys()
 
   const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
 
@@ -75,6 +66,7 @@ export function usePxChartsCanvasApi(chartId: string) {
 
     await fetchPxLocks()
     await fetchPxNodes()
+    await fetchPxKeys()
 
     nodes.value = data.containers.map((n: PxChartContainer) => ({
       id: n.id,
@@ -85,7 +77,12 @@ export function usePxChartsCanvasApi(chartId: string) {
       },
       height: n.layout.height,
       width: n.layout.width,
-      data: { name: n.name, content: n.content, px_chart: n.px_chart, keys: pxNodes.value.find((node) => node.id === n.content) },
+      data: {
+        name: n.name,
+        content: n.content,
+        px_chart: n.px_chart,
+        keys: pxKeys.value.filter((key) => key.node === n.content),
+      },
     }))
 
     edges.value = data.edges.map((e: PxChartEdge) => ({
@@ -96,7 +93,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: e.targetHandle,
       markerEnd: edgeDefaultValues.markerEnd,
       type: edgeDefaultValues.type,
-      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id) }
+      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id) },
     }))
   }
 
@@ -110,19 +107,19 @@ export function usePxChartsCanvasApi(chartId: string) {
   }
    */
 
-  async function getKeysForNode(nodeId: string | null) : Promise<PxKey[]> {
+  async function getKeysForNode(nodeId: string | null): Promise<PxKey[]> {
     // TODO: improve error handling
     if (!nodeId) {
-        return []
+      return []
     }
     const node = await fetchPxNode(nodeId)
     return node!.keys
   }
 
-  async function getLocksForEdge(edgeId: string | null) : Promise<PxLock[]> {
+  async function getLocksForEdge(edgeId: string | null): Promise<PxLock[]> {
     // TODO: improve error handling
     if (!edgeId) {
-        return []
+      return []
     }
     await fetchPxLocks()
     return pxLocks.value.filter((lock) => lock.edge === edgeId)
@@ -161,7 +158,7 @@ export function usePxChartsCanvasApi(chartId: string) {
         name: newContainerPayload.name,
         content: newContainerPayload.content,
         px_chart: chartId,
-        keys: []
+        keys: [],
       },
     })
   }
@@ -178,7 +175,9 @@ export function usePxChartsCanvasApi(chartId: string) {
     // frontend array, these attributes need to be put into data.
     let data = null
     if (updatedContainer.content !== undefined) {
-      data = merge(data, { data: { content: updatedContainer.content, keys: getKeysForNode(updatedContainer.content) } })
+      data = merge(data, {
+        data: { content: updatedContainer.content, keys: getKeysForNode(updatedContainer.content) },
+      })
     }
     if (updatedContainer.name) {
       data = merge(data, { data: { name: updatedContainer.name } })
@@ -288,7 +287,7 @@ export function usePxChartsCanvasApi(chartId: string) {
         target: connection.target,
         targetHandle: connection.targetHandle!,
         px_chart: chartId,
-        locks: []
+        locks: [],
       })
     } catch (err) {
       alert('Could not add edge: ' + err.message)
@@ -330,12 +329,14 @@ export function usePxChartsCanvasApi(chartId: string) {
   async function updateLocksOnEdge(edgeId: string) {
     const edge = edges.value.find((e) => e.id === edgeId)
     if (!edge) {
-        // TODO: improve error handling?
-        console.warn('Could not find edge.')
+      // TODO: improve error handling?
+      console.warn('Could not find edge.')
     } else {
-        edge.data.locks = await getLocksForEdge(edgeId)
-        console.log(`Updated locks on edge ${edgeId}. It now has ${edge.data.locks.length} locks.`)
-        console.log(`Locks ids on edge ${edgeId}: ${edge.data.locks.map(lock => lock.id).toString()}`)
+      edge.data.locks = await getLocksForEdge(edgeId)
+      console.log(`Updated locks on edge ${edgeId}. It now has ${edge.data.locks.length} locks.`)
+      console.log(
+        `Locks ids on edge ${edgeId}: ${edge.data.locks.map((lock) => lock.id).toString()}`,
+      )
     }
   }
 
@@ -356,6 +357,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     addEdge,
     applyDefaultEdgeChanges,
     deleteEdge,
-    updateLocksOnEdge
+    updateLocksOnEdge,
   }
 }
