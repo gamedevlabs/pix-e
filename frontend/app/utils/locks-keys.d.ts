@@ -17,7 +17,7 @@ interface PxLockDefinition {
 interface PxKeyDefinition {
   id: string
   name: string
-  type: PxKeyTypesType
+  key_type: PxKeyTypesType
   consumable: boolean
   fixed: boolean
   unique: boolean // can also be verified. alternatively: show summary with count of each key

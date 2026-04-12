@@ -9,8 +9,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update', updatedNode: PxNode): void
   (e: 'delete', nodeId: string): void
-  (e: 'deleteComponent' | 'addComponent', nodeId: string, componentId: string): void
-  (e: 'deleteKey' | 'addKey', nodeId: string, keyId: string): void
+  (e: 'deleteComponent' | 'addComponent' | 'deleteKey' | 'addKey' , nodeId: string, componentId: string): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -161,7 +160,7 @@ async function handleAddKey() {
         <br />
         <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
         <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
-        <section class="grid grid-cols-1 gap-6">
+        <section class="flex flex-wrap gap-4">
           <div v-for="pxKey in node.keys" :key="pxKey.id">
             <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
           </div>

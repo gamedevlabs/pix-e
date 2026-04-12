@@ -11,10 +11,12 @@ const {
   items: pxLocks,
 } = usePxLocks(props.chartId)
 const { items: pxLockDefinitions, fetchAll: fetchPxLockDefinitions } = usePxLockDefinitions()
+const { items: pxKeyDefinitions, fetchAll: fetchPxKeyDefinitions } = usePxKeyDefinitions()
 
 onMounted(() => {
   fetchPxLocks()
   fetchPxLockDefinitions()
+  fetchPxKeyDefinitions()
   initialize()
 })
 
@@ -24,6 +26,7 @@ export interface LockInfo {
   currentCount: number
   newCount: number
   lockId: string | undefined
+  unlockedBy: string[]
 }
 
 const emit = defineEmits<{
@@ -34,10 +37,17 @@ function getNameFromDefinitionId(defId: string) {
   return pxLockDefinitions.value.find((def) => def.id === defId)!.name
 }
 
+function getNamesOfUnlockingKeys(lockDef: PxLockDefinition) {
+  return lockDef.unlocked_by.map(
+    (keyId) => pxKeyDefinitions.value.find((keyDef) => keyDef.id === keyId)!.name,
+  )
+}
+
 const state: Ref<Record<string, LockInfo>> = ref({})
 
 async function initialize() {
   await fetchPxLocks()
+  await fetchPxKeyDefinitions()
   //console.log('initializing state...')
 
   let lockCount = 0
@@ -52,6 +62,7 @@ async function initialize() {
         currentCount: instance.count,
         newCount: instance.count,
         lockId: instance.id,
+        unlockedBy: getNamesOfUnlockingKeys(def),
       }
       lockCount += instance.count
     } else {
@@ -61,11 +72,14 @@ async function initialize() {
         currentCount: 0,
         newCount: 0,
         lockId: undefined,
+        unlockedBy: getNamesOfUnlockingKeys(def),
       }
     }
   })
 
-  console.log(`successfully initialized state. found ${lockCount} locks for edge with id ${props.selectedEdge.id}`)
+  console.log(
+    `successfully initialized state. found ${lockCount} locks for edge with id ${props.selectedEdge.id}`,
+  )
   console.log(`initial state: ${JSON.stringify(state.value)}`)
 }
 
@@ -104,9 +118,9 @@ async function onSubmit() {
 </script>
 
 <template>
-  <UModal 
-  :title="'Add/Edit Locks'"
-  :close="{ onClick: () => emit('close', { edgeId: selectedEdge.id }) }"
+  <UModal
+    :title="'Edit Locks on Edge'"
+    :close="{ onClick: () => emit('close', { edgeId: selectedEdge.id }) }"
   >
     <template #body>
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
@@ -124,6 +138,9 @@ async function onSubmit() {
               variant="outline"
               :color="entry[1].newCount ? 'primary' : 'neutral'"
             />
+            <UTooltip :text="entry[1].unlockedBy.toString()">
+              <UBadge label="🔑" color="neutral" variant="outline" />
+            </UTooltip>
           </UFieldGroup>
         </div>
 

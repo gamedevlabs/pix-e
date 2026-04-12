@@ -4,6 +4,7 @@ const props = defineProps<{
   definition?: PxKeyDefinition
   node?: PxNode
   visualizationStyle: 'preview' | 'detailed'
+  readOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -50,9 +51,17 @@ async function handleDelete(id: string) {
 <template>
   <div v-if="!associatedNode || !associatedDefinition">Loading PxKey {{ pxkey.id }}</div>
   <PxKeyCardPreview
+    v-else-if="visualizationStyle === 'preview' && readOnly"
+    :pxkey="pxkey"
+    :definition="associatedDefinition!"
+    :readonly="true"
+  />
+
+  <PxKeyCardPreview
     v-else-if="visualizationStyle === 'preview'"
     :pxkey="pxkey"
     :definition="associatedDefinition!"
+    :readonly="false"
     @delete="handleDelete"
   />
 

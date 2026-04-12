@@ -19,6 +19,15 @@ const props = defineProps<{
         <h2 class="font-semibold text-lg mb-2">Description</h2>
         <p>{{ props.node.description }}</p>
       </div>
+      <div v-if="node.keys.length">
+        <USeparator class="py-6" />
+        <section class="flex flex-wrap gap-4">
+          🔑
+          <div v-for="pxKey in node.keys" :key="pxKey.id">
+            <PxKeyCard visualization-style="preview" :pxkey="pxKey" :read-only="true" />
+          </div>
+        </section>
+      </div>
     </template>
   </UCard>
 </template>

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-const props = defineProps<{ pxkey: PxKey; definition: PxKeyDefinition }>()
+const props = defineProps<{ pxkey: PxKey; definition: PxKeyDefinition; readonly: boolean }>()
 
 const emit = defineEmits<{
   (e: 'delete', id: string): void
@@ -15,7 +15,13 @@ function emitDelete() {
       <p>{{ props.pxkey.count }}x</p>
       <p class="font-semibold">{{ props.definition.name }}</p></UButton
     >
-    <UButton color="error" icon="i-lucide-trash-2" :on-click="emitDelete" variant="subtle" />
+    <UButton
+      v-if="!readonly"
+      color="error"
+      icon="i-lucide-trash-2"
+      :on-click="emitDelete"
+      variant="subtle"
+    />
   </UFieldGroup>
 </template>
 <style scoped></style>
