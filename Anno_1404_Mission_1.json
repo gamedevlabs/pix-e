@@ -1,0 +1,1288 @@
+{
+  "pxnodes": [
+    {
+      "id": "10f41907-53af-457b-8d35-fed5e8ecf268",
+      "name": "Mission I — A Declaration Of Faith",
+      "description": "In this mission, the player is introduced to the Emperor's cousin, Lord Richard Northburgh. The Lord is currently building an Emperor's Cathedral in his city Cathedral City to hope for God's assistance in the recovery of the Emperor. Lord Richard Northburgh acts as a mentor for the player and teaches them the basics of the game, while also asking for assistance in building the Cathedral. As the Lord has a much more prestigious city compared to the player, the Lord makes a great impression on the player and acts not just as a mentor, but also as a goal for what the player wants to achieve in their own playthroughs."
+    },
+    {
+      "id": "9ada7a7e-eff7-437c-bb6b-d040a22328f2",
+      "name": "The Emperor's Seal Bearer",
+      "description": "The player has to select Lord Richard Northburgh's Flagship to administer the player's oath of loyalty to the Emperor before gaining access to the island."
+    },
+    {
+      "id": "51441f5a-10f0-47b8-aef6-a44806a2bd06",
+      "name": "Profession of Faith",
+      "description": "This is the victory condition of the mission. The player has to build a chapel with multiple peasant buildings in its influence radius."
+    },
+    {
+      "id": "9af35ec7-5160-4382-89ed-61f1ee48f2ed",
+      "name": "The heart of the Settlement",
+      "description": "The player has to select their marketplace and gather information of their population."
+    },
+    {
+      "id": "73a8e8a6-f7b4-4d5a-a4bc-de60aa4535bf",
+      "name": "Safe as Houses",
+      "description": "The player is tasked with building three peasant buildings, slowly growing their settlement."
+    },
+    {
+      "id": "ca761411-57b1-4075-bb3a-eec666a196f8",
+      "name": "Among Crates and Shelves",
+      "description": "In this mission, the player has to click on the warehouse in order to get information on the current stock levels."
+    },
+    {
+      "id": "355e1223-58bb-4783-b925-6191767f97c3",
+      "name": "The essential Building material",
+      "description": "Building houses requires wood and currently, the island does not cut down any trees! Lord Richard Northburgh therefore tasks the player with constructing two lumberjacks, emphasizing the need to connect the lumberjacks to a warehouse in order to collect the goods."
+    },
+    {
+      "id": "af444361-575a-46a9-b209-04e06b5a18e7",
+      "name": "War on hunger",
+      "description": "The population might become hungry, as there are no fisherman's huts in Falconstone! Lord Richard Northburgh tasks the player with constructing one on Falconstone's beach."
+    },
+    {
+      "id": "d545a74e-4067-450e-b7ba-b81e84c36401",
+      "name": "Wood for the Imperial cathedral",
+      "description": "Lord Richard Northburgh is short on wood and notices the woodcutters on the player's island. He therefore asks the player to assist him and provide 10t of wood for the next step of building the Imperial cathedral."
+    },
+    {
+      "id": "4d07d7e9-10fc-4e42-9207-7336ec73ee83",
+      "name": "A floating gift",
+      "description": "As a thank you, Lord Richard Northburgh allows the player to take control of a small trade ship provided by him. The player has to click on it in order to take control."
+    },
+    {
+      "id": "7daca662-ca4f-49e9-8d4e-30373aa9e905",
+      "name": "With Sextant and Spy-glass I",
+      "description": "It looks like one of Lord Richard Northburgh's presents to the player went overboard when they left for Cathedral City. He asks the player to sail to the goods and collect them by clicking on it."
+    },
+    {
+      "id": "b713f76f-7446-44fd-bdc5-a08518c3c393",
+      "name": "With Sextant and Spy-glass II",
+      "description": "Having collected the tools, the Lord tells the player to sail back to Falconstone and transfer the tools to the city."
+    },
+    {
+      "id": "9bb9196e-3caf-4a37-bf24-47444fe6a853",
+      "name": "Fish on the table",
+      "description": "Lord Richard Northburgh has a second island nearby where his people produce building materials for the Imperial cathedral. It seems like they are hungry and the player is tasked with delivering 10t of fish to that island."
+    },
+    {
+      "id": "5fd14d64-7cce-4e1a-88f3-93c199e5ab1f",
+      "name": "Check the Storage",
+      "description": "This mission aims to assist the player to see whether they already have enough fish in their warehouse or not."
+    },
+    {
+      "id": "c28d0bbe-1e04-437d-a3a2-f1183f6aba60",
+      "name": "To Work!",
+      "description": "This quest helps the player to deliver the fish to the island. It tasks the player with transferring 10t of fish from the island's warehouse to their ship."
+    },
+    {
+      "id": "4d4bae4e-2300-4a19-abf0-45b105736b0a",
+      "name": "A worthy outcome",
+      "description": "Motivated by the delivery of fish, the stonemasons present the player with an intricately carved masonry to be used at the construction site of the Imperial cathedral. The stonemasons ask the player to deliver the masonry to Cathedral City as soon as possible."
+    },
+    {
+      "id": "3ca1a6fd-0c35-472d-b15c-add34d6337e3",
+      "name": "The missing Cargo",
+      "description": "While sailing around the map, Lord Richard Northburgh draws the player's attention to some flotsam. He makes it out as missing cargo for the construction site and asks the player to deliver it to his city."
+    },
+    {
+      "id": "ccaba0bb-1734-434c-9577-60e51315b51e",
+      "name": "More Peasant houses",
+      "description": "In order to provide housing for more than 90 peasants, the player has to construct six more peasant houses."
+    },
+    {
+      "id": "50cfad20-ffba-48ec-aaa8-7fa234090ebc",
+      "name": "Averting danger",
+      "description": "Thinking about a way to avoid similar accidents, Lord Richard Northburgh asks the player to map out the two reefs in the vicinity. When the ship is close to a reef, it will start to scout the reef and produce a map that can be taken to Cathedral city."
+    },
+    {
+      "id": "c86861f0-eb88-4106-b2f0-c3fd2a83ffe8",
+      "name": "Where is the Master builder?",
+      "description": "When clicking on the construction site of the Imperial cathedral, Lord Northburgh notices that the master builder is currently missing. The Lord asks you to find him in the city."
+    },
+    {
+      "id": "2ceec15b-e40c-4b8e-85dd-679aa68481e0",
+      "name": "Where is the Master builder? Not Started",
+      "description": "The player has not yet started the quest and needs to click on construction site of Lord Richard Northburgh's Imperial Cathedral."
+    },
+    {
+      "id": "b85f00a7-08da-4023-a987-7904bd229e5e",
+      "name": "Where is the Master builder? Finished",
+      "description": "The player has found the Master Builder and completed the quest."
+    },
+    {
+      "id": "89671e13-cc3b-43a0-bffe-1dc5008963ec",
+      "name": "The missing Cargo Not Started",
+      "description": "The player has not yet started the optional quest line of The missing Cargo."
+    },
+    {
+      "id": "3bd83c52-3c53-4e28-9ed0-0b70238488fb",
+      "name": "Averting danger Completed",
+      "description": "The player has completed the Averting danger quest line."
+    },
+    {
+      "id": "e91c13f2-d5a8-4664-b68d-00f0dfde2e94",
+      "name": "Where is the Master Builder? Quest Line",
+      "description": "This node refers to the entire Quest Line of Where is the Master Builder?"
+    },
+    {
+      "id": "c5b3a44a-ba83-4924-b211-0e5b25176c6a",
+      "name": "The missing Cargo Quest Line",
+      "description": "This node refers to the entire Quest Line of The missing Cargo."
+    },
+    {
+      "id": "f31f2a11-6346-4a19-abdf-4e58caf06433",
+      "name": "Mission I — Part I",
+      "description": "This node reflects the player experience during the first part of Mission I."
+    },
+    {
+      "id": "0ee25722-7957-425b-ba3b-511feecff698",
+      "name": "Mission I — Part II",
+      "description": "This node reflects the player experience during the second part of Mission I. This part introduces the optional POF-Questline."
+    },
+    {
+      "id": "a2437fb0-151b-4a5e-933d-48211e78fafc",
+      "name": "Mission I — Part III",
+      "description": "This node reflects the player experience during the third and final part of Mission I. As the player gets access to a ship, they can also start with the optional quest line The missing Cargo."
+    },
+    {
+      "id": "5abac85a-fa80-4da8-b8b7-2a2d90d6bcc5",
+      "name": "Softlocked State",
+      "description": "In this state, the mission progression does not continue and the player has to restart the mission."
+    },
+    {
+      "id": "a9895bbc-38da-4d60-a2fa-08385578d466",
+      "name": "Profession of Faith Completed",
+      "description": "The player has completed the Profession of Faith Quest."
+    },
+    {
+      "id": "f8d35760-29ef-4450-8793-7aae60e1bf74",
+      "name": "Finished",
+      "description": "The player finished the current chart."
+    },
+    {
+      "id": "0461fbf3-f99f-4e7c-b5ab-7f322b512697",
+      "name": "Mission Completed",
+      "description": "The player completed the mission."
+    },
+    {
+      "id": "170769f3-51de-47ab-85fd-7933ab961ca0",
+      "name": "Fish on the table Auxiliary Quests",
+      "description": "This node represents all the auxiliary quests required to complete the Fish on the table Quest Line"
+    },
+    {
+      "id": "11c808c1-42a5-4975-926d-dda242bae682",
+      "name": "Start",
+      "description": "Helper node to emphasize the entry of the chart."
+    },
+    {
+      "id": "7e97a9cc-685d-4b01-b0b2-3de5711fe98f",
+      "name": "More Peasant houses + A worthy outcome",
+      "description": "The player can currently work on one of the specified missions in the title."
+    },
+    {
+      "id": "4097bee6-d021-433f-9430-e78df1d2e449",
+      "name": "Fish on the table + More Peasant houses",
+      "description": "The player can currently work on one of the specified missions in the title."
+    }
+  ],
+  "pxcomponents": [
+    {
+      "id": "7061f16b-4910-4099-8f24-7cdebc6cc7d2",
+      "node": "10f41907-53af-457b-8d35-fed5e8ecf268",
+      "definition": "eed1ec72-e75c-4f57-91d3-f3d6cd4125e6",
+      "value": 20
+    },
+    {
+      "id": "6e1688cd-b339-4dc5-bf52-ca19efa24acb",
+      "node": "9ada7a7e-eff7-437c-bb6b-d040a22328f2",
+      "definition": "acf878e8-e01e-4f30-897d-ce7c42883ff7",
+      "value": true
+    },
+    {
+      "id": "ffb3cbb0-d5ac-476e-81be-92cb259924ce",
+      "node": "51441f5a-10f0-47b8-aef6-a44806a2bd06",
+      "definition": "8e6ed89a-04e9-4405-a933-c21d4b5b5eeb",
+      "value": true
+    },
+    {
+      "id": "33309ea9-31cb-4eba-b5a8-ae2d290db797",
+      "node": "51441f5a-10f0-47b8-aef6-a44806a2bd06",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "Complete the Mission"
+    },
+    {
+      "id": "1214d7af-3329-4939-9a42-d45d0eef7e27",
+      "node": "9af35ec7-5160-4382-89ed-61f1ee48f2ed",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "a68502d1-ccff-4c70-aa1a-1866daed176b",
+      "node": "51441f5a-10f0-47b8-aef6-a44806a2bd06",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "99993f60-e051-4958-9878-83fceddcca12",
+      "node": "9ada7a7e-eff7-437c-bb6b-d040a22328f2",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "cd53f7b9-77cc-47e6-8771-e2151f95e038",
+      "node": "73a8e8a6-f7b4-4d5a-a4bc-de60aa4535bf",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "140a37f9-c174-49f8-8404-384dd36985d4",
+      "node": "ca761411-57b1-4075-bb3a-eec666a196f8",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "f8f1da75-f1d9-489c-9bcd-7d76033d50cd",
+      "node": "355e1223-58bb-4783-b925-6191767f97c3",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "afa24275-cc5e-4d01-b2b1-c1d34c0c5796",
+      "node": "af444361-575a-46a9-b209-04e06b5a18e7",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "28abd6bd-bc0b-43bc-b3c3-c908b937027c",
+      "node": "d545a74e-4067-450e-b7ba-b81e84c36401",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "dfc904d8-e2fa-4cb7-aaf8-e36850aa796b",
+      "node": "d545a74e-4067-450e-b7ba-b81e84c36401",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "1000 Gold coins"
+    },
+    {
+      "id": "4ca9073b-fa68-40a5-b65b-8cffc0deec9d",
+      "node": "4d07d7e9-10fc-4e42-9207-7336ec73ee83",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "1 Small trade ship"
+    },
+    {
+      "id": "f03ae640-f929-4319-9aec-bdddc6379bd7",
+      "node": "7daca662-ca4f-49e9-8d4e-30373aa9e905",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "c510b8e6-212b-4cbf-8132-a5805cb97649",
+      "node": "4d07d7e9-10fc-4e42-9207-7336ec73ee83",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "cda3d7cc-baa8-44bc-b843-52c7104703ff",
+      "node": "b713f76f-7446-44fd-bdc5-a08518c3c393",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "39d009bf-99d2-490d-ba71-ed4569fad774",
+      "node": "9bb9196e-3caf-4a37-bf24-47444fe6a853",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "ba7fd1b2-2a92-4bc9-b94b-a48b892f2146",
+      "node": "4d4bae4e-2300-4a19-abf0-45b105736b0a",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "812654bb-6c09-4b81-932d-024e31956551",
+      "node": "4d4bae4e-2300-4a19-abf0-45b105736b0a",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "2500 Gold coins; 3t Tools"
+    },
+    {
+      "id": "15af0995-5468-4705-a3b8-e790d9a6bc2b",
+      "node": "3ca1a6fd-0c35-472d-b15c-add34d6337e3",
+      "definition": "86ad113b-df92-454c-8175-ed640788d4da",
+      "value": "Discover the small reef"
+    },
+    {
+      "id": "f039990d-9a6b-48e7-878d-dabe1f04a636",
+      "node": "3ca1a6fd-0c35-472d-b15c-add34d6337e3",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "1000 Gold coins; 2t Tools"
+    },
+    {
+      "id": "270393b8-b7f7-403d-8402-741abdbe584d",
+      "node": "ccaba0bb-1734-434c-9577-60e51315b51e",
+      "definition": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "value": true
+    },
+    {
+      "id": "60cbc06c-49d4-4122-acdf-0408d409c77a",
+      "node": "50cfad20-ffba-48ec-aaa8-7fa234090ebc",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "2500 Gold coins; 3t Tools"
+    },
+    {
+      "id": "c604a041-1848-4a08-94ac-fbee6b599390",
+      "node": "c86861f0-eb88-4106-b2f0-c3fd2a83ffe8",
+      "definition": "86ad113b-df92-454c-8175-ed640788d4da",
+      "value": "Click on the construction site of the Imperial cathedral in Cathedral city"
+    },
+    {
+      "id": "fdfddf9a-9e27-45b9-8bdd-b86952565ec1",
+      "node": "c86861f0-eb88-4106-b2f0-c3fd2a83ffe8",
+      "definition": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "value": "1500 Gold coins"
+    }
+  ],
+  "pxcomponentdefinitions": [
+    {
+      "id": "eed1ec72-e75c-4f57-91d3-f3d6cd4125e6",
+      "name": "Planned Time to Complete",
+      "type": "number"
+    },
+    {
+      "id": "da6af5de-5b9a-462b-917a-0d571805905c",
+      "name": "Is Mandatory",
+      "type": "boolean"
+    },
+    {
+      "id": "720a98f4-1655-4c1e-b6b5-4e91992d3f81",
+      "name": "Difficulty Setting",
+      "type": "string"
+    },
+    {
+      "id": "496aa65b-8071-416d-8745-4b1710f9813b",
+      "name": "Gameplay Intensity Modifier",
+      "type": "number"
+    },
+    {
+      "id": "8e6ed89a-04e9-4405-a933-c21d4b5b5eeb",
+      "name": "Is Victory Condition",
+      "type": "boolean"
+    },
+    {
+      "id": "86ad113b-df92-454c-8175-ed640788d4da",
+      "name": "Additional Requirement to Start Quest",
+      "type": "string"
+    },
+    {
+      "id": "10ec5014-90b5-4a47-b23d-ae7a79a1b1f0",
+      "name": "Reward",
+      "type": "string"
+    },
+    {
+      "id": "acf878e8-e01e-4f30-897d-ce7c42883ff7",
+      "name": "Is Initial Mission",
+      "type": "boolean"
+    },
+    {
+      "id": "30cff1fd-067e-4485-a1f0-567dd1d32325",
+      "name": "Repeatable X times",
+      "type": "number"
+    }
+  ],
+  "pxcharts": [
+    {
+      "id": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "name": "Mission 1 — Part I",
+      "description": "This chart contains the quests and the progression of Mission I Part I.",
+      "associatedNode": "10f41907-53af-457b-8d35-fed5e8ecf268"
+    },
+    {
+      "id": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "name": "Optional Quest Line Where Is The Master Builder",
+      "description": "This chart contains the possible states of the Quest Line Where is the Master Builder.",
+      "associatedNode": "10f41907-53af-457b-8d35-fed5e8ecf268"
+    },
+    {
+      "id": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "name": "Optional Quest Line The Missing Cargo",
+      "description": "This chart contains the possible states of the Quest Line The Missing Cargo.",
+      "associatedNode": "a2437fb0-151b-4a5e-933d-48211e78fafc"
+    },
+    {
+      "id": "d400557d-c0de-474c-b156-4b4145be207b",
+      "name": "Profession of Faith State Chart",
+      "description": "This chart contains the possible states of the Main Quest Profession of Faith",
+      "associatedNode": "0ee25722-7957-425b-ba3b-511feecff698"
+    },
+    {
+      "id": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "Mission I — Part II",
+      "description": "This chart contains the quests and the progression of Mission I Part II.",
+      "associatedNode": "0ee25722-7957-425b-ba3b-511feecff698"
+    },
+    {
+      "id": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "Mission I — Part III",
+      "description": "This chart contains the quests and the progression of Mission I Part III.",
+      "associatedNode": "a2437fb0-151b-4a5e-933d-48211e78fafc"
+    },
+    {
+      "id": "a91bdedf-1096-47bf-959a-3d381c145c05",
+      "name": "Fish on the table Auxiliary Quest Graph",
+      "description": "This chart contains the quests and progression of the Fish on the table Quest.",
+      "associatedNode": "170769f3-51de-47ab-85fd-7933ab961ca0"
+    }
+  ],
+  "pxchartcontainers": [
+    {
+      "id": "9849cb7a-4a92-45a6-93f5-635e48503151",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "name": "New Container",
+      "content": "9ada7a7e-eff7-437c-bb6b-d040a22328f2"
+    },
+    {
+      "id": "3c6ee61a-3269-42fb-b273-9a1b9c4fb88f",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "name": "New Container",
+      "content": "2ceec15b-e40c-4b8e-85dd-679aa68481e0"
+    },
+    {
+      "id": "12de5102-4e2b-4b34-8298-9633a553a458",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "name": "New Container",
+      "content": "b85f00a7-08da-4023-a987-7904bd229e5e"
+    },
+    {
+      "id": "804b8fd5-3b98-404c-965d-a167fcda4968",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "name": "New Container",
+      "content": "c86861f0-eb88-4106-b2f0-c3fd2a83ffe8"
+    },
+    {
+      "id": "2fd0fdf0-315a-4ce9-9724-a62183b5ac1c",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "name": "New Container",
+      "content": "50cfad20-ffba-48ec-aaa8-7fa234090ebc"
+    },
+    {
+      "id": "21a9f9ef-b807-4ccc-aa26-1b92e7957fa6",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "name": "New Container",
+      "content": "3ca1a6fd-0c35-472d-b15c-add34d6337e3"
+    },
+    {
+      "id": "a5dd32c5-2118-444a-ba73-3fbcc3354ad6",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "name": "New Container",
+      "content": "89671e13-cc3b-43a0-bffe-1dc5008963ec"
+    },
+    {
+      "id": "bb3397d3-fab8-4591-8ef4-1fc27b1a75bc",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "name": "New Container",
+      "content": "3bd83c52-3c53-4e28-9ed0-0b70238488fb"
+    },
+    {
+      "id": "40012d08-164e-42e7-9115-6b7cc4f82484",
+      "px_chart": "d400557d-c0de-474c-b156-4b4145be207b",
+      "name": "New Container",
+      "content": "51441f5a-10f0-47b8-aef6-a44806a2bd06"
+    },
+    {
+      "id": "53ea5e0f-1d46-4ee7-915a-b0fbf748f7d2",
+      "px_chart": "d400557d-c0de-474c-b156-4b4145be207b",
+      "name": "New Container",
+      "content": "a9895bbc-38da-4d60-a2fa-08385578d466"
+    },
+    {
+      "id": "2cd5b7b7-379c-452e-93ba-3869ab57edf1",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "name": "New Container",
+      "content": "5abac85a-fa80-4da8-b8b7-2a2d90d6bcc5"
+    },
+    {
+      "id": "29378516-799e-4127-a43e-1b2d0ca7f6a2",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "name": "New Container",
+      "content": "0ee25722-7957-425b-ba3b-511feecff698"
+    },
+    {
+      "id": "6664cb0c-fa64-48c1-a3c3-6b0d3bfa8c36",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "9af35ec7-5160-4382-89ed-61f1ee48f2ed"
+    },
+    {
+      "id": "508f6561-98b5-4505-a0a8-c13660a65948",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "73a8e8a6-f7b4-4d5a-a4bc-de60aa4535bf"
+    },
+    {
+      "id": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "ca761411-57b1-4075-bb3a-eec666a196f8"
+    },
+    {
+      "id": "50d2f419-00af-4897-b9d3-2ed914de0242",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "355e1223-58bb-4783-b925-6191767f97c3"
+    },
+    {
+      "id": "00c64992-2632-499e-beab-09a4f6c30581",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "af444361-575a-46a9-b209-04e06b5a18e7"
+    },
+    {
+      "id": "f51b8544-1ad6-469e-b47e-497e40fba757",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "d545a74e-4067-450e-b7ba-b81e84c36401"
+    },
+    {
+      "id": "ae80441f-756e-4ddb-9cbc-234c52584f17",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "4d07d7e9-10fc-4e42-9207-7336ec73ee83"
+    },
+    {
+      "id": "a9320ced-7310-4d15-8f0c-0baf9a6eaec4",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "a2437fb0-151b-4a5e-933d-48211e78fafc"
+    },
+    {
+      "id": "c09e08a4-8aa0-49ee-b2c7-c8a8bfd959c1",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "7daca662-ca4f-49e9-8d4e-30373aa9e905"
+    },
+    {
+      "id": "612b17a3-4f6e-4a8a-b01e-192decfd4dfb",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "b713f76f-7446-44fd-bdc5-a08518c3c393"
+    },
+    {
+      "id": "e33dd63c-9417-42d2-9eb3-a8766bca8b63",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "9bb9196e-3caf-4a37-bf24-47444fe6a853"
+    },
+    {
+      "id": "51df4965-5fa0-4717-854d-80291dae57b7",
+      "px_chart": "a91bdedf-1096-47bf-959a-3d381c145c05",
+      "name": "New Container",
+      "content": "c28d0bbe-1e04-437d-a3a2-f1183f6aba60"
+    },
+    {
+      "id": "72d004dc-ba8d-48ee-b712-f35d3bf5748e",
+      "px_chart": "a91bdedf-1096-47bf-959a-3d381c145c05",
+      "name": "New Container",
+      "content": "5fd14d64-7cce-4e1a-88f3-93c199e5ab1f"
+    },
+    {
+      "id": "316eb532-5fa4-4f1c-8895-3dcb1b4b91f5",
+      "px_chart": "a91bdedf-1096-47bf-959a-3d381c145c05",
+      "name": "New Container",
+      "content": "f8d35760-29ef-4450-8793-7aae60e1bf74"
+    },
+    {
+      "id": "ea5ec4fc-7fb9-4cec-82bc-3a7aad9b2c9d",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "name": "New Container",
+      "content": "11c808c1-42a5-4975-926d-dda242bae682"
+    },
+    {
+      "id": "ab6231e9-5309-43cc-a772-b9325c52550c",
+      "px_chart": "d400557d-c0de-474c-b156-4b4145be207b",
+      "name": "New Container",
+      "content": "11c808c1-42a5-4975-926d-dda242bae682"
+    },
+    {
+      "id": "45c92ca1-f5fe-43ed-be7f-26b7dc5b4b6b",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "name": "New Container",
+      "content": "11c808c1-42a5-4975-926d-dda242bae682"
+    },
+    {
+      "id": "2f1cb740-abfb-40b9-8dd5-70d5e00ee14a",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "name": "New Container",
+      "content": "11c808c1-42a5-4975-926d-dda242bae682"
+    },
+    {
+      "id": "b43475b8-9022-44db-b413-7847083d0943",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "11c808c1-42a5-4975-926d-dda242bae682"
+    },
+    {
+      "id": "872320a7-1f06-4628-bbfa-c53210a83023",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "170769f3-51de-47ab-85fd-7933ab961ca0"
+    },
+    {
+      "id": "3f2739e8-1198-4191-94b0-6f279413542c",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "4d4bae4e-2300-4a19-abf0-45b105736b0a"
+    },
+    {
+      "id": "db0e0f2f-ff0d-42f8-8cec-1676408adf03",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "f8d35760-29ef-4450-8793-7aae60e1bf74"
+    },
+    {
+      "id": "564ffb47-1def-4879-be5f-92e98abad43b",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "ccaba0bb-1734-434c-9577-60e51315b51e"
+    },
+    {
+      "id": "6f7499da-e967-485a-aeca-f2961ae1878b",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "7e97a9cc-685d-4b01-b0b2-3de5711fe98f"
+    },
+    {
+      "id": "a3d3e210-74fa-4076-af81-5920b9772216",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "name": "New Container",
+      "content": "4097bee6-d021-433f-9430-e78df1d2e449"
+    },
+    {
+      "id": "89f58ba6-5249-4ea4-83e3-3ae27b41988d",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "name": "New Container",
+      "content": "11c808c1-42a5-4975-926d-dda242bae682"
+    }
+  ],
+  "pxchartcontainerlayouts": [
+    {
+      "id": 886,
+      "container": "00c64992-2632-499e-beab-09a4f6c30581",
+      "position_x": 922.4959537685606,
+      "position_y": 726.5000447808687,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 884,
+      "container": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "position_x": 306.4328403956175,
+      "position_y": 683.4555674124415,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 872,
+      "container": "12de5102-4e2b-4b34-8298-9633a553a458",
+      "position_x": 1280.1058004136046,
+      "position_y": 255.79261866159334,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 875,
+      "container": "21a9f9ef-b807-4ccc-aa26-1b92e7957fa6",
+      "position_x": 47.08826688269363,
+      "position_y": -548.1438339551291,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 881,
+      "container": "29378516-799e-4127-a43e-1b2d0ca7f6a2",
+      "position_x": 440.03233711638455,
+      "position_y": 193.40790831334064,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 880,
+      "container": "2cd5b7b7-379c-452e-93ba-3869ab57edf1",
+      "position_x": -154.28445884429692,
+      "position_y": -263.63956971806357,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 899,
+      "container": "2f1cb740-abfb-40b9-8dd5-70d5e00ee14a",
+      "position_x": -492.62424458411016,
+      "position_y": -488.0919855755981,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 874,
+      "container": "2fd0fdf0-315a-4ce9-9724-a62183b5ac1c",
+      "position_x": 48.64177214180012,
+      "position_y": -34.233563788575196,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 895,
+      "container": "316eb532-5fa4-4f1c-8895-3dcb1b4b91f5",
+      "position_x": 806.9158350453051,
+      "position_y": 234.05574406989916,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 871,
+      "container": "3c6ee61a-3269-42fb-b273-9a1b9c4fb88f",
+      "position_x": 257,
+      "position_y": 230,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 902,
+      "container": "3f2739e8-1198-4191-94b0-6f279413542c",
+      "position_x": 1269.748808976908,
+      "position_y": -204.68270314676343,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 878,
+      "container": "40012d08-164e-42e7-9115-6b7cc4f82484",
+      "position_x": 306,
+      "position_y": 234,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 898,
+      "container": "45c92ca1-f5fe-43ed-be7f-26b7dc5b4b6b",
+      "position_x": -296.93613678199716,
+      "position_y": 240.5018391348903,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 883,
+      "container": "508f6561-98b5-4505-a0a8-c13660a65948",
+      "position_x": 308.98581853993653,
+      "position_y": 221.01908346539932,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 885,
+      "container": "50d2f419-00af-4897-b9d3-2ed914de0242",
+      "position_x": 922.5079995078518,
+      "position_y": 162.90703235030605,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 893,
+      "container": "51df4965-5fa0-4717-854d-80291dae57b7",
+      "position_x": 341,
+      "position_y": 202,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 879,
+      "container": "53ea5e0f-1d46-4ee7-915a-b0fbf748f7d2",
+      "position_x": 821.1078098700177,
+      "position_y": 258.9330786149614,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 904,
+      "container": "564ffb47-1def-4879-be5f-92e98abad43b",
+      "position_x": 1266.7173758438867,
+      "position_y": 318.2395122993236,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 891,
+      "container": "612b17a3-4f6e-4a8a-b01e-192decfd4dfb",
+      "position_x": -688.3099066863097,
+      "position_y": -160.84090517251713,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 882,
+      "container": "6664cb0c-fa64-48c1-a3c3-6b0d3bfa8c36",
+      "position_x": -298.24415663390795,
+      "position_y": 656.6371939983217,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 905,
+      "container": "6f7499da-e967-485a-aeca-f2961ae1878b",
+      "position_x": 351.57455977730643,
+      "position_y": 316.76831472247073,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 894,
+      "container": "72d004dc-ba8d-48ee-b712-f35d3bf5748e",
+      "position_x": -118.73413242139173,
+      "position_y": 206.14869835499707,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 873,
+      "container": "804b8fd5-3b98-404c-965d-a167fcda4968",
+      "position_x": 765.3281738204131,
+      "position_y": 232.60334099158655,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 901,
+      "container": "872320a7-1f06-4628-bbfa-c53210a83023",
+      "position_x": -172.12942619990082,
+      "position_y": -159.88477498113954,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 907,
+      "container": "89f58ba6-5249-4ea4-83e3-3ae27b41988d",
+      "position_x": -318.32172670128557,
+      "position_y": 259.7833238500253,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 649,
+      "container": "9849cb7a-4a92-45a6-93f5-635e48503151",
+      "position_x": -154.0104297736175,
+      "position_y": 193.25948665610986,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 906,
+      "container": "a3d3e210-74fa-4076-af81-5920b9772216",
+      "position_x": 351.27056482552473,
+      "position_y": -159.73637957753152,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 876,
+      "container": "a5dd32c5-2118-444a-ba73-3fbcc3354ad6",
+      "position_x": -491.8778295481234,
+      "position_y": -37.728581934737875,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 889,
+      "container": "a9320ced-7310-4d15-8f0c-0baf9a6eaec4",
+      "position_x": 1436.9591716469122,
+      "position_y": 1742.98076090626,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 897,
+      "container": "ab6231e9-5309-43cc-a772-b9325c52550c",
+      "position_x": -167.28954476026095,
+      "position_y": 257.85130164500293,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 888,
+      "container": "ae80441f-756e-4ddb-9cbc-234c52584f17",
+      "position_x": 919.6124725002671,
+      "position_y": 1737.0961742950797,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 900,
+      "container": "b43475b8-9022-44db-b413-7847083d0943",
+      "position_x": -1132.1438685058706,
+      "position_y": -599.6252000192908,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 877,
+      "container": "bb3397d3-fab8-4591-8ef4-1fc27b1a75bc",
+      "position_x": 547.6594395115512,
+      "position_y": 25.40615693698919,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 890,
+      "container": "c09e08a4-8aa0-49ee-b2c7-c8a8bfd959c1",
+      "position_x": -1146.8007098148842,
+      "position_y": -185.17627440434265,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 903,
+      "container": "db0e0f2f-ff0d-42f8-8cec-1676408adf03",
+      "position_x": 1818.4382060536723,
+      "position_y": 168.18357221479437,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 892,
+      "container": "e33dd63c-9417-42d2-9eb3-a8766bca8b63",
+      "position_x": 819.506491545478,
+      "position_y": -192.38877607446688,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 896,
+      "container": "ea5ec4fc-7fb9-4cec-82bc-3a7aad9b2c9d",
+      "position_x": -719.8985027034342,
+      "position_y": 217.2170982737166,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 887,
+      "container": "f51b8544-1ad6-469e-b47e-497e40fba757",
+      "position_x": 918.1054768962058,
+      "position_y": 1239.5296419816768,
+      "height": 0,
+      "width": 400
+    }
+  ],
+  "pxchartedges": [
+    {
+      "id": "fe374fb8-b29a-46ac-93c6-b442c5e4ab0d",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "source": "3c6ee61a-3269-42fb-b273-9a1b9c4fb88f",
+      "sourceHandle": "source-b",
+      "target": "804b8fd5-3b98-404c-965d-a167fcda4968",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "0cfc0f24-961c-40fd-93d8-05079162250b",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "source": "804b8fd5-3b98-404c-965d-a167fcda4968",
+      "sourceHandle": "source-b",
+      "target": "12de5102-4e2b-4b34-8298-9633a553a458",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "0dba2850-936a-4ab8-aa27-472d328b253a",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "source": "a5dd32c5-2118-444a-ba73-3fbcc3354ad6",
+      "sourceHandle": "source-b",
+      "target": "21a9f9ef-b807-4ccc-aa26-1b92e7957fa6",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "e0393d81-d40e-48da-867c-7313ebad2865",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "source": "2fd0fdf0-315a-4ce9-9724-a62183b5ac1c",
+      "sourceHandle": "source-b",
+      "target": "bb3397d3-fab8-4591-8ef4-1fc27b1a75bc",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "f08dbf99-382b-4806-9429-34c02039ed31",
+      "px_chart": "d400557d-c0de-474c-b156-4b4145be207b",
+      "source": "40012d08-164e-42e7-9115-6b7cc4f82484",
+      "sourceHandle": "source-b",
+      "target": "53ea5e0f-1d46-4ee7-915a-b0fbf748f7d2",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "f926af57-5346-489b-81f8-7b64aa2bfb66",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "source": "9849cb7a-4a92-45a6-93f5-635e48503151",
+      "sourceHandle": "source-a",
+      "target": "2cd5b7b7-379c-452e-93ba-3869ab57edf1",
+      "targetHandle": "target-c"
+    },
+    {
+      "id": "6eee8a74-4139-485c-804c-5ee761f037d1",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "source": "9849cb7a-4a92-45a6-93f5-635e48503151",
+      "sourceHandle": "source-b",
+      "target": "29378516-799e-4127-a43e-1b2d0ca7f6a2",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "66528762-a777-4910-82e0-ac15278e5512",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "6664cb0c-fa64-48c1-a3c3-6b0d3bfa8c36",
+      "sourceHandle": "source-b",
+      "target": "508f6561-98b5-4505-a0a8-c13660a65948",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "dc29ea32-235d-457f-9e3f-85fb014b8ae8",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "sourceHandle": "source-b",
+      "target": "50d2f419-00af-4897-b9d3-2ed914de0242",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "4901e718-4791-4e1b-aec7-fe841c10d13e",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "ae80441f-756e-4ddb-9cbc-234c52584f17",
+      "sourceHandle": "source-b",
+      "target": "a9320ced-7310-4d15-8f0c-0baf9a6eaec4",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "17d89f8c-0d4c-4fda-9e0e-fc10c241b7de",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "c09e08a4-8aa0-49ee-b2c7-c8a8bfd959c1",
+      "sourceHandle": "source-b",
+      "target": "612b17a3-4f6e-4a8a-b01e-192decfd4dfb",
+      "targetHandle": "source-d"
+    },
+    {
+      "id": "b75f2833-0fc2-4770-b9f3-8262a878c9da",
+      "px_chart": "a91bdedf-1096-47bf-959a-3d381c145c05",
+      "source": "72d004dc-ba8d-48ee-b712-f35d3bf5748e",
+      "sourceHandle": "source-b",
+      "target": "51df4965-5fa0-4717-854d-80291dae57b7",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "84173d5f-800a-4663-91dd-bdd9fe75b49c",
+      "px_chart": "a91bdedf-1096-47bf-959a-3d381c145c05",
+      "source": "51df4965-5fa0-4717-854d-80291dae57b7",
+      "sourceHandle": "source-b",
+      "target": "316eb532-5fa4-4f1c-8895-3dcb1b4b91f5",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "707f07b7-ab9e-4b77-bb85-6334347f995c",
+      "px_chart": "3e493eae-222c-4160-a8a8-abea13b8ee03",
+      "source": "ea5ec4fc-7fb9-4cec-82bc-3a7aad9b2c9d",
+      "sourceHandle": "source-b",
+      "target": "9849cb7a-4a92-45a6-93f5-635e48503151",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "28c438bc-af85-4656-97f3-2f79d3280635",
+      "px_chart": "d400557d-c0de-474c-b156-4b4145be207b",
+      "source": "ab6231e9-5309-43cc-a772-b9325c52550c",
+      "sourceHandle": "source-b",
+      "target": "40012d08-164e-42e7-9115-6b7cc4f82484",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "98ff3c5a-1d04-41a2-b369-74adaac9ac12",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "612b17a3-4f6e-4a8a-b01e-192decfd4dfb",
+      "sourceHandle": "source-b",
+      "target": "872320a7-1f06-4628-bbfa-c53210a83023",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "e309d5b3-d815-4008-9458-844b5ef9c980",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "612b17a3-4f6e-4a8a-b01e-192decfd4dfb",
+      "sourceHandle": "source-a",
+      "target": "e33dd63c-9417-42d2-9eb3-a8766bca8b63",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "92603fe2-0a53-411e-a46c-39e206c502ac",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "e33dd63c-9417-42d2-9eb3-a8766bca8b63",
+      "sourceHandle": "source-b",
+      "target": "3f2739e8-1198-4191-94b0-6f279413542c",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "7a14214f-9804-45b6-a560-1820a312e71d",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "3f2739e8-1198-4191-94b0-6f279413542c",
+      "sourceHandle": "source-b",
+      "target": "db0e0f2f-ff0d-42f8-8cec-1676408adf03",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "2e3ae3ea-c0b2-4ee7-befb-63df39f5e6cc",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "564ffb47-1def-4879-be5f-92e98abad43b",
+      "sourceHandle": "source-b",
+      "target": "db0e0f2f-ff0d-42f8-8cec-1676408adf03",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "08386621-5c69-4991-8411-3b64069bc0b4",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "872320a7-1f06-4628-bbfa-c53210a83023",
+      "sourceHandle": "source-a",
+      "target": "e33dd63c-9417-42d2-9eb3-a8766bca8b63",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "8161f928-4dc9-4178-9cb9-251c930c8383",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "872320a7-1f06-4628-bbfa-c53210a83023",
+      "sourceHandle": "source-b",
+      "target": "a3d3e210-74fa-4076-af81-5920b9772216",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "f8e8e279-c1a9-4458-a794-97724ac725e1",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "a3d3e210-74fa-4076-af81-5920b9772216",
+      "sourceHandle": "source-b",
+      "target": "e33dd63c-9417-42d2-9eb3-a8766bca8b63",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "c068b86c-c63e-45fe-8998-3200164707b3",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "a3d3e210-74fa-4076-af81-5920b9772216",
+      "sourceHandle": "source-c",
+      "target": "6f7499da-e967-485a-aeca-f2961ae1878b",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "5cec9592-5dda-4005-a866-138c496e3a1f",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "6f7499da-e967-485a-aeca-f2961ae1878b",
+      "sourceHandle": "source-b",
+      "target": "564ffb47-1def-4879-be5f-92e98abad43b",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "a52940f6-ab3a-479c-9ae5-339fdc63eb5b",
+      "px_chart": "d7d8578c-e82b-4f0f-b963-6effadec53ce",
+      "source": "89f58ba6-5249-4ea4-83e3-3ae27b41988d",
+      "sourceHandle": "source-b",
+      "target": "3c6ee61a-3269-42fb-b273-9a1b9c4fb88f",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "a115b06c-6a12-46fd-a116-cc2fc51f1e36",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "source": "2f1cb740-abfb-40b9-8dd5-70d5e00ee14a",
+      "sourceHandle": "source-c",
+      "target": "a5dd32c5-2118-444a-ba73-3fbcc3354ad6",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "2f631b79-4cf2-49e9-94bf-ab11e9801f3e",
+      "px_chart": "484edc7a-eda8-4eaf-9800-dde8014cf3bb",
+      "source": "21a9f9ef-b807-4ccc-aa26-1b92e7957fa6",
+      "sourceHandle": "source-c",
+      "target": "2fd0fdf0-315a-4ce9-9724-a62183b5ac1c",
+      "targetHandle": "source-a"
+    },
+    {
+      "id": "c5863250-bfd6-4edb-ba68-e445bc35dde3",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "45c92ca1-f5fe-43ed-be7f-26b7dc5b4b6b",
+      "sourceHandle": "source-c",
+      "target": "6664cb0c-fa64-48c1-a3c3-6b0d3bfa8c36",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "1ed7667a-e17d-4655-a0e4-a691c5eab85b",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "6664cb0c-fa64-48c1-a3c3-6b0d3bfa8c36",
+      "sourceHandle": "source-b",
+      "target": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "2195ec75-c76f-46c8-9487-2972625217cb",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "508f6561-98b5-4505-a0a8-c13660a65948",
+      "sourceHandle": "source-c",
+      "target": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "dfd739ff-c751-4312-9fc4-2b17e2381617",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "50d2f419-00af-4897-b9d3-2ed914de0242",
+      "sourceHandle": "source-c",
+      "target": "00c64992-2632-499e-beab-09a4f6c30581",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "8142e48b-4978-4886-8eb6-473727948b2a",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "sourceHandle": "source-b",
+      "target": "00c64992-2632-499e-beab-09a4f6c30581",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "e24cbd5b-4633-4611-a422-dabae24f8e34",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "05c85f0a-cbec-441a-af29-10489347bc7e",
+      "sourceHandle": "source-b",
+      "target": "f51b8544-1ad6-469e-b47e-497e40fba757",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "6159345a-33bd-4a8d-a334-933a79e0e702",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "00c64992-2632-499e-beab-09a4f6c30581",
+      "sourceHandle": "source-c",
+      "target": "f51b8544-1ad6-469e-b47e-497e40fba757",
+      "targetHandle": "source-a"
+    },
+    {
+      "id": "fa2147b5-e642-4c6d-bbd2-a59a33647532",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "50d2f419-00af-4897-b9d3-2ed914de0242",
+      "sourceHandle": "source-b",
+      "target": "f51b8544-1ad6-469e-b47e-497e40fba757",
+      "targetHandle": "target-b"
+    },
+    {
+      "id": "13d938a5-75e9-48b5-b260-8081b20792c3",
+      "px_chart": "9bc3d439-a907-487b-a739-35db7dbf66e4",
+      "source": "f51b8544-1ad6-469e-b47e-497e40fba757",
+      "sourceHandle": "source-c",
+      "target": "ae80441f-756e-4ddb-9cbc-234c52584f17",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "66821035-aab1-42de-bdee-b3eabc6c1123",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "612b17a3-4f6e-4a8a-b01e-192decfd4dfb",
+      "sourceHandle": "source-c",
+      "target": "a3d3e210-74fa-4076-af81-5920b9772216",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "df04f727-7bb5-47b1-b393-e0c4644a7daa",
+      "px_chart": "3f1c165d-58a5-466a-a7cf-d4b0b687f124",
+      "source": "b43475b8-9022-44db-b413-7847083d0943",
+      "sourceHandle": "source-c",
+      "target": "c09e08a4-8aa0-49ee-b2c7-c8a8bfd959c1",
+      "targetHandle": "source-a"
+    }
+  ]
+}

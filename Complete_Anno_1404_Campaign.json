@@ -1,0 +1,465 @@
+{
+  "pxnodes": [
+    {
+      "id": "7c490a90-85f6-482c-b88a-ab44ba2927eb",
+      "name": "Campaign",
+      "description": "The campaign provides the player with an introduction to the game. In eight missions, the player will learn about most systems, such as providing for their citizens, the interplays of the occident and the orient, and also military conflict. The player sees a captivating story unfold in front of their eyes with convincing characters and their personality, ideals, and flaws."
+    },
+    {
+      "id": "cd2aafe6-124f-44b0-91c8-23282d2a901c",
+      "name": "Mission I — A Declaration Of Faith",
+      "description": "In this mission, the player is introduced to the Emperor's cousin, Lord Richard Northburgh. The Lord is currently building an Emperor's Cathedral in his city Cathedral City to hope for God's assistance in the recovery of the Emperor. Lord Richard Northburgh acts as a mentor for the player and teaches them the basics of the game, while also asking for assistance in building the Cathedral. As the Lord has a much more prestigious city compared to the player, the Lord makes a great impression on the player and acts not just as a mentor, but also as a goal for what the player wants to achieve in their own playthroughs."
+    },
+    {
+      "id": "2ec37178-cfe2-41c3-a6f0-e0d6ecf2b1d3",
+      "name": "Mission II — In the Sign of the Cross",
+      "description": "Continuing with the player's settlement in Mission 1, Lord Richard Northburgh assists the player in advancing the player's settlement. The player learns how to upgrade their peasants to the next level, the citizen level, how to manoeuvre multiple ships, and how to settle more islands. The player is also introduced to Guy Forcas, Marie d'Artois, and Brother Hilarius. The former is sent by Kardinal Lucius to start a crusade against the orient, with Marie d'Arois supporting the cause by delivering war ships and materials to it. While this mission introduces the player to more mechanics, Guy Forcas especially plays a big role in driving the player to complete the missions as fast as possible."
+    },
+    {
+      "id": "612edbf5-79f1-48fe-b89f-a1bc7d3994dd",
+      "name": "Mission III — Departure for the Promised Land",
+      "description": "Still continuing the settlement of the previous two missions, the player gets to assist the Kardinal personally for the last preparations of the crusade. The player gets introduced to more mechanics, such as trade routes and natural resources, while making sure that the player's population remains satisfied. Lord Richard Northburgh in the meantime questions why the Emporer, while being sick, would allow such a crusade. Lord Richard Northburgh helps the player less, as he needs to assist the crusade as well and can not spare any more resources. He also mentions that the Cathedral's building time is heavily delayed. The Kardinal and Guy Forcas are not transparent at all and the player gets an eerie feeling whenever they interact with Lucius or Guy. Finishing the mission, the Lord approaches the player and tells them that he heard something quite disturbing about it all, leaving the player questioning what he means."
+    },
+    {
+      "id": "f598b5e5-819f-4772-8d3f-f2ea9fa5e9c3",
+      "name": "Mission IV — The Lost Children",
+      "description": "The mission starts with Lord Richard Northburgh telling the player that the ships they have been following have children on board and that Corsair ships are taking the children on board. With damaged ships due to a storm, they can not continue following and therefore set sail to a nearby small settlement of the Lord's. The player is first tasked with building a repair crane to repair both of their ships, which means building a thriving settlement. This mission also introduces the orient settlements to the player. Nomads inhibit these islands and have substantially different needs compared to the inhabitants of the occident. Oriental islands also provide different fertilities and resources, which the player has to make use of not just to satisfy the inhabitants of the orient, but also advance from citizens to patricians, which is required toward the end of the mission. The mission introduces the player to naval battles to rescue the children. The missions ends with Guy Forcas and his massive fleet approaching and arresting the Lord. While Guy Forcas tells the player to not play any part in the upcoming crusade, the Lord asks the player to stop the impending war."
+    },
+    {
+      "id": "4296ae71-29b0-4c38-8a2d-ae927e4dda8b",
+      "name": "Mission V — A Storm Breaks Out",
+      "description": "Al Zahir, the Grand Vizier, acts as the player's mentor in this mission. However, Marie d'Artois has arrived with her massive fleet and starts attacking the Grand Vizier as part of the crusade. The player has to continue developing their settlement from Mission IV in order to support the Grand Vizier in defending himself from the ruthless attacks of Marie d'Artois and Guy Forcas. Over the course of the mission the player has to find multiple artifacts in order to show Marie d'Artois that this crusade is paid for by trafficking children. After showing her the evidence, she stops assisting in the crusade, but Guy Forcas will retaliate. The mission ends when the player destroys Guy Forcas' fleet on his island with Kardinal Lucius arriving. He wants to take revenge and a heavily wounded Marie d'Artois tells the player to set sail to a nearby island of hers to take shelter from the Kardinal's incoming attack."
+    },
+    {
+      "id": "0992677e-bd67-4200-8e1a-a29e4d9528c5",
+      "name": "Mission VI — Caught in a Trap",
+      "description": "Compared to the previous missions, this mission shifts the player's focus completely. Instead of focusing on fulfilling the inhabitant's needs, the player has to secure the survival of Marie d'Artois' inhabitants. Marie tells the player that her other islands secure the needs of the main island, and the player has to focus on training soldiers to defend the island from Lucius' incoming attack. With an ever-increasing number of soldiers landing on the island, more and more sabotage acts by Lucius on the island, and the inhabitants getting more stressed by the situation, this mission constantly puts the player under much stress to ensure the survival of the city. After enduring multiple waves of attacks, Marie d'Artois, who is still heavily injured from the previous mission, asks the player to send a ship to ask for the Grand Vizier's assistance. The mission ends with the Grand Vizier arriving at the island, providing a safe passage for the player and the inhabitants of the city, and leaving behind a furious Kardinal who sets the city ablaze."
+    },
+    {
+      "id": "89e4a5fa-ebd2-44cc-b736-9281bdfe1c49",
+      "name": "Mission VII — The man with the mask",
+      "description": "After fleeing Marie d'Artois' island from the constant attacks of Kardinal Lucius, she and the player arrive in Al Zahir's safe haven in the orient. After hearing about the current situation on one of her islands from Phillipe Lamour, she leaves the player and the other people with Al Zahir and returns to face the Kardinal until the player found a cure for the Emperor in order to stop Lucius. This mission introduces the player to the rest of the oriental buildings and the second and also last civilization level in the orient, Envoys. While trying to find and procure the cure, the player has to interact with multiple neutral factions, such as Heketa the Witch, Izmir the Alchemist, and Al Rashid the Assassin. During the mission, the player also finds Lord Richard Northburgh and saves him from his current imprisonment. The mission finishes with the player procuring the medicine for the Emperor and Phillipe Lamour hastily arriving, informing the Lord and the player that Marie d'Artois is close to defeat and needs their support as soon as possible. Hoping for his fast recovery, Lord Richard Northburgh and the player sail towards Falconstone and Cathedral City, where Lucius is reported to reside at the moment, to stop Lucius' ill-willed plans."
+    },
+    {
+      "id": "0a77b152-bc36-4699-9c71-923cac1830df",
+      "name": "Mission VIII — Pillars of Justice",
+      "description": "After a long ship trip, the player accompanied by the Lord arrive at Falconstone, where the Lord notes that everything the player has built is turned to ash by the Kardinal. The situation is not much better in Cathedral City, but nonetheless the Lord asks the player to finish his project in building the Imperial Cathedral before Kardinal Lucius, who is also intent on proving his faith to God by finishing the Imperial Cathedral before the player. Cathedral City and the other islands around it provide the player with everything to build a blossoming metropolis, however, the constant threat of Kardinal Lucius finishing parts of the cathedral before the player puts pressure on the player during every step they make. Everything the player has learned during the Campaign culminates in this mission. The player not only needs to satisfy the needs of their occidental settlement, but also build an oriental settlement while stopping the Kardinal's sabotages throughout the mission. When the player finishes the Imperial Cathedral before the player, the Emperor and his massive war fleet arrives just in time and he asks the player to bring him the traitorous Lucius, who reportedly has left his city. The mission finishes with the Emperor thanking the player for curing him of his illness and stopping the crusade from claiming more lives. Lord Richard Northburgh, Marie d'Artois, the Grand Vizier Al Zahir, and a just-arriving Sultan thank the player for their commitment to the cause."
+    },
+    {
+      "id": "d5bdfd8b-6298-4f49-926d-26479db6efc7",
+      "name": "Easy Difficulty Setting",
+      "description": "When the player selects the easy difficulty for the missions, the base goods at the start of each mission are more. Also, the player gets the full build costs refunded if they decide to destroy a building they built, therefore the game is very forgiving when the player makes mistakes."
+    },
+    {
+      "id": "b44694b4-4607-493d-be56-1f3cae38da42",
+      "name": "Medium Difficulty Setting",
+      "description": "When the player selects the medium difficulty for the missions, the base goods at the start of each mission are average. The player gets half the build costs refunded if they decide to destroy a building they built, allowing the player to recover decently from mistakes while also being punished slightly."
+    },
+    {
+      "id": "bc5fe4c1-d172-47d4-a939-9e9a2967d873",
+      "name": "Hard Difficulty Setting",
+      "description": "When the player selects the hard option for the missions, the base goods at the start of each mission are sparse. Also, the player gets no build costs refunded if they decide to destroy a building they built, punishing the player for mistakes severely."
+    }
+  ],
+  "pxcomponents": [
+    {
+      "id": "9ea950bd-6250-4a87-a993-fb12c9924bac",
+      "node": "cd2aafe6-124f-44b0-91c8-23282d2a901c",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 20
+    },
+    {
+      "id": "0d973e6d-af14-4d9a-b494-7a04b024cdf1",
+      "node": "2ec37178-cfe2-41c3-a6f0-e0d6ecf2b1d3",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 30
+    },
+    {
+      "id": "d3846e12-3e9d-465c-8947-2d1f2578d7f5",
+      "node": "612edbf5-79f1-48fe-b89f-a1bc7d3994dd",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 40
+    },
+    {
+      "id": "80aef1bf-7732-491f-b2a7-580066f70a0a",
+      "node": "f598b5e5-819f-4772-8d3f-f2ea9fa5e9c3",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 75
+    },
+    {
+      "id": "efa91321-eb68-4c18-aae9-36c63e117090",
+      "node": "0992677e-bd67-4200-8e1a-a29e4d9528c5",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 55
+    },
+    {
+      "id": "d7dc2172-be82-4eb2-8618-a3595b318147",
+      "node": "89e4a5fa-ebd2-44cc-b736-9281bdfe1c49",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 85
+    },
+    {
+      "id": "b9a7455e-cb84-4120-b792-b41c5416091a",
+      "node": "4296ae71-29b0-4c38-8a2d-ae927e4dda8b",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 105
+    },
+    {
+      "id": "649f9aea-681e-4e1c-b6aa-049464de87af",
+      "node": "0a77b152-bc36-4699-9c71-923cac1830df",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 110
+    },
+    {
+      "id": "ac055381-1169-4944-887a-84db812ec28f",
+      "node": "d5bdfd8b-6298-4f49-926d-26479db6efc7",
+      "definition": "0cdd87b7-89c7-4e36-bbed-349f48b240f3",
+      "value": "Easy"
+    },
+    {
+      "id": "9b11c624-d800-468a-aca3-e54cb2650e8e",
+      "node": "b44694b4-4607-493d-be56-1f3cae38da42",
+      "definition": "0cdd87b7-89c7-4e36-bbed-349f48b240f3",
+      "value": "Medium"
+    },
+    {
+      "id": "49bb048e-37b3-40f7-8dc6-8ad086a5a32e",
+      "node": "b44694b4-4607-493d-be56-1f3cae38da42",
+      "definition": "54308897-1111-4314-b1a8-03b0bad66946",
+      "value": 0
+    },
+    {
+      "id": "bf72546d-7b74-46dc-8644-80a214cf7172",
+      "node": "bc5fe4c1-d172-47d4-a939-9e9a2967d873",
+      "definition": "0cdd87b7-89c7-4e36-bbed-349f48b240f3",
+      "value": "Hard"
+    },
+    {
+      "id": "913bc553-d800-4c57-8c9d-07c80ef12e11",
+      "node": "bc5fe4c1-d172-47d4-a939-9e9a2967d873",
+      "definition": "54308897-1111-4314-b1a8-03b0bad66946",
+      "value": 5
+    },
+    {
+      "id": "0ce89c5c-c5d7-48e8-84b5-3bc7ae9e5b92",
+      "node": "d5bdfd8b-6298-4f49-926d-26479db6efc7",
+      "definition": "54308897-1111-4314-b1a8-03b0bad66946",
+      "value": -5
+    },
+    {
+      "id": "47598f61-5ca0-444e-abc9-cefc4c9c4b4c",
+      "node": "7c490a90-85f6-482c-b88a-ab44ba2927eb",
+      "definition": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "value": 520
+    }
+  ],
+  "pxcomponentdefinitions": [
+    {
+      "id": "aee40b18-4361-47d3-88bc-aa5aa8e8a731",
+      "name": "Planned Time to Complete",
+      "type": "number"
+    },
+    {
+      "id": "b52631cf-91a9-4c6d-b0b9-b792798357fd",
+      "name": "Is Mandatory",
+      "type": "boolean"
+    },
+    {
+      "id": "0cdd87b7-89c7-4e36-bbed-349f48b240f3",
+      "name": "Difficulty Setting",
+      "type": "string"
+    },
+    {
+      "id": "54308897-1111-4314-b1a8-03b0bad66946",
+      "name": "Gameplay Intensity Modifier",
+      "type": "number"
+    },
+    {
+      "id": "99ecdc32-1fd6-4f70-9797-bbd54bb44002",
+      "name": "Is Victory Condition",
+      "type": "boolean"
+    },
+    {
+      "id": "bbcac257-389b-4f75-8b7f-4cf0b31b2090",
+      "name": "Additional Requirement to Start Quest",
+      "type": "string"
+    },
+    {
+      "id": "40ff3b5b-9b36-4e68-8aee-0357e583ca22",
+      "name": "Reward",
+      "type": "string"
+    },
+    {
+      "id": "08a8e739-e69c-4cb3-8802-3cb251e9d6a9",
+      "name": "Is Initial Mission",
+      "type": "boolean"
+    },
+    {
+      "id": "36021698-7043-49ca-9844-407f7343ec0c",
+      "name": "Repeatable X times",
+      "type": "number"
+    }
+  ],
+  "pxcharts": [
+    {
+      "id": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "The Campaign",
+      "description": "This chart contains the mission progression of the campaign.",
+      "associatedNode": "7c490a90-85f6-482c-b88a-ab44ba2927eb"
+    },
+    {
+      "id": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "name": "Difficulty Selection",
+      "description": "This chart contains the difficulty selection and how it affects PX.",
+      "associatedNode": "7c490a90-85f6-482c-b88a-ab44ba2927eb"
+    }
+  ],
+  "pxchartcontainers": [
+    {
+      "id": "952fd090-8547-4545-9157-eb948079c405",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "cd2aafe6-124f-44b0-91c8-23282d2a901c"
+    },
+    {
+      "id": "4e1f7795-0a03-4af8-a27f-5663964321ad",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "2ec37178-cfe2-41c3-a6f0-e0d6ecf2b1d3"
+    },
+    {
+      "id": "8dcfbd05-70e9-4752-92e3-d035b9cd393a",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "612edbf5-79f1-48fe-b89f-a1bc7d3994dd"
+    },
+    {
+      "id": "fb793266-383c-4815-958c-5de18b922b27",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "f598b5e5-819f-4772-8d3f-f2ea9fa5e9c3"
+    },
+    {
+      "id": "6ff06eee-51f4-4139-91a0-36f0718a5c01",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "4296ae71-29b0-4c38-8a2d-ae927e4dda8b"
+    },
+    {
+      "id": "ead06247-db24-491e-984a-6eff4d1591b9",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "0992677e-bd67-4200-8e1a-a29e4d9528c5"
+    },
+    {
+      "id": "88e5066c-ecb7-486a-8adc-b70bc1e63d9c",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "89e4a5fa-ebd2-44cc-b736-9281bdfe1c49"
+    },
+    {
+      "id": "54edb300-68f8-4772-b0ce-ba13dddc734d",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "name": "New Container",
+      "content": "0a77b152-bc36-4699-9c71-923cac1830df"
+    },
+    {
+      "id": "e5283cc3-c8d5-40e7-b647-db6dc0f3114d",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "name": "New Container",
+      "content": "d5bdfd8b-6298-4f49-926d-26479db6efc7"
+    },
+    {
+      "id": "4f66b2a6-72da-4d18-babe-9fec6d2b232f",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "name": "New Container",
+      "content": "b44694b4-4607-493d-be56-1f3cae38da42"
+    },
+    {
+      "id": "f73e980f-f745-41ea-844f-80beef20cac9",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "name": "New Container",
+      "content": "bc5fe4c1-d172-47d4-a939-9e9a2967d873"
+    }
+  ],
+  "pxchartcontainerlayouts": [
+    {
+      "id": 372,
+      "container": "4e1f7795-0a03-4af8-a27f-5663964321ad",
+      "position_x": 864.4309780158623,
+      "position_y": 260.8043414763271,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 639,
+      "container": "4f66b2a6-72da-4d18-babe-9fec6d2b232f",
+      "position_x": 909.494482595329,
+      "position_y": 224.29739670999408,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 378,
+      "container": "54edb300-68f8-4772-b0ce-ba13dddc734d",
+      "position_x": 4119.196498712995,
+      "position_y": 289.4841493003785,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 375,
+      "container": "6ff06eee-51f4-4139-91a0-36f0718a5c01",
+      "position_x": 2451.9321046217647,
+      "position_y": 267.26576972318526,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 377,
+      "container": "88e5066c-ecb7-486a-8adc-b70bc1e63d9c",
+      "position_x": 3549.196498712995,
+      "position_y": 285.4841493003785,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 373,
+      "container": "8dcfbd05-70e9-4752-92e3-d035b9cd393a",
+      "position_x": 1376.7504443445398,
+      "position_y": 258.50694476633294,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 371,
+      "container": "952fd090-8547-4545-9157-eb948079c405",
+      "position_x": 346.36801991219954,
+      "position_y": 267.69653160630924,
+      "height": 726,
+      "width": 400
+    },
+    {
+      "id": 638,
+      "container": "e5283cc3-c8d5-40e7-b647-db6dc0f3114d",
+      "position_x": 369,
+      "position_y": 223,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 376,
+      "container": "ead06247-db24-491e-984a-6eff4d1591b9",
+      "position_x": 2987.196498712995,
+      "position_y": 273.4841493003785,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 640,
+      "container": "f73e980f-f745-41ea-844f-80beef20cac9",
+      "position_x": 1436.7124807061061,
+      "position_y": 235.9103796314806,
+      "height": 0,
+      "width": 400
+    },
+    {
+      "id": 374,
+      "container": "fb793266-383c-4815-958c-5de18b922b27",
+      "position_x": 1918.9360679031404,
+      "position_y": 261.52227794820016,
+      "height": 0,
+      "width": 400
+    }
+  ],
+  "pxchartedges": [
+    {
+      "id": "7e4d7ae8-967a-427b-9e51-93e61f30e887",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "952fd090-8547-4545-9157-eb948079c405",
+      "sourceHandle": "source-b",
+      "target": "4e1f7795-0a03-4af8-a27f-5663964321ad",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "d2af7d1a-8e14-4724-bbf0-cd10c40cd7f2",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "4e1f7795-0a03-4af8-a27f-5663964321ad",
+      "sourceHandle": "source-b",
+      "target": "8dcfbd05-70e9-4752-92e3-d035b9cd393a",
+      "targetHandle": "source-d"
+    },
+    {
+      "id": "ce3c728d-5843-4078-a311-ee0a42997a6d",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "8dcfbd05-70e9-4752-92e3-d035b9cd393a",
+      "sourceHandle": "source-b",
+      "target": "fb793266-383c-4815-958c-5de18b922b27",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "b89a5693-199d-45e5-8abe-5a4f0e70513c",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "fb793266-383c-4815-958c-5de18b922b27",
+      "sourceHandle": "source-b",
+      "target": "6ff06eee-51f4-4139-91a0-36f0718a5c01",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "6547e24e-b0d7-4ce7-969c-560857218fb3",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "6ff06eee-51f4-4139-91a0-36f0718a5c01",
+      "sourceHandle": "source-b",
+      "target": "ead06247-db24-491e-984a-6eff4d1591b9",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "a378ac88-d183-4e5e-82f5-364bb2c45e06",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "ead06247-db24-491e-984a-6eff4d1591b9",
+      "sourceHandle": "source-b",
+      "target": "88e5066c-ecb7-486a-8adc-b70bc1e63d9c",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "1aafb0b1-37ce-4410-94e2-016d462ec5cc",
+      "px_chart": "2ab67600-f50a-404f-ad6e-e5663a51e31c",
+      "source": "88e5066c-ecb7-486a-8adc-b70bc1e63d9c",
+      "sourceHandle": "source-b",
+      "target": "54edb300-68f8-4772-b0ce-ba13dddc734d",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "b70e17ab-f721-457f-b317-243ca5357021",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "source": "e5283cc3-c8d5-40e7-b647-db6dc0f3114d",
+      "sourceHandle": "source-b",
+      "target": "4f66b2a6-72da-4d18-babe-9fec6d2b232f",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "5bf58709-1fbf-43bc-966d-aff3c2f05206",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "source": "4f66b2a6-72da-4d18-babe-9fec6d2b232f",
+      "sourceHandle": "source-b",
+      "target": "f73e980f-f745-41ea-844f-80beef20cac9",
+      "targetHandle": "target-d"
+    },
+    {
+      "id": "ccc97ebb-c35f-4d3a-bf38-0e2914e127a3",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "source": "f73e980f-f745-41ea-844f-80beef20cac9",
+      "sourceHandle": "source-a",
+      "target": "4f66b2a6-72da-4d18-babe-9fec6d2b232f",
+      "targetHandle": "target-a"
+    },
+    {
+      "id": "6e9b2801-b50f-4118-9f68-9b110e49cd60",
+      "px_chart": "b9dace7f-381e-486a-89e7-501c91c25083",
+      "source": "4f66b2a6-72da-4d18-babe-9fec6d2b232f",
+      "sourceHandle": "source-c",
+      "target": "e5283cc3-c8d5-40e7-b647-db6dc0f3114d",
+      "targetHandle": "target-c"
+    }
+  ]
+}
