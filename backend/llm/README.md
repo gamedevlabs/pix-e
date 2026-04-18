@@ -100,7 +100,7 @@ print(response.metadata.models_used)
 
 **Pillars Feature:**
 - `pillars.validate` - Validate pillar structure and clarity
-- `pillars.improve` - Generate improved version of pillar
+- `pillars.improve_explained` - Generate improved version of pillar with explanations
 - `pillars.evaluate_completeness` - Check if pillars cover game design adequately
 - `pillars.evaluate_contradictions` - Find contradictions between pillars
 - `pillars.suggest_additions` - Suggest additional pillars
@@ -324,7 +324,7 @@ class AnthropicProvider(BaseProvider):
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=kwargs.get("max_tokens", 1024),
-            temperature=kwargs.get("temperature", 0.7)
+            temperature=kwargs.get("temperature", 0)
         )
         return response.content[0].text
 

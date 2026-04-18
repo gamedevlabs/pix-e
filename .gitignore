@@ -17,3 +17,14 @@ logs
 
 # Build output, for some reason JetBrains only accepts the ignore here
 .nuxt
+
+docs/*
+backend/comparison_results/*
+backend/docs/experiments/*
+.claude/CLAUDE.md
+.gitignore
+.cursor/rules/*
+backend/db_backup_20260104_125924.sql
+.gitignore
+backend/vectors.db
+backend/artifacts/*

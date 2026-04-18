@@ -6,6 +6,8 @@ All schemas are migrated from backend/llm/llm_links/responseSchemes.py to centra
 pillar-specific logic in the orchestrator.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -44,8 +46,17 @@ class ContradictionIssue(BaseModel):
 
 
 class PillarCompletenessResponse(BaseModel):
+    """Response for concept fit evaluation."""
+
+    hasGaps: bool = Field(
+        description="Whether there are gaps in pillar coverage for the game concept"
+    )
     pillarFeedback: list[CompletenessAnswer] = Field(
-        description="Reasoning for each pillar"
+        description="Reasoning for each pillar's fit with the concept"
+    )
+    missingAspects: list[str] = Field(
+        description="List of aspects from the game concept not covered by pillars. "
+        "Empty list if no gaps."
     )
 
 
@@ -55,7 +66,39 @@ class PillarContradictionResponse(BaseModel):
 
 
 class PillarAdditionsFeedback(BaseModel):
+    """Response for suggesting additional pillars."""
+
     additions: list[LLMPillar]  # ignore given pillarId, needs to be created by DB
+
+
+class ResolutionSuggestion(BaseModel):
+    """A suggestion for resolving a contradiction between two pillars."""
+
+    pillarOneId: int = Field(description="ID of the first pillar in the contradiction")
+    pillarTwoId: int = Field(description="ID of the second pillar in the contradiction")
+    pillarOneTitle: str = Field(description="Title of the first pillar")
+    pillarTwoTitle: str = Field(description="Title of the second pillar")
+    resolutionStrategy: str = Field(
+        description="Suggested approach to resolve the contradiction"
+    )
+    suggestedChanges: list[str] = Field(
+        description="Specific changes to make to resolve the contradiction"
+    )
+    alternativeApproach: str = Field(
+        default="",
+        description="Alternative approach if the primary strategy doesn't work",
+    )
+
+
+class ContradictionResolutionResponse(BaseModel):
+    """Response for contradiction resolution suggestions."""
+
+    resolutions: list[ResolutionSuggestion] = Field(
+        description="List of resolution suggestions for each contradiction"
+    )
+    overallRecommendation: str = Field(
+        description="Overall recommendation for handling the contradictions"
+    )
 
 
 class PillarsInContextResponse(BaseModel):
@@ -72,4 +115,109 @@ class ContextInPillarsResponse(BaseModel):
     )
     feedback: str = Field(
         description="Feedback on how the context fits with the pillars"
+    )
+
+
+class ComprehensivePillarsEvaluation(BaseModel):
+    """
+    Comprehensive evaluation result combining all aspects in a single response.
+
+    Used by the monolithic handler for RQ1 comparison (single LLM call baseline).
+    """
+
+    # Concept Fit
+    hasGaps: bool = Field(
+        description="Whether there are gaps in pillar coverage for the game concept"
+    )
+    pillarFeedback: list[CompletenessAnswer] = Field(
+        description="Reasoning for each pillar's fit with the concept"
+    )
+    missingAspects: list[str] = Field(
+        description="Aspects from the game concept not covered by pillars"
+    )
+
+    # Contradictions
+    hasContradictions: bool = Field(
+        description="Whether there are contradictions between pillars"
+    )
+    contradictions: list[ContradictionIssue] = Field(
+        description="List of contradictions found between pillars"
+    )
+
+    # Suggested Additions (only if gaps exist)
+    suggestedAdditions: list[LLMPillar] = Field(
+        default_factory=list,
+        description="Suggested new pillars to cover missing aspects",
+    )
+
+    # Resolution Suggestions (only if contradictions exist)
+    resolutionSuggestions: list[ResolutionSuggestion] = Field(
+        default_factory=list,
+        description="Suggestions for resolving contradictions",
+    )
+
+    # Overall Assessment
+    overallScore: int = Field(
+        ge=1,
+        le=5,
+        description="Overall quality score from 1 (needs work) to 5 (excellent)",
+    )
+    overallFeedback: str = Field(
+        description="Summary feedback on the pillar set as a whole"
+    )
+
+
+class SynthesisResult(BaseModel):
+    """
+    Synthesis result from the final synthesis agent.
+
+    Aggregates all evaluation results into an overall score and feedback.
+    Used in agentic mode to provide a final summary like monolithic mode.
+    """
+
+    overallScore: int = Field(
+        ge=1,
+        le=5,
+        description="Overall quality score from 1 (needs work) to 5 (excellent)",
+    )
+    overallFeedback: str = Field(
+        description="Summary feedback synthesizing all evaluation results"
+    )
+    strengths: list[str] = Field(
+        default_factory=list,
+        description="Key strengths identified across all evaluations",
+    )
+    areasForImprovement: list[str] = Field(
+        default_factory=list,
+        description="Key areas that need improvement",
+    )
+
+
+# --- Schemas for improved pillar with explanations ---
+
+
+class PillarChange(BaseModel):
+    """Describes a specific change made to improve a pillar."""
+
+    field: Literal["name", "description"] = Field(description="Which field was changed")
+    after: str = Field(description="The new value after improvement")
+    reasoning: str = Field(description="Why this change improves the pillar")
+    issues_addressed: list[str] = Field(
+        description="Which validation issues this change fixes (can be empty list)"
+    )
+
+
+class ImprovedPillarResponse(BaseModel):
+    """Response containing improved pillar with explanations."""
+
+    name: str = Field(description="Improved pillar name")
+    description: str = Field(description="Improved pillar description")
+    changes: list[PillarChange] = Field(
+        description="List of changes made with explanations"
+    )
+    overall_summary: str = Field(
+        description="High-level summary of why the improved pillar is better"
+    )
+    validation_issues_fixed: list[str] = Field(
+        description="List of validation issue titles that were fixed"
     )

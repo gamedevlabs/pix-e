@@ -10,16 +10,18 @@ from typing import Any, Dict
 from llm import BaseOperationHandler
 from llm.exceptions import InvalidRequestError
 from pillars.llm.prompts import (
+    ComprehensivePillarsEvaluationPrompt,
     ContextInPillarsPrompt,
-    ImprovePillarPrompt,
-    PillarAdditionPrompt,
+    ImprovePillarWithExplanationPrompt,
+    PillarAdditionPromptSimple,
     PillarCompletenessPrompt,
     PillarContradictionPrompt,
     ValidationPrompt,
 )
 from pillars.llm.schemas import (
+    ComprehensivePillarsEvaluation,
     ContextInPillarsResponse,
-    LLMPillar,
+    ImprovedPillarResponse,
     PillarAdditionsFeedback,
     PillarCompletenessResponse,
     PillarContradictionResponse,
@@ -45,16 +47,38 @@ class ValidatePillarHandler(BaseOperationHandler):
             )
 
 
-class ImprovePillarHandler(BaseOperationHandler):
-    """Improve a game design pillar by fixing structural issues."""
+class ImprovePillarWithExplanationHandler(BaseOperationHandler):
+    """Improve a pillar and explain the improvements made."""
 
-    operation_id = "pillars.improve"
-    description = "Generate an improved version of a pillar by fixing structural issues"
+    operation_id = "pillars.improve_explained"
+    description = "Generate improved pillar with detailed explanations of changes"
     version = "1.0.0"
-    response_schema = LLMPillar
+    response_schema = ImprovedPillarResponse
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
-        return ImprovePillarPrompt % (data["name"], data["description"])
+        # Format validation issues for the prompt
+        issues = data.get("validation_issues", [])
+        if issues:
+            # Format as numbered list to make it clear all must be addressed
+            issues_text = "\n".join(
+                [
+                    f"{i+1}. {issue.get('title', 'Unknown')}: "
+                    f"{issue.get('description', '')}"
+                    for i, issue in enumerate(issues)
+                ]
+            )
+            # Add explicit count at the top
+            issues_text = f"Total issues to fix: {len(issues)}\n\n{issues_text}"
+        else:
+            issues_text = (
+                "No specific issues provided. Improve for clarity and structure."
+            )
+
+        return ImprovePillarWithExplanationPrompt % (
+            issues_text,
+            data["name"],
+            data["description"],
+        )
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "name" not in data or "description" not in data:
@@ -114,7 +138,8 @@ class SuggestAdditionsHandler(BaseOperationHandler):
     def build_prompt(self, data: Dict[str, Any]) -> str:
         pillars_text = data["pillars_text"]
         context = data["context"]
-        return PillarAdditionPrompt % (context, pillars_text)
+        # Use simple prompt for standalone handler (no concept fit context)
+        return PillarAdditionPromptSimple % (context, pillars_text)
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "pillars_text" not in data or "context" not in data:
@@ -135,6 +160,39 @@ class EvaluateContextHandler(BaseOperationHandler):
         pillars_text = data["pillars_text"]
         context = data["context"]
         return ContextInPillarsPrompt % (context, pillars_text)
+
+    def validate_input(self, data: Dict[str, Any]) -> None:
+        if "pillars_text" not in data or "context" not in data:
+            raise InvalidRequestError(
+                message="Missing required fields: 'pillars_text' and 'context'"
+            )
+
+
+class ComprehensiveEvaluationHandler(BaseOperationHandler):
+    """
+    Monolithic handler for comprehensive pillar evaluation.
+
+    Combines all evaluation aspects in a single LLM call:
+    - Concept fit analysis
+    - Contradiction detection
+    - Suggested additions (if gaps)
+    - Resolution suggestions (if contradictions)
+    - Overall assessment
+
+    This is the baseline for RQ1 comparison against the agentic workflow.
+    """
+
+    operation_id = "pillars.evaluate_comprehensive"
+    description = (
+        "Comprehensive pillar evaluation in a single LLM call (monolithic baseline)"
+    )
+    version = "1.0.0"
+    response_schema = ComprehensivePillarsEvaluation
+
+    def build_prompt(self, data: Dict[str, Any]) -> str:
+        pillars_text = data["pillars_text"]
+        context = data["context"]
+        return ComprehensivePillarsEvaluationPrompt % (context, pillars_text)
 
     def validate_input(self, data: Dict[str, Any]) -> None:
         if "pillars_text" not in data or "context" not in data:
