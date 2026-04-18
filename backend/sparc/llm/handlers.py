@@ -10,10 +10,10 @@ from typing import Any, Dict
 from llm.exceptions import InvalidRequestError
 from llm.operation_handler import BaseOperationHandler
 from sparc.llm.prompts.monolithic import MONOLITHIC_SPARC_PROMPT
+from sparc.llm.prompts.monolithic_rq1 import MONOLITHIC_RQ1_PROMPT
 from sparc.llm.prompts.monolithic_synthesis import (
     MONOLITHIC_SPARC_SYNTHESIS_PROMPT,
 )
-from sparc.llm.prompts.monolithic_rq1 import MONOLITHIC_RQ1_PROMPT
 from sparc.llm.prompts.rq1_normalize import RQ1_NORMALIZE_PROMPT
 from sparc.llm.schemas.aggregated import MonolithicSPARCResponse
 from sparc.llm.schemas.rq1 import RQ1UnifiedResponse
@@ -101,9 +101,7 @@ class RQ1NormalizeHandler(BaseOperationHandler):
     def build_prompt(self, data: Dict[str, Any]) -> str:
         evaluation_output = data.get("evaluation_output", {})
         evaluation_type = data.get("evaluation_type", "unknown")
-        evaluation_json = json.dumps(
-            evaluation_output, indent=2, ensure_ascii=True
-        )
+        evaluation_json = json.dumps(evaluation_output, indent=2, ensure_ascii=True)
         return RQ1_NORMALIZE_PROMPT % (evaluation_type, evaluation_json)
 
     def validate_input(self, data: Dict[str, Any]) -> None:
