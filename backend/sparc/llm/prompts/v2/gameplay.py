@@ -2,32 +2,32 @@
 Gameplay aspect prompt for SPARC V2.
 """
 
-GAMEPLAY_PROMPT = """You are a game design expert evaluating the GAMEPLAY definition.
+GAMEPLAY_PROMPT = """You are an expert game development consultant evaluating
+the GAMEPLAY definition.
 
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
 {pillar_section}
-## EVALUATION CRITERIA
+## ASPECT GUIDE (SPARC)
 
-A well-defined gameplay should:
-1. Identify 3-5 CORE VERBS that describe player actions (explore, craft,
-   fight, build, etc.)
-2. Describe CORE MECHANICS - the systems players interact with
-3. Define a 30-SECOND GAMEPLAY loop - what does the player DO
-   moment-to-moment?
-4. Clarify any LEVEL-SPECIFIC mechanics if applicable
+Describe the core gameplay.
+Try to find 3-5 verbs that describe the gameplay experience.
+Describe what Core Mechanics are relevant for your idea.
+Describe what the player does by formulating a 30 Seconds of Gameplay.
+If you have special Level Core Mechanics make this very clear.
 
 ## ASSESSMENT
 
 Evaluate the content above:
-- "well_defined": Clear core verbs, mechanics described, gameplay loop articulated
-- "needs_work": Vague actions, missing mechanics, or unclear moment-to-moment experience
+- "well_defined": The guide questions are answered clearly and specifically.
+- "needs_work": The guide questions are partially answered or vague.
+- "not_provided": The aspect is missing or cannot be inferred.
 
 ## RESPONSE
 
 Provide:
-1. status: "well_defined" or "needs_work"
+1. status: "well_defined", "needs_work", or "not_provided"
 2. reasoning: 2-3 sentences explaining your assessment
 3. suggestions: Concrete improvements (include even if well_defined)
 

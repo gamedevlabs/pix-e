@@ -2,33 +2,33 @@
 Unique Features aspect prompt for SPARC V2.
 """
 
-UNIQUE_FEATURES_PROMPT = """You are a game design expert evaluating UNIQUE FEATURES.
+UNIQUE_FEATURES_PROMPT = """You are an expert game development consultant
+evaluating UNIQUE FEATURES.
 
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
 {pillar_section}
-## EVALUATION CRITERIA
+## ASPECT GUIDE (SPARC)
 
-Well-defined unique features should:
-1. Identify what makes this game UNIQUE
-2. Explain how it DIFFERS from similar games
-3. Describe how it IMPROVES upon existing genre/themes
-4. List 3-5 DEFINING ELEMENTS that set it apart
-5. Features should be VALIDATED - actually unique, not just claimed
+Describe how the idea will be unique by answering the questions:
+What does your idea feature that is unique?
+How is your idea different to other projects out there?
+How does it improve upon existing genre/location/theme?
+How is your idea (in the case of a level) different to other parts of your game?
+Create a list with 3-5 features that will be the defining elements of your idea.
 
 ## ASSESSMENT
 
 Evaluate the content above:
-- "well_defined": Clear unique features, differentiation explained,
-  defining elements listed
-- "needs_work": Generic features, weak differentiation, or unvalidated
-  uniqueness claims
+- "well_defined": The guide questions are answered clearly and specifically.
+- "needs_work": The guide questions are partially answered or vague.
+- "not_provided": The aspect is missing or cannot be inferred.
 
 ## RESPONSE
 
 Provide:
-1. status: "well_defined" or "needs_work"
+1. status: "well_defined", "needs_work", or "not_provided"
 2. reasoning: 2-3 sentences explaining your assessment
 3. suggestions: Concrete improvements (include even if well_defined)
 

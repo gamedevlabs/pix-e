@@ -103,6 +103,9 @@ CHECK FOR:
 1. REQUIRED MECHANICS/ITEMS
    - Are required mechanics or items established on ALL incoming paths?
    - If only on some paths, flag as path-dependent.
+   - Treat explicit action/knowledge verbs as requirements (e.g., "uses", \
+    "accesses", "knows how to", "has learned"). If the \
+    exact mechanic/knowledge is not introduced earlier, mark it missing.
 
 2. NARRATIVE PREREQUISITES
    - Does the node reference events that have occurred?
@@ -112,6 +115,12 @@ CHECK FOR:
 3. STATE PREREQUISITES
    - Does the node assume a game state that is achievable on all paths?
    - Are triggers/conditions for reaching this node satisfiable?
+
+PROCESS (strict):
+1) Extract REQUIRED mechanics/items/knowledge from the TARGET NODE details.
+2) For each requirement, find an explicit quote in PREVIOUS NODES only.
+3) If no explicit quote exists, list it under "missing_prerequisites".
+4) Do not use the TARGET NODE as evidence.
 
 PREREQUISITE CHECKLIST:
 1) Extract required mechanics/items/abilities from the TARGET NODE text.
@@ -130,14 +139,15 @@ EVIDENCE RULES (forward coherence):
 
 CHECK FOR:
 1. MECHANICAL SETUP
-   - If the node introduces mechanics, are they used/referenced in a \
-    future node?
+   - If the node introduces mechanics, items, characters, or plot points, \
+    are they used/referenced in a future node?
 
 2. NARRATIVE SETUP
    - Do the story elements introduced in this node pay off later?
    - Is foreshadowing appropriate and not heavy-handed?
+   - Example: NPC mentions a locked door player will encounter
 
-3. WORLD BUILDING
+4. WORLD BUILDING
    - Are locations/characters introduced properly?
    - Is context provided for future events?
 
@@ -175,8 +185,14 @@ CHECK FOR:
    - If there are components, does the description match the node components?
    - Does a part of the node description contradict another part of the
      node description?
+   - Example: "Calm exploration" with Tension=95
 
-2. COMPONENT HARMONY
+2. CLARITY
+   - Is the node's purpose clear?
+   - Are descriptions specific enough to implement?
+   - Example violation: "Do the thing with the stuff"
+
+3. COMPONENT HARMONY
    - Do all node components work together?
    - Is component category/value appropriate for the content?
 

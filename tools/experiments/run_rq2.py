@@ -312,15 +312,17 @@ def _evaluate_nodes(
                 node = node_map.get(node_id)
                 if node is None:
                     raise ValueError(f"Node not found: {node_id}")
-                result = await workflow.evaluate_node(
-                    node=node,
-                    chart=chart,
-                    model_id=llm_model,
-                    project=project_context,
-                    project_pillars=pillars,
-                    game_concept=concept,
-                    dimensions=dimensions,
-                )
+                eval_kwargs: dict[str, Any] = {
+                    "node": node,
+                    "chart": chart,
+                    "model_id": llm_model,
+                    "project": project_context,
+                    "project_pillars": pillars,
+                    "game_concept": concept,
+                }
+                if execution_mode == "agentic":
+                    eval_kwargs["dimensions"] = dimensions
+                result = await workflow.evaluate_node(**eval_kwargs)
                 return result.model_dump()
 
         tasks = [asyncio.create_task(_run_one(node_id)) for node_id in target_node_ids]

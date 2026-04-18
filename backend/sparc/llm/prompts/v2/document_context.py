@@ -11,16 +11,16 @@ Your task is to extract relevant information from a game design document that re
 to specific SPARC evaluation aspects.
 
 The 10 SPARC aspects are:
-1. player_experience - Emotional journey, feelings players should experience
-2. theme - Thematic elements, setting tone, atmosphere
-3. purpose - Project goals, target audience, vision
-4. gameplay - Core mechanics, systems, player interactions
-5. goals_challenges_rewards - Objectives, progression, difficulty
-6. place - World, setting, environments, locations
-7. story_narrative - Plot, characters, narrative structure
-8. unique_features - Unique selling points, innovations
-9. art_direction - Visual style, aesthetics, art pipeline
-10. opportunities_risks - Market opportunities, risks, constraints
+1. player_experience - Player experience in active form and emotional focus
+2. theme - Dominant and secondary themes
+3. purpose - Purpose of the project and creator motivation
+4. gameplay - Core mechanics, verbs, and 30 seconds of gameplay
+5. goals_challenges_rewards - Objectives, obstacles, and rewards
+6. place - Environment setting and concrete locations
+7. story_narrative - Story, arrival, history, and key events
+8. unique_features - Differentiators and defining features
+9. art_direction - Art style, palette, lighting, and mood boards
+10. opportunities_risks - Opportunities, risks, and counteractions
 
 Extract ONLY what is explicitly mentioned in the document. If an aspect is
 not covered, leave extracted_sections empty."""
@@ -50,64 +50,72 @@ For each aspect, identify:
 ## ASPECT DEFINITIONS
 
 ### PLAYER EXPERIENCE
-Extract content about what the player will experience emotionally:
-- How the game should make players feel
-- Emotional keywords (tension, joy, triumph, fear, wonder)
-- Target player experience and feelings
+Extract content about the player experience:
+- Player perspective in active form
+- Emotional experience and vivid description
+- High concept statement of the experience
 
 ### THEME
-Extract content about thematic elements:
-- The dominant unifying theme
+Extract content about the theme:
+- Dominant and unifying theme
 - Secondary themes
-- How themes are expressed
 
 ### PURPOSE
-Extract content about project goals and motivation:
-- Purpose of the game/level
-- Target audience
-- Vision and objectives
+Extract content about purpose:
+- Purpose of the game or level
+- Reason and purpose why the creator wants to work on this
+- Why others would want to work on this
+- What the creator wants to achieve
 
 ### GAMEPLAY
-Extract content about mechanics and player actions:
-- Core mechanics and systems
-- What the player does (core verbs: explore, craft, fight, etc.)
-- Moment-to-moment gameplay description
+Extract content about gameplay:
+- 3-5 verbs that describe gameplay
+- Core mechanics relevant to the idea
+- 30 seconds of gameplay
+- Special level core mechanics if mentioned
 
 ### GOALS, CHALLENGES, & REWARDS
-Extract content about objectives and progression:
-- Goals and objectives
-- Challenge design
-- Reward systems and progression
+Extract content about goals, challenges, and rewards:
+- Objectives required to complete the level/game
+- Where the player starts and where the objective is
+- Obstacles and how they challenge the player
+- Rewards and story-related outcomes
+- How objectives, obstacles, and rewards are communicated
 
 ### PLACE
-Extract content about world and setting:
-- Physical spaces and environments
-- World setting and locations
-- Atmosphere and mood
+Extract content about place:
+- Environment setting
+- Concrete key locations
 
 ### STORY & NARRATIVE
-Extract content about narrative elements:
-- Plot and story
-- Characters
-- Narrative structure
+Extract content about story and narrative:
+- Rough story and storytelling methods
+- Story of the environment or game
+- What happened before the player arrived
+- The arrival of the player (how and why)
+- Player goals and purpose
+- How arrival is communicated
+- History of the place
+- Key events the player experiences
 
 ### UNIQUE FEATURES
-Extract content about innovations:
-- Unique selling points
-- What makes it different
-- Innovative features
+Extract content about unique features:
+- What is unique about the idea
+- How it differs from other projects
+- How it improves upon existing genre/location/theme
+- Defining elements (3-5 features)
 
 ### ART DIRECTION
-Extract content about visual style:
-- Art style and aesthetics
-- Visual design direction
-- Reference art or inspirations
+Extract content about art direction:
+- Art style
+- Visual uniqueness elements
+- Reference collections/boards and mood board
+- Color palette and lighting details
 
 ### OPPORTUNITIES & RISKS
-Extract content about market and challenges:
-- Market opportunities
-- Potential risks
-- Technical or design constraints
+Extract content about opportunities and risks:
+- Opportunities and how they are used
+- Risks, likelihood, and counteractions
 
 ## IMPORTANT RULES
 

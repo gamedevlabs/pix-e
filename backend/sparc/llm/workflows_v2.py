@@ -747,27 +747,21 @@ class SPARCRouterWorkflow:
                             "pillars_count": len(relevant_pillars_text.split("\n")),
                         }
 
-            # Check if we should skip LLM call
+            # When router found no content for this aspect, fall back
+            # to full game text so the agent can make its own determination
+            # instead of returning a hard-coded not_provided stub.
             if len(sections) == 0:
-                # Return not_provided without LLM call
-                response = agent.get_not_provided_response()
-                result = AgentResult(
-                    agent_name=agent.name,
-                    success=True,
-                    data=response.model_dump(),
-                    model_used=None,
-                    execution_time_ms=0,
-                    prompt_tokens=0,
-                    completion_tokens=0,
-                    total_tokens=0,
-                )
-            else:
-                # Run agent with extracted sections and pillar context
-                agent_context = {
-                    **context,
-                    "data": agent_data,
-                }
-                result = await agent.run(agent_context)
+                game_text = context.get("data", {}).get("game_text", "")
+                if game_text:
+                    sections = [game_text]
+                    agent_data["extracted_sections"] = sections
+
+            # Run agent with extracted sections and pillar context
+            agent_context = {
+                **context,
+                "data": agent_data,
+            }
+            result = await agent.run(agent_context)
 
             # Save to DB - use the full agent_data that was actually sent to the agent
             if self.evaluation:

@@ -1,4 +1,5 @@
 import argparse
+import concurrent.futures
 import json
 import os
 import sys
@@ -25,7 +26,7 @@ def _resolve_concept(project) -> Optional[Any]:
     )
 
 
-def _run_monolithic(game_text: str, model_id: str) -> Dict[str, Any]:
+def _run_monolithic_eval(game_text: str, model_id: str) -> Dict[str, Any]:
     from llm.orchestrator import LLMOrchestrator
     from llm.types import LLMRequest
 
@@ -108,11 +109,118 @@ def _run_router_v2(
     }
 
 
+def _build_failed_result(error: Exception) -> Dict[str, Any]:
+    return {
+        "success": False,
+        "results": {},
+        "execution_time_ms": 0,
+        "total_tokens": 0,
+        "estimated_cost_eur": 0,
+        "errors": [str(error)],
+        "warnings": [],
+    }
+
+
+def _evaluate_concept(
+    *,
+    concept_payload: Dict[str, Any],
+    user_id: int,
+    model_name: str,
+) -> Dict[str, Any]:
+    from django.contrib.auth import get_user_model
+
+    from llm.logfire_config import get_logfire
+    from tools.experiments.rq1_normalize import run_rq1_normalize
+
+    user = get_user_model().objects.get(id=user_id)
+
+    game_text = concept_payload["game_text"]
+    project_id = concept_payload["project_id"]
+
+    logfire = get_logfire()
+
+    with logfire.span(
+        "rq1.concept",
+        project_id=str(project_id),
+        project_name=concept_payload["project_name"],
+        concept_id=str(concept_payload["concept_id"]),
+    ):
+        with logfire.span("rq1.mode.monolithic"):
+            try:
+                monolithic = _run_monolithic_eval(game_text, model_name)
+            except Exception as exc:
+                monolithic = _build_failed_result(exc)
+        with logfire.span("rq1.mode.agentic_full_text"):
+            try:
+                agentic_full = _run_router_v2(
+                    game_text=game_text,
+                    model_id=model_name,
+                    user=user,
+                    pillar_mode="none",
+                    context_strategy="full_text",
+                    project_id=project_id,
+                )
+            except Exception as exc:
+                agentic_full = _build_failed_result(exc)
+        with logfire.span("rq1.mode.agentic_routed"):
+            try:
+                agentic_routed = _run_router_v2(
+                    game_text=game_text,
+                    model_id=model_name,
+                    user=user,
+                    pillar_mode="smart",
+                    context_strategy="router",
+                    project_id=project_id,
+                )
+            except Exception as exc:
+                agentic_routed = _build_failed_result(exc)
+
+    with logfire.span("rq1.normalize"):
+        monolithic_synth = run_rq1_normalize(
+            model_name=model_name,
+            evaluation_output=monolithic.get("results", {}),
+            evaluation_type="monolithic",
+        )
+        agentic_full_synth = run_rq1_normalize(
+            model_name=model_name,
+            evaluation_output=agentic_full.get("results", {}),
+            evaluation_type="agentic_full_text",
+        )
+        agentic_routed_synth = run_rq1_normalize(
+            model_name=model_name,
+            evaluation_output=agentic_routed.get("results", {}),
+            evaluation_type="agentic_routed",
+        )
+
+    return {
+        "project_id": project_id,
+        "project_name": concept_payload["project_name"],
+        "project_description": concept_payload["project_description"],
+        "concept_id": concept_payload["concept_id"],
+        "game_text": game_text,
+        "monolithic": monolithic,
+        "agentic_full_text": agentic_full,
+        "agentic_routed": agentic_routed,
+        "rq1_synthesis": {
+            "monolithic": monolithic_synth,
+            "agentic_full_text": agentic_full_synth,
+            "agentic_routed": agentic_routed_synth,
+        },
+        "_index": concept_payload["_index"],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run RQ1 three-arm SPARC evaluation")
     parser.add_argument("--user-id", type=int, default=2)
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument(
+        "--max-parallel",
+        type=int,
+        default=5,
+        help="Maximum number of concepts to process in parallel.",
+    )
     parser.add_argument(
         "--limit",
         type=int,
@@ -151,13 +259,13 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     from llm.logfire_config import get_logfire
-    from tools.experiments.rq1_synthesis import run_rq1_synthesis
 
     run_meta = {
         "user_id": args.user_id,
         "model": args.model,
         "project_id": args.project_id,
         "limit": args.limit,
+        "max_parallel": args.max_parallel,
         "started_at": timestamp,
     }
 
@@ -171,76 +279,43 @@ def main() -> int:
         project_id=args.project_id or "",
         limit=args.limit or "",
     ):
-        for project in projects:
+        concept_payloads: list[Dict[str, Any]] = []
+        for index, project in enumerate(projects):
             concept = _resolve_concept(project)
             if not concept:
                 continue
-
-            game_text = concept.content
-
-            with logfire.span(
-                "rq1.concept",
-                project_id=str(project.id),
-                project_name=project.name,
-                concept_id=str(concept.id),
-            ):
-                with logfire.span("rq1.mode.monolithic"):
-                    monolithic = _run_monolithic(game_text, args.model)
-                with logfire.span("rq1.mode.agentic_full_text"):
-                    agentic_full = _run_router_v2(
-                        game_text=game_text,
-                        model_id=args.model,
-                        user=user,
-                        pillar_mode="none",
-                        context_strategy="full_text",
-                        project_id=project.id,
-                    )
-                with logfire.span("rq1.mode.agentic_routed"):
-                    agentic_routed = _run_router_v2(
-                        game_text=game_text,
-                        model_id=args.model,
-                        user=user,
-                        pillar_mode="smart",
-                        context_strategy="router",
-                        project_id=project.id,
-                    )
-
-            with logfire.span("rq1.synthesis"):
-                monolithic_synth = run_rq1_synthesis(
-                    model_name=args.model,
-                    mode="monolithic",
-                    results=monolithic.get("results", {}),
-                )
-                agentic_full_synth = run_rq1_synthesis(
-                    model_name=args.model,
-                    mode="agentic",
-                    results=agentic_full.get("results", {}),
-                )
-                agentic_routed_synth = run_rq1_synthesis(
-                    model_name=args.model,
-                    mode="agentic",
-                    results=agentic_routed.get("results", {}),
-                )
-
-            results.append(
+            concept_payloads.append(
                 {
                     "project_id": project.id,
                     "project_name": project.name,
                     "project_description": project.description,
                     "concept_id": concept.id,
-                    "game_text": game_text,
-                    "monolithic": monolithic,
-                    "agentic_full_text": agentic_full,
-                    "agentic_routed": agentic_routed,
-                    "rq1_synthesis": {
-                        "monolithic": monolithic_synth,
-                        "agentic_full_text": agentic_full_synth,
-                        "agentic_routed": agentic_routed_synth,
-                    },
+                    "game_text": concept.content,
+                    "_index": index,
                 }
             )
 
+        max_workers = max(1, min(args.max_parallel, len(concept_payloads)))
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers
+        ) as executor:
+            futures = [
+                executor.submit(
+                    _evaluate_concept,
+                    concept_payload=payload,
+                    user_id=args.user_id,
+                    model_name=args.model,
+                )
+                for payload in concept_payloads
+            ]
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
+
     run_meta["finished_at"] = time.strftime("%Y%m%d_%H%M%S")
+
+    results.sort(key=lambda item: item.get("_index", 0))
+    for item in results:
+        item.pop("_index", None)
 
     (output_dir / "summary.json").write_text(
         json.dumps(run_meta, indent=2, ensure_ascii=True) + "\n",

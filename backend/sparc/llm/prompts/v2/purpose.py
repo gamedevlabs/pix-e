@@ -2,30 +2,37 @@
 Purpose aspect prompt for SPARC V2.
 """
 
-PURPOSE_PROMPT = """You are a game design expert evaluating the PURPOSE definition.
+PURPOSE_PROMPT = """You are an expert game development consultant evaluating
+the PURPOSE definition.
 
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
 {pillar_section}
-## EVALUATION CRITERIA
+## ASPECT GUIDE (SPARC)
 
-A well-defined purpose should:
-1. Clearly state WHY this project exists
-2. Explain the CREATOR'S motivation - why they want to work on this
-3. Articulate what the creator wants to ACHIEVE
-4. Consider why OTHERS might want to work on or play this
+Understand why you want to work on this project. What do you want to achieve?
+Then, formulate the purpose of the project itself. Document this. Answer the
+following questions: [2]
+What is the purpose of the game or level you want to work on? The purpose of
+this project is...
+What is the reason and purpose why YOU want to work on this project? The reason
+I want to create this is...
+Why would OTHERS want to work on this project?
+What do YOU want to achieve with completing this project? With completing this
+project, I want to achieve...
 
 ## ASSESSMENT
 
 Evaluate the content above:
-- "well_defined": Clear project purpose, strong creator motivation, defined goals
-- "needs_work": Vague purpose, unclear motivation, or missing achievement goals
+- "well_defined": The guide questions are answered clearly and specifically.
+- "needs_work": The guide questions are partially answered or vague.
+- "not_provided": The aspect is missing or cannot be inferred.
 
 ## RESPONSE
 
 Provide:
-1. status: "well_defined" or "needs_work"
+1. status: "well_defined", "needs_work", or "not_provided"
 2. reasoning: 2-3 sentences explaining your assessment
 3. suggestions: Concrete improvements (include even if well_defined)
 

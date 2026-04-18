@@ -23,74 +23,75 @@ Extract content related to these aspects. Only extract content that is
 DIRECTLY relevant to each aspect.
 
 ### PLAYER EXPERIENCE
-Content describing what the player will experience emotionally and experientially.
-- How the game should make players feel
-- Emotional keywords and experiences (tension, joy, triumph, fear, wonder, etc.)
-- Description of the player's perspective and actions
-- High concept statements about the experience
+Content about the player experience definition.
+- What the player experiences, from the player's perspective in active form
+- Emotional experience and vivid, visualizable description
+- High concept statement describing the experience
 
 ### THEME
-Content about the game's thematic elements.
-- The dominant, unifying theme
+Content about the game's theme.
+- Dominant and unifying theme
 - Secondary themes
-- How themes are expressed throughout the concept
 
 ### PURPOSE
-Content about why this project exists and motivations.
+Content about why this project exists.
 - Purpose of the game or level
-- Why the creator wants to work on this
+- Reason and purpose why the creator wants to work on this
 - Why others would want to work on this
 - What the creator wants to achieve
 
 ### GAMEPLAY
-Content describing core mechanics and player actions.
-- Core verbs that describe gameplay (explore, craft, fight, build, etc.)
-- Core mechanics and systems
-- What the player does moment-to-moment (30 seconds of gameplay)
-- Level-specific mechanics if mentioned
+Content describing core gameplay.
+- 3-5 verbs that describe gameplay experience
+- Core mechanics relevant to the idea
+- 30 seconds of gameplay (moment-to-moment actions)
+- Special level core mechanics if mentioned
 
 ### GOALS, CHALLENGES & REWARDS
 Content about objectives, obstacles, and rewards.
-- Player objectives and goals
-- Obstacles and challenges the player faces
-- How challenges test the player
-- Rewards for completing objectives
-- How objectives/rewards are communicated to the player
+- Objectives required to complete the level/game
+- Where the player starts and where the objective is
+- Obstacles and how they challenge the player
+- Rewards for achieving objectives and story-related outcomes
+- How objectives, obstacles, and rewards are communicated to the player
 
 ### PLACE
-Content about setting and environment.
-- Environment setting and world
-- Key locations mentioned
-- How specific the locations are described
+Content about the place/setting.
+- Environment setting
+- Concrete key locations
 
 ### STORY & NARRATIVE
-Content about plot, characters, and storytelling.
-- The story of the game/level
+Content about story and narrative.
+- Rough story and how the player experiences it
+- Story of the environment or game
 - What happened before the player arrived
-- How the player experiences the story
-- Characters mentioned
-- Storytelling methods (environmental, cutscenes, dialogue, etc.)
+- The arrival of the player (how and why)
+- Player goals and purpose
+- How the arrival is communicated to the player
+- History of the place
+- How the story of the environment is told
+- Key events the player experiences while traveling
+- Storytelling methods (environmental, gameplay, cutscenes, narrators, dialogues)
 
 ### UNIQUE FEATURES
-Content about what makes this game unique.
-- Claimed unique features
-- How it differs from other games
-- Improvements on existing genre/themes
-- Defining elements that set it apart
+Content about unique features.
+- What is unique about the idea
+- How it differs from other projects
+- How it improves upon existing genre/location/theme
+- Defining elements (3-5 features)
 
 ### ART DIRECTION
-Content about visual style and aesthetics.
+Content about artistic vision.
 - Art style (realistic, stylized, cartoonish, etc.)
-- Color palette information
-- Lighting and atmosphere
 - Visual uniqueness elements
-- References or inspirations mentioned
+- Reference collections/boards and mood board
+- Color palette: primary/secondary, light source, shadow color
+- Light vs. dark ratio and warm/cool palette
 
 ### OPPORTUNITIES & RISKS
-Content about market position and project risks.
-- Market opportunities identified
-- Potential risks or challenges
-- How risks might be mitigated
+Content about opportunities and risks.
+- Opportunities and how to use them
+- Risks, likelihood, and counteractions
 
 ## INSTRUCTIONS
 

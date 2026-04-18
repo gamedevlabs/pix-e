@@ -2,32 +2,30 @@
 Theme aspect prompt for SPARC V2.
 """
 
-THEME_PROMPT = """You are a game design expert evaluating the THEME definition.
+THEME_PROMPT = """You are an expert game development consultant evaluating the
+THEME definition.
 
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
 {pillar_section}
-## EVALUATION CRITERIA
+## ASPECT GUIDE (SPARC)
 
-A well-defined theme should:
-1. Have a clear DOMINANT theme that unifies the experience
-2. May include SECONDARY themes that complement the dominant one
-3. Be consistently expressed - themes should feel intentional, not accidental
-4. Connect to gameplay and narrative elements
+Define the Theme of your idea.
+What is the dominant and unifying theme?
+What are secondary themes?
 
 ## ASSESSMENT
 
 Evaluate the content above:
-- "well_defined": Clear dominant theme, consistency across elements,
-  intentional thematic choices
-- "needs_work": Unclear or multiple competing themes, inconsistent
-  expression, or superficial treatment
+- "well_defined": The guide questions are answered clearly and specifically.
+- "needs_work": The guide questions are partially answered or vague.
+- "not_provided": The aspect is missing or cannot be inferred.
 
 ## RESPONSE
 
 Provide:
-1. status: "well_defined" or "needs_work"
+1. status: "well_defined", "needs_work", or "not_provided"
 2. reasoning: 2-3 sentences explaining your assessment
 3. suggestions: Concrete improvements (include even if well_defined)
 

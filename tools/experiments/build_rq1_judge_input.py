@@ -11,9 +11,10 @@ def _load_json(path: Path) -> Any:
 
 def _join_list(value: Any) -> str:
     if not value:
-        return ""
+        return "None"
     if isinstance(value, list):
-        return "; ".join(str(v) for v in value)
+        joined = "; ".join(str(v) for v in value if v is not None)
+        return joined or "None"
     return str(value)
 
 
@@ -23,21 +24,18 @@ def _format_rq1_synthesis(result: Dict[str, Any]) -> str:
     parts = []
     parts.append(f"Overall Status: {result.get('overall_status', '')}")
     parts.append(f"Overall Reasoning: {result.get('overall_reasoning', '')}")
-    strongest = _join_list(result.get("strongest_aspects"))
-    if strongest:
-        parts.append(f"Strongest Aspects: {strongest}")
-    weakest = _join_list(result.get("weakest_aspects"))
-    if weakest:
-        parts.append(f"Weakest Aspects: {weakest}")
-    critical = _join_list(result.get("critical_gaps"))
-    if critical:
-        parts.append(f"Critical Gaps: {critical}")
-    next_steps = _join_list(result.get("next_steps"))
-    if next_steps:
-        parts.append(f"Next Steps: {next_steps}")
+    parts.append(
+        f"Strongest Aspects: {_join_list(result.get('strongest_aspects'))}"
+    )
+    parts.append(
+        f"Weakest Aspects: {_join_list(result.get('weakest_aspects'))}"
+    )
+    parts.append(f"Critical Gaps: {_join_list(result.get('critical_gaps'))}")
+    parts.append(f"Next Steps: {_join_list(result.get('next_steps'))}")
     consistency = result.get("consistency_notes")
-    if consistency:
-        parts.append(f"Consistency Notes: {consistency}")
+    parts.append(
+        f"Consistency Notes: {consistency if consistency else 'None'}"
+    )
     return "\n".join(parts).strip()
 
 

@@ -19,6 +19,7 @@ Analyze all aspect evaluations above and provide a synthesis that:
 2. Identifies the strongest and weakest aspects
 3. Notes any cross-aspect inconsistencies or synergies
 4. Provides prioritized next steps
+5. Avoids marketing, business, or managerial advice
 
 ## ASSESSMENT CRITERIA
 
@@ -34,21 +35,31 @@ Analyze all aspect evaluations above and provide a synthesis that:
 
 ## RESPONSE FORMAT
 
-Provide:
-1. overall_status: "ready", "nearly_ready", or "needs_work"
-2. overall_reasoning: 2-3 sentence summary of the concept's state
-3. strongest_aspects: Up to 3 aspects with "well_defined" status (list of aspect names)
-4. weakest_aspects: ONLY aspects with "needs_work" or "not_provided" status
-   (list of aspect names, can be empty if all aspects are well-defined)
-5. critical_gaps: Aspects that are blockers for prototyping (list of aspect names,
-   only include aspects with "not_provided" status or critical "needs_work")
-6. next_steps: 3-5 prioritized actions to improve the concept
-7. consistency_notes: Any cross-aspect inconsistencies or synergies
-   (optional, null if none)
+Return a JSON object with this exact structure:
 
-**IMPORTANT**: Do not include well-defined aspects in weakest_aspects
-just because they are relatively weaker. Only include aspects that
-actually need work.
+{{
+  "overall_status": "ready" | "nearly_ready" | "needs_work",
+  "overall_reasoning": "2-3 sentence summary of the concept's state",
+  "strongest_aspects": ["aspect_name_1", "aspect_name_2"],
+  "weakest_aspects": ["aspect_name_1", "aspect_name_2"],
+  "critical_gaps": ["aspect_name_1"],
+  "next_steps": ["action 1", "action 2", "action 3"],
+  "consistency_notes": "cross-aspect inconsistencies or synergies, or null"
+}}
 
-Return a JSON object with these fields.
+**Field rules:**
+- strongest_aspects: Up to 3 aspects with "well_defined" status
+- weakest_aspects: ONLY aspects with "needs_work" or "not_provided" status.
+  Do not include well-defined aspects just because they are relatively weaker.
+- critical_gaps: Must be a subset of weakest_aspects. Only aspects with
+  "not_provided" status or critical "needs_work" that block prototyping.
+- If overall_status is "ready", weakest_aspects and critical_gaps must be [].
+- next_steps: 3-5 prioritized actions to improve the concept.
+- consistency_notes: null if none.
+
+**IMPORTANT**: Each item in strongest_aspects, weakest_aspects, and
+critical_gaps must be a SEPARATE string element in the JSON array.
+Do NOT concatenate multiple aspect names into a single string.
+
+Return all fields. Use [] for empty lists and null for consistency_notes.
 """

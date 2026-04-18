@@ -8,11 +8,18 @@ from django.core.management.base import BaseCommand, CommandError
 from game_concept.models import GameConcept, Project
 
 
-def _iter_concept_files(source_dir: Path, include_summaries: bool) -> Iterable[Path]:
+def _iter_concept_files(
+    source_dir: Path,
+    include_summaries: bool,
+    summaries_only: bool = False,
+) -> Iterable[Path]:
     if not source_dir.exists():
         raise CommandError(f"Source directory not found: {source_dir}")
     for path in sorted(source_dir.glob("*.txt")):
-        if not include_summaries and "summary" in path.name.lower():
+        is_summary = "summary" in path.name.lower()
+        if summaries_only and not is_summary:
+            continue
+        if not include_summaries and not summaries_only and is_summary:
             continue
         yield path
 
@@ -51,6 +58,11 @@ class Command(BaseCommand):
             help="Also import summary files (default: skip).",
         )
         parser.add_argument(
+            "--summaries-only",
+            action="store_true",
+            help="Import ONLY summary files (skip full versions).",
+        )
+        parser.add_argument(
             "--limit",
             type=int,
             default=None,
@@ -66,6 +78,7 @@ class Command(BaseCommand):
         user_id = options["user_id"]
         source_dir = Path(options["source_dir"]).resolve()
         include_summaries = options["include_summaries"]
+        summaries_only = options["summaries_only"]
         limit = options["limit"]
         dry_run = options["dry_run"]
 
@@ -75,7 +88,7 @@ class Command(BaseCommand):
         except user_model.DoesNotExist as exc:
             raise CommandError(f"User not found: {user_id}") from exc
 
-        files = list(_iter_concept_files(source_dir, include_summaries))
+        files = list(_iter_concept_files(source_dir, include_summaries, summaries_only))
         if limit is not None:
             files = files[: max(0, limit)]
 
@@ -93,6 +106,8 @@ class Command(BaseCommand):
                 continue
 
             base_name = _clean_project_name(path.stem)
+            if summaries_only:
+                base_name = f"{base_name} (Summary)"
             name = base_name
             suffix = 2
             while Project.objects.filter(user=user, name=name).exists():

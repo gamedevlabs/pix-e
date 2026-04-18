@@ -2,33 +2,43 @@
 Art Direction aspect prompt for SPARC V2.
 """
 
-ART_DIRECTION_PROMPT = """You are a game design expert evaluating ART DIRECTION.
+ART_DIRECTION_PROMPT = """You are an expert game development consultant
+evaluating ART DIRECTION.
 
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
 {pillar_section}
-## EVALUATION CRITERIA
+## ASPECT GUIDE (SPARC)
 
-Well-defined art direction should:
-1. Specify an ART STYLE (realistic, stylized, cartoonish, etc.)
-2. Define COLOR PALETTE - primary colors, secondary colors, light/shadow
-3. Describe LIGHTING - contrast ratio, warm/cool temperature
-4. Identify VISUAL UNIQUENESS elements
-5. Include or reference inspiration (mood boards, references)
+Describe a general artistic vision:
+Pick an Art Style: "What visual art style will your environment be? Will it be
+Realistic? Exaggerated? Stylized? Cartoonish? Etc." (Galuzin, 2016)
+Visually Unique: "How will your project be unique visually/stylistically? Make
+a list of 2-3 things that will make your stand-alone game environment or
+playable level design be different than most similar environment projects out
+there." (Galuzin, 2016)
+Collect first impressions and create Reference Collections, and Reference
+Boards.
+Define the color palette for your project.
+What is the primary color? What are the secondary colors?
+What is the primary light source? What is the shadow color?
+"How much light vs. dark ratio is in your scene? High-contrast? Lots of dark
+areas? Evenly lit?" (Galuzin, 2016)
+"Will your game environment use a warm or cool color palette?" (Galuzin, 2016)
+Create a Mood Board for your project.
 
 ## ASSESSMENT
 
 Evaluate the content above:
-- "well_defined": Clear art style, color palette defined, lighting
-  considered, visual identity established
-- "needs_work": Vague style, missing color palette, or unclear visual
-  direction
+- "well_defined": The guide questions are answered clearly and specifically.
+- "needs_work": The guide questions are partially answered or vague.
+- "not_provided": The aspect is missing or cannot be inferred.
 
 ## RESPONSE
 
 Provide:
-1. status: "well_defined" or "needs_work"
+1. status: "well_defined", "needs_work", or "not_provided"
 2. reasoning: 2-3 sentences explaining your assessment
 3. suggestions: Concrete improvements (include even if well_defined)
 

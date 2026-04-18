@@ -6,6 +6,7 @@ Aggregates aspect evaluations into a final report.
 
 from typing import Any, Dict, List
 
+from llm.types import AgentResult
 from sparc.llm.agents.v2.base import V2BaseAgent
 from sparc.llm.prompts.v2.synthesis import SYNTHESIS_PROMPT
 from sparc.llm.schemas.v2.aspects import SimplifiedAspectResponse
@@ -46,6 +47,18 @@ class SynthesisAgent(V2BaseAgent):
 
         return SYNTHESIS_PROMPT.format(aspect_evaluations=evaluations)
 
+    def execute(self, context: Dict[str, Any]) -> AgentResult:
+        result = super().execute(context)
+        if result.success and isinstance(result.data, dict):
+            result.data = self._normalize_synthesis_data(result.data)
+        return result
+
+    async def run(self, context: Dict[str, Any]) -> AgentResult:
+        result = await super().run(context)
+        if result.success and isinstance(result.data, dict):
+            result.data = self._normalize_synthesis_data(result.data)
+        return result
+
     def _format_evaluations(
         self, aspect_results: Dict[str, SimplifiedAspectResponse]
     ) -> str:
@@ -72,6 +85,75 @@ class SynthesisAgent(V2BaseAgent):
             lines.append("")
 
         return "\n".join(lines)
+
+    def _normalize_synthesis_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        normalized = dict(data)
+
+        def coerce_list(value: Any) -> List[str]:
+            if value is None:
+                return []
+            if isinstance(value, list):
+                return [str(item) for item in value if item is not None]
+            return [str(value)]
+
+        def clean_list(values: List[str]) -> List[str]:
+            cleaned: List[str] = []
+            seen = set()
+            for value in values:
+                # Split concatenated aspect names
+                # (e.g. "place','story_narrative','art_direction")
+                parts = [p.strip().strip("'\"") for p in str(value).split(",")]
+                for part in parts:
+                    item = part.strip()
+                    if not item or item in seen:
+                        continue
+                    seen.add(item)
+                    cleaned.append(item)
+            return cleaned
+
+        overall_status = str(normalized.get("overall_status") or "").strip()
+        strongest = clean_list(coerce_list(normalized.get("strongest_aspects")))
+        weakest = clean_list(coerce_list(normalized.get("weakest_aspects")))
+        critical = clean_list(coerce_list(normalized.get("critical_gaps")))
+        next_steps = clean_list(coerce_list(normalized.get("next_steps")))
+
+        if overall_status == "ready":
+            weakest = []
+            critical = []
+        else:
+            updated_weakest = list(weakest)
+            updated_critical: List[str] = []
+            for item in critical:
+                if item not in updated_weakest:
+                    if len(updated_weakest) < 3:
+                        updated_weakest.append(item)
+                        updated_critical.append(item)
+                    else:
+                        continue
+                else:
+                    updated_critical.append(item)
+            if len(updated_weakest) > 3:
+                updated_weakest = updated_weakest[:3]
+            updated_critical = [
+                item for item in updated_critical if item in updated_weakest
+            ]
+            weakest = updated_weakest
+            critical = updated_critical
+
+        strongest = strongest[:3]
+        weakest = weakest[:3]
+        critical = [item for item in critical if item in weakest]
+        next_steps = next_steps[:5]
+
+        normalized["strongest_aspects"] = strongest
+        normalized["weakest_aspects"] = weakest
+        normalized["critical_gaps"] = critical
+        normalized["next_steps"] = next_steps
+
+        consistency_notes = normalized.get("consistency_notes")
+        normalized["consistency_notes"] = consistency_notes or None
+
+        return normalized
 
     def synthesize_without_llm(
         self, aspect_results: Dict[str, SimplifiedAspectResponse]
@@ -108,7 +190,7 @@ class SynthesisAgent(V2BaseAgent):
         else:
             overall_status = "needs_work"
 
-        return SPARCSynthesis(
+        synthesis = SPARCSynthesis(
             overall_status=overall_status,
             overall_reasoning=self._generate_reasoning(
                 well_defined, needs_work, not_provided
@@ -119,6 +201,8 @@ class SynthesisAgent(V2BaseAgent):
             next_steps=self._generate_next_steps(needs_work, not_provided),
             consistency_notes=None,
         )
+        normalized = self._normalize_synthesis_data(synthesis.model_dump())
+        return SPARCSynthesis(**normalized)
 
     def _generate_reasoning(
         self, well_defined: List[str], needs_work: List[str], not_provided: List[str]

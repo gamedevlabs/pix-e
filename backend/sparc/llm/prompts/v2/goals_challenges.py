@@ -2,34 +2,42 @@
 Goals, Challenges & Rewards aspect prompt for SPARC V2.
 """
 
-GOALS_CHALLENGES_REWARDS_PROMPT = """You are a game design expert evaluating
-GOALS, CHALLENGES & REWARDS.
+GOALS_CHALLENGES_REWARDS_PROMPT = """You are an expert game development
+consultant evaluating GOALS, CHALLENGES & REWARDS.
 
 ## ASPECT-RELEVANT CONTENT
 
 {aspect_text}
 {pillar_section}
-## EVALUATION CRITERIA
+## ASPECT GUIDE (SPARC)
 
-A well-defined goals/challenges/rewards structure should:
-1. List clear OBJECTIVES the player must complete
-2. Define OBSTACLES/CHALLENGES for each objective
-3. Describe how challenges TEST the player
-4. Explain REWARDS for achieving objectives
-5. Consider how objectives and rewards are COMMUNICATED to the player
+We want to design the goals, challenges and rewards for the level, often also
+called "objectives, obstacles and set pieces" (Galuzin, 2016). For this, define
+the following aspects:
+For the story goals you have created on why the player is at this place, create
+a list of objectives that the player has to complete in order to complete this
+level/game. These objectives will be the goals communicated to the player.
+For each objective, describe where the player starts and where the objective is.
+Then, describe the obstacles the player has to overcome to achieve the
+objective. Describe how these obstacles will challenge the player.
+For each objective and obstacles set, describe how you will reward the player
+achieving the objective.
+If these rewards are story-related, describe how the player action caused the
+outcome or influenced its outcome.
+How are you planning to communicate the objectives, obstacles, and rewards to
+the player?
 
 ## ASSESSMENT
 
 Evaluate the content above:
-- "well_defined": Clear objectives, meaningful challenges, appropriate
-  rewards, communication considered
-- "needs_work": Vague goals, missing challenges, unclear rewards, or no
-  communication plan
+- "well_defined": The guide questions are answered clearly and specifically.
+- "needs_work": The guide questions are partially answered or vague.
+- "not_provided": The aspect is missing or cannot be inferred.
 
 ## RESPONSE
 
 Provide:
-1. status: "well_defined" or "needs_work"
+1. status: "well_defined", "needs_work", or "not_provided"
 2. reasoning: 2-3 sentences explaining your assessment
 3. suggestions: Concrete improvements (include even if well_defined)
 

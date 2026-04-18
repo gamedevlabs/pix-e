@@ -16,7 +16,7 @@ def _load_django() -> None:
     django.setup()
 
 
-def _run_monolithic(game_text: str, model_id: str) -> Dict[str, Any]:
+def _run_monolithic_eval(game_text: str, model_id: str) -> Dict[str, Any]:
     from llm.orchestrator import LLMOrchestrator
     from llm.types import LLMRequest
 
@@ -125,7 +125,7 @@ def main() -> int:
 
     game_text = concept.content
 
-    monolithic = _run_monolithic(game_text, args.model)
+    monolithic = _run_monolithic_eval(game_text, args.model)
     agentic_full = _run_router_v2(
         game_text=game_text,
         model_id=args.model,
@@ -142,6 +142,26 @@ def main() -> int:
         context_strategy="router",
         project_id=project.id if project else None,
     )
+
+    from tools.experiments.rq1_normalize import run_rq1_normalize
+
+    rq1_synthesis = {
+        "monolithic": run_rq1_normalize(
+            model_name=args.model,
+            evaluation_output=monolithic.get("results", {}),
+            evaluation_type="monolithic",
+        ),
+        "agentic_full_text": run_rq1_normalize(
+            model_name=args.model,
+            evaluation_output=agentic_full.get("results", {}),
+            evaluation_type="agentic_full_text",
+        ),
+        "agentic_routed": run_rq1_normalize(
+            model_name=args.model,
+            evaluation_output=agentic_routed.get("results", {}),
+            evaluation_type="agentic_routed",
+        ),
+    }
 
     summary = {
         "user_id": args.user_id,
@@ -161,6 +181,7 @@ def main() -> int:
             "monolithic": monolithic,
             "agentic_full_text": agentic_full,
             "agentic_routed": agentic_routed,
+            "rq1_synthesis": rq1_synthesis,
         }
     ]
 

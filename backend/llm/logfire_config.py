@@ -39,6 +39,12 @@ class _NoOpLogfire:
     def exception(self, *args: Any, **kwargs: Any) -> None:
         pass
 
+    def warning(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
+    def shutdown(self) -> None:
+        pass
+
 
 class _NoOpSpan:
     """No-op span context manager."""
@@ -103,9 +109,15 @@ def configure_logfire(service_name: str = "pix-e-backend") -> None:
         logfire.instrument_django()
 
         _configured = True
-    except LogfireConfigError:
+    except LogfireConfigError as exc:
+        import sys
+
+        print(f"Logfire config error (spans disabled): {exc}", file=sys.stderr)
         _configured = True
-    except Exception:
+    except Exception as exc:
+        import sys
+
+        print(f"Logfire setup error (spans disabled): {exc}", file=sys.stderr)
         _configured = True
 
 

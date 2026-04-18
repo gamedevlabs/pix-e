@@ -12,6 +12,9 @@ from sparc.llm.prompts.gameplay import (
 
 # Monolithic baseline prompt
 from sparc.llm.prompts.monolithic import MONOLITHIC_SPARC_PROMPT
+from sparc.llm.prompts.monolithic_synthesis import (
+    MONOLITHIC_SPARC_SYNTHESIS_PROMPT,
+)
 
 # Player-focused prompts
 from sparc.llm.prompts.player_experience import (
@@ -47,4 +50,5 @@ __all__ = [
     "OPPORTUNITIES_RISKS_PROMPT",
     # Monolithic baseline
     "MONOLITHIC_SPARC_PROMPT",
+    "MONOLITHIC_SPARC_SYNTHESIS_PROMPT",
 ]
