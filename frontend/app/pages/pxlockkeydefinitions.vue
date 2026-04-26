@@ -77,12 +77,14 @@ const keysForSelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
 
 interface LockState {
   name: string
+  softGate: boolean
   unlocked_by: string[]
   unlock_mode: PxLockUnlockModeType
 }
 
 const defaultState: LockState = {
   name: '',
+  softGate: false,
   unlocked_by: [],
   unlock_mode: 'permanent',
 }
@@ -160,6 +162,9 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
         <UForm :state="lockState" class="mb-6 space-y-4 p-1" @submit="handleCreateLock">
           <UFormField>
             <UInput v-model="lockState.name" type="text" placeholder="Name" />
+          </UFormField>
+          <UFormField label="Soft Gate" orientation="horizontal">
+            <UCheckbox v-model="lockState.softGate" />
           </UFormField>
           <UFormField label="Unlock Mode" orientation="horizontal">
             <USelectMenu
