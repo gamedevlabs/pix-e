@@ -39,7 +39,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
   }
   
   function isSoftGate(lock: PxLock) {
-    return pxLockDefinitions.value.find((def) => def.id === lock.definition)!.soft_gate
+    return pxLockDefinitionsById.value[lock.definition]!.soft_gate
   }
 
   const softGatedEdges = computed(() => {
@@ -51,11 +51,11 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
   })
 
   const pathNodesAndEdges = computed(() => {
-    return Array.from(Array(pathNodes.value.length), (_, i) => ({ node: pathNodes.value[i], edge: pathEdges.value[i]}));
+    return Array.from(Array(pathNodes.value.length), (_, i) => ({ node: pathNodes.value[i]!, edge: pathEdges.value[i]}));
   })
 
   const gatedPath = computed(() => {
-    let keys: PxKey[] = []
+    let keys: PxKeySet = {}
     const gatedNodes: Node[] = []
     const gatedEdges: Edge[] = []
     let softUnlock = false
@@ -64,7 +64,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
             if (step.node) gatedNodes.push(step.node)
             if (step.edge) gatedEdges.push(step.edge)
         } else {
-            if (step.node) keys = keys.concat(step.node.data.keys)
+            if (step.node) keys = { ...keys, ...getKeySetFromKeyAssignment(step.node.data.keys), ...keys }
             if (isSoftUnlock(keys, step.edge?.data.locks)) {
                 console.log(`soft unlock found on edge ${step.edge?.id}`)
                 softUnlock = true
@@ -74,10 +74,12 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     return { nodes: gatedNodes, edges: gatedEdges }
   })
 
-  // TODO to use this reactively, pass definitions as props
-  const lockDefinitionsMap = computed(() => {
-    fetchPxLockDefinitions()
-    return new Map(pxLockDefinitions.value.map(def => [def.id, def]));
+  const pxLockDefinitionsById: ComputedRef<Record<string, PxLockDefinition>> = computed(() => {
+    return pxLockDefinitions.value.reduce((acc, def) => ({ [def.id]: def, ...acc}), {});
+  })
+  
+  const pxKeyDefinitionsById: ComputedRef<Record<string, PxKeyDefinition>> = computed(() => {
+    return pxKeyDefinitions.value.reduce((acc, def) => ({ [def.id]: def, ...acc}), {});
   })
 
   function getKeysInNode(nodeId: string) : PxKey[] {
@@ -111,7 +113,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     }
 
     const softGates : PxLock[] = locks
-      .filter((lock) => pxLockDefinitions.value.find((def) => def.id === lock.definition)!.soft_gate)
+      .filter((lock) => pxLockDefinitionsById.value[lock.definition]!.soft_gate)
 
     return !canUnlock(keys, softGates, false)
   }
@@ -130,7 +132,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
     // for set of locks, determine all sets of keys that can unlock them
     const requiredKeysPerLock: string[][] = locks
-      .map((lock) => pxLockDefinitions.value.find((def) => def.id === lock.definition)!)
+      .map((lock) => pxLockDefinitionsById.value[lock.definition]!)
       .map((def) => def.soft_gate && unlockSoftGates ? [] : def.unlocked_by)
     const unlockingKeySets: PxKeySet[] = cartesian(requiredKeysPerLock)
         .map(keys => getKeySetFromDefArray(keys))
@@ -212,8 +214,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
         // clean up inventory
         // TODO: remove consumed locks
-        //inventory = inventory.filter(key => !pxKeyDefinitions.value.find(def => def.id === key.definition)!.fixed)
-        inventory = Object.fromEntries(Object.entries(inventory).filter(([key, count]) => !pxKeyDefinitions.value.find(def => def.id === key)!.fixed))
+        inventory = Object.fromEntries(Object.entries(inventory).filter(([keyDef, count]) => !pxKeyDefinitionsById.value[keyDef]!.fixed))
         console.log(`inventory after filter: ${JSON.stringify(inventory)}`)
         // update inventory in queue nodes instead: q[idx]!.keys + node.keys - keys consumed when passing outEdge
       }
