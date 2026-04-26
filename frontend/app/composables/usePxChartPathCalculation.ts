@@ -177,7 +177,6 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
     // iterate
     let found = false
-    // let inventory: PxKey[] = []
     let inventory: PxKeySet = {}
     let allLockedEdges: string[] = []
     while (q.length && !found) {
@@ -192,15 +191,11 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
           .filter((edge) => edge.source === node.id)
 
       if (!ignoreLocks) {
-        // update inventory
-        inventory = {...node.keys, ...inventory}
-        // console.log(`inventory after adding: ${JSON.stringify(inventory)}`)
-
         // check for locked transitions
         const [unlockedOutEdges, lockedOutEdges] = outEdges
           .reduce(
             (acc, edge) =>
-              canUnlock(inventory, edge.data.locks)
+              canUnlock(node.keys, edge.data.locks)
                 ? (acc[0].push(edge), acc)
                 : (acc[1].push(edge), acc),
             [[], []] as [Edge[], Edge[]],
@@ -214,8 +209,8 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
         // clean up inventory
         // TODO: remove consumed locks
-        inventory = Object.fromEntries(Object.entries(inventory).filter(([keyDef, count]) => !pxKeyDefinitionsById.value[keyDef]!.fixed))
-        console.log(`inventory after filter: ${JSON.stringify(inventory)}`)
+        inventory = Object.fromEntries(Object.entries(node.keys).filter(([keyDef, count]) => !pxKeyDefinitionsById.value[keyDef]!.fixed))
+        // console.log(`inventory after filter: ${JSON.stringify(node.keys)}`)
         // update inventory in queue nodes instead: q[idx]!.keys + node.keys - keys consumed when passing outEdge
       }
 
@@ -228,6 +223,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
           dist.set(outNodeId, alt)
           const idx = findIndex(q, ['id', outNodeId])
           q[idx]!.prio = alt
+          if (!ignoreLocks) q[idx]!.keys = { ...inventory, ...q[idx]!.keys }
           q.sort((n1, n2) => n2.prio - n1.prio)
         }
         if (outNodeId == targetId) {
