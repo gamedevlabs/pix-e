@@ -13,6 +13,30 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
   // const gatedPathEdges = ref<string[]>([])
   //const pathIgnoringLocks = ref<string[]>([])
   const locked = ref<string[]>([])
+
+  type PxKeySet = Record<string, number>
+
+  function getKeySetFromDefArray(keys: string[]) : PxKeySet {
+    const keyset: PxKeySet = {}
+    for (const key of keys) {
+        if (!keyset[key]) keyset[key] = 0
+        keyset[key] += 1
+    }
+    return keyset
+  }
+
+  // assumes the input is a single assignment,
+  // i.e. each definition can only appear once
+  function getKeySetFromKeyAssignment(keys: PxKey[]) : PxKeySet {
+    if (!keys) return {}
+
+    const keyset: PxKeySet = {}
+    for (const key of keys) {
+        keyset[key.definition] = key.count
+        console.log(`building keyset: ${JSON.stringify(keyset)}`)
+    }
+    return keyset
+  }
   
   function isSoftGate(lock: PxLock) {
     return pxLockDefinitions.value.find((def) => def.id === lock.definition)!.soft_gate
@@ -56,7 +80,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     return new Map(pxLockDefinitions.value.map(def => [def.id, def]));
   })
 
-  function getKeysInNode(nodeId: string) {
+  function getKeysInNode(nodeId: string) : PxKey[] {
     return nodes.value.find((node) => node.id === nodeId)!.data.keys
   }
 
@@ -80,7 +104,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
   // TODO: handle key definition ids instead of full key objects
   // assumes non-soft gate locks can be unlocked with available keys
-  function isSoftUnlock(keys: PxKey[], locks: PxLock[]) {
+  function isSoftUnlock(keys: PxKeySet, locks: PxLock[]) {
     //console.log(`checking for soft unlock`)
     if (!locks || !locks.length) {
       return false
@@ -99,7 +123,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
   // current assumptions/limitations:
   // - keys are reusable. the same reusable key can be used to unlock multiple locks on the same edge
   // counts are ignored
-  function canUnlock(keys: PxKey[], locks: PxLock[], unlockSoftGates: boolean = true) {
+  function canUnlock(keysInInventory: PxKeySet, locks: PxLock[], unlockSoftGates: boolean = true) {
     if (!locks.length) {
       return true
     }
@@ -108,17 +132,20 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     const requiredKeysPerLock: string[][] = locks
       .map((lock) => pxLockDefinitions.value.find((def) => def.id === lock.definition)!)
       .map((def) => def.soft_gate && unlockSoftGates ? [] : def.unlocked_by)
-    //console.log(`requiredKeysPerLock: ${JSON.stringify(requiredKeysPerLock)}`)
-    const unlockingKeySets: string[][] = cartesian(requiredKeysPerLock)
-    // console.log(`unlockingKeySets: ${JSON.stringify(unlockingKeySets)}`)
+    const unlockingKeySets: PxKeySet[] = cartesian(requiredKeysPerLock)
+        .map(keys => getKeySetFromDefArray(keys))
     
 
     // edge is unlockable if any unlocking key set is a subset of the available keys
-    const availableKeyDefs = keys.map((k) => k.definition)
-    //console.log(`availableKeyDefs: ${JSON.stringify(availableKeyDefs)}`)
-    const canUnlock = unlockingKeySets.some((set) => set.every((key) => availableKeyDefs.includes(key)))
-    //console.log(`can unlock: ${canUnlock}`)
+    const canUnlock = unlockingKeySets
+        .some((unlocking) => Object.entries(unlocking).every(([key, count]) => keysInInventory[key] && keysInInventory[key] >= count))
     return canUnlock
+  }
+
+  interface QueueNode {
+        id: string,
+        prio: number,
+        keys: PxKeySet
   }
 
   async function dijkstraInChart(sourceId: string, targetId: string, ignoreLocks: boolean = false) {
@@ -128,7 +155,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
       await fetchPxKeyDefinitions()
     }
 
-    const q = [{ id: sourceId, prio: 0, keys: getKeysInNode(sourceId) }]
+    const q: QueueNode[] = [{ id: sourceId, prio: 0, keys: getKeySetFromKeyAssignment(getKeysInNode(sourceId)) }]
     const dist = new Map<string, number>()
     dist.set(sourceId, 0)
     const prev = new Map<string, string>()
@@ -137,7 +164,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     for (const node of nodes.value) {
       if (node.id != sourceId) {
         dist.set(node.id, Infinity)
-        q.push({ id: node.id, prio: Infinity, keys: node.data.keys })
+        q.push({ id: node.id, prio: Infinity, keys: getKeySetFromKeyAssignment(node.data.keys) })
       }
     }
 
@@ -148,7 +175,8 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
     // iterate
     let found = false
-    let inventory: PxKey[] = []
+    // let inventory: PxKey[] = []
+    let inventory: PxKeySet = {}
     let allLockedEdges: string[] = []
     while (q.length && !found) {
       const node = q.pop()
@@ -163,10 +191,8 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
       if (!ignoreLocks) {
         // update inventory
-        if (node.keys && node.keys.length) {
-          inventory = inventory.concat(node.keys)
-        }
-        // console.log(`inventory: ${JSON.stringify(inventory)}`)
+        inventory = {...node.keys, ...inventory}
+        // console.log(`inventory after adding: ${JSON.stringify(inventory)}`)
 
         // check for locked transitions
         const [unlockedOutEdges, lockedOutEdges] = outEdges
@@ -186,7 +212,10 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
 
         // clean up inventory
         // TODO: remove consumed locks
-        inventory = inventory.filter(key => !pxKeyDefinitions.value.find(def => def.id === key.definition)!.fixed)
+        //inventory = inventory.filter(key => !pxKeyDefinitions.value.find(def => def.id === key.definition)!.fixed)
+        inventory = Object.fromEntries(Object.entries(inventory).filter(([key, count]) => !pxKeyDefinitions.value.find(def => def.id === key)!.fixed))
+        console.log(`inventory after filter: ${JSON.stringify(inventory)}`)
+        // update inventory in queue nodes instead: q[idx]!.keys + node.keys - keys consumed when passing outEdge
       }
 
       for (const outEdge of outEdges) {
