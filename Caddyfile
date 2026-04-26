@@ -1,0 +1,19 @@
+http://pixie.soc.cit.tum.de {
+# Proxy API requests to Django (Synchronous)
+    handle /api/* {
+                      reverse_proxy django:8000
+                  }
+
+# Serve Django static files
+    handle /static/* {
+                         root * /app/staticfiles
+                         file_server
+                     }
+
+# Serve Nuxt static files
+    handle {
+               root * /usr/share/caddy/html
+               try_files {path} {path}/ /index.html
+               file_server
+           }
+}
