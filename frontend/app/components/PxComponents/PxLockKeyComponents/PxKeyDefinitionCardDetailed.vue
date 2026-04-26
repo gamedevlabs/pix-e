@@ -47,7 +47,7 @@ const keyTypes = ref(['item', 'ability'])
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-key" class="size-5" />
+        🔑
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
           <NuxtLink :to="{ name: 'pxkeydefinitions-id', params: { id: props.definition.id } }">
             {{ props.definition.name }}

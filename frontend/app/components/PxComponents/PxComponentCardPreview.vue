@@ -11,11 +11,11 @@ function emitDelete() {
 </script>
 <template>
   <UFieldGroup>
-    <UButton :to="{ name: 'pxcomponents-id', params: { id: props.component.id } }" variant="subtle" >
+    <UButton :to="{ name: 'pxcomponents-id', params: { id: props.component.id } }" variant="subtle">
       <p class="font-semibold">{{ props.definition.name }}</p>
       <p>{{ props.component.value }}</p></UButton
     >
-    <UButton color="error" icon="i-lucide-trash-2" :on-click="emitDelete" variant="subtle"/>
+    <UButton color="error" icon="i-lucide-trash-2" :on-click="emitDelete" variant="subtle" />
   </UFieldGroup>
 </template>
 <style scoped></style>
