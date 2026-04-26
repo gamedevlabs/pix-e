@@ -434,7 +434,8 @@ class PxLockDefinition(models.Model):
     name = models.CharField(max_length=255)
 
     unlocked_by = models.ManyToManyField(PxKeyDefinition)
-
+    soft_gate = models.BooleanField()
+    
     UNLOCK_MODE_CHOICES = [
         ("permanent", "Permanent"),
         ("temporary", "Temporary"),

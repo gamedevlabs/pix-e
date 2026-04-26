@@ -7,6 +7,7 @@ type PxKeyTypesType = (typeof pxKeyTypes)[number] // TODO: improve name
 interface PxLockDefinition {
   id: string
   name: string
+  soft_gate: boolean
   unlocked_by: string[] // ids of key definitions
   unlock_mode: PxLockUnlockModeType
   created_at: string

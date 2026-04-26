@@ -36,12 +36,14 @@ const keys = computed(() => {
 
 interface LockState {
   name: string
+  softGate: boolean
   unlockedBy: string[]
   unlockMode: PxLockUnlockModeType
 }
 
 const defaultState: LockState = {
   name: '',
+  softGate: false,
   unlockedBy: [],
   unlockMode: 'permanent',
 }
@@ -65,6 +67,9 @@ async function handleUpdate(updatedDefinition: PxLockDefinition) {
     <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
       <UFormField>
         <UInput v-model="state.name" type="text" placeholder="Name" />
+      </UFormField>
+      <UFormField label="Soft Gate?">
+        <UCheckbox v-model="state.softGate" />
       </UFormField>
       <UFormField label="Unlock Mode">
         <USelectMenu v-model="state.unlockMode" :items="unlockModes" />
