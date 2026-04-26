@@ -13,12 +13,13 @@ const emit = defineEmits<{
 
 const isBeingEdited = ref(false)
 
-type EditableLockDefinition = Pick<PxLockDefinition, 'name' | 'unlocked_by' | 'unlock_mode'>
+type EditableLockDefinition = Pick<PxLockDefinition, 'name' | 'unlocked_by' | 'unlock_mode' | 'soft_gate'>
 
 const editForm: Ref<EditableLockDefinition> = ref({
   name: props.definition.name,
   unlock_mode: props.definition.unlock_mode,
   unlocked_by: props.definition.unlocked_by,
+  soft_gate: props.definition.soft_gate
 })
 
 function startEdit() {
@@ -51,7 +52,7 @@ const unlockedByKeyNames = computed(() => {
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-lock-keyhole" class="size-5" />
+        🔒
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
           <NuxtLink :to="{ name: 'pxlockdefinitions-id', params: { id: props.definition.id } }">
             {{ props.definition.name }}
@@ -63,6 +64,8 @@ const unlockedByKeyNames = computed(() => {
 
     <template #default>
       <div v-if="!isBeingEdited" class="grid grid-cols-2 gap-6">
+        <b>Soft Gate</b>
+        <UCheckbox v-model="editForm.soft_gate" :disabled="true" color="neutral" />
         <b>Unlock Mode</b>
         {{ definition.unlock_mode }}
         <b>Unlocked By</b>
@@ -71,6 +74,8 @@ const unlockedByKeyNames = computed(() => {
         </ul>
       </div>
       <div v-else class="grid grid-cols-2 gap-6">
+        <b>Soft Gate</b>
+        <UCheckbox v-model="editForm.soft_gate" />
         <b>Unlock Mode</b>
         <USelectMenu v-model="editForm.unlock_mode" :items="unlockModes" :search-input="false" />
         <b>Unlocked By</b>
