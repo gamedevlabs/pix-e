@@ -38,7 +38,7 @@ SECRET_KEY = "django-insecure-wxqcjs8ufub1x#x)nwi-y4k+sv@$r@9-=&dp!8r=sp8ee=#lh%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list = []
+ALLOWED_HOSTS: list = ['pixie.soc.cit.tum.de', 'localhost', '127.0.0.1']
 
 # Application definition
 

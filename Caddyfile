@@ -1,8 +1,22 @@
-http://pixie.soc.cit.tum.de {
+pixie.soc.cit.tum.de {
 # Proxy API requests to Django (Synchronous)
     handle /api/* {
                       reverse_proxy django:8000
                   }
+# Proxy accounts requests to Django (login, register, etc.)
+    handle /accounts/* {
+                           reverse_proxy django:8000
+                       }
+
+# Proxy llm requests to Django
+    handle /llm/* {
+                           reverse_proxy django:8000
+                       }
+
+# Proxy movie requests to Django
+    handle /movie-script-evaluator/* {
+                           reverse_proxy django:8000
+                       }
 
 # Serve Django static files
     handle /static/* {

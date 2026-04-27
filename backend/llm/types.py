@@ -89,7 +89,7 @@ class LLMRequest(BaseModel):
         LLMRequest(feature="pillars", operation="validate", ...)
 
     Available operations can be discovered dynamically. Example:
-        from backend.llm import list_operations
+        from llm import list_operations
         ops = list_operations(feature="pillars")
         # ['pillars.validate', 'pillars.improve', ...]
     """
