@@ -7,6 +7,8 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
   const { items: pxLockDefinitions, fetchAll: fetchPxLockDefinitions } = usePxLockDefinitions()
   const { items: pxKeyDefinitions, fetchAll: fetchPxKeyDefinitions } = usePxKeyDefinitions()
 
+  const selectedNodes = ref<string[]>([])
+
   const path = ref<string[]>([]) // TODO: deprecate?
   const pathEdges = ref<Edge[]>([])
   const locked = ref<string[]>([])
@@ -362,6 +364,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     console.log(`Starting path calculation...`)
     console.log(`Found ${nodes.value.length} nodes.`)
     console.log(`Input (length ${selected.length}): ${selected.toString()}`)
+    selectedNodes.value = selected
     let newPath: string[] = []
     //let newPathIgnoringLocks: string[] = []
     if (selected.length == 2 && selected[0] && selected[1]) {
@@ -388,7 +391,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     }
 
     if (!newPath.length) {
-      errorToast('Could not calculate path between selected nodes.')
+      infoToast('Could not calculate path between selected nodes.')
     }
     path.value = newPath
     console.log(
@@ -401,6 +404,7 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
     path.value = []
     pathEdges.value = []
     locked.value = []
+    selectedNodes.value = []
   }
 
   async function updatePathHighlight() {
@@ -417,13 +421,23 @@ export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>
       boxShadow: '0 0 10px var(--ui-warning)',
     }
 
+    // use error color for selected nodes when no path connects them
+    const noPathNodeStyle = {
+      border: '3px solid var(--ui-error)',
+      borderRadius: '10px',
+      boxShadow: '0 0 10px var(--ui-error)',
+    }
+
     // set style of nodes in calculated path
     for (const node of nodes.value) {
       node.style = path.value.includes(node.id) ? pathNodeStyle : undefined
+      if (!node.style && selectedNodes.value.includes(node.id)) {
+        node.style = noPathNodeStyle
+      }
     }
     for (const node of gatedPath.value.nodes) {
-        node.style = softGatedPathNodeStyle
-      }
+      node.style = softGatedPathNodeStyle
+    }
   }
 
   async function updateEdgeStyling() {
