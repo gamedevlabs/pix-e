@@ -18,7 +18,7 @@ const emit = defineEmits<{
 const state = ref({
   nodeRef: props.selectedNodeId,
   definitionRef: undefined,
-  count: undefined,
+  count: 1,
 })
 
 const availableDefinitionsForSelectedNode = computed(() => {
@@ -85,7 +85,7 @@ async function onSubmit() {
           />
         </UFormField>
 
-        <UFormField label="Count" name="count" class="max-w-96" required>
+        <UFormField label="Count" name="count" class="max-w-96">
           <div>
             <UInputNumber
               v-model="state.count"
