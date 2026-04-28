@@ -77,14 +77,14 @@ const keysForSelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
 
 interface LockState {
   name: string
-  softGate: boolean
+  soft_gate: boolean
   unlocked_by: string[]
   unlock_mode: PxLockUnlockModeType
 }
 
 const defaultState: LockState = {
   name: '',
-  softGate: false,
+  soft_gate: false,
   unlocked_by: [],
   unlock_mode: 'permanent',
 }
@@ -92,9 +92,7 @@ const defaultState: LockState = {
 const lockState = ref<LockState>(defaultState)
 
 async function handleCreateLock() {
-  //lockState.value.unlockedBy = lockState.value.unlockedBy.map((keyName) => pxKeyDefinitions.value.find((def) => def.name === keyName)!.id)
   await createPxLockDefinition({ ...lockState.value })
-  //await createPxKeyDefinition({name: lockState.value.name})
   lockState.value = defaultState
 }
 
@@ -149,6 +147,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
         >
           <PxKeyDefinitionCardDetailed
             :definition="item"
+            class="min-w-100"
             @edit="handleUpdateKey"
             @delete="deletePxKeyDefinition"
           />
@@ -164,7 +163,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
             <UInput v-model="lockState.name" type="text" placeholder="Name" />
           </UFormField>
           <UFormField label="Soft Gate" orientation="horizontal">
-            <UCheckbox v-model="lockState.softGate" />
+            <UCheckbox v-model="lockState.soft_gate" />
           </UFormField>
           <UFormField label="Unlock Mode" orientation="horizontal">
             <USelectMenu
@@ -173,7 +172,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               :search-input="false"
             />
           </UFormField>
-          <UFormField label="Unlocked By" orientation="horizontal">
+          <UFormField label="Unlocked By" orientation="horizontal" :required="true">
             <USelectMenu
               v-model="lockState.unlocked_by"
               :items="keysForSelection"
@@ -197,6 +196,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           <PxLockDefinitionCardDetailed
             :definition="item"
             :keys-for-selection="keysForSelection"
+            class="min-w-100"
             @edit="handleUpdateLock"
             @delete="deletePxLockDefinition"
           />
