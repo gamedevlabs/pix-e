@@ -468,12 +468,6 @@ const groups = computed(() => {
                 </div>
               </div>
             </template>
-
-            <template #footer="{ collapsed }">
-              <div>
-                <UserMenu :collapsed="collapsed" />
-              </div>
-            </template>
           </UDashboardSidebar>
 
           <UDashboardSearch v-model:open="searchOpen" :groups="groups" />
