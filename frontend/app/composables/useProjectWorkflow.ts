@@ -108,6 +108,33 @@ export const useProjectWorkflow = () => {
   }
 
   /**
+   * Mark a substep complete regardless of which workflow it belongs to.
+   * Searches every loaded workflow for the matching `stepId`/`substepId`,
+   * and is a no-op if the substep is missing or already complete.
+   *
+   * Used by route-watchers (see `useOnboardingProgress`) so that progress on
+   * one workflow can advance even while the user is viewing a different one.
+   */
+  const tryCompleteSubstep = async (stepId: string, substepId: string) => {
+    const wf = workflows.value.find((w) =>
+      w.steps.some((s) => s.id === stepId && s.substeps.some((ss) => ss.id === substepId)),
+    )
+    if (!wf) return
+
+    const step = wf.steps.find((s) => s.id === stepId)
+    const substep = step?.substeps.find((ss) => ss.id === substepId)
+    if (!substep || substep.status === 'complete') return
+
+    const updated = await api.updateSubstepStatus('default', wf.id, stepId, substepId, 'complete')
+    if (updated) {
+      const idx = workflows.value.findIndex((w) => w.id === wf.id)
+      if (idx !== -1) {
+        workflows.value[idx] = updated
+      }
+    }
+  }
+
+  /**
    * Preview a workflow phase in the UI without changing the active one.
    * This enables users to freely browse phases.
    */
@@ -128,6 +155,7 @@ export const useProjectWorkflow = () => {
     loadForProject,
     loadForUser,
     toggleSubstep,
+    tryCompleteSubstep,
     completeOnboarding,
     viewWorkflow,
 

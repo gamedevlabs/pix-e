@@ -55,14 +55,12 @@ function selectGenre(g: string) {
       </div>
     </UFormField>
 
-    <UFormField label="Target Platforms" required :error="errors.targetPlatform">
-      <TargetPlatformPicker
-        v-model="targetPlatform"
-        :disabled="submitting"
-        required
-        :error="errors.targetPlatform"
-        hint="Select the platforms you intend to release your game on."
-      />
-    </UFormField>
+    <TargetPlatformPicker
+      v-model="targetPlatform"
+      :disabled="submitting"
+      required
+      :error="errors.targetPlatform"
+      hint="Select the platforms you intend to release your game on."
+    />
   </div>
 </template>

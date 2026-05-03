@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import OnboardingSlideOverButton from '~/components/OnboardingSlideOverButton.vue'
+import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
 
 defineProps<{
   links: NavigationMenuItem[][]
-  workflowTitle: string
-  workflowProgress: number
 }>()
 
 const openNavValue = defineModel<string | undefined>('openNavValue')
@@ -76,12 +74,7 @@ const open = ref(false)
 
         <!-- Footer: onboarding trigger + external links -->
         <div class="mt-auto w-full flex flex-col items-start">
-          <OnboardingSlideOverButton
-            :collapsed="collapsed"
-            :title="workflowTitle"
-            :progress="workflowProgress"
-          />
-          <OnboardingSlideover :collapsed="collapsed" />
+          <OnboardingTrigger mode="sidebar" :collapsed="collapsed" />
 
           <UNavigationMenu
             :collapsed="collapsed"

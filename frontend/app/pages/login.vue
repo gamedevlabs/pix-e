@@ -1,10 +1,7 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
 
-// ============================================================================
-// PAGE CONFIG - Edit these settings for this module
-// ============================================================================
 definePageMeta({
   pageConfig: {
     type: 'public',
@@ -12,31 +9,20 @@ definePageMeta({
     title: 'Login',
   },
 })
-// ============================================================================
 
 const state = reactive({ username: '', password: '' })
 const authentication = useAuthentication()
 const show = ref(false)
 
 const { loadForUser, toggleSubstep } = useProjectWorkflow()
-const projectWorkflow = useProjectWorkflow()
-
-const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
-const activeWorkflowTitle = computed(() => {
-  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const selectedId =
-    projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
-  const w = list.find((x) => x.id === selectedId)
-  return w?.meta?.title || 'Getting Started'
-})
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
 
 onMounted(async () => {
-  // Don't show or progress the onboarding wizard until the user is actually logged in.
+  // Don't progress the onboarding wizard until the user is actually logged in.
   if (!isLoggedIn.value) return
 
   await loadForUser()
-  // Opening the login page counts as completing the first substep
+  // Opening the login page counts as completing the first substep.
   await toggleSubstep('user-onb-1', 'user-onb-1-1')
 })
 
@@ -95,11 +81,7 @@ async function handleRegistration() {
 
 <template>
   <div class="items-center justify-center flex-col flex">
-    <!-- Workflow button fixed bottom-left (only when logged in) -->
-    <div v-if="isLoggedIn" class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
-      <OnboardingSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
-    </div>
-    <OnboardingSlideover v-if="isLoggedIn" />
+    <OnboardingTrigger mode="floating" />
 
     <h1 class="text-2xl font-bold mb-4">Login</h1>
     <UForm :validate="validate" :state="state" class="space-y-4 w-60">

@@ -191,6 +191,9 @@ export function useCreateProjectProcess() {
     if (!validateStep(currentStep.value)) return
 
     submitting.value = true
+
+    // Step 1: only the actual project creation should surface a "creation failed" toast.
+    let created: Project
     try {
       let iconToSend: string | null = null
       if (uploadedFile.value) {
@@ -203,32 +206,13 @@ export function useCreateProjectProcess() {
         iconToSend = form.icon
       }
 
-      const created = await createProject({
+      created = await createProject({
         name: form.name!.trim(),
         shortDescription: form.shortDescription?.trim() ?? '',
         genre: form.genre.join(', '),
         targetPlatform: form.targetPlatform as Project['targetPlatform'],
         icon: iconToSend,
       })
-
-      toast.add({
-        title: 'Success!',
-        description: `Project "${created.name}" has been created`,
-        color: 'success',
-        icon: 'i-heroicons-check-circle',
-      })
-
-      // Complete user onboarding: marks "Follow the creation guide" done, auto-completes
-      // the Done step, and embeds the snapshot into the new project's workflow list.
-      try {
-        await toggleSubstep('user-onb-2', 'user-onb-2-3')
-        await completeOnboarding()
-      } catch (e) {
-        console.warn('Failed to complete onboarding workflow:', e)
-      }
-
-      await switchProject(created.id)
-      closeSlideover()
     } catch {
       toast.add({
         title: 'Error',
@@ -236,6 +220,31 @@ export function useCreateProjectProcess() {
         color: 'error',
         icon: 'i-heroicons-x-circle',
       })
+      submitting.value = false
+      return
+    }
+
+    // Step 2: project exists. Everything below is best-effort — we don't want a
+    // navigation hiccup or workflow housekeeping issue to look like a creation failure.
+    toast.add({
+      title: 'Success!',
+      description: `Project "${created.name}" has been created`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+
+    try {
+      await toggleSubstep('user-onb-2', 'user-onb-2-3')
+      await completeOnboarding()
+    } catch (e) {
+      console.warn('Failed to complete onboarding workflow:', e)
+    }
+
+    try {
+      await switchProject(created.id)
+      closeSlideover()
+    } catch (e) {
+      console.warn('Failed to navigate to new project:', e)
       submitting.value = false
     }
   }

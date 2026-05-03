@@ -21,18 +21,7 @@ const MODULE_ROUTES = [
  */
 export function useOnboardingProgress(searchOpen: Ref<boolean>) {
   const route = useRoute()
-  const projectWorkflow = useProjectWorkflow()
-
-  // Only toggles a substep that is currently pending/active — safe to call repeatedly.
-  async function tryCompleteSubstep(stepId: string, substepId: string) {
-    const w = projectWorkflow.workflow.value
-    if (!w) return
-    const step = w.steps.find((s) => s.id === stepId)
-    if (!step) return
-    const ss = step.substeps.find((x) => x.id === substepId)
-    if (!ss || ss.status === 'complete') return
-    await projectWorkflow.toggleSubstep(stepId, substepId)
-  }
+  const { tryCompleteSubstep } = useProjectWorkflow()
 
   // onb-1-1: first visit to any module page (not the dashboard itself).
   const hasVisitedModule = ref(false)

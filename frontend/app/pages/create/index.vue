@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import OnboardingSlideOverButton from '~/components/OnboardingSlideOverButton.vue'
 import CreateProgressStepper from '~/components/create-project/CreateProgressStepper.vue'
 import CreateStepBasics from '~/components/create-project/CreateStepBasics.vue'
 import CreateStepDetails from '~/components/create-project/CreateStepDetails.vue'
 import CreateStepReview from '~/components/create-project/CreateStepReview.vue'
 import IconUploadModal from '~/components/create-project/IconUploadModal.vue'
-import type { WorkflowInstance } from '~/mock_data/mock_workflow'
+import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
 
 definePageMeta({
   middleware: 'authentication',
@@ -30,27 +29,11 @@ const {
   cancel,
   createNewProject,
 } = useCreateProjectProcess()
-
-// Slideover button (bottom-left): the sidebar is hidden on this page,
-// so the trigger and host are mounted here directly.
-const projectWorkflow = useProjectWorkflow()
-const overallProgress = computed(() => projectWorkflow.getSelectedWorkflowProgress.value || 0)
-const activeWorkflowTitle = computed(() => {
-  const list = (projectWorkflow.workflows?.value || []) as WorkflowInstance[]
-  const selectedId =
-    projectWorkflow.viewedWorkflowId?.value ?? projectWorkflow.activeWorkflowId?.value
-  const w = list.find((x) => x.id === selectedId)
-  return w?.meta?.title || 'Onboarding Wizard'
-})
 </script>
 
 <template>
   <div>
-    <div class="fixed left-4 bottom-4 z-40 w-72 max-w-[calc(100vw-2rem)]">
-      <OnboardingSlideOverButton :title="activeWorkflowTitle" :progress="overallProgress" />
-    </div>
-
-    <OnboardingSlideover />
+    <OnboardingTrigger mode="floating" />
 
     <UContainer class="py-10">
       <div class="max-w-3xl mx-auto">

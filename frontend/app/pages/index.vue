@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LandingPublic from '~/components/landing/LandingPublic.vue'
 import LandingAuthenticated from '~/components/landing/LandingAuthenticated.vue'
+import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
 
 definePageMeta({
   pageConfig: {
@@ -48,11 +49,9 @@ onMounted(() => {
 
 <template>
   <div class="max-w-screen-2xl mx-auto w-full px-6 lg:px-10 xl:px-14 py-10 space-y-14">
-    <template v-if="isLoggedIn">
-      <OnboardingSlideover />
-      <LandingAuthenticated :username="username" />
-    </template>
+    <OnboardingTrigger mode="floating" />
 
+    <LandingAuthenticated v-if="isLoggedIn" :username="username" />
     <LandingPublic v-else />
   </div>
 </template>
