@@ -31,12 +31,7 @@ const isAvatarHovered = ref(false)
       <!-- Form inputs -->
       <div class="space-y-6">
         <UFormField label="Project Name" required>
-          <UInput
-            v-model="name"
-            placeholder="My Awesome Game"
-            size="lg"
-            :disabled="submitting"
-          />
+          <UInput v-model="name" placeholder="My Awesome Game" size="lg" :disabled="submitting" />
         </UFormField>
 
         <UFormField label="Short Description" optional>

@@ -29,9 +29,7 @@ defineProps<{
         <div class="mt-2 text-center">
           <div
             class="text-sm font-medium"
-            :class="
-              currentStep >= step.number ? 'text-gray-900 dark:text-white' : 'text-gray-500'
-            "
+            :class="currentStep >= step.number ? 'text-gray-900 dark:text-white' : 'text-gray-500'"
           >
             {{ step.title }}
           </div>

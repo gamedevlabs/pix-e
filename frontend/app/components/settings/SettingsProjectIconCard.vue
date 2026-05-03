@@ -36,11 +36,7 @@ function handleIconChange(event: Event) {
     </template>
 
     <div class="px-5 pb-5 flex flex-col items-center gap-4">
-      <div
-        class="relative"
-        @mouseenter="isIconHovered = true"
-        @mouseleave="isIconHovered = false"
-      >
+      <div class="relative" @mouseenter="isIconHovered = true" @mouseleave="isIconHovered = false">
         <UAvatar
           v-if="icon"
           :src="icon"

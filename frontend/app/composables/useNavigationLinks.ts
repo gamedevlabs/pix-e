@@ -12,10 +12,7 @@ function isRouteTo(to: unknown): to is string {
   return typeof to === 'string' && !!to && !/^https?:\/\//.test(to)
 }
 
-function computeActiveParentValue(
-  items: NavigationMenuItem[],
-  path: string,
-): string | undefined {
+function computeActiveParentValue(items: NavigationMenuItem[], path: string): string | undefined {
   const current = normalizePath(path)
 
   for (const item of items) {

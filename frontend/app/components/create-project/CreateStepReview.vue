@@ -33,11 +33,7 @@ defineEmits<{
           <div
             class="p-2 bg-white dark:bg-gray-900 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
           >
-            <UAvatar
-              size="xl"
-              :src="previewUrl || iconUrl || undefined"
-              :text="avatarText"
-            />
+            <UAvatar size="xl" :src="previewUrl || iconUrl || undefined" :text="avatarText" />
           </div>
         </div>
 
@@ -62,9 +58,7 @@ defineEmits<{
       <!-- Short Description -->
       <div class="group">
         <div class="flex items-center gap-2 mb-1">
-          <label class="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Description
-          </label>
+          <label class="text-sm font-medium text-gray-500 dark:text-gray-400"> Description </label>
           <UButton
             icon="i-heroicons-pencil"
             color="neutral"
@@ -77,9 +71,7 @@ defineEmits<{
         <p v-if="shortDescription" class="text-gray-700 dark:text-gray-300">
           {{ shortDescription }}
         </p>
-        <p v-else class="text-gray-400 dark:text-gray-500 italic">
-          No description provided
-        </p>
+        <p v-else class="text-gray-400 dark:text-gray-500 italic">No description provided</p>
       </div>
 
       <div class="grid grid-cols-2 gap-6">

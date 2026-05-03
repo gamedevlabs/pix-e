@@ -18,15 +18,8 @@ definePageMeta({
   },
 })
 
-const {
-  formData,
-  originalProject,
-  isLoading,
-  isSaving,
-  hasChanges,
-  handleCancel,
-  handleSubmit,
-} = useProjectSettings()
+const { formData, originalProject, isLoading, isSaving, hasChanges, handleCancel, handleSubmit } =
+  useProjectSettings()
 </script>
 
 <template>

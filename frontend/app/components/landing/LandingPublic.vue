@@ -121,9 +121,7 @@ const featureHighlights = [
       <div class="flex items-center gap-3">
         <div class="h-6 w-1 rounded-full bg-secondary-500" />
         <div>
-          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Try without an account
-          </h2>
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Try without an account</h2>
           <p class="text-sm text-gray-500 dark:text-gray-400">
             These tools are available immediately — no login required
           </p>

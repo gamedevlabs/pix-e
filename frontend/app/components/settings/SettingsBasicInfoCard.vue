@@ -17,13 +17,7 @@ const shortDescription = defineModel<string>('shortDescription', { required: tru
 
     <div class="px-5 pb-5 space-y-5">
       <UFormField label="Project Name" required>
-        <UInput
-          v-model="name"
-          placeholder="Enter project name"
-          size="md"
-          class="w-full"
-          required
-        />
+        <UInput v-model="name" placeholder="Enter project name" size="md" class="w-full" required />
       </UFormField>
 
       <UFormField label="Short Description">
