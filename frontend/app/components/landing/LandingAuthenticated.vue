@@ -66,7 +66,7 @@ const getProjectMenuItems = (projectId: string): DropdownMenuItem[][] => [
     {
       label: 'Edit',
       icon: 'i-lucide-pencil',
-      onSelect: () => router.push(`/edit?id=${projectId}`),
+      onSelect: () => router.push(`/settings?id=${projectId}`),
     },
     {
       label: 'Duplicate',

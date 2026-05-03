@@ -138,7 +138,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
           {
             id: 'onb-1-2',
             name: 'Explore the project settings',
-            route: '/edit',
+            route: '/settings',
             description:
               'Project settings define global parameters of your project. This includes naming, structure, and configuration that affect all modules. Understanding this helps you see how everything is connected.',
           },

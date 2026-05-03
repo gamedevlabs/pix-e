@@ -10,7 +10,7 @@ const MODULE_ROUTES = [
   '/player-expectations',
   '/player-experience',
   '/sentiments',
-  '/edit',
+  '/settings',
 ]
 
 /**
@@ -47,13 +47,13 @@ export function useOnboardingProgress(searchOpen: Ref<boolean>) {
     },
   )
 
-  // onb-1-2: first visit to the Settings page (/edit).
+  // onb-1-2: first visit to the Settings page (/settings).
   const hasVisitedSettings = ref(false)
   watch(
     () => route.path,
     (path) => {
       if (hasVisitedSettings.value) return
-      if (path.startsWith('/edit')) {
+      if (path.startsWith('/settings')) {
         hasVisitedSettings.value = true
         tryCompleteSubstep('onb-1', 'onb-1-2')
       }

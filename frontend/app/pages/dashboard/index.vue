@@ -201,7 +201,7 @@ const iconIsImage = computed(() => {
             color="neutral"
             variant="ghost"
             label="Settings"
-            @click="navigateToModule('/edit')"
+            @click="navigateToModule('/settings')"
           />
           <div class="flex flex-col items-end gap-2">
             <!-- Platform icons -->

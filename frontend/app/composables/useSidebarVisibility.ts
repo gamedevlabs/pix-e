@@ -31,7 +31,7 @@ export function useSidebarVisibility() {
     // Fallback: pages without a pageConfig.
     const path = route.path || ''
     const name = route.name ? String(route.name) : ''
-    const alwaysShowSidebar: string[] = ['dashboard', 'edit']
+    const alwaysShowSidebar: string[] = ['dashboard', 'settings']
     const alwaysHideSidebar: string[] = ['login', '/movie-script-evaluator', 'create']
 
     if (!name || path === '/') return false
