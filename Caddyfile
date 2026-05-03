@@ -1,33 +1,18 @@
-pixie.soc.cit.tum.de {
-# Proxy API requests to Django (Synchronous)
+localhost {
+    encode gzip
+
     handle /api/* {
-                      reverse_proxy django:8000
-                  }
-# Proxy accounts requests to Django (login, register, etc.)
-    handle /accounts/* {
-                           reverse_proxy django:8000
-                       }
+        reverse_proxy django:8000
+    }
 
-# Proxy llm requests to Django
-    handle /llm/* {
-                           reverse_proxy django:8000
-                       }
-
-# Proxy movie requests to Django
-    handle /movie-script-evaluator/* {
-                           reverse_proxy django:8000
-                       }
-
-# Serve Django static files
     handle /static/* {
-                         root * /app/staticfiles
-                         file_server
-                     }
+        root * /app/staticfiles
+        file_server
+    }
 
-# Serve Nuxt static files
     handle {
-               root * /usr/share/caddy/html
-               try_files {path} {path}/ /index.html
-               file_server
-           }
+        root * /usr/share/caddy/html
+        try_files {path} {path}/ /index.html
+        file_server
+    }
 }

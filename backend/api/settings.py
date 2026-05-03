@@ -86,14 +86,27 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://localhost",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Session settings for same-origin (Lax is safe for same-domain requests)
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = True
+
+# Trust Caddy proxy for HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 ROOT_URLCONF = "api.urls"
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "https://localhost",
+    "https://pixie.soc.cit.tum.de",
 ]
 
 TEMPLATES = [

@@ -10,12 +10,12 @@ import { useMovieScriptEvaluatorApi } from './api/movieScriptEvaluatorApi.js'
 export function useMovieScriptEvaluator() {
   const movieScriptAPI = useMovieScriptEvaluatorApi()
   const movieScriptProjects = useCrudWithAuthentication<MovieProject>(
-    'movie-script-evaluator/projects/',
+    'api/movie-script-evaluator/projects/',
   )
 
   function useAssets(projectId: string) {
     return useCrudWithAuthentication<Asset>(
-      'movie-script-evaluator/projects/' + projectId + '/assets/',
+      'api/movie-script-evaluator/projects/' + projectId + '/assets/',
     )
   }
 
@@ -25,7 +25,7 @@ export function useMovieScriptEvaluator() {
 
   function useMovieScript(projectId: string) {
     return useCrudWithAuthentication<MovieScript>(
-      'movie-script-evaluator/projects/' + projectId + '/script/',
+      'api/movie-script-evaluator/projects/' + projectId + '/script/',
     )
   }
 
@@ -42,7 +42,7 @@ export function useMovieScriptEvaluator() {
     }
 
     const crud = useCrudWithAuthentication<ScriptSceneAnalysis>(
-      'movie-script-evaluator/projects/' + projectId + '/script-scene-analysis/',
+      'api/movie-script-evaluator/projects/' + projectId + '/script-scene-analysis/',
     )
 
     return {

@@ -34,7 +34,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:8000', //131.159.25.79:8000
+      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000'),
     },
   },
 })

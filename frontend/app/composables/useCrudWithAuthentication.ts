@@ -1,11 +1,10 @@
-﻿const BASE_URL = 'http://localhost:8000/'
-
 export function useCrudWithAuthentication<T>(apiUrl: string) {
+  const config = useRuntimeConfig()
   const items = ref<T[]>([])
   const loading = ref(false)
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = BASE_URL + apiUrl
+  const API_URL = config.public.apiBase + '/' + apiUrl
 
   async function fetchAll() {
     loading.value = true

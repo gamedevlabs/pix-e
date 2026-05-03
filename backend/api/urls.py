@@ -20,12 +20,12 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("llm/", include("pillars.urls")),
-    path("accounts/", include("accounts.urls")),
-    path("", include("pxnodes.urls")),
+    path("api/llm/", include("pillars.urls")),
+    path("api/accounts/", include("accounts.urls")),
+    path("api/", include("pxnodes.urls")),
     path("api/player-expectations-new/", include("player_expectations_new.urls")),
     path("api/", include("pxcharts.urls")),
     path("api/", include("pximportexport.urls")),
-    path("", include("player_expectations.urls")),
-    path("movie-script-evaluator/", include("moviescriptevaluator.urls")),
+    path("api/player-expectations/", include("player_expectations.urls")),
+    path("api/movie-script-evaluator/", include("moviescriptevaluator.urls")),
 ]

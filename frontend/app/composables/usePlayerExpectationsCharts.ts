@@ -37,7 +37,8 @@ const confusionPaletteBase = [
   '#27599e', // repeat ok
 ]
 
-export function usePlayerExpectationCharts(baseUrl = 'http://localhost:8000/api') {
+export function usePlayerExpectationCharts() {
+  const config = useRuntimeConfig()
   // reactive chart state
   const aspectChartData = ref(null)
   const sentimentChartData = ref(null)
@@ -48,6 +49,7 @@ export function usePlayerExpectationCharts(baseUrl = 'http://localhost:8000/api'
 
   const loading = ref(false)
   const error = ref<unknown>(null)
+  const baseUrl = config.public.apiBase + '/api'
 
   // ---------- shaping helpers ----------
   function toAspectBar(data: Record<string, number>) {

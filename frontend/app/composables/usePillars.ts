@@ -1,7 +1,7 @@
-﻿import { usePillarsApi } from '@/composables/api/pillarsApi'
+import { usePillarsApi } from '@/composables/api/pillarsApi'
 
 export function usePillars() {
-  const basics = useCrud<Pillar>('llm/pillars/')
+  const basics = useCrud<Pillar>('api/llm/pillars/')
 
   const pillarsApi = usePillarsApi()
   const designIdea = ref<string>('')
