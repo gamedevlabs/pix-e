@@ -77,12 +77,7 @@ const progress = computed(() => {
       <OnboardingSlideOverButton :title="title" :progress="progress" />
     </div>
 
-    <OnboardingSlideOverButton
-      v-else
-      :collapsed="collapsed"
-      :title="title"
-      :progress="progress"
-    />
+    <OnboardingSlideOverButton v-else :collapsed="collapsed" :title="title" :progress="progress" />
 
     <OnboardingSlideover :collapsed="mode === 'sidebar' ? collapsed : false" />
   </template>
