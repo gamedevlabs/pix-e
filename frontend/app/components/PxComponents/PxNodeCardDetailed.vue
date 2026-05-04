@@ -136,7 +136,7 @@ async function handleAddKey() {
           {{ props.node.name }}
         </NuxtLink>
       </h2>
-      <UTextarea v-else v-model="editForm.name" />
+      <UTextarea v-else v-model="editForm.name" :rows="1" />
     </template>
 
     <template #default>
@@ -245,7 +245,11 @@ async function handleAddKey() {
           />
         </div>
       </div>
-      <UTextarea v-else v-model="editForm.description" />
+      <div v-else>
+        <h2 class="font-semibold text-lg mb-2">Description</h2>
+        <UTextarea v-model="editForm.description" />
+      </div>
+      
     </template>
 
     <template #footer>

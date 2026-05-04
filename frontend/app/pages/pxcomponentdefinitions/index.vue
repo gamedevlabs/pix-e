@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { FormError } from '@nuxt/ui'
+
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -27,15 +29,27 @@ onMounted(() => {
 
 const items = ref(['number', 'string', 'boolean'])
 
-const state = ref<{ name: string; type: PxValueType }>({
+interface PxDefState {
+  name: string
+  type: PxValueType | undefined
+}
+
+const state = ref<PxDefState>({
   name: '',
-  type: 'none',
+  type: undefined,
 })
 
 const { currentProject } = useProjectHandler()
 const { toggleSubstep, loadForProject } = useProjectWorkflow()
 if (currentProject.value?.id) {
   await loadForProject(currentProject.value.id)
+}
+
+function validate(state: PxDefState): FormError[] {
+  const errors = []
+  if (!state.name) errors.push({ name: 'name', message: 'Required' })
+  if (!state.type) errors.push({ name: 'type', message: 'Required' })
+  return errors
 }
 
 async function handleCreate() {
@@ -55,12 +69,12 @@ async function handleUpdate(updatedDefinition: PxComponentDefinition) {
   <div class="p-8">
     <h1 class="text-2xl font-bold mb-6">Component Definitions</h1>
 
-    <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
-      <UFormField>
+    <UForm :state="state" class="mb-6 space-y-4" :validate="validate" @submit="handleCreate">
+      <UFormField name="name">
         <UInput v-model="state.name" type="text" placeholder="Name" />
       </UFormField>
       <UFormField label="Type" name="type">
-        <USelectMenu v-model="state.type" :items="items" />
+        <USelectMenu v-model="state.type" :items="items" placeholder="Select Type" />
       </UFormField>
       <UButton type="submit">Create Component</UButton>
     </UForm>

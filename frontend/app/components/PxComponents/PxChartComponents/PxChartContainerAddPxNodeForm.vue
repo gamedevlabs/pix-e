@@ -22,7 +22,7 @@ async function onSubmit() {
     <template #body>
       <UForm :state="formState" class="space-y-4" @submit="onSubmit">
         <UFormField label="Node Reference" name="selectedNodeId" class="max-w-96" required>
-          <USelect
+          <USelectMenu
             v-model="formState.selectedNodeId"
             value-key="id"
             label-key="name"

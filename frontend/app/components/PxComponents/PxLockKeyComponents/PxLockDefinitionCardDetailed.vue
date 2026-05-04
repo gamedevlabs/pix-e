@@ -13,13 +13,16 @@ const emit = defineEmits<{
 
 const isBeingEdited = ref(false)
 
-type EditableLockDefinition = Pick<PxLockDefinition, 'name' | 'unlocked_by' | 'unlock_mode' | 'soft_gate'>
+type EditableLockDefinition = Pick<
+  PxLockDefinition,
+  'name' | 'unlocked_by' | 'unlock_mode' | 'soft_gate'
+>
 
 const editForm: Ref<EditableLockDefinition> = ref({
   name: props.definition.name,
   unlock_mode: props.definition.unlock_mode,
   unlocked_by: props.definition.unlocked_by,
-  soft_gate: props.definition.soft_gate
+  soft_gate: props.definition.soft_gate,
 })
 
 function startEdit() {
@@ -77,14 +80,13 @@ const unlockedByKeyNames = computed(() => {
         <b>Soft Gate</b>
         <UCheckbox v-model="editForm.soft_gate" />
         <b>Unlock Mode</b>
-        <USelectMenu v-model="editForm.unlock_mode" :items="unlockModes" :search-input="false" />
+        <USelect v-model="editForm.unlock_mode" :items="unlockModes" />
         <b>Unlocked By</b>
         <USelectMenu
           v-model="editForm.unlocked_by"
           :items="keysForSelection"
           :value-key="'value'"
           multiple
-          :search-input="false"
         />
       </div>
     </template>

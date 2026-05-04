@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SelectMenuItem } from '@nuxt/ui'
+import type { FormError, SelectMenuItem } from '@nuxt/ui'
 
 definePageMeta({
   middleware: ['authentication', 'project-context'],
@@ -39,28 +39,34 @@ onMounted(() => {
 
 const keyTypes = ref(['item', 'ability'])
 
-interface KeyState {
+interface PxKeyDefState {
   name: string
-  type: PxKeyTypesType
+  type: PxKeyTypesType | undefined
   consumable: boolean
   fixed: boolean
   unique: boolean
 }
 
-const defaultKeyState: KeyState = {
+const defaultKeyState: PxKeyDefState = {
   name: '',
-  type: 'none',
+  type: undefined,
   consumable: false,
   fixed: false,
   unique: false,
 }
 
-const keyState = ref<KeyState>(defaultKeyState)
+const keyState = ref<PxKeyDefState>({ ...defaultKeyState })
+
+function validateKeyDefInput(state: Partial<PxKeyDefState>): FormError[] {
+  const errors = []
+  if (!state.name) errors.push({ name: 'name', message: 'Required' })
+  if (!state.type) errors.push({ name: 'type', message: 'Required' })
+  return errors
+}
 
 async function handleCreateKey() {
   await createPxKeyDefinition({ ...keyState.value })
-  keyState.value.name = ''
-  keyState.value.type = 'none'
+  keyState.value = defaultKeyState
 }
 
 async function handleUpdateKey(updatedDefinition: PxKeyDefinition) {
@@ -75,25 +81,32 @@ const keysForSelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
   return pxKeyDefinitions.value.map((def) => ({ label: def.name, value: def.id }))
 })
 
-interface LockState {
+interface PxLockDefState {
   name: string
   soft_gate: boolean
   unlocked_by: string[]
   unlock_mode: PxLockUnlockModeType
 }
 
-const defaultState: LockState = {
+const defaultLockState: PxLockDefState = {
   name: '',
   soft_gate: false,
   unlocked_by: [],
   unlock_mode: 'permanent',
 }
 
-const lockState = ref<LockState>(defaultState)
+const lockState = ref<PxLockDefState>(defaultLockState)
+
+function validateLockDefInput(state: Partial<PxLockDefState>): FormError[] {
+  const errors = []
+  if (!state.name) errors.push({ name: 'name', message: 'Required' })
+  if (!state.unlocked_by?.length) errors.push({ name: 'unlocked_by', message: 'Required' })
+  return errors
+}
 
 async function handleCreateLock() {
   await createPxLockDefinition({ ...lockState.value })
-  lockState.value = defaultState
+  lockState.value = defaultLockState
 }
 
 async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
@@ -107,12 +120,28 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
       <h1 class="text-2xl font-bold mb-6">PxKey Definitions</h1>
 
       <div class="grid grid-cols-2 gap-16" style="grid-template-columns: 1fr 4fr">
-        <UForm :state="keyState" class="mb-6 space-y-4 p-1" @submit="handleCreateKey">
-          <UFormField>
-            <UInput v-model="keyState.name" type="text" placeholder="Name" />
+        <UForm
+          :state="keyState"
+          class="mb-6 space-y-4 p-1"
+          :validate="validateKeyDefInput"
+          @submit="handleCreateKey"
+        >
+          <UFormField name="name" required>
+            <UInput
+              v-model="keyState.name"
+              type="text"
+              placeholder="Name"
+              class="w-full"
+              size="lg"
+            />
           </UFormField>
-          <UFormField label="Type" name="type" orientation="horizontal">
-            <USelectMenu v-model="keyState.type" :items="keyTypes" :search-input="false" />
+          <UFormField label="Type" name="type" orientation="horizontal" required>
+            <USelectMenu
+              v-model="keyState.type"
+              :items="keyTypes"
+              placeholder="Select Type"
+              :search-input="false"
+            />
           </UFormField>
           <UFormField
             label="Consumable"
@@ -158,9 +187,20 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
       <h1 class="text-2xl font-bold mb-6">PxLock Definitions</h1>
 
       <div class="grid grid-cols-2 gap-16" style="grid-template-columns: 1fr 4fr">
-        <UForm :state="lockState" class="mb-6 space-y-4 p-1" @submit="handleCreateLock">
-          <UFormField>
-            <UInput v-model="lockState.name" type="text" placeholder="Name" />
+        <UForm
+          :state="lockState"
+          class="mb-6 space-y-4 p-1"
+          :validate="validateLockDefInput"
+          @submit="handleCreateLock"
+        >
+          <UFormField name="name" required>
+            <UInput
+              v-model="lockState.name"
+              type="text"
+              placeholder="Name"
+              class="w-full"
+              size="lg"
+            />
           </UFormField>
           <UFormField label="Soft Gate" orientation="horizontal">
             <UCheckbox v-model="lockState.soft_gate" />
@@ -172,7 +212,12 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               :search-input="false"
             />
           </UFormField>
-          <UFormField label="Unlocked By" orientation="horizontal" :required="true">
+          <UFormField
+            name="unlocked_by"
+            label="Unlocked By"
+            orientation="horizontal"
+            required
+          >
             <USelectMenu
               v-model="lockState.unlocked_by"
               :items="keysForSelection"
@@ -180,6 +225,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               multiple
               :search-input="false"
               placeholder="Select Keys"
+              class="min-w-max"
             />
           </UFormField>
           <UButton type="submit" :block="true" class="mt-4">Create Lock</UButton>

@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import type { FormError } from '@nuxt/ui'
+
 const props = defineProps<{ selectedNodeId: string }>()
 
 const { createItem: createPxKey, items: pxKeys, fetchAll: fetchPxKeys } = usePxKeys()
@@ -15,11 +17,23 @@ const emit = defineEmits<{
   close: (payload: { nodeId: string; keyId: string }) => void
 }>()
 
-const state = ref({
+interface PxKeyState {
+  nodeRef: string
+  definitionRef: string | undefined
+  count: number
+}
+
+const state: Ref<PxKeyState> = ref({
   nodeRef: props.selectedNodeId,
   definitionRef: undefined,
   count: 1,
 })
+
+function validate(state: Partial<PxKeyState>): FormError[] {
+  const errors = []
+  if (!state.definitionRef) errors.push({ name: 'definitionRef', message: 'Required' })
+  return errors
+}
 
 const availableDefinitionsForSelectedNode = computed(() => {
   return pxDefinitions.value.filter(
@@ -58,9 +72,9 @@ async function onSubmit() {
 <template>
   <UModal :title="'Add new PxKey'">
     <template #body>
-      <UForm :state="state" class="space-y-4" @submit="onSubmit">
-        <UFormField label="Node Reference" name="nodeRef" class="max-w-96" required>
-          <USelect
+      <UForm :state="state" :validate="validate" class="space-y-4" @submit="onSubmit">
+        <UFormField label="Node Reference" name="nodeRef" required>
+          <USelectMenu
             v-model="state.nodeRef"
             value-key="id"
             label-key="name"
@@ -70,11 +84,11 @@ async function onSubmit() {
           />
         </UFormField>
 
-        <UFormField label="Definition Reference" name="definitionRef" class="max-w-96" required>
+        <UFormField label="Definition Reference" name="definitionRef" required>
           <div v-if="availableDefinitionsForSelectedNode.length === 0">
             The selected node already has a key for each definition available.
           </div>
-          <USelect
+          <USelectMenu
             v-else
             v-model="state.definitionRef"
             value-key="id"
@@ -85,18 +99,19 @@ async function onSubmit() {
           />
         </UFormField>
 
-        <UFormField label="Count" name="count" class="max-w-96">
+        <UFormField label="Count" name="count">
           <div>
             <UInputNumber
               v-model="state.count"
               :default-value="1"
               placeholder="Key Count"
               class="w-full"
+              :min="1"
             />
           </div>
         </UFormField>
 
-        <UButton type="submit"> Submit </UButton>
+        <UButton type="submit" class="mt-4"> Submit </UButton>
       </UForm>
     </template>
   </UModal>

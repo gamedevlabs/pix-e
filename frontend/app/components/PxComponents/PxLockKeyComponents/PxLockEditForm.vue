@@ -115,6 +115,11 @@ async function onSubmit() {
   emit('close', { edgeId: props.selectedEdge.id })
   console.log(`updated state: ${JSON.stringify(state.value)}`)
 }
+
+function getColor(lockInfo: LockInfo) {
+  if (!lockInfo.newCount) return 'neutral'
+  return 'primary'
+}
 </script>
 
 <template>
@@ -124,25 +129,31 @@ async function onSubmit() {
   >
     <template #body>
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
-        <div v-for="entry in Object.entries(state)" :key="entry[0]">
+        <UFormField v-for="[id, lockInfo] of Object.entries(state)" :key="id" :name="`state.${id}`">
           <UFieldGroup>
             <UBadge
               class="min-w-64"
-              :label="entry[1].defName"
+              :label="lockInfo.defName"
               size="lg"
-              :variant="entry[1].newCount ? 'subtle' : 'outline'"
-              :color="entry[1].newCount ? 'primary' : 'neutral'"
+              :variant="lockInfo.newCount ? 'subtle' : 'outline'"
+              :color="getColor(lockInfo)"
             />
             <UInputNumber
-              v-model="entry[1].newCount"
-              variant="outline"
-              :color="entry[1].newCount ? 'primary' : 'neutral'"
+              v-model="lockInfo.newCount"
+              name="count"
+              :variant="lockInfo.newCount ? 'subtle' : 'outline'"
+              :color="getColor(lockInfo)"
+              :min="0"
             />
-            <UTooltip :text="entry[1].unlockedBy.toString()">
-              <UBadge label="🔑" color="neutral" variant="outline" />
+            <UTooltip :text="lockInfo.unlockedBy.toString()">
+              <UBadge
+                label="🔑"
+                :color="getColor(lockInfo)"
+                :variant="lockInfo.newCount ? 'subtle' : 'outline'"
+              />
             </UTooltip>
           </UFieldGroup>
-        </div>
+        </UFormField>
 
         <UButton class="right-0" type="submit"> Submit </UButton>
       </UForm>
