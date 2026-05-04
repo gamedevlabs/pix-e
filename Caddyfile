@@ -1,4 +1,4 @@
-localhost {
+pixie.soc.cit.tum.de {
     encode gzip
 
     handle /api/* {
