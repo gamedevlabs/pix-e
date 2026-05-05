@@ -1,9 +1,8 @@
-const BASE_URL = 'http://localhost:8000/'
-
 export function usePxExport() {
+  const config = useRuntimeConfig()
   const loading = ref<boolean>(false)
   const error = ref<unknown>(null)
-  const API_URL = BASE_URL + 'api/'
+  const API_URL = config.public.apiBase + '/api/'
   const { success, error: errorToast } = usePixeToast()
 
   async function exportPxData(): Promise<object> {

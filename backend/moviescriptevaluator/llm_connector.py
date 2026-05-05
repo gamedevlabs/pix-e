@@ -1,8 +1,9 @@
 from typing import Any
 
-# Import handlers to trigger auto-registration
-from backend.moviescriptevaluator.llm import handlers  # noqa: F401
 from llm import LLMOrchestrator, LLMRequest
+
+# Import handlers to trigger auto-registration
+from moviescriptevaluator.llm import handlers  # noqa: F401
 from moviescriptevaluator.models import AssetMetaData, MovieScript
 
 

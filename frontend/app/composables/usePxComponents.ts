@@ -1,3 +1,3 @@
 export function usePxComponents() {
-  return useCrudForPxWithAuthentication<PxComponent>('pxcomponents/')
+  return useCrudForPxWithAuthentication<PxComponent>('api/pxcomponents/')
 }

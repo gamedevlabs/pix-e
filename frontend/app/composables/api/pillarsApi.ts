@@ -1,11 +1,11 @@
-﻿export function usePillarsApi() {
+export function usePillarsApi() {
   const config = useRuntimeConfig()
   const llm = useLLM()
 
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
-      await $fetch(`${config.public.apiBase}/llm/design/`, {
+      await $fetch(config.public.apiBase + '/api/llm/design/', {
         method: 'PUT',
         body: {
           description: designIdea.trim(),
@@ -22,7 +22,7 @@
 
   async function getPillarsInContextAPICall() {
     return await $fetch<PillarsInContextFeedback>(
-      `${config.public.apiBase}/llm/feedback/overall/`,
+      config.public.apiBase + '/api/llm/feedback/overall/',
       {
         method: 'POST',
         body: {
@@ -38,7 +38,7 @@
 
   async function getPillarsContradictionsAPICall() {
     return await $fetch<PillarContradictionsFeedback>(
-      `${config.public.apiBase}/llm/feedback/contradictions/`,
+      config.public.apiBase + '/api/llm/feedback/contradictions/',
       {
         method: 'POST',
         body: {
@@ -54,7 +54,7 @@
 
   async function getPillarsCompletenessAPICall() {
     return await $fetch<PillarCompletenessFeedback>(
-      `${config.public.apiBase}/llm/feedback/completeness/`,
+      config.public.apiBase + '/api/llm/feedback/completeness/',
       {
         method: 'POST',
         body: {
@@ -70,7 +70,7 @@
 
   async function getPillarsAdditionsAPICall() {
     return await $fetch<PillarAdditionsFeedback>(
-      `${config.public.apiBase}/llm/feedback/additions/`,
+      config.public.apiBase + '/api/llm/feedback/additions/',
       {
         method: 'POST',
         body: {
@@ -86,7 +86,7 @@
 
   async function validatePillarAPICall(pillar: Pillar) {
     pillar.llm_feedback = await $fetch<PillarFeedback>(
-      `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
+      config.public.apiBase + `/api/llm/pillars/${pillar.id}/validate/`,
       {
         method: 'POST',
         body: {
@@ -101,7 +101,7 @@
   }
 
   async function fixPillarWithAIAPICall(pillar: Pillar) {
-    return await $fetch<PillarDTO>(`${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`, {
+    return await $fetch<PillarDTO>(config.public.apiBase + `/api/llm/pillars/${pillar.id}/fix/`, {
       method: 'POST',
       body: {
         model: llm.active_llm,
@@ -115,7 +115,7 @@
 
   async function getContextInPillarsAPICall(context: string) {
     return await $fetch<ContextInPillarsFeedback>(
-      `${config.public.apiBase}/llm/feedback/context/`,
+      config.public.apiBase + '/api/llm/feedback/context/',
       {
         method: 'POST',
         body: {
