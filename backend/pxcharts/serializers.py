@@ -148,7 +148,9 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
     containers = PxChartContainerDetailSerializer(many=True, read_only=True)
     edges = PxChartEdgeSerializer(many=True, read_only=True)
-    associated_node_id = serializers.UUIDField(source="associatedNode.id", read_only=False, allow_null=True, required=False)
+    associated_node_id = serializers.UUIDField(
+        source="associatedNode.id", read_only=False, allow_null=True, required=False
+    )
 
     class Meta:
         model = PxChart

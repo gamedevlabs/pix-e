@@ -30,7 +30,9 @@ const fetchSentiments = async () => {
   loading.value = true
   error.value = null
   try {
-    const sentiments = await $fetch(config.public.apiBase + '/api/sentiments/?type=${selectedDataset.value}')
+    const sentiments = await $fetch(
+      config.public.apiBase + '/api/sentiments/?type=${selectedDataset.value}',
+    )
     allSentiments.value = sentiments.data
   } catch (err) {
     console.error(err)
