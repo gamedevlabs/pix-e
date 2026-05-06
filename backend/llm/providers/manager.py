@@ -7,11 +7,12 @@ Central manager that handles:
 - Direct model selection (user-specified)
 - Automatic model selection (based on requirements)
 - Fallback and retry logic
+- Per-user API key support
 """
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from llm.config import Config, get_config
 from llm.exceptions import (
@@ -39,6 +40,18 @@ logger = logging.getLogger(__name__)
 class ModelManager:
     """
     Central manager for all LLM providers and models.
+
+    Supports three creation paths:
+
+    1. **Global / env-var based** (``ModelManager()``) — reads API keys
+       from environment variables via ``Config``.
+    2. **Per-user, all keys** (``ModelManager.for_user(user, enc_key)``) —
+       loads every active ``UserApiKey`` for the given user.
+    3. **Per-user, single key** (``ModelManager.for_user_and_key(user, api_key_id, enc_key)``)  —  # noqa: E501
+       loads exactly one ``UserApiKey``.
+
+    Model resolution uses a ``_model_registry`` (``model_name → provider_instance``)
+    for O(1) lookup, supporting multiple providers with the same model name.
     """
 
     def __init__(self, config: Optional[Config] = None):
@@ -49,16 +62,196 @@ class ModelManager:
             config: Configuration instance (uses default if not provided)
         """
         self.config = config or get_config()
+        # providers maps provider_name → provider_instance (backward compat)
         self.providers: Dict[str, BaseProvider] = {}
+        # _provider_list maps provider_name → list of provider instances
+        self._provider_list: Dict[str, List[BaseProvider]] = {}
+        # _model_registry maps model_name → provider_instance for O(1) lookup
+        self._model_registry: Dict[str, BaseProvider] = {}
         self._model_cache: Optional[List[ModelDetails]] = None
         self._cache_timestamp: Optional[float] = None
 
         # Initialize all available providers
         self._init_providers()
 
+    # ============================================
+    # Factory Methods for Per-User Keys
+    # ============================================
+
+    @classmethod
+    def for_user(cls, user, enc_key: bytes) -> "ModelManager":
+        """
+        Create a ModelManager that uses ALL of the given user's active API keys.
+
+        Providers are built dynamically from ``UserApiKey`` rows.  If the
+        user has no configured keys the manager falls back to env-var
+        providers (global config).  Ollama is always added from env config
+        when available.
+
+        Args:
+            user: The Django user whose API keys should be loaded.
+            enc_key: Fernet encryption key bytes from the user's session
+                (obtained via ``get_encryption_key_from_session``).
+
+        Returns:
+            A new ``ModelManager`` instance backed by the user's API keys
+            (or env-var fallback).
+
+        Raises:
+            ProviderError: If no providers could be initialised at all.
+        """
+        from llm.providers.user_providers import create_providers_for_user
+
+        manager = cls.__new__(cls)
+        manager.config = get_config()
+        manager.providers = {}
+        manager._model_registry = {}
+        manager._provider_list = {}
+        manager._model_cache = None
+        manager._cache_timestamp = None
+
+        # Load user's keys as provider instances
+        user_providers = create_providers_for_user(user, enc_key)
+        manager._provider_list.update(user_providers)
+        manager._rebuild_model_registry()
+
+        # Fallback: if no user keys, try env-var providers
+        has_user_keys = any(
+            providers
+            for name, providers in manager._provider_list.items()
+            if name != "ollama" and providers
+        )
+        if not has_user_keys:
+            logger.info("No user API keys found — falling back to env-var providers")
+            manager._init_providers()
+        else:
+            # Ensure Ollama is added from config if not already present
+            if "ollama" not in manager._provider_list:
+                try:
+                    ollama = OllamaProvider(
+                        {
+                            "base_url": manager.config.ollama_base_url,
+                            "timeout": manager.config.ollama_timeout_seconds,
+                        }
+                    )
+                    if ollama.is_available():
+                        manager._provider_list.setdefault("ollama", []).append(ollama)
+                        manager._rebuild_model_registry()
+                    else:
+                        logger.debug("Ollama not available, skipping")
+                except Exception:
+                    logger.debug("Ollama not available, skipping")
+
+        if not manager._provider_list:
+            raise ProviderError(
+                message="No LLM providers available. Add an API key in Settings.",
+                provider="none",
+            )
+
+        # Sync backward compat providers map
+        manager._sync_providers_map()
+
+        return manager
+
+    @classmethod
+    def for_user_and_key(cls, user, api_key_id: str, enc_key: bytes) -> "ModelManager":
+        """
+        Create a ModelManager scoped to a SINGLE specific API key.
+
+        Only the provider that corresponds to the requested key is loaded
+        (plus Ollama if reachable).  This is useful when the user explicitly
+        picks one of their saved keys from the UI.
+
+        Args:
+            user: The Django user who owns the key.
+            api_key_id: The primary key of the ``UserApiKey`` record.
+            enc_key: Fernet encryption key bytes from the user's session.
+
+        Returns:
+            A new ``ModelManager`` instance with exactly one provider.
+
+        Raises:
+            django.http.Http404: If the ``UserApiKey`` does not exist or
+                is not owned by ``user``.
+            ProviderError: If the resulting manager has no providers.
+        """
+        from django.shortcuts import get_object_or_404
+        from accounts.models import UserApiKey
+        from accounts.encryption import decrypt_api_key
+        from llm.providers.user_providers import _create_provider
+
+        api_key_obj = get_object_or_404(
+            UserApiKey, id=api_key_id, user=user, is_active=True
+        )
+        raw_key = decrypt_api_key(api_key_obj.encrypted_key, enc_key)
+
+        manager = cls.__new__(cls)
+        manager.config = get_config()
+        manager.providers = {}
+        manager._model_registry = {}
+        manager._provider_list = {}
+        manager._model_cache = None
+        manager._cache_timestamp = None
+
+        provider = _create_provider(api_key_obj.provider, raw_key, api_key_obj.base_url)
+        if provider:
+            manager._provider_list[api_key_obj.provider] = [provider]
+            manager._rebuild_model_registry()
+
+        # Add Ollama only if available
+        try:
+            ollama = OllamaProvider(
+                {
+                    "base_url": manager.config.ollama_base_url,
+                    "timeout": manager.config.ollama_timeout_seconds,
+                }
+            )
+            if ollama.is_available():
+                manager._provider_list.setdefault("ollama", []).append(ollama)
+                manager._rebuild_model_registry()
+            else:
+                logger.debug("Ollama not available, skipping")
+        except Exception:
+            logger.debug("Ollama not available, skipping")
+
+        manager._sync_providers_map()
+
+        return manager
+
+    # ============================================
+    # Internal Helpers
+    # ============================================
+
+    def _rebuild_model_registry(self) -> None:
+        """
+        Rebuild the ``model_name → provider_instance`` lookup table.
+
+        Iterates over all provider instances in ``_provider_list``, calls
+        ``list_models()`` on each, and indexes every returned model by
+        name.  The first provider that advertises a given name wins (FIFO
+        ordering within ``_provider_list``).
+        """
+        self._model_registry = {}
+        for provider_name, provider_list in self._provider_list.items():
+            for provider in provider_list:
+                try:
+                    models = provider.list_models()
+                    for model in models:
+                        if model.name not in self._model_registry:
+                            self._model_registry[model.name] = provider
+                except Exception as e:
+                    logger.warning(f"Failed to list models from {provider_name}: {e}")
+
+    def _sync_providers_map(self) -> None:
+        """Sync backward-compat .providers dict from _provider_list."""
+        self.providers = {}
+        for name, plist in self._provider_list.items():
+            if plist:
+                self.providers[name] = plist[0]
+
     def _init_providers(self) -> None:
         """
-        Initialize all configured LLM providers.
+        Initialize all configured LLM providers from env config.
 
         Tries to initialize Ollama, OpenAI, and Gemini based on configuration.
         Providers that fail to initialize are skipped with a warning.
@@ -73,6 +266,7 @@ class ModelManager:
             )
             if ollama.is_available():
                 self.providers["ollama"] = ollama
+                self._provider_list.setdefault("ollama", []).append(ollama)
                 logger.info("✅ Ollama provider initialized")
             else:
                 logger.info("⚠️  Ollama provider not available")
@@ -91,6 +285,7 @@ class ModelManager:
                 )
                 if openai.is_available():
                     self.providers["openai"] = openai
+                    self._provider_list.setdefault("openai", []).append(openai)
                     logger.info("✅ OpenAI provider initialized")
                 else:
                     logger.warning("⚠️  OpenAI provider not available")
@@ -110,6 +305,7 @@ class ModelManager:
                 )
                 if gemini.is_available():
                     self.providers["gemini"] = gemini
+                    self._provider_list.setdefault("gemini", []).append(gemini)
                     logger.info("✅ Gemini provider initialized")
                 else:
                     logger.warning("⚠️  Gemini provider not available")
@@ -117,6 +313,8 @@ class ModelManager:
                 logger.warning(f"⚠️  Gemini provider initialization failed: {e}")
         else:
             logger.info("⚠️  Gemini API key not configured")
+
+        self._rebuild_model_registry()
 
         # Ensure at least one provider is available
         if not self.providers:
@@ -127,18 +325,31 @@ class ModelManager:
 
         provider_names = ", ".join(self.providers.keys())
         logger.info(
-            f"📊 Initialized {len(self.providers)} provider(s): " f"{provider_names}"
+            f"📊 Initialized {len(self.providers)} provider(s): {provider_names}"
         )
+
+    # ============================================
+    # Model Listing
+    # ============================================
 
     def list_models(self, refresh: bool = False) -> List[ModelDetails]:
         """
-        List all available models from all providers.
+        List all available models from every provider instance.
 
-        Results are cached for performance. Use refresh=True to bypass cache.
+        Iterates over ``_provider_list`` (which may contain multiple
+        instances per provider name, e.g. several OpenAI keys).  Results
+        are cached for ``cache_ttl_seconds``; call with ``refresh=True`` to
+        bypass the cache.
+
+        Args:
+            refresh: If ``True``, ignore the cache and re-fetch models
+                from all providers.
+
+        Returns:
+            A list of ``ModelDetails``, deduplicated by model name.
         """
         now = time.time()
 
-        # Check if cache is valid
         if (
             not refresh
             and self._model_cache is not None
@@ -148,15 +359,19 @@ class ModelManager:
         ):
             return self._model_cache
 
-        # Fetch models from all providers
+        # Fetch models from all provider instances
         all_models = []
-        for provider_name, provider in self.providers.items():
-            try:
-                models = provider.list_models()
-                all_models.extend(models)
-                logger.debug(f"Listed {len(models)} models from {provider_name}")
-            except Exception as e:
-                logger.warning(f"Failed to list models from {provider_name}: {e}")
+        seen_model_names = set()
+        for provider_name, provider_list in self._provider_list.items():
+            for provider in provider_list:
+                try:
+                    models = provider.list_models()
+                    for model in models:
+                        if model.name not in seen_model_names:
+                            all_models.append(model)
+                            seen_model_names.add(model.name)
+                except Exception as e:
+                    logger.warning(f"Failed to list models from {provider_name}: {e}")
 
         # Update cache
         if self.config.cache_enabled:
@@ -176,11 +391,9 @@ class ModelManager:
         """
         models = self.list_models(refresh=refresh)
 
-        # Filter by provider
         if provider_filter:
             models = [m for m in models if m.provider == provider_filter]
 
-        # Filter by capabilities
         if capability_filter:
             models = filter_by_capabilities(models, capability_filter)
 
@@ -193,24 +406,54 @@ class ModelManager:
         models = self.list_models(refresh=refresh)
         return ModelInventory(models=models)
 
-    def _find_model_by_name(self, model_name: str) -> ModelDetails:
-        """
-        Find a model by name across all providers.
-        """
-        all_models = self.list_models()
+    # ============================================
+    # Model Resolution
+    # ============================================
 
-        for model in all_models:
+    def _find_model_by_name(self, model_name: str) -> Tuple[ModelDetails, BaseProvider]:
+        """
+        Resolve a model name to its details and provider instance.
+
+        Uses ``_model_registry`` for O(1) lookup — does **not** iterate all
+        providers.  When the manager was created via ``for_user_and_key``,
+        the registry only contains models from that single key, making the
+        lookup naturally scoped.
+
+        Args:
+            model_name: The name of the model to look up.
+
+        Returns:
+            A ``(ModelDetails, BaseProvider)`` tuple.
+
+        Raises:
+            ModelUnavailableError: If the model name is not found in any
+                provider's model list.
+        """
+        provider = self._model_registry.get(model_name)
+        if not provider:
+            available_names = list(self._model_registry.keys())[:5]
+            available_str = ", ".join(available_names) if available_names else "none"
+            raise ModelUnavailableError(
+                model=model_name,
+                provider="unknown",
+                reason=f"Model '{model_name}' not found. Available: {available_str}...",
+            )
+
+        # Get model details from provider
+        models = provider.list_models()
+        for model in models:
             if model.name == model_name:
-                return model
+                return model, provider
 
-        # Model not found
-        available_names = [m.name for m in all_models[:5]]
-        available_str = ", ".join(available_names)
         raise ModelUnavailableError(
             model=model_name,
-            provider="unknown",
-            reason=f"Model not found. Available models: {available_str}...",
+            provider=provider.provider_name,
+            reason=f"Model '{model_name}' not found in provider's model list",
         )
+
+    # ============================================
+    # Generation Methods
+    # ============================================
 
     def generate_with_model(
         self,
@@ -223,23 +466,13 @@ class ModelManager:
         """
         Generate text using a specific model (user-selected).
 
-        This is the PRIMARY method for user-driven model selection.
-        Uses exactly the model specified - no automatic selection.
-
-        Args:
-            model_name: Exact model name to use
-            prompt: Text prompt
-            temperature: Sampling temperature (0.0-1.0)
-            max_tokens: Maximum tokens to generate
-            **kwargs: Provider-specific parameters
+        Uses _model_registry for O(1) model-to-provider resolution.
+        This works correctly with both single-key and multi-key ModelManagers.
         """
-        # Find the model
-        model = self._find_model_by_name(model_name)
-        provider = self.providers[model.provider]
+        model_details, provider = self._find_model_by_name(model_name)
 
-        # Generate with the specified model
         text = provider.generate_text(
-            model_name=model.name,
+            model_name=model_details.name,
             prompt=prompt,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -247,7 +480,7 @@ class ModelManager:
         )
 
         return GenerationResult(
-            text=text, model=model.name, provider=provider.provider_name
+            text=text, model=model_details.name, provider=provider.provider_name
         )
 
     def generate_structured_with_model(
@@ -261,26 +494,14 @@ class ModelManager:
     ) -> Any:
         """
         Generate structured output using a specific model (user-selected).
-
-        Args:
-            model_name: Exact model name to use
-            prompt: Text prompt
-            response_schema: Pydantic model for response structure
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
-            **kwargs: Provider-specific parameters
         """
-        # Find the model
-        model = self._find_model_by_name(model_name)
-        provider = self.providers[model.provider]
+        model_details, provider = self._find_model_by_name(model_name)
 
-        # Check if model supports structured output
-        if not model.capabilities.json_strict:
+        if not model_details.capabilities.json_strict:
             logger.warning(f"Model {model_name} may not have strict JSON support")
 
-        # Generate structured output
         return provider.generate_structured(
-            model_name=model.name,
+            model_name=model_details.name,
             prompt=prompt,
             response_schema=response_schema,
             temperature=temperature,
@@ -296,18 +517,11 @@ class ModelManager:
     ) -> ModelDetails:
         """
         Automatically select the best model based on requirements.
-
-        Selection strategy:
-        1. Filter by capability requirements
-        2. Apply model preference (local/cloud/auto)
-        3. Prefer specific provider if requested
-        4. Rank by context window size
-        5. Return best match
         """
-        all_models = self.list_models()
+        # Get models from registry
+        models = self.list_models()
 
-        # Filter by capabilities
-        matching = filter_by_capabilities(all_models, requirements)
+        matching = filter_by_capabilities(models, requirements)
 
         if not matching:
             raise ModelUnavailableError(
@@ -316,7 +530,6 @@ class ModelManager:
                 reason=f"No models match requirements: {requirements.model_dump()}",
             )
 
-        # Apply model preference
         if model_preference == "local":
             local_models = [m for m in matching if m.type == "local"]
             if local_models:
@@ -325,16 +538,14 @@ class ModelManager:
         elif model_preference == "cloud":
             matching = [m for m in matching if m.type == "cloud"]
             prefer_local = False
-        else:  # auto
+        else:
             prefer_local = self.config.default_model_preference == "local"
 
-        # Prefer specific provider if requested
-        if preferred_provider and preferred_provider in self.providers:
+        if preferred_provider:
             provider_models = [m for m in matching if m.provider == preferred_provider]
             if provider_models:
                 matching = provider_models
 
-        # Find best model
         best = find_best_model(matching, requirements, prefer_local)
 
         if not best:
@@ -358,21 +569,20 @@ class ModelManager:
     ) -> GenerationResult:
         """
         Generate text with automatic model selection.
-
-        Use this when:
-        - Backend operation needs a model but user hasn't chosen
-        - You want "smart" model selection based on requirements
         """
-        # Use basic requirements if not specified
         if requirements is None:
             requirements = CapabilityRequirements(min_context_window=None)
 
-        # Select best model
         model = self.auto_select_model(requirements, model_preference)
-        provider = self.providers[model.provider]
+        provider_info = self._model_registry.get(model.name)
 
-        # Generate
-        text = provider.generate_text(
+        if not provider_info:
+            raise ProviderError(
+                message=f"Provider for model '{model.name}' not found in registry",
+                provider="unknown",
+            )
+
+        text = provider_info.generate_text(
             model_name=model.name,
             prompt=prompt,
             temperature=temperature,
@@ -381,7 +591,7 @@ class ModelManager:
         )
 
         return GenerationResult(
-            text=text, model=model.name, provider=provider.provider_name
+            text=text, model=model.name, provider=provider_info.provider_name
         )
 
     def get_provider_status(self) -> Dict[str, Dict[str, Any]]:

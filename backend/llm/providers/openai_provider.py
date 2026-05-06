@@ -71,9 +71,14 @@ class OpenAIProvider(BaseProvider):
                 - organization: OpenAI organization ID (optional)
                 - timeout: Request timeout in seconds (default: 60)
                 - base_url: API base URL (optional, for compatible APIs)
+                - include_all_models: If ``True``, ``list_models()`` returns
+                  every model the API exposes instead of filtering to GPT
+                  models only.  Intended for Morpheus / custom provider
+                  endpoints. (default: ``False``)
         """
         super().__init__(config)
         self._is_available: Optional[bool] = None
+        self.include_all_models: bool = config.get("include_all_models", False)
 
         api_key = config.get("api_key")
         if not api_key:
@@ -109,15 +114,22 @@ class OpenAIProvider(BaseProvider):
             return False
 
     def list_models(self) -> List[ModelDetails]:
-        """List available OpenAI models (filters for GPT models only)."""
+        """List available OpenAI models.
+
+        When include_all_models=False (default, for genuine OpenAI), filters
+        to GPT models only. When True (for Morpheus, custom APIs), returns
+        all models the API exposes.
+        """
         try:
             response = self.client.models.list()
             models = []
 
             for model in response.data:
                 model_id = model.id
-                # Only include GPT models
-                if model_id.startswith(("gpt-4", "gpt-3.5")):
+                # For non-OpenAI providers, include ALL models
+                if self.include_all_models or model_id.startswith(
+                    ("gpt-4", "gpt-3.5")
+                ):
                     models.append(
                         ModelDetails(
                             name=model_id,
