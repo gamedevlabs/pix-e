@@ -1,0 +1,111 @@
+"""
+API key encryption at rest.
+
+Security model
+--------------
+The Fernet key is DERIVED FROM THE USER'S PLAINTEXT PASSWORD at login time
+and stored ONLY in the server-side Django session (never persisted).
+
+Key expiry is tracked INDEPENDENTLY from the Django session via a UTC
+timestamp in the session. This means:
+- The Django session can stay alive for days (user stays logged in | configurable)
+- The encryption key expires after KEY_TTL_SECONDS (1 hour) or when loggin out or when closing the tab
+- When the key expires, the user gets a password prompt to re-derive it
+- The ReestablishKeyView only needs the password, not a new login
+"""
+
+import base64
+import logging
+import time
+from typing import Optional
+
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+logger = logging.getLogger(__name__)
+
+_PBKDF2_SALT = b"pixe-session-key-v1"
+_PBKDF2_ITERATIONS = 600000
+_SESSION_KEY_NAME = "user_encryption_key"
+_SESSION_EXPIRES_AT_NAME = "user_encryption_key_expires_at"
+KEY_TTL_SECONDS = 3600  # 1 hour (3600 seconds)
+
+
+def derive_encryption_key(plaintext_password: str) -> bytes:
+    """
+    Derive a Fernet key from the user's plaintext password.
+    """
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=_PBKDF2_SALT,
+        iterations=_PBKDF2_ITERATIONS,
+    )
+    return base64.urlsafe_b64encode(kdf.derive(plaintext_password.encode("utf-8")))
+
+
+def store_key_in_session(session, key: bytes) -> None:
+    """Store the encryption key in the session with its own expiry timestamp."""
+    session[_SESSION_KEY_NAME] = key.decode("utf-8")
+    session[_SESSION_EXPIRES_AT_NAME] = time.time() + KEY_TTL_SECONDS
+
+
+def get_encryption_key_from_session(session) -> Optional[bytes]:
+    """
+    Extract the user's encryption key from the Django session.
+
+    Checks BOTH:
+    - Whether the key exists in the session
+    - Whether the key's independent TTL has expired
+
+    On every successful read, the key's TTL is refreshed (bumped forward
+    by KEY_TTL_SECONDS), so active users stay authenticated for API key
+    operations without re-entering their password every hour.
+
+    Returns None if the key is missing or expired.
+    The Django session itself may still be valid (user is logged in).
+    """
+    key = session.get(_SESSION_KEY_NAME)
+    expires_at = session.get(_SESSION_EXPIRES_AT_NAME)
+
+    if not key or not expires_at:
+        return None
+
+    if time.time() > expires_at:
+        # Key expired — clear it so we don't check again
+        session.pop(_SESSION_KEY_NAME, None)
+        session.pop(_SESSION_EXPIRES_AT_NAME, None)
+        return None
+
+    # Bump TTL on every access — active users stay authenticated
+    session[_SESSION_EXPIRES_AT_NAME] = time.time() + KEY_TTL_SECONDS
+    return key.encode("utf-8")
+
+
+def clear_key_from_session(session) -> None:
+    """Remove the encryption key and its expiry from the session."""
+    session.pop(_SESSION_KEY_NAME, None)
+    session.pop(_SESSION_EXPIRES_AT_NAME, None)
+
+
+def encrypt_api_key(plaintext: str, encryption_key: bytes) -> bytes:
+    """Encrypt a raw API key using the user's session-derived Fernet key."""
+    if not plaintext:
+        raise ValueError("Cannot encrypt empty value")
+    if not encryption_key:
+        raise RuntimeError("Encryption key not available — user must log in")
+
+    f = Fernet(encryption_key)
+    return f.encrypt(plaintext.encode("utf-8"))
+
+
+def decrypt_api_key(ciphertext: bytes, encryption_key: bytes) -> str:
+    """Decrypt a Fernet-encrypted API key."""
+    if not ciphertext:
+        raise ValueError("Cannot decrypt empty value")
+    if not encryption_key:
+        raise RuntimeError("Encryption key not available — user must log in")
+
+    f = Fernet(encryption_key)
+    return f.decrypt(ciphertext).decode("utf-8")

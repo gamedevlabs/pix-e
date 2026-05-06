@@ -1,4 +1,5 @@
 asgiref==3.10.0
+cryptography==44.0.0
 black==25.1.0
 certifi==2025.10.5
 cfgv==3.4.0

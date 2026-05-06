@@ -10,9 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import hashlib
 import os
 import sys
+import warnings
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -71,6 +74,13 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
         "rest_framework.parsers.JSONParser",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "100/minute",
+        "api_key_test": "10/minute",
+    },
 }
 
 MIDDLEWARE = [
@@ -91,11 +101,17 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-# Session settings for same-origin (Lax is safe for same-domain requests)
+# Session settings
+# Note: The session itself lasts a full day (user stays logged in).
+# The encryption key inside the session has its own 1-hour TTL
+# tracked independently — see accounts/encryption.py KEY_TTL_SECONDS.
+SESSION_COOKIE_AGE = 86400  # 24 hours — browser session alternative
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = not DEBUG  # False in dev (HTTP), True in production (HTTPS)
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = not DEBUG  # False in dev (HTTP), True in production (HTTPS)
 
 # Trust Caddy proxy for HTTPS
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -181,3 +197,23 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# === API Key Encryption ===
+# Keys are encrypted with a Fernet key derived from the user's login password
+# and stored ONLY in the server-side session. No global encryption key needed.
+# See accounts/encryption.py for the derivation mechanism.
+
+# Pepper for HMAC-based key fingerprinting (prevents oracle attacks on key_hash).
+# Set this to a random string in production. If empty, key fingerprinting is weaker.
+API_KEY_FINGERPRINT_PEPPER = os.getenv(
+    "API_KEY_FINGERPRINT_PEPPER",
+    hashlib.sha256(f"{SECRET_KEY}:fingerprint".encode()).hexdigest() if DEBUG else "",
+)
+
+if not API_KEY_FINGERPRINT_PEPPER and not DEBUG:
+    warnings.warn(
+        "API_KEY_FINGERPRINT_PEPPER is not set. Key fingerprinting will use an empty "
+        "pepper, making HMAC-based duplicate detection weaker. Set this to a random "
+        "string in your .env file or environment.",
+        stacklevel=2,
+    )
