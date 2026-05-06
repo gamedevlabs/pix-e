@@ -49,6 +49,8 @@ jobs:
           context: ./${{ matrix.component }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            CADDY_CONFIG=${{ github.ref_name == 'release' && 'prod.Caddyfile' || 'dev.Caddyfile' }}
       - name: Deploy to Dev
         if: github.ref_name == 'main'
         run: |
