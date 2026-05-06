@@ -1,10 +1,14 @@
+import logging
+
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
+from rest_framework.exceptions import APIException as _DRFException
 
-from llm import LLMOrchestrator, get_config
+from llm import get_config
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest
 
 # Import handlers to trigger auto-registration
@@ -13,7 +17,7 @@ from pillars.llm import handlers  # noqa: F401
 from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
-# Create your views here.
+logger = logging.getLogger(__name__)
 
 
 def get_model_id(model_name: str) -> str:
@@ -48,7 +52,12 @@ class DesignView(ModelViewSet):
         return GameDesignDescription.objects.filter(user=self.request.user)
 
     def get_object(self):
-        return GameDesignDescription.objects.get(user=self.request.user)
+        return GameDesignDescription.objects.filter(user=self.request.user).first()
+
+    def get_object_or_404(self):
+        """Return design or raise 404 if not found."""
+        from django.shortcuts import get_object_or_404 as _get_object_or_404
+        return _get_object_or_404(GameDesignDescription, user=self.request.user)
 
     @action(detail=False, methods=["GET"], url_path="get_or_create")
     def get_or_create(self, request):
@@ -62,10 +71,8 @@ class DesignView(ModelViewSet):
         )
 
 
-class PillarFeedbackView(ViewSet):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.orchestrator = LLMOrchestrator()
+class PillarFeedbackView(UserLLMOrchestratorMixin, ViewSet):
+    """View for per-pillar LLM feedback (validate, fix)."""
 
     @action(detail=True, methods=["POST"], url_path="validate")
     def validate_pillar(self, request, pk):
@@ -84,20 +91,20 @@ class PillarFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            # Execute through orchestrator
-            response = self.orchestrator.execute(llm_request)
+            # Execute through per-user orchestrator
+            response = self.get_llm_orchestrator(request).execute(llm_request)
 
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in validate_pillar: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in validate_pillar")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=True, methods=["POST"], url_path="fix")
     def fix_pillar(self, request, pk):
+        """Fix a pillar using AI suggestions."""
         try:
             pillar = Pillar.objects.filter(id=pk).first()
             if not pillar:
@@ -113,8 +120,8 @@ class PillarFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            # Execute through orchestrator
-            response = self.orchestrator.execute(llm_request)
+            # Execute through per-user orchestrator
+            response = self.get_llm_orchestrator(request).execute(llm_request)
 
             # Update pillar with improved version
             improved = response.results
@@ -127,17 +134,14 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse(data, status=200)
 
         except Exception as e:
-            print(f"Error in fix_pillar: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in fix_pillar")
             return JsonResponse({"error": str(e)}, status=500)
 
 
-class LLMFeedbackView(ViewSet):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.orchestrator = LLMOrchestrator()
+class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
+    """View for overall LLM feedback (completeness, contradictions, additions)."""
 
     @action(detail=False, methods=["POST"], url_path="overall")
     def overall_feedback(self, request):
@@ -179,9 +183,15 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            completeness_response = self.orchestrator.execute(completeness_request)
-            contradictions_response = self.orchestrator.execute(contradictions_request)
-            additions_response = self.orchestrator.execute(additions_request)
+            completeness_response = self.get_llm_orchestrator(request).execute(
+                completeness_request
+            )
+            contradictions_response = self.get_llm_orchestrator(request).execute(
+                contradictions_request
+            )
+            additions_response = self.get_llm_orchestrator(request).execute(
+                additions_request
+            )
 
             combined_result = {
                 "coverage": completeness_response.results,
@@ -192,10 +202,9 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(combined_result, status=200)
 
         except Exception as e:
-            print(f"Error in overall_feedback: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in overall_feedback")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="completeness")
@@ -223,14 +232,13 @@ class LLMFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in completeness: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in completeness")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="contradictions")
@@ -258,14 +266,13 @@ class LLMFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in contradictions: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in contradictions")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="additions")
@@ -293,14 +300,13 @@ class LLMFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in additions: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in additions")
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="context")
@@ -324,12 +330,11 @@ class LLMFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in context: {e}")
-            import traceback
-
-            traceback.print_exc()
+            if isinstance(e, _DRFException):
+                raise
+            logger.exception("Error in context")
             return JsonResponse({"error": str(e)}, status=500)

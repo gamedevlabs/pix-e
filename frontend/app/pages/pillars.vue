@@ -1,4 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
+/**
+ * Design Pillars page.
+ *
+ * Displays design pillars with LLM-driven feedback, coverage analysis,
+ * contradiction detection, and proposed additions. LLM calls use the
+ * user's personal API key context via the PillarFeedbackView mixin.
+ */
 // ============================================================================
 // PAGE CONFIG - Edit these settings for this module
 // ============================================================================
@@ -38,7 +45,7 @@ const {
 
 await pillarsFetchAll()
 
-await useFetch<GameDesign>(`${config.public.apiBase}/llm/design/get_or_create/`, {
+await useFetch<GameDesign>(`${config.public.apiBase}/api/llm/design/get_or_create/`, {
   method: 'GET',
   credentials: 'include',
   headers: useRequestHeaders(['cookie']),
@@ -223,6 +230,7 @@ async function dismissIssue(pillar: Pillar, index: number) {
         color="secondary"
         variant="soft"
         loading-auto
+        :disabled="!additionalFeature?.trim()"
         @click="getContextInPillarsFeedback"
       />
 

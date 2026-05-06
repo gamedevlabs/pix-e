@@ -8,10 +8,14 @@ from moviescriptevaluator.models import AssetMetaData, MovieScript
 
 
 class MovieScriptLLMConnector:
-    orchestrator: LLMOrchestrator
+    """LLM connector for movie script analysis.
 
-    def __init__(self):
-        self.orchestrator = LLMOrchestrator()
+    Uses a per-user orchestrator (passed in at construction) instead of
+    the old global env-var pattern, so each user's stored API keys are used.
+    """
+
+    def __init__(self, orchestrator: LLMOrchestrator):
+        self.orchestrator = orchestrator
 
     def analyze_movie_script(
         self, movie_script: MovieScript, asset_list: list[AssetMetaData]

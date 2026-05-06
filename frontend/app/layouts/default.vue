@@ -1,3 +1,11 @@
+/**
+ * Default application layout.
+ *
+ * Renders the header with navigation, user menu, model selector, and color mode
+ * toggle. The main content area supports both sidebar and sidebar-less modes.
+ * Hosts the SettingsOverlay (API key management modal) and SessionPasswordModal
+ * (encryption key expiry handling) as application-wide overlays.
+ */
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'
@@ -8,12 +16,14 @@ const route = useRoute()
 const router = useRouter()
 
 const open = ref(false)
+const settingsOpen = ref(false)
 
 // AUTH
 const authentication = useAuthentication()
 
 // HEADER
 const llmStore = useLLM()
+onMounted(() => llmStore.ensureInit())
 
 const dropdownItems = computed(() => [
   [
@@ -216,13 +226,41 @@ const groups = computed(() => [
           @click="useRouter().push('login')"
         />
         <div v-else class="flex items-center gap-2">
-          <!-- Put user info, settings, logout etc. here -->
+          <UIcon
+            v-if="llmStore.loading"
+            name="i-lucide-loader-circle"
+            class="size-5 animate-spin text-dimmed"
+          />
           <USelect
-            v-model="llmStore.active_llm"
-            :items="llmStore.llm_models"
+            v-else-if="llmStore.models.length > 0"
+            v-model="llmStore.activeModel"
+            :items="
+              llmStore.models.map((m) => ({
+                label: m.label,
+                value: m.value,
+                icon: m.icon,
+              }))
+            "
             value-key="value"
-            :icon="llmStore.llm_icon"
-            class="w-48"
+            :icon="llmStore.activeModelIcon"
+            class="w-56"
+          />
+          <UButton
+            v-else
+            :icon="llmStore.initialized ? 'i-lucide-plus' : 'i-lucide-rotate-ccw'"
+            color="primary"
+            variant="solid"
+            size="sm"
+            @click="settingsOpen = true"
+          >
+            {{ llmStore.initialized ? 'Add API Key' : 'Reload' }}
+          </UButton>
+          <UButton
+            icon="i-lucide-settings"
+            variant="ghost"
+            color="neutral"
+            aria-label="Settings"
+            @click="settingsOpen = true"
           />
           <UDropdownMenu :items="dropdownItems">
             <!-- we need to wrap it in a div so the whole component is clickable -->
@@ -309,6 +347,8 @@ const groups = computed(() => [
       </div>
     </main>
 
+    <SettingsOverlay v-model:open="settingsOpen" />
+    <SessionPasswordModal />
     <UFooter />
   </div>
 </template>

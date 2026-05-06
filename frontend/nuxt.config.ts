@@ -21,6 +21,10 @@ export default defineNuxtConfig({
     },
   ],
 
+  imports: {
+    dirs: ['composables', 'composables/api'],
+  },
+
   modules: [
     //'@nuxt/content',
     '@nuxt/eslint',
