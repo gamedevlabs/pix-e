@@ -10,7 +10,6 @@ COPY package*.json ./
 RUN npm install
 RUN npm ci
 COPY . .
-
 # CRITICAL: We use generate, NOT build, to produce a truly static dist/
 RUN npm run generate  # Outputs static files to .output/public
 
