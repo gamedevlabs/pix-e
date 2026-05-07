@@ -54,10 +54,13 @@ export function useGameConcept() {
   async function fetchConceptHistory() {
     isLoadingHistory.value = true
     try {
-      const data = await $fetch<GameConcept[]>(`${config.public.apiBase}/api/game-concept/history/`, {
-        credentials: 'include',
-        headers: useRequestHeaders(['cookie']),
-      })
+      const data = await $fetch<GameConcept[]>(
+        `${config.public.apiBase}/api/game-concept/history/`,
+        {
+          credentials: 'include',
+          headers: useRequestHeaders(['cookie']),
+        },
+      )
       conceptHistory.value = data || []
     } catch (err) {
       errorToast(err)

@@ -57,17 +57,20 @@ export function usePillarsApi() {
   }
 
   async function acceptPillarFixAPICall(pillarId: number, name: string, description: string) {
-    return await $fetch<Pillar>(`${config.public.apiBase}/api/llm/pillars/${pillarId}/accept-fix/`, {
-      method: 'POST',
-      body: {
-        name,
-        description,
+    return await $fetch<Pillar>(
+      `${config.public.apiBase}/api/llm/pillars/${pillarId}/accept-fix/`,
+      {
+        method: 'POST',
+        body: {
+          name,
+          description,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+    )
   }
 
   async function getContextInPillarsAPICall(context: string) {

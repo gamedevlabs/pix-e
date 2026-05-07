@@ -180,20 +180,23 @@ export function useSparcV2Api() {
     context: string = '',
     contextStrategy: SparcContextStrategy = 'router',
   ) {
-    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/aspects/`, {
-      method: 'POST',
-      body: {
-        game_text: gameText,
-        aspects: aspects,
-        context: context,
-        context_strategy: contextStrategy,
-        model: llm.active_llm,
+    return await $fetch<SPARCV2Response>(
+      `${config.public.apiBase}/api/sparc/v2/evaluate/aspects/`,
+      {
+        method: 'POST',
+        body: {
+          game_text: gameText,
+          aspects: aspects,
+          context: context,
+          context_strategy: contextStrategy,
+          model: llm.active_llm,
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+    )
   }
 
   return {
