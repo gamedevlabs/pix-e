@@ -25,7 +25,7 @@ const {
   heatmapData,
   topConfusionsChartData,
   load,
-} = usePlayerExpectationCharts('http://localhost:8000/api')
+} = usePlayerExpectationCharts()
 
 onMounted(load)
 </script>

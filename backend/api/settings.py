@@ -41,7 +41,7 @@ SECRET_KEY = "django-insecure-wxqcjs8ufub1x#x)nwi-y4k+sv@$r@9-=&dp!8r=sp8ee=#lh%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list = []
+ALLOWED_HOSTS: list = ["pixie.soc.cit.tum.de", "localhost", "127.0.0.1"]
 
 # Application definition
 
@@ -91,14 +91,27 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://localhost",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Session settings for same-origin (Lax is safe for same-domain requests)
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = True
+
+# Trust Caddy proxy for HTTPS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 ROOT_URLCONF = "api.urls"
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
+    "https://localhost",
+    "https://pixie.soc.cit.tum.de",
 ]
 
 TEMPLATES = [
@@ -166,6 +179,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media files (user uploads)
 MEDIA_URL = "/media/"

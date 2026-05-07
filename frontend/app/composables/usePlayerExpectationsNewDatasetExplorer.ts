@@ -242,10 +242,10 @@ function dateStrToUnixSeconds(dateStr: string, endOfDay: boolean) {
 }
 
 //Main composable function.
-export function usePlayerExpectationsNewDatasetExplorer(
-  baseUrl = 'http://localhost:8000/api/player-expectations-new',
-) {
+export function usePlayerExpectationsNewDatasetExplorer() {
+  const config = useRuntimeConfig()
   const loading = ref(false)
+  const baseUrl = config.public.apiBase + '/api/player-expectations-new'
   // ref creates a reactive value...if the value changes, Vue will automatically update the UI.
   //access the real value via .value
   const error = ref<unknown>(null)

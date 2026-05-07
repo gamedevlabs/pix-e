@@ -150,6 +150,9 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=True)
     containers = PxChartContainerDetailSerializer(many=True, read_only=True)
     edges = PxChartEdgeSerializer(many=True, read_only=True)
+    associated_node_id = serializers.UUIDField(
+        source="associatedNode.id", read_only=False, allow_null=True, required=False
+    )
 
     class Meta:
         model = PxChart
@@ -172,4 +175,13 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"id": "Cannot update ID after creation."}
             )
-        return super().update(instance, validated_data)
+
+        associated_node_id = validated_data.pop("associated_node_id", None)
+        if associated_node_id is not None:
+            instance.associatedNode_id = associated_node_id
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
