@@ -21,6 +21,9 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/llm/", include("pillars.urls")),
+    path("api/llm/", include("pxnodes.llm_urls")),
+    path("api/sparc/", include("sparc.urls")),
+    path("api/game-concept/", include("game_concept.urls")),
     path("api/accounts/", include("accounts.urls")),
     path("api/", include("pxnodes.urls")),
     path("api/player-expectations-new/", include("player_expectations_new.urls")),

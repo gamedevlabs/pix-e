@@ -130,11 +130,13 @@ class PxChartSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "project",
+            "associatedNode",
             "owner",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
@@ -158,14 +160,15 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
-            "associated_node_id",
+            "project",
+            "associatedNode",
             "containers",
             "edges",
             "owner",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:

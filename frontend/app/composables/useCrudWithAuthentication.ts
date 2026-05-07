@@ -1,3 +1,4 @@
+import { useProject } from '@/composables/useProject'
 export function useCrudWithAuthentication<T>(apiUrl: string) {
   const config = useRuntimeConfig()
   const items = ref<T[]>([])
@@ -5,6 +6,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
   const API_URL = config.public.apiBase + '/' + apiUrl
+  const projectStore = useProject()
 
   async function fetchAll() {
     loading.value = true
@@ -94,6 +96,15 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
       errorToast(err)
     }
   }
+
+  watch(
+    () => projectStore.activeProjectId,
+    async (nextId, previousId) => {
+      if (previousId !== null && nextId !== previousId) {
+        await fetchAll()
+      }
+    },
+  )
 
   return {
     items,

@@ -73,7 +73,7 @@ class Config:
     # Model name aliases: maps friendly names to full model IDs
     model_aliases: dict = field(
         default_factory=lambda: {
-            "gemini": "gemini-2.0-flash-exp",
+            "gemini": "gemini-3.1-flash-lite-preview",
             "openai": "gpt-4o-mini",
         }
     )
@@ -229,7 +229,7 @@ class Config:
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             model_aliases=get_setting(
                 "model_aliases",
-                {"gemini": "gemini-2.0-flash-exp", "openai": "gpt-4o-mini"},
+                {"gemini": "gemini-3.1-flash-lite-preview", "openai": "gpt-4o-mini"},
                 dict,
             ),
             # Storage

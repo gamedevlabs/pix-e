@@ -77,7 +77,7 @@ class TestModelAliasResolution:
         """Test that 'gemini' alias resolves to full model ID."""
         config = get_config()
         resolved = config.resolve_model_alias("gemini")
-        assert resolved == "gemini-2.0-flash-exp"
+        assert resolved == "gemini-3.1-flash-lite-preview"
 
     def test_config_resolves_openai_alias(self):
         """Test that 'openai' alias resolves to full model ID."""

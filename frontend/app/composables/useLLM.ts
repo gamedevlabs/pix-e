@@ -9,7 +9,7 @@ export const useLLM = defineStore('llm', () => {
       icon: 'i-simple-icons-googlegemini',
     },
     {
-      label: 'ChatGPT (GPT-4)',
+      label: 'ChatGPT (GPT-4o-mini)',
       value: 'openai',
       icon: 'i-simple-icons-openai',
     },

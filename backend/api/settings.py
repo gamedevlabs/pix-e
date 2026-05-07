@@ -10,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+
+from llm.logfire_config import configure_logfire
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +29,8 @@ load_dotenv(BASE_DIR / ".env")
 
 # Load environment variables from .env file
 load_dotenv(BASE_DIR.parent / ".env")
+
+configure_logfire()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -54,6 +57,8 @@ INSTALLED_APPS = [
     "pxnodes",
     "llm",
     "pillars",
+    "sparc",
+    "game_concept",
     "accounts",
     "pxcharts",
     "player_expectations",
@@ -177,7 +182,39 @@ STATIC_URL = "static/"
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Media files (user uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Document upload configuration
+ALLOWED_DOCUMENT_TYPES = ["pdf", "docx", "txt", "md"]
+DOCUMENT_MAX_SIZE_MB = 10
+
+# Vector database for structural memory context
+# Stored separately from main SQLite database
+VECTOR_DB_PATH = BASE_DIR / "vectors.db"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "sparc.llm.workflows_v2": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}

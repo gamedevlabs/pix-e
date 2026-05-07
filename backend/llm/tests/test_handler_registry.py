@@ -33,7 +33,7 @@ class TestHandlerRegistration:
 
         # Check that pillar operations are registered
         assert registry.has_operation("pillars.validate")
-        assert registry.has_operation("pillars.improve")
+        assert registry.has_operation("pillars.improve_explained")
         assert registry.has_operation("pillars.evaluate_completeness")
         assert registry.has_operation("pillars.evaluate_contradictions")
         assert registry.has_operation("pillars.suggest_additions")
@@ -83,7 +83,7 @@ class TestOperationListing:
         operations = list_operations()
 
         assert "pillars.validate" in operations
-        assert "pillars.improve" in operations
+        assert "pillars.improve_explained" in operations
         assert len(operations) >= 6  # At least 6 pillar operations
 
     def test_list_operations_filtered_by_feature(self):
