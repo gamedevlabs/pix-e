@@ -90,7 +90,9 @@ class GameConceptViewSet(ModelViewSet):
 
         project = get_current_project(user)
         if not project:
-            project = Project.objects.create(user=user, name="Untitled Project")
+            project = Project.objects.create(
+                user=user, name="Untitled Project", is_current=True
+            )
 
         # Mark all existing concepts as not current
         GameConcept.objects.filter(project=project, is_current=True).update(
