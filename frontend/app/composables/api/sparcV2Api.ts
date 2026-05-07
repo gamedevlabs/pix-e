@@ -26,7 +26,7 @@ export function useSparcV2Api() {
       formData.append('context_strategy', contextStrategy)
       formData.append('document', document)
 
-      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
+      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -36,7 +36,7 @@ export function useSparcV2Api() {
       })
     } else {
       // Keep existing JSON approach when no document
-      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/`, {
+      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/`, {
         method: 'POST',
         body: {
           game_text: gameText,
@@ -63,7 +63,7 @@ export function useSparcV2Api() {
     onError: (error: string) => void,
     document?: File | null,
   ) {
-    const url = `${config.public.apiBase}/sparc/v2/evaluate-stream/`
+    const url = `${config.public.apiBase}/api/sparc/v2/evaluate-stream/`
 
     try {
       // Use FormData if document is provided, otherwise use JSON
@@ -158,7 +158,7 @@ export function useSparcV2Api() {
     context: string = '',
     contextStrategy: SparcContextStrategy = 'router',
   ) {
-    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/aspect/`, {
+    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/aspect/`, {
       method: 'POST',
       body: {
         game_text: gameText,
@@ -180,7 +180,7 @@ export function useSparcV2Api() {
     context: string = '',
     contextStrategy: SparcContextStrategy = 'router',
   ) {
-    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/sparc/v2/evaluate/aspects/`, {
+    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/aspects/`, {
       method: 'POST',
       body: {
         game_text: gameText,

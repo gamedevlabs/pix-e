@@ -13,7 +13,7 @@ definePageMeta({
     icon: 'i-lucide-film',
     navGroup: 'main',
     navOrder: 5,
-    showInNav: true,
+    showInNav: false,
   },
 })
 

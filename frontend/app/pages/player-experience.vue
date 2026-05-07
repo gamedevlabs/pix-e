@@ -16,7 +16,7 @@ definePageMeta({
     icon: 'i-lucide-chart-no-axes-gantt',
     navGroup: 'main',
     navOrder: 2,
-    showInNav: true,
+    showInNav: false,
   },
 })
 
