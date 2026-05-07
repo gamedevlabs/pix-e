@@ -1,7 +1,20 @@
 <script setup lang="ts">
+// ============================================================================
+// PAGE CONFIG - Edit these settings for this module
+// ============================================================================
 definePageMeta({
-  middleware: 'authentication',
+  middleware: ['authentication', 'project-context'],
+  pageConfig: {
+    type: 'project-required',
+    showSidebar: true,
+    title: 'SPARC',
+    icon: 'i-lucide-sparkles',
+    navGroup: 'main',
+    navOrder: 5,
+    showInNav: true,
+  },
 })
+// ============================================================================
 
 const { fetchGameConcept } = useGameConcept()
 const { context } = useSparc()
