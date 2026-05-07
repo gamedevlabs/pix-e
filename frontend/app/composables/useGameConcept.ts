@@ -15,7 +15,7 @@ export function useGameConcept() {
   async function fetchGameConcept() {
     try {
       const data = await $fetch<{ content: string }>(
-        `${config.public.apiBase}/game-concept/current/`,
+        `${config.public.apiBase}/api/game-concept/current/`,
         {
           credentials: 'include',
           headers: useRequestHeaders(['cookie']),
@@ -33,7 +33,7 @@ export function useGameConcept() {
 
     isSavingConcept.value = true
     try {
-      await $fetch(`${config.public.apiBase}/game-concept/update_current/`, {
+      await $fetch(`${config.public.apiBase}/api/game-concept/update_current/`, {
         method: 'POST',
         body: { content: designIdea.value },
         credentials: 'include',
@@ -54,7 +54,7 @@ export function useGameConcept() {
   async function fetchConceptHistory() {
     isLoadingHistory.value = true
     try {
-      const data = await $fetch<GameConcept[]>(`${config.public.apiBase}/game-concept/history/`, {
+      const data = await $fetch<GameConcept[]>(`${config.public.apiBase}/api/game-concept/history/`, {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
@@ -70,7 +70,7 @@ export function useGameConcept() {
     isRestoringConcept.value = true
     try {
       const data = await $fetch<GameConcept>(
-        `${config.public.apiBase}/game-concept/${conceptId}/restore/`,
+        `${config.public.apiBase}/api/game-concept/${conceptId}/restore/`,
         {
           method: 'POST',
           credentials: 'include',

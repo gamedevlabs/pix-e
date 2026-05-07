@@ -23,7 +23,7 @@ export function usePillars() {
   const config = useRuntimeConfig()
   const pillarsApi = usePillarsApi()
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = `${config.public.apiBase}/llm/pillars/`
+  const API_URL = `${config.public.apiBase}/api/llm/pillars/`
   const projectStore = useProject()
 
   // Use shared game concept state

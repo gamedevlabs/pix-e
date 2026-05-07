@@ -22,7 +22,7 @@ export function usePillarsApi() {
 
   async function validatePillarAPICall(pillar: Pillar) {
     pillar.llm_feedback = await $fetch<PillarFeedback>(
-      `${config.public.apiBase}/llm/pillars/${pillar.id}/validate/`,
+      `${config.public.apiBase}/api/llm/pillars/${pillar.id}/validate/`,
       {
         method: 'POST',
         body: {
@@ -38,7 +38,7 @@ export function usePillarsApi() {
 
   async function fixPillarWithAIAPICall(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
     return await $fetch<FixPillarAPIResponse>(
-      `${config.public.apiBase}/llm/pillars/${pillar.id}/fix/`,
+      `${config.public.apiBase}/api/llm/pillars/${pillar.id}/fix/`,
       {
         method: 'POST',
         body: {
@@ -57,7 +57,7 @@ export function usePillarsApi() {
   }
 
   async function acceptPillarFixAPICall(pillarId: number, name: string, description: string) {
-    return await $fetch<Pillar>(`${config.public.apiBase}/llm/pillars/${pillarId}/accept-fix/`, {
+    return await $fetch<Pillar>(`${config.public.apiBase}/api/llm/pillars/${pillarId}/accept-fix/`, {
       method: 'POST',
       body: {
         name,
@@ -72,7 +72,7 @@ export function usePillarsApi() {
 
   async function getContextInPillarsAPICall(context: string) {
     return await $fetch<ContextInPillarsFeedback>(
-      `${config.public.apiBase}/llm/feedback/context/`,
+      `${config.public.apiBase}/api/llm/feedback/context/`,
       {
         method: 'POST',
         body: {
@@ -91,7 +91,7 @@ export function usePillarsApi() {
 
   async function evaluateAllAPICall(executionMode: ExecutionMode = 'agentic') {
     return await $fetch<EvaluateAllResponse>(
-      `${config.public.apiBase}/llm/feedback/evaluate-all/`,
+      `${config.public.apiBase}/api/llm/feedback/evaluate-all/`,
       {
         method: 'POST',
         body: {
@@ -108,7 +108,7 @@ export function usePillarsApi() {
 
   async function resolveContradictionsAPICall(contradictions: ContradictionsResponse) {
     return await $fetch<ContradictionResolutionResponse>(
-      `${config.public.apiBase}/llm/feedback/resolve-contradictions/`,
+      `${config.public.apiBase}/api/llm/feedback/resolve-contradictions/`,
       {
         method: 'POST',
         body: {
@@ -124,7 +124,7 @@ export function usePillarsApi() {
   }
 
   async function acceptAdditionAPICall(name: string, description: string) {
-    return await $fetch<Pillar>(`${config.public.apiBase}/llm/feedback/accept-addition/`, {
+    return await $fetch<Pillar>(`${config.public.apiBase}/api/llm/feedback/accept-addition/`, {
       method: 'POST',
       body: {
         name,
