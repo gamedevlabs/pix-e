@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, cast
+from typing import Any, Optional, cast
 
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
@@ -6,7 +6,7 @@ from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer, Serializer
+from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
 
 from .models import Project

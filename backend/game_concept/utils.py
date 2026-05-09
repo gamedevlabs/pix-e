@@ -1,6 +1,7 @@
 from typing import Optional
 
 from projects.models import Project
+
 from .models import GameConcept
 
 

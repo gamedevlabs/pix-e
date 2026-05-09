@@ -14,13 +14,13 @@ from rest_framework.serializers import BaseSerializer, Serializer
 from rest_framework.viewsets import ModelViewSet
 
 from projects.utils import get_current_project
+
 from .models import GameConcept, Project
 from .serializers import (
     GameConceptCreateSerializer,
     GameConceptListSerializer,
     GameConceptSerializer,
 )
-from projects.services import clone_project
 from .utils import get_current_game_concept
 
 

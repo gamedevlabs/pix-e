@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from projects.models import Project
 from projects.utils import get_current_project
+
 from .models import GameConcept
 
 

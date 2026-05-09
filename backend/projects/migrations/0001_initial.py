@@ -28,7 +28,10 @@ class Migration(migrations.Migration):
                                 verbose_name="ID",
                             ),
                         ),
-                        ("name", models.CharField(blank=True, default="", max_length=255)),
+                        (
+                            "name",
+                            models.CharField(blank=True, default="", max_length=255),
+                        ),
                         ("description", models.TextField(blank=True, default="")),
                         (
                             "is_current",
@@ -60,5 +63,6 @@ class Migration(migrations.Migration):
                         ],
                     },
                 )
-            ])
+            ],
+        )
     ]

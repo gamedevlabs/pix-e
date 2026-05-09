@@ -6,6 +6,7 @@ import uuid
 
 from django.contrib.auth.models import User
 
+from game_concept.models import GameConcept
 from pillars.models import Pillar
 from pxcharts.models import (
     PxChart,
@@ -15,19 +16,18 @@ from pxcharts.models import (
 )
 from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
 
-from game_concept.models import GameConcept
 from .models import Project
 
 
 def clone_project(
-        *,
-        source_project: Project,
-        user: User,
-        name: str,
-        include_concept: bool,
-        include_pillars: bool,
-        include_charts: bool,
-        include_nodes: bool,
+    *,
+    source_project: Project,
+    user: User,
+    name: str,
+    include_concept: bool,
+    include_pillars: bool,
+    include_charts: bool,
+    include_nodes: bool,
 ) -> Project:
     new_project = Project.objects.create(
         user=user,
@@ -84,12 +84,12 @@ def clone_project(
 
 
 def _clone_nodes(
-        *,
-        source_project: Project,
-        new_project: Project,
-        user: User,
-        def_map: dict[str, PxComponentDefinition],
-        node_map: dict[str, PxNode],
+    *,
+    source_project: Project,
+    new_project: Project,
+    user: User,
+    def_map: dict[str, PxComponentDefinition],
+    node_map: dict[str, PxNode],
 ) -> None:
     definitions = PxComponentDefinition.objects.filter(project=source_project)
     for definition in definitions:
@@ -135,12 +135,12 @@ def _clone_nodes(
 
 
 def _clone_charts(
-        *,
-        source_project: Project,
-        new_project: Project,
-        user: User,
-        include_nodes: bool,
-        node_map: dict[str, PxNode],
+    *,
+    source_project: Project,
+    new_project: Project,
+    user: User,
+    include_nodes: bool,
+    node_map: dict[str, PxNode],
 ) -> None:
     charts = PxChart.objects.filter(project=source_project)
     for chart in charts:
@@ -187,7 +187,7 @@ def _clone_charts(
 
 
 def _clone_container_layout(
-        container: PxChartContainer, new_container: PxChartContainer
+    container: PxChartContainer, new_container: PxChartContainer
 ) -> None:
     if not hasattr(container, "layout") or not container.layout:
         return
