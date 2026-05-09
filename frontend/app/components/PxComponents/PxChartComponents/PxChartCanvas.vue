@@ -18,7 +18,7 @@ const props = defineProps({ chartId: { type: String, default: -1 } })
 const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
-const BASE_URL = config.public.apiBase + "/api"
+const BASE_URL = config.public.apiBase + '/api'
 const { success: successToast, error: errorToast } = usePixeToast()
 
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
@@ -393,8 +393,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
             icon="i-heroicons-cog-6-tooth"
             color="primary"
             :loading="precomputeLoading"
-            @click="handlePrecomputeArtifacts"
             :disabled="true"
+            @click="handlePrecomputeArtifacts"
           >
             Precompute Artifacts
           </UButton>
@@ -403,8 +403,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
             icon="i-heroicons-trash"
             color="error"
             variant="outline"
-            @click="handleResetArtifacts"
             :disabled="true"
+            @click="handleResetArtifacts"
           >
             Reset Cache
           </UButton>

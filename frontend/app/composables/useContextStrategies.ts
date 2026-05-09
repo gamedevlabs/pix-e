@@ -10,7 +10,7 @@
  */
 const config = useRuntimeConfig()
 
-const BASE_URL = config.public.apiBase + "/api/"
+const BASE_URL = config.public.apiBase + '/api/'
 
 export type StrategyType =
   | 'full_context'
