@@ -17,6 +17,7 @@ import type {
   UserApiKey,
 } from '~/types/api-key'
 import { PROVIDER_ICONS, PROVIDER_LABELS, PROVIDER_OPTIONS } from '~/utils/api-key'
+import { SessionExpiredError } from '~/utils/sessionFetch'
 
 const open = defineModel<boolean>('open', { default: false })
 const llmStore = useLLM()
@@ -42,6 +43,7 @@ const editingId = ref<string | null>(null)
 const editLabel = ref('')
 const editBaseUrl = ref('')
 const editIsActive = ref(true)
+const editKeyValue = ref('')
 const isEditing = ref(false)
 
 // Help modals
@@ -53,8 +55,10 @@ const isEditCustom = computed(() => {
   return key?.provider === 'custom'
 })
 
-watch(open, async (val) => {
-  if (val) {
+// Re-fetch keys whenever the overlay opens OR when apiKeyRefreshFlag bumps
+// (which happens when an LLM call fails due to invalid API key).
+watch([open, () => useState('apiKeyRefreshFlag', () => 0).value], async () => {
+  if (open.value) {
     try {
       keys.value = await fetchKeys()
     } catch {
@@ -119,6 +123,7 @@ function startEdit(key: UserApiKey) {
   editLabel.value = key.label
   editBaseUrl.value = key.base_url || ''
   editIsActive.value = key.is_active
+  editKeyValue.value = ''
 }
 
 function cancelEdit() {
@@ -136,13 +141,21 @@ async function handleEditSubmit() {
       body.base_url = editBaseUrl.value
     }
     body.is_active = editIsActive.value
+    // If user is re-keying a broken key, include the new key value
+    if (editKeyValue.value.trim()) {
+      body.key = editKeyValue.value.trim()
+    }
     const updated = await updateKey(editingId.value, body)
     const idx = keys.value.findIndex((k) => k.id === editingId.value)
     if (idx !== -1) keys.value[idx] = updated
     await llmStore.refreshModels()
     editingId.value = null
     toast.add({ title: 'Key updated', color: 'success' })
-  } catch {
+  } catch (err) {
+    // Let session expiry bubble up so password modal appears
+    if (err instanceof SessionExpiredError) {
+      throw err
+    }
     toast.add({ title: 'Failed to update key', color: 'error' })
   } finally {
     isEditing.value = false
@@ -178,6 +191,19 @@ async function handleTest(id: string) {
     toast.add({ title: 'Key test failed', description: 'Could not connect', color: 'error' })
   } finally {
     testingId.value = null
+  }
+  // Re-fetch keys — test may have auto-disabled the key on the server
+  try {
+    keys.value = await fetchKeys()
+  } catch {
+    /* */
+  }
+  // Sync edit form state if we're currently editing the tested key
+  if (editingId.value === id) {
+    const updated = keys.value.find((k) => k.id === id)
+    if (updated) {
+      editIsActive.value = updated.is_active
+    }
   }
 }
 </script>
@@ -304,7 +330,14 @@ async function handleTest(id: string) {
 
         <!-- Key List -->
         <div v-if="keys.length > 0" class="space-y-2">
-          <div v-for="apiKey in keys" :key="apiKey.id" class="p-3 border rounded-lg">
+          <div
+            v-for="apiKey in keys"
+            :key="apiKey.id"
+            :class="[
+              'p-3 border rounded-lg',
+              apiKey.disabled_reason === 'auth_failure' ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : '',
+            ]"
+          >
             <!-- Normal view -->
             <div v-if="editingId !== apiKey.id" class="flex items-center justify-between">
               <div class="flex items-center gap-3 min-w-0">
@@ -313,11 +346,11 @@ async function handleTest(id: string) {
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-sm truncate">{{ apiKey.label }}</span>
                     <UBadge
-                      :color="apiKey.is_active ? 'success' : 'neutral'"
+                      :color="apiKey.disabled_reason === 'auth_failure' ? 'error' : apiKey.is_active ? 'success' : 'neutral'"
                       variant="subtle"
                       size="xs"
                     >
-                      {{ apiKey.is_active ? 'Active' : 'Off' }}
+                      {{ apiKey.disabled_reason === 'auth_failure' ? 'Invalid' : apiKey.is_active ? 'Active' : 'Off' }}
                     </UBadge>
                   </div>
                   <div class="text-xs text-dimmed truncate">
@@ -368,6 +401,18 @@ async function handleTest(id: string) {
                 />
               </div>
               <UInput v-model="editLabel" placeholder="Label" size="sm" />
+              <template v-if="editingId && keys.find(k => k.id === editingId)?.disabled_reason === 'auth_failure'">
+                <UInput
+                  v-model="editKeyValue"
+                  type="password"
+                  placeholder="Enter new API key to replace the broken one"
+                  size="sm"
+                />
+                <p class="text-xs text-amber-600 dark:text-amber-400 -mt-2">
+                  This key was auto-disabled because the provider rejected it.
+                  Enter a new valid key to re-enable it.
+                </p>
+              </template>
               <template v-if="isEditCustom">
                 <UInput v-model="editBaseUrl" placeholder="https://api.openai.com/v1" size="sm" />
                 <p class="text-xs text-dimmed -mt-2">
@@ -380,12 +425,24 @@ async function handleTest(id: string) {
                   size="xs"
                   :color="editIsActive ? 'success' : 'neutral'"
                   variant="outline"
+                  :disabled="editingId ? (keys.find(k => k.id === editingId)?.disabled_reason === 'auth_failure') : false"
                   @click="editIsActive = !editIsActive"
                 >
                   {{ editIsActive ? 'Enabled' : 'Disabled' }}
                 </UButton>
+                <span v-if="editingId && keys.find(k => k.id === editingId)?.disabled_reason === 'auth_failure'" class="text-xs text-amber-600 dark:text-amber-400">
+                  Must enter a new key to re-enable
+                </span>
               </div>
               <div class="flex justify-end gap-2">
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-plug"
+                  size="sm"
+                  :loading="testingId === editingId"
+                  @click="editingId ? handleTest(editingId) : undefined"
+                />
                 <UButton variant="ghost" size="sm" @click="cancelEdit">Cancel</UButton>
                 <UButton size="sm" :loading="isEditing" @click="handleEditSubmit">Save</UButton>
               </div>
