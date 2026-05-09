@@ -12,6 +12,7 @@
 const emit = defineEmits<{
   success: []
   close: []
+  openSettings: []
 }>()
 
 const password = ref('')
@@ -23,12 +24,15 @@ async function handleSubmit() {
   if (!password.value) return
   isSubmitting.value = true
   error.value = ''
-  const ok = await reestablish(password.value)
-  if (ok) {
+  const result = await reestablish(password.value)
+  if (result.ok) {
     password.value = ''
     emit('success')
   } else {
-    error.value = 'Wrong password'
+    error.value = result.error || 'Wrong password'
+    if (result.openSettings) {
+      emit('openSettings')
+    }
   }
   isSubmitting.value = false
 }

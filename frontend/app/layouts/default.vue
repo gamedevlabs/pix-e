@@ -348,7 +348,7 @@ const groups = computed(() => [
     </main>
 
     <SettingsOverlay v-model:open="settingsOpen" />
-    <SessionPasswordModal />
+    <SessionPasswordModal @open-settings="settingsOpen = true" />
     <UFooter />
   </div>
 </template>

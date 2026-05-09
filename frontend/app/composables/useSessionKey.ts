@@ -22,7 +22,7 @@ export function useSessionKey() {
 
   let retryFn: (() => Promise<unknown>) | null = null
 
-  async function reestablish(password: string): Promise<boolean> {
+  async function reestablish(password: string): Promise<{ ok: boolean; error?: string; openSettings?: boolean }> {
     // First, do a GET to refresh the CSRF cookie (might be stale from key expiry)
     try {
       await $fetch(`${config.public.apiBase}/api/accounts/me/`, {
@@ -47,7 +47,7 @@ export function useSessionKey() {
       showPasswordModal.value = false
       retryFn = null
       toast.add({ title: 'Session refreshed', color: 'success' })
-      return true
+      return { ok: true }
     } catch (err: unknown) {
       const e = err as Record<string, unknown>
       const response = e?.response as Record<string, unknown> | undefined
@@ -56,16 +56,23 @@ export function useSessionKey() {
       const detail =
         (data?.detail as string) || (data?.error as string) || (e?.message as string) || ''
       if (status === 403 && detail.includes('Wrong password')) {
-        toast.add({ title: 'Wrong password', color: 'error' })
+        return { ok: false, error: 'Wrong password' }
       } else if (status === 403 && detail.includes('CSRF')) {
-        toast.add({ title: 'Session expired. Please log in again.', color: 'error' })
-        // Hard session expiry — can't recover with password alone
         dismissModal()
         useRouter().push('/login')
+        return { ok: false, error: 'Session expired. Please log in again.' }
       } else {
-        toast.add({ title: detail || 'Failed to refresh key', color: 'error' })
+        // Retry failed — not a password issue. Close modal, show toast.
+        dismissModal()
+        const isInvalidKey = detail.includes('API key is invalid') || detail.includes('disabled') || detail.includes('no valid')
+        const msg = detail || 'Failed to refresh key'
+        if (isInvalidKey) {
+          toast.add({ title: 'API Key Invalid', description: msg, color: 'error' })
+        } else {
+          toast.add({ title: 'Error', description: msg, color: 'error' })
+        }
+        return { ok: false, error: msg, openSettings: isInvalidKey }
       }
-      return false
     }
   }
 
