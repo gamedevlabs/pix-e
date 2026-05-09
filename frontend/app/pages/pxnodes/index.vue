@@ -184,16 +184,13 @@ async function handleAddComponent() {
     <SimpleContentWrapper>
       <template #header>
         <div class="flex justify-between items-center">
-          <div>
-            Nodes
-          </div>
+          <div>Nodes</div>
           <UButton
-              :color="showMemoryPanel ? 'primary' : 'neutral'"
-              variant="soft"
-              icon="i-lucide-brain"
-              @click="toggleMemoryPanel"
-              class="justify-end"
-              :disabled="true"
+            :color="showMemoryPanel ? 'primary' : 'neutral'"
+            variant="soft"
+            icon="i-lucide-brain"
+            :disabled="true"
+            @click="toggleMemoryPanel"
           >
             Structural Memory
           </UButton>
