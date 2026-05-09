@@ -23,6 +23,8 @@ export interface UserApiKey {
   base_url: string
   /** Whether this key is currently enabled for requests. */
   is_active: boolean
+  /** Reason the key was disabled: 'auth_failure' means provider rejected it. */
+  disabled_reason: string
   /** Masked key value — only the last 4 characters are visible. */
   masked_key: string
   /** Timestamp of the last successful API test, or null if never tested. */
@@ -50,7 +52,8 @@ export interface CreateApiKeyPayload {
 
 /**
  * Payload for updating an existing API key.
- * Only metadata fields can be changed; the key value itself cannot be modified.
+ * Only metadata fields can be changed by default; the key value itself
+ * can only be provided when the key is disabled due to auth_failure.
  */
 export interface UpdateApiKeyPayload {
   /** Updated human-readable label. */
@@ -59,4 +62,6 @@ export interface UpdateApiKeyPayload {
   is_active?: boolean
   /** Updated custom base URL. */
   base_url?: string
+  /** New API key value — only accepted when key was disabled due to auth_failure. */
+  key?: string
 }

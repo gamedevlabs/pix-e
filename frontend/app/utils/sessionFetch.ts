@@ -11,17 +11,27 @@ export class SessionExpiredError extends Error {
   }
 }
 
+export class InvalidApiKeyError extends Error {
+  constructor(message?: string) {
+    super(message ?? 'Your API key is invalid. Please re-add it in Settings.')
+    this.name = 'InvalidApiKeyError'
+  }
+}
+
 /**
  * Wraps $fetch to detect encryption-key expired errors and throw SessionExpiredError.
  *
  * Triggers on:
  * - 401 with "Encryption key expired" (from NotAuthenticated in mixin/models)
+ * - 401 with "invalid/disabled" (invalid API key → prompts re-add in Settings)
  * - 403 with CSRF-related messages (Django's CSRF middleware after session rotation)
  *
  * The caller should catch SessionExpiredError and trigger the password modal.
+ * InvalidApiKeyError should show a toast telling the user to re-add the key.
  * This keeps the promise chain clean — no hanging promises.
  */
 const KEY_EXPIRED_MSG = 'Encryption key expired'
+const INVALID_KEY_MSG = 'API key is invalid'
 
 /**
  * Guard: don't call sessionFetch during SSR — there's no browser session.
@@ -55,9 +65,21 @@ export async function sessionFetch<T>(url: string, opts?: Record<string, unknown
       throw new SessionExpiredError(detail)
     }
 
-    // Any 403 in this app is almost certainly a CSRF failure caused by
-    // inconsistent session state (e.g. expired encryption key).
-    if (status === 403) {
+    // Invalid/disabled API key → throw typed error that UI can catch
+    if (status === 401 && detail.includes(INVALID_KEY_MSG)) {
+      throw new InvalidApiKeyError(detail)
+    }
+
+    // Match 403 only when the response body explicitly mentions CSRF or session,
+    // not for generic DRF PermissionDenied (e.g. IsOwner check failing).
+    // Matching on status code alone was too broad — a real permission error
+    // would trigger the password modal unnecessarily and confuse users.
+    if (
+      status === 403 &&
+      (detail.includes('csrf') ||
+        detail.includes('session') ||
+        detail.includes('encryption key'))
+    ) {
       throw new SessionExpiredError('Session expired due to CSRF token mismatch.')
     }
 
