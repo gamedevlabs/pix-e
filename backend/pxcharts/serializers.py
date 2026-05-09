@@ -161,7 +161,7 @@ class PxChartDetailSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "project",
-            "associatedNode",
+            "associated_node_id",
             "containers",
             "edges",
             "owner",
