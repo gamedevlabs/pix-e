@@ -68,6 +68,7 @@ class ModelManager:
         self._provider_list: Dict[str, List[BaseProvider]] = {}
         # _model_registry maps model_name → provider_instance for O(1) lookup
         self._model_registry: Dict[str, BaseProvider] = {}
+        self._registry_built: bool = False  # lazy-build flag; see _ensure_registry()
         self._model_cache: Optional[List[ModelDetails]] = None
         self._cache_timestamp: Optional[float] = None
 
@@ -106,14 +107,16 @@ class ModelManager:
         manager.config = get_config()
         manager.providers = {}
         manager._model_registry = {}
+        manager._registry_built = False
         manager._provider_list = {}
         manager._model_cache = None
         manager._cache_timestamp = None
 
         # Load user's keys as provider instances
+        # NOTE: _rebuild_model_registry is NOT called here — it's lazy via
+        # _ensure_registry(). This avoids live network calls on every request.
         user_providers = create_providers_for_user(user, enc_key)
         manager._provider_list.update(user_providers)
-        manager._rebuild_model_registry()
 
         # Fallback: if no user keys, try env-var providers
         has_user_keys = any(
@@ -136,7 +139,8 @@ class ModelManager:
                     )
                     if ollama.is_available():
                         manager._provider_list.setdefault("ollama", []).append(ollama)
-                        manager._rebuild_model_registry()
+                        # Registry will be lazily built on first use
+                        # (see _ensure_registry)
                     else:
                         logger.debug("Ollama not available, skipping")
                 except Exception:
@@ -189,6 +193,7 @@ class ModelManager:
         manager.config = get_config()
         manager.providers = {}
         manager._model_registry = {}
+        manager._registry_built = False
         manager._provider_list = {}
         manager._model_cache = None
         manager._cache_timestamp = None
@@ -196,7 +201,7 @@ class ModelManager:
         provider = _create_provider(api_key_obj.provider, raw_key, api_key_obj.base_url)
         if provider:
             manager._provider_list[api_key_obj.provider] = [provider]
-            manager._rebuild_model_registry()
+            # Registry lazily built on first use (see _ensure_registry)
 
         # Add Ollama only if available
         try:
@@ -208,7 +213,7 @@ class ModelManager:
             )
             if ollama.is_available():
                 manager._provider_list.setdefault("ollama", []).append(ollama)
-                manager._rebuild_model_registry()
+                # Registry lazily built on first use (see _ensure_registry)
             else:
                 logger.debug("Ollama not available, skipping")
         except Exception:
@@ -222,6 +227,17 @@ class ModelManager:
     # Internal Helpers
     # ============================================
 
+    def _ensure_registry(self) -> None:
+        """Build the model registry lazily on first use.
+
+        Called before any registry lookup. Avoids network calls at
+        initialization time, which is important because ``for_user()``
+        is called on every view that needs an orchestrator.
+        """
+        if not self._registry_built:
+            self._rebuild_model_registry()
+            self._registry_built = True
+
     def _rebuild_model_registry(self) -> None:
         """
         Rebuild the ``model_name → provider_instance`` lookup table.
@@ -230,6 +246,10 @@ class ModelManager:
         ``list_models()`` on each, and indexes every returned model by
         name.  The first provider that advertises a given name wins (FIFO
         ordering within ``_provider_list``).
+
+        Note: This makes live network calls to each provider. It is called
+        lazily via ``_ensure_registry()`` — not at construction time — so
+        creating a ``ModelManager`` is instant.
         """
         self._model_registry = {}
         for provider_name, provider_list in self._provider_list.items():
@@ -429,6 +449,7 @@ class ModelManager:
             ModelUnavailableError: If the model name is not found in any
                 provider's model list.
         """
+        self._ensure_registry()
         provider = self._model_registry.get(model_name)
         if not provider:
             available_names = list(self._model_registry.keys())[:5]
@@ -574,6 +595,7 @@ class ModelManager:
             requirements = CapabilityRequirements(min_context_window=None)
 
         model = self.auto_select_model(requirements, model_preference)
+        self._ensure_registry()
         provider_info = self._model_registry.get(model.name)
 
         if not provider_info:
