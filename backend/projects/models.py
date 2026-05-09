@@ -26,7 +26,7 @@ class Project(models.Model):
             )
         ]
         ordering = ["-updated_at"]
-        db_table = "game_concept_project"
+        db_table = "projects_project"
 
     def __str__(self) -> str:
         return f"{self.user.username}'s project: {self.name or 'Untitled'}"
