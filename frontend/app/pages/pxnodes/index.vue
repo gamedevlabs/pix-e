@@ -22,14 +22,23 @@ const {
   deleteItem: deletePxNode,
 } = usePxNodes()
 
-const { currentProject } = useProjectHandler()
-const { toggleSubstep, loadForProject } = useProjectWorkflow()
-if (currentProject.value?.id) {
-  await loadForProject(currentProject.value.id)
-}
+const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
 
-onMounted(() => {
-  fetchPxNodes()
+const {
+  loading: generatingMemory,
+  evaluating: evaluatingCoherence,
+  lastResult: memoryResult,
+  lastEvaluation: evaluationResult,
+  stats: chartStats,
+  generate: generateMemory,
+  getStats: getMemoryStats,
+  evaluate: evaluateCoherence,
+  clearEvaluation,
+} = useStructuralMemory()
+
+const state = ref({
+  name: '',
+  description: '',
 })
 
 // Structural memory generation state
@@ -45,11 +54,28 @@ const chartOptions = computed(() =>
   })),
 )
 
-async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  await createPxNode({ ...newEntityDraft })
-  // px-2-2: "Create your first node"
-  await toggleSubstep('px-2', 'px-2-2')
-  newItem.value = null
+// Get stats for selected charts
+const selectedChartStats = computed(() =>
+  chartStats.value.filter((s) => selectedChartIds.value.includes(s.chart_id)),
+)
+
+const totalPendingNodes = computed(() =>
+  selectedChartStats.value.reduce((sum, s) => sum + s.pending_nodes, 0),
+)
+
+const totalProcessedNodes = computed(() =>
+  selectedChartStats.value.reduce((sum, s) => sum + s.processed_nodes, 0),
+)
+
+onMounted(async () => {
+  await Promise.all([fetchPxNodes(), fetchPxCharts()])
+})
+
+async function handleCreate() {
+  const newUuid = v4()
+  await createPxNode({ id: newUuid, ...state.value })
+  state.value.name = ''
+  state.value.description = ''
 }
 
 // Not particularly efficient, but works for now.
@@ -59,27 +85,105 @@ async function handleForeignAddComponent() {
   await fetchPxNodes()
 }
 
-async function handleAddComponent() {
-  // px-2-3: "Add a component to your new node"
-  await toggleSubstep('px-2', 'px-2-3')
+// Structural Memory functions
+function toggleMemoryPanel() {
+  showMemoryPanel.value = !showMemoryPanel.value
+  if (showMemoryPanel.value && selectedChartIds.value.length > 0) {
+    refreshStats()
+  }
+}
+
+async function refreshStats() {
+  if (selectedChartIds.value.length > 0) {
+    await getMemoryStats(selectedChartIds.value)
+  }
+}
+
+async function handleGenerateMemory() {
+  if (selectedChartIds.value.length === 0) {
+    return
+  }
+
+  await generateMemory({
+    chartIds: selectedChartIds.value,
+    forceRegenerate: forceRegenerate.value,
+  })
+
+  // Refresh stats after generation
+  await refreshStats()
+}
+
+// Watch for chart selection changes to refresh stats
+watch(selectedChartIds, async (newIds) => {
+  if (newIds.length > 0 && showMemoryPanel.value) {
+    await refreshStats()
+  }
+  // Clear evaluation when charts change
+  clearEvaluation()
+})
+
+// Evaluation function - only works with single chart selection
+async function handleEvaluateCoherence() {
+  if (selectedChartIds.value.length !== 1) {
+    return
+  }
+
+  await evaluateCoherence({
+    chartId: selectedChartIds.value[0],
+  })
+}
+
+// Get severity badge color
+function getSeverityColor(severity: string): string {
+  switch (severity) {
+    case 'error':
+      return 'red'
+    case 'warning':
+      return 'amber'
+    case 'info':
+      return 'blue'
+    default:
+      return 'neutral'
+  }
+}
+
+// Get issue type badge color
+function getIssueTypeColor(type: string): string {
+  switch (type) {
+    case 'prerequisite':
+      return 'red'
+    case 'pacing':
+      return 'amber'
+    case 'story':
+      return 'violet'
+    case 'category':
+      return 'cyan'
+    default:
+      return 'neutral'
+  }
 }
 </script>
 
 <template>
-  <div>
-    <SimpleContentWrapper>
-      <template #header>Nodes</template>
+  <div class="p-4">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Px Nodes</h1>
+      <UButton
+        :color="showMemoryPanel ? 'primary' : 'neutral'"
+        variant="soft"
+        icon="i-lucide-brain"
+        @click="toggleMemoryPanel"
+      >
+        Structural Memory
+      </UButton>
+    </div>
 
-      <SimpleCardSection use-add-button @add-clicked="addItem">
-        <div v-for="node in pxNodes" :key="node.id">
-          <PxNodeCard
-            :key="node.id"
-            :node-id="node.id"
-            :visualization-style="'detailed'"
-            @delete="deletePxNode"
-            @add-foreign-component="handleForeignAddComponent"
-            @add-component="handleAddComponent"
-          />
+    <!-- Structural Memory Panel -->
+    <UCard v-if="showMemoryPanel" class="mb-6">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon name="i-lucide-brain" class="text-primary" />
+          <span class="font-semibold">Generate Structural Memory</span>
         </div>
       </template>
 

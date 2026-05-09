@@ -82,36 +82,6 @@ async function handleFixWithAICompleted() {
   await toggleSubstep('pillars-2', 'pillars-2-2')
 }
 
-async function handleGetPillarsInContextFeedback() {
-  await getPillarsInContextFeedback()
-
-  // Complete all three pillars-4 substeps when Refresh All is used
-  await toggleSubstep('pillars-4', 'pillars-4-1')
-  await toggleSubstep('pillars-4', 'pillars-4-2')
-  await toggleSubstep('pillars-4', 'pillars-4-3')
-}
-
-async function handleGetPillarsCompleteness() {
-  await getPillarsCompleteness()
-
-  // pillars-4-1: "Coverage"
-  await toggleSubstep('pillars-4', 'pillars-4-1')
-}
-
-async function handleGetPillarContradictions() {
-  await getPillarContradictions()
-
-  // pillars-4-2: "Contradictions"
-  await toggleSubstep('pillars-4', 'pillars-4-2')
-}
-
-async function handleGetPillarsAdditions() {
-  await getPillarsAdditions()
-
-  // pillars-4-3: "Additions"
-  await toggleSubstep('pillars-4', 'pillars-4-3')
-}
-
 // pillars-3-1: "Write a new core idea, add additional features and then generate LLM feedback"
 // completes when the user gets back the feedback response for the core design idea
 async function handleGetContextInPillarsFeedback() {

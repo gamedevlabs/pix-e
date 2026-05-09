@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ContradictionResolutionModal } from '#components'
 
+// Load workflow for the current project
+const { toggleSubstep } = useProjectWorkflow()
+
 const pillars = usePillars()
 const toast = useToast()
 const overlay = useOverlay()
@@ -63,6 +66,15 @@ function openResolutionModal() {
   })
   modal.open()
 }
+
+async function handleGetPillarsInContextFeedback() {
+  await pillars.evaluateAll()
+
+  // Complete all three pillars-4 substeps when Refresh All is used
+  await toggleSubstep('pillars-4', 'pillars-4-1')
+  await toggleSubstep('pillars-4', 'pillars-4-2')
+  await toggleSubstep('pillars-4', 'pillars-4-3')
+}
 </script>
 
 <template>
@@ -100,7 +112,7 @@ function openResolutionModal() {
           :label="pillars.isEvaluating.value ? 'Evaluating...' : 'Evaluate All'"
           color="primary"
           :loading="pillars.isEvaluating.value"
-          @click="pillars.evaluateAll()"
+          @click="handleGetPillarsInContextFeedback"
         />
       </div>
     </div>
