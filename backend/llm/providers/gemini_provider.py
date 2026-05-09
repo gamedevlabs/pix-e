@@ -13,6 +13,7 @@ from google.genai.errors import ClientError
 from pydantic import ValidationError
 
 from llm.exceptions import (
+    AuthenticationError,
     ModelUnavailableError,
     ProviderError,
     RateLimitError,
@@ -131,6 +132,11 @@ class GeminiProvider(BaseProvider):
 
             return models
         except (ClientError, GeminiAPIError) as e:
+            if "api key" in str(e).lower() or "permission" in str(e).lower() or "unauthenticated" in str(e).lower():
+                raise AuthenticationError(
+                    message=str(e),
+                    context={"provider": "gemini"},
+                )
             raise ProviderError(
                 provider="gemini", message=f"Failed to list models: {str(e)}"
             )
@@ -165,6 +171,11 @@ class GeminiProvider(BaseProvider):
             if "not found" in error_str or "404" in error_str:
                 raise ModelUnavailableError(
                     model=model_name, provider="gemini", reason="Model not found"
+                )
+            if "api key" in error_str or "permission" in error_str or "unauthenticated" in error_str:
+                raise AuthenticationError(
+                    message=str(e),
+                    context={"model": model_name, "provider": "gemini"},
                 )
             raise ProviderError(
                 provider="gemini",
@@ -228,6 +239,20 @@ class GeminiProvider(BaseProvider):
                     provider="gemini",
                     message=f"Request timed out: {str(e)}",
                     context={"model": model_name},
+                )
+            elif any(
+                kw in error_str
+                for kw in [
+                    "api key",
+                    "unauthorized",
+                    "unauthenticated",
+                    "permission",
+                    "invalid key",
+                ]
+            ):
+                raise AuthenticationError(
+                    message=str(e),
+                    context={"model": model_name, "provider": "gemini"},
                 )
             else:
                 raise ProviderError(
@@ -309,6 +334,20 @@ class GeminiProvider(BaseProvider):
                     provider="gemini",
                     message=f"Request timed out: {str(e)}",
                     context={"model": model_name},
+                )
+            elif any(
+                kw in error_str
+                for kw in [
+                    "api key",
+                    "unauthorized",
+                    "unauthenticated",
+                    "permission",
+                    "invalid key",
+                ]
+            ):
+                raise AuthenticationError(
+                    message=str(e),
+                    context={"model": model_name, "provider": "gemini"},
                 )
             else:
                 raise ProviderError(

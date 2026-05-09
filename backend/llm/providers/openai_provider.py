@@ -11,12 +11,14 @@ from typing import Any, Dict, List, Optional
 from openai import (
     APIError,
     APITimeoutError,
+    AuthenticationError as OpenAIAuthError,
     OpenAI,
 )
 from openai import RateLimitError as OpenAIRateLimitError
 from pydantic import ValidationError
 
 from llm.exceptions import (
+    AuthenticationError,
     ModelUnavailableError,
     ProviderError,
     RateLimitError,
@@ -140,6 +142,11 @@ class OpenAIProvider(BaseProvider):
                     )
 
             return models
+        except OpenAIAuthError as e:
+            raise AuthenticationError(
+                message=str(e),
+                context={"provider": "openai"},
+            )
         except APIError as e:
             raise ProviderError(
                 provider="openai", message=f"Failed to list models: {str(e)}"
@@ -157,6 +164,11 @@ class OpenAIProvider(BaseProvider):
                 provider=self.provider_name,
                 type=self.provider_type,
                 capabilities=self._get_model_capabilities(model.id),
+            )
+        except OpenAIAuthError as e:
+            raise AuthenticationError(
+                message=str(e),
+                context={"provider": "openai"},
             )
         except APIError as e:
             if (
@@ -215,6 +227,11 @@ class OpenAIProvider(BaseProvider):
                 provider="openai",
                 message=f"Request timed out: {str(e)}",
                 context={"model": model_name},
+            )
+        except OpenAIAuthError as e:
+            raise AuthenticationError(
+                message=str(e),
+                context={"model": model_name, "provider": "openai"},
             )
         except APIError as e:
             if "does not exist" in str(e).lower():
@@ -310,6 +327,11 @@ class OpenAIProvider(BaseProvider):
                 provider="openai",
                 message=f"Request timed out: {str(e)}",
                 context={"model": model_name},
+            )
+        except OpenAIAuthError as e:
+            raise AuthenticationError(
+                message=str(e),
+                context={"model": model_name, "provider": "openai"},
             )
         except APIError as e:
             if "does not exist" in str(e).lower():
