@@ -182,15 +182,23 @@ async function handleAddComponent() {
 <template>
   <div>
     <SimpleContentWrapper>
-      <template #header> Nodes</template>
-      <UButton
-        :color="showMemoryPanel ? 'primary' : 'neutral'"
-        variant="soft"
-        icon="i-lucide-brain"
-        @click="toggleMemoryPanel"
-      >
-        Structural Memory
-      </UButton>
+      <template #header>
+        <div class="flex justify-between items-center">
+          <div>
+            Nodes
+          </div>
+          <UButton
+              :color="showMemoryPanel ? 'primary' : 'neutral'"
+              variant="soft"
+              icon="i-lucide-brain"
+              @click="toggleMemoryPanel"
+              class="justify-end"
+              :disabled="true"
+          >
+            Structural Memory
+          </UButton>
+        </div>
+      </template>
 
       <!-- Structural Memory Panel -->
       <UCard v-if="showMemoryPanel" class="mb-6">
