@@ -67,11 +67,10 @@ watch([open, () => useState('apiKeyRefreshFlag', () => 0).value], async () => {
     }
     try {
       await llmStore.refreshModels()
-    } catch (err) {
-      if (err instanceof SessionExpiredError) {
-        getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
-        return
-      }
+    } catch {
+      // Session expired while refreshing models — show password modal.
+      // Don't check instanceof since the error crosses Pinia action boundaries.
+      getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
     }
   }
 })

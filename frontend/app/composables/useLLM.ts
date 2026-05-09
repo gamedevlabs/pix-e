@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { PROVIDER_ICONS } from '~/utils/api-key'
+import { SessionExpiredError } from '~/utils/sessionFetch'
+import { getSessionKey } from '~/composables/useSessionKey'
 
 /**
  * An LLM model option associated with a user's stored API key.
@@ -97,7 +99,11 @@ export const useLLM = defineStore('llm', () => {
       if (!activeModel.value && result.length > 0) {
         activeModel.value = result[0].value
       }
-    } catch {
+    } catch (err) {
+      // Session expiry must propagate so callers show the password modal
+      if (err instanceof SessionExpiredError) {
+        throw err
+      }
       // Fallback: if no user keys or not logged in, show nothing
       models.value = []
     } finally {
@@ -109,7 +115,16 @@ export const useLLM = defineStore('llm', () => {
   /** Ensures models have been fetched at least once. Safe to call multiple times — subsequent calls are no-ops. */
   async function ensureInit() {
     if (!initialized.value) {
-      await refreshModels()
+      try {
+        await refreshModels()
+      } catch (err) {
+        if (err instanceof SessionExpiredError) {
+          // TTL expired — show password modal immediately so user can re-key
+          getSessionKey().handleSessionExpired(() => refreshModels())
+          return
+        }
+        // Other errors (network, no keys) — silently show empty state
+      }
     }
   }
 
