@@ -114,7 +114,13 @@ export const useLLM = defineStore('llm', () => {
   /** Ensures models have been fetched at least once. Safe to call multiple times — subsequent calls are no-ops. */
   async function ensureInit() {
     if (!initialized.value) {
-      await refreshModels()
+      try {
+        await refreshModels()
+      } catch {
+        // Session expiry during initial load — no modal possible at mount time.
+        // LLM call wrappers (callWithRetry in usePillars) will catch and show the
+        // password modal when the user actually tries to use an AI feature.
+      }
     }
   }
 
