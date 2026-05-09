@@ -7,7 +7,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.exceptions import APIException as _DRFException
 
+from accounts.models import UserApiKey
+from accounts.views import should_auto_disable as _should_auto_disable
 from llm import get_config
+from llm.exceptions import AuthenticationError, OrchestratorError, ProviderError
 from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest
 
@@ -18,6 +21,83 @@ from .models import GameDesignDescription, Pillar
 from .serializers import GameDesignSerializer, PillarSerializer
 
 logger = logging.getLogger(__name__)
+
+
+# Provider names in error context → UserApiKey.provider values.
+# The OpenAI provider class sets provider="openai" in errors, but user keys
+# using the same SDK may be stored as "custom" or "morpheus".
+_PROVIDER_KEY_MAP: dict[str, list[str]] = {
+    "openai": ["openai", "custom", "morpheus"],
+    "gemini": ["gemini"],
+}
+
+
+def _disable_keys_for_provider(request, provider: str) -> int:
+    """Set is_active=False + disabled_reason for all active keys of a provider."""
+    mapped_providers = _PROVIDER_KEY_MAP.get(provider, [provider])
+    return UserApiKey.objects.filter(
+        user=request.user, provider__in=mapped_providers, is_active=True
+    ).update(is_active=False, disabled_reason="auth_failure")
+
+
+def _handle_orchestrator_error(request, e: Exception) -> JsonResponse:
+    """
+    Handle LLM orchestrator errors consistently, auto-disabling invalid keys.
+
+    Returns a JsonResponse with an appropriate HTTP status and user-facing
+    message instead of a cryptic 500.
+    """
+    # Extract provider from exception context if available
+    provider = ""
+    if isinstance(e, AuthenticationError):
+        provider = e.context.get("provider", "")
+    elif isinstance(e, ProviderError):
+        provider = e.context.get("provider", "")
+        # Also check the message for auth keywords as fallback
+        msg = str(e)
+        provider_in_msg = ""
+        for p in ["openai", "gemini"]:
+            if f"provider '{p}'" in msg.lower():
+                provider_in_msg = p
+                break
+        provider = provider or provider_in_msg
+
+    # Auto-disable if we know the provider and the error looks like auth failure
+    if provider and provider != "none":
+        is_auth = isinstance(e, AuthenticationError) or (
+            isinstance(e, ProviderError) and _should_auto_disable(str(e))
+        )
+        if is_auth:
+            count = _disable_keys_for_provider(request, provider)
+            if count:
+                logger.warning(
+                    "Auto-disabled %d %s API key(s) for user %s: %s",
+                    count, provider, request.user.id, str(e)[:120],
+                )
+            return JsonResponse(
+                {
+                    "error": "Your API key is invalid and has been disabled. "
+                    "Please re-add it in Settings.",
+                },
+                status=401,
+            )
+
+    if isinstance(e, OrchestratorError):
+        msg = str(e)
+        if "No LLM providers available" in msg:
+            return JsonResponse(
+                {
+                    "error": "No API keys configured. "
+                    "Please add an API key in Settings to use AI features.",
+                },
+                status=400,
+            )
+
+    if isinstance(e, _DRFException):
+        raise
+
+    logger.exception("Error in LLM operation")
+    return JsonResponse({"error": str(e)}, status=500)
 
 
 def get_model_id(model_name: str) -> str:
@@ -52,7 +132,17 @@ class DesignView(ModelViewSet):
         return GameDesignDescription.objects.filter(user=self.request.user)
 
     def get_object(self):
-        return GameDesignDescription.objects.filter(user=self.request.user).first()
+        """
+        Return the user's game design or raise Http404.
+
+        DRF's ``get_object()`` contract requires raising Http404 on missing
+        objects — returning None breaks downstream serializer/DRF machinery.
+        """
+        try:
+            return GameDesignDescription.objects.get(user=self.request.user)
+        except GameDesignDescription.DoesNotExist:
+            from django.http import Http404
+            raise Http404("No game design description found for this user.")
 
     def get_object_or_404(self):
         """Return design or raise 404 if not found."""
@@ -97,10 +187,7 @@ class PillarFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in validate_pillar")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
 
     @action(detail=True, methods=["POST"], url_path="fix")
     def fix_pillar(self, request, pk):
@@ -134,10 +221,7 @@ class PillarFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(data, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in fix_pillar")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
 
 
 class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
@@ -183,15 +267,12 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
                 model_id=model_id,
             )
 
-            completeness_response = self.get_llm_orchestrator(request).execute(
-                completeness_request
-            )
-            contradictions_response = self.get_llm_orchestrator(request).execute(
-                contradictions_request
-            )
-            additions_response = self.get_llm_orchestrator(request).execute(
-                additions_request
-            )
+            # Cache orchestrator — each get_llm_orchestrator() call constructs a
+            # new LLMOrchestrator → ModelManager → decrypts all keys → network calls.
+            orchestrator = self.get_llm_orchestrator(request)
+            completeness_response = orchestrator.execute(completeness_request)
+            contradictions_response = orchestrator.execute(contradictions_request)
+            additions_response = orchestrator.execute(additions_request)
 
             combined_result = {
                 "coverage": completeness_response.results,
@@ -202,10 +283,7 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(combined_result, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in overall_feedback")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="completeness")
     def completeness(self, request):
@@ -236,10 +314,7 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in completeness")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="contradictions")
     def contradictions(self, request):
@@ -270,10 +345,7 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in contradictions")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="additions")
     def additions(self, request):
@@ -304,10 +376,7 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in additions")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="context")
     def context(self, request):
@@ -334,7 +403,4 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            if isinstance(e, _DRFException):
-                raise
-            logger.exception("Error in context")
-            return JsonResponse({"error": str(e)}, status=500)
+            return _handle_orchestrator_error(request, e)
