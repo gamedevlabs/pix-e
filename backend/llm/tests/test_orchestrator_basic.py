@@ -71,7 +71,7 @@ class TestOrchestratorConfiguration:
 
         assert hasattr(config, "resolve_model_alias")
         # Test common aliases
-        assert config.resolve_model_alias("gemini") == "gemini-2.0-flash-exp"
+        assert config.resolve_model_alias("gemini") == "gemini-3.1-flash-lite-preview"
         assert config.resolve_model_alias("openai") == "gpt-4o-mini"
 
     def test_config_returns_unknown_alias_as_is(self):
@@ -117,10 +117,10 @@ class TestRequestValidation:
             feature="pillars",
             operation="validate",
             data={},
-            temperature=0.5,
+            temperature=0,
         )
 
-        assert request.temperature == 0.5
+        assert request.temperature == 0
 
     def test_request_with_max_tokens(self):
         """Test creating request with max_tokens."""

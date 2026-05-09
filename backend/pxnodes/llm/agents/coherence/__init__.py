@@ -1,0 +1,32 @@
+"""
+PxNodes Coherence Agents - Agentic evaluation of node coherence.
+
+Provides 4 specialized agents that evaluate different coherence dimensions:
+- BackwardCoherenceAgent: Does node respect what came before?
+- ForwardCoherenceAgent: Does node properly set up future?
+- GlobalFitAgent: Does node align with concept and pillars?
+- NodeIntegrityAgent: Is node internally coherent?
+"""
+
+from pxnodes.llm.agents.coherence.base import CoherenceDimensionAgent
+from pxnodes.llm.agents.coherence.contextual import GlobalFitAgent
+from pxnodes.llm.agents.coherence.forward import ForwardCoherenceAgent
+from pxnodes.llm.agents.coherence.internal import NodeIntegrityAgent
+from pxnodes.llm.agents.coherence.prerequisite import BackwardCoherenceAgent
+from pxnodes.llm.agents.coherence.schemas import (
+    CoherenceAggregatedResult,
+    CoherenceDimensionResult,
+)
+
+__all__ = [
+    # Base
+    "CoherenceDimensionAgent",
+    # Agents
+    "BackwardCoherenceAgent",
+    "ForwardCoherenceAgent",
+    "NodeIntegrityAgent",
+    "GlobalFitAgent",
+    # Schemas
+    "CoherenceDimensionResult",
+    "CoherenceAggregatedResult",
+]

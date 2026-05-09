@@ -38,7 +38,7 @@ class BaseOperationHandler(ABC):
     version: str = "1.0.0"
     capability_requirements: Optional[CapabilityRequirements] = None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """
         Auto-register handler when class is defined.
 
@@ -52,7 +52,7 @@ class BaseOperationHandler(ABC):
 
             register_handler(cls.operation_id, cls)
 
-    def __init__(self, model_manager: ModelManager):
+    def __init__(self, model_manager: ModelManager) -> None:
         """
         Initialize handler with model manager.
         """
@@ -91,7 +91,7 @@ class BaseOperationHandler(ABC):
         self,
         data: Dict[str, Any],
         model_name: str,
-        temperature: float = 0.7,
+        temperature: float = 0,
         max_tokens: Optional[int] = None,
         **kwargs,
     ) -> BaseModel:

@@ -22,6 +22,7 @@ class PxComponentDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxComponentDefinition
         fields = "__all__"
+        read_only_fields = ["project"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
@@ -39,10 +40,11 @@ class PxNodeSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "owner",
+            "project",
             "updated_at",
             "created_at",
         ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
@@ -66,10 +68,11 @@ class PxNodeDetailSerializer(serializers.ModelSerializer):
             "components",
             "charts",
             "owner",
+            "project",
             "updated_at",
             "created_at",
         ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
