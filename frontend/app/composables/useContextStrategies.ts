@@ -8,8 +8,9 @@
  * - hmem: Vector embeddings with positional index routing (Sun & Zeng 2025)
  * - combined: Structural data + hierarchical organization
  */
+const config = useRuntimeConfig()
 
-const BASE_URL = 'http://localhost:8000/'
+const BASE_URL = config.public.apiBase + '/api/'
 
 export type StrategyType =
   | 'full_context'
