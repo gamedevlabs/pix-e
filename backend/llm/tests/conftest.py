@@ -47,10 +47,19 @@ def mock_model_manager():
     mock_manager.generate_structured_with_model = Mock(return_value=Mock())
 
     # Mock list_available_models
+    # NOTE: Mock(name=...) does NOT set .name as string attr (reserved param).
+    # Must set attributes explicitly.
+    def _make_model(display_name: str, prov: str, typ: str):
+        m = Mock()
+        m.name = display_name
+        m.provider = prov
+        m.type = typ
+        return m
+
     mock_manager.list_available_models = Mock(
         return_value=[
-            Mock(name="gemini-2.0-flash-exp", provider="gemini", type="cloud"),
-            Mock(name="gpt-4o-mini", provider="openai", type="cloud"),
+            _make_model("gemini-2.0-flash-exp", "gemini", "cloud"),
+            _make_model("gpt-4o-mini", "openai", "cloud"),
         ]
     )
 
