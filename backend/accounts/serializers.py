@@ -49,6 +49,7 @@ class UserApiKeySerializer(serializers.ModelSerializer):
             "label",
             "base_url",
             "is_active",
+            "disabled_reason",
             "key",  # write-only
             "masked_key",  # read-only
             "last_used_at",
@@ -66,19 +67,63 @@ class UserApiKeySerializer(serializers.ModelSerializer):
     def get_masked_key(self, obj: UserApiKey) -> str:
         return obj.get_masked_key()
 
-    def validate_provider(self, value: str) -> str:
-        if value not in ProviderType.values:
-            raise serializers.ValidationError(
-                f"Invalid provider. Must be one of: {', '.join(ProviderType.values)}"
-            )
-        return value
-
     def validate(self, attrs):
         if attrs.get("provider") == ProviderType.CUSTOM and not attrs.get("base_url"):
             raise serializers.ValidationError(
                 {"base_url": "Base URL is required for custom (OpenAI-compatible) APIs"}
             )
         return attrs
+
+    def update(self, instance, validated_data):
+        # Block manual re-enable of auth-failure keys without a new key.
+        if (
+            instance.disabled_reason == "auth_failure"
+            and validated_data.get("is_active") is True
+            and "key" not in validated_data
+        ):
+            raise serializers.ValidationError(
+                {
+                    "is_active": (
+                        "This key was disabled because the provider rejected it. "
+                        "Enter a new API key value to re-enable it."
+                    )
+                }
+            )
+
+        # Allow key edits ONLY if the key is disabled due to auth failure.
+        # This lets users fix a broken/invalid key without deleting it.
+        if "key" in validated_data:
+            if not instance.disabled_reason:
+                raise serializers.ValidationError(
+                    {
+                        "key": "The API key cannot be changed on an active key. "
+                        "Delete and re-create this key instead."
+                    }
+                )
+            # Re-keying a disabled key: encrypt the new key, clear the failure
+            raw_key = validated_data.pop("key")
+            request = self.context.get("request")
+            enc_key = get_encryption_key_from_session(request.session)
+            if not enc_key:
+                raise serializers.ValidationError(
+                    {"key": "Session expired. Please log in again."}
+                )
+            validated_data["encrypted_key"] = encrypt_api_key(raw_key, enc_key)
+            validated_data["is_active"] = True
+            validated_data["disabled_reason"] = ""
+            # Recompute fingerprint and masked_key
+            pepper = settings.API_KEY_FINGERPRINT_PEPPER or ""
+            validated_data["key_fingerprint"] = hmac.new(
+                pepper.encode("utf-8"),
+                raw_key.encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            validated_data["masked_key"] = (
+                f"\u2022\u2022\u2022\u2022{raw_key[-4:]}"
+                if len(raw_key) >= 4
+                else "\u2022\u2022\u2022\u2022"
+            )
+        return super().update(instance, validated_data)
 
     def create(self, validated_data):
         raw_key = validated_data.pop("key")

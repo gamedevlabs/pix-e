@@ -18,19 +18,22 @@ class UserApiKeyAdmin(admin.ModelAdmin):
         "label",
         "masked_key",
         "is_active",
+        "disabled_reason",
         "last_used_at",
         "created_at",
     ]
-    list_filter = ["provider", "is_active", "created_at"]
+    list_filter = ["provider", "is_active", "disabled_reason", "created_at"]
     search_fields = ["user__username", "user__email", "label"]
     readonly_fields = [
-        "encrypted_key",
         "key_fingerprint",
         "masked_key",
         "last_used_at",
         "created_at",
         "updated_at",
     ]
+    # encrypted_key is intentionally omitted from readonly_fields and fieldsets.
+    # It's a BinaryField that renders as raw bytes — admins don't need it;
+    # the fingerprint and masked key provide sufficient identification.
     fieldsets = [
         (
             "Identity",
@@ -41,15 +44,15 @@ class UserApiKeyAdmin(admin.ModelAdmin):
         (
             "Security",
             {
-                "fields": ["encrypted_key", "key_fingerprint", "masked_key"],
+                "fields": ["key_fingerprint", "masked_key"],
                 "classes": ["collapse"],
-                "description": "Sensitive fields — encrypted_key is stored ciphertext only",
+                "description": "Sensitive fields — encrypted_key is excluded from admin views",
             },
         ),
         (
             "Status",
             {
-                "fields": ["is_active", "base_url", "last_used_at"],
+                "fields": ["is_active", "disabled_reason", "base_url", "last_used_at"],
             },
         ),
         (
