@@ -8,7 +8,7 @@ definePageMeta({
     icon: 'i-lucide-component',
     navGroup: 'main',
     navParent: 'player-experience',
-    navOrder: 3,
+    navOrder: 4,
     showInNav: true,
   },
 })
@@ -28,7 +28,7 @@ function handleDelete(id: string) {
 <template>
   <div>
     <SimpleContentWrapper>
-      <template #header>Px Components</template>
+      <template #header>Components</template>
 
       <SimpleCardSection>
         <div v-for="component in pxComponents" :key="component.id">

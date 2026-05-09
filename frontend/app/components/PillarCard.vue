@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { PillarFixModal } from '#components'
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update', namedEntityDraft: Partial<NamedEntity>): void
-  (event: 'edit' | 'delete'): void
+  (event: 'edit' | 'delete' | 'validate' | 'fix-with-ai-completed'): void
   (event: 'dismiss', index: number): void
 }>()
 
@@ -27,6 +27,7 @@ async function openFixModal() {
       onClose: () => modal.close(),
       onAccepted: (updatedPillar: Pillar) => {
         emit('update', updatedPillar)
+        emit('fix-with-ai-completed')
         modal.close()
         toast.add({
           title: 'Pillar Updated',
@@ -41,6 +42,7 @@ async function openFixModal() {
 
 async function handleValidation() {
   await pillars.validatePillar(props.pillar)
+  emit('validate')
   if (props.pillar.llm_feedback?.hasStructureIssue) {
     toast.add({
       title: 'Structural Issues Found',

@@ -21,6 +21,7 @@ const { fetchById: fetchComponentById } = usePxComponents()
 
 const emit = defineEmits<{
   (e: 'addForeignComponent', nodeId: string, componentId: string): void
+  (e: 'addComponent'): void
 }>()
 
 onMounted(() => {
@@ -55,6 +56,7 @@ async function handleAddComponent(nodeId: string, componentId: string) {
     console.error(err)
   }
   fetchedNode.value.components.push(addedComponent!)
+  emit('addComponent')
 }
 
 async function handleDeleteComponent(nodeId: string, componentId: string) {
