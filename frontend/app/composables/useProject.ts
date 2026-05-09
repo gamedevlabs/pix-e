@@ -12,7 +12,7 @@ export const useProject = defineStore('project', () => {
   async function fetchProjects() {
     isLoading.value = true
     try {
-      const data = await $fetch<Project[]>(`${config.public.apiBase}/game-concept/projects/`, {
+      const data = await $fetch<Project[]>(`${config.public.apiBase}/projects/`, {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
@@ -30,7 +30,7 @@ export const useProject = defineStore('project', () => {
     isSwitching.value = true
     try {
       const data = await $fetch<Project>(
-        `${config.public.apiBase}/game-concept/projects/${projectId}/switch/`,
+        `${config.public.apiBase}/projects/${projectId}/switch/`,
         {
           method: 'POST',
           credentials: 'include',
@@ -62,7 +62,7 @@ export const useProject = defineStore('project', () => {
     if (!projectId) return
     isCloning.value = true
     try {
-      await $fetch<Project>(`${config.public.apiBase}/game-concept/projects/${projectId}/clone/`, {
+      await $fetch<Project>(`${config.public.apiBase}/projects/${projectId}/clone/`, {
         method: 'POST',
         body: payload,
         credentials: 'include',

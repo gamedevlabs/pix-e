@@ -11,11 +11,12 @@ from django.contrib.auth.models import User
 from rest_framework.request import Request
 
 from game_concept.models import Project
-from game_concept.utils import get_current_game_concept, get_current_project
+from game_concept.utils import get_current_game_concept
 from llm.config import get_config
 from llm.events import EventCollector
 from llm.providers.manager import ModelManager
 from llm.types import LLMRequest
+from projects.utils import get_current_project
 from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
 from sparc.llm.workflows_v2 import SPARCRouterWorkflow
 from sparc.models import SPARCEvaluation

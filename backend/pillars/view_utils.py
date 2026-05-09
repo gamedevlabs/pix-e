@@ -8,9 +8,10 @@ from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
 from game_concept.models import GameConcept
-from game_concept.utils import get_current_game_concept, get_current_project
+from game_concept.utils import get_current_game_concept
 from pillars.models import Pillar
 from pillars.utils import format_pillars_text
+from projects.utils import get_current_project
 
 
 def get_project_pillars(user: User) -> QuerySet[Pillar]:

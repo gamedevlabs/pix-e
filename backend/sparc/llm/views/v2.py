@@ -15,8 +15,8 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from game_concept.models import Project
-from game_concept.utils import get_current_project
 from llm.logfire_config import get_logfire
+from projects.utils import get_current_project
 
 # Import to trigger workflow registration
 from sparc.llm import workflows, workflows_v2  # noqa: F401

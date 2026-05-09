@@ -12,7 +12,7 @@ class PxChart(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     project = models.ForeignKey(
-        "game_concept.Project",
+        "projects.Project",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

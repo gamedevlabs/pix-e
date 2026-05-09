@@ -19,7 +19,7 @@ from backend.llm.logfire_config import get_logfire
 from backend.llm.types import LLMRequest, LLMResponse
 from backend.llm.view_utils import get_model_id
 from game_concept.models import Project
-from game_concept.utils import get_current_project
+from projects.utils import get_current_project
 
 # Import handlers and workflows to trigger auto-registration
 from sparc.llm import handlers, workflows  # noqa: F401
