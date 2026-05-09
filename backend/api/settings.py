@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import hashlib
 import os
 import sys
-import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -102,14 +101,23 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Session settings
-# Note: The session itself lasts a full day (user stays logged in).
-# The encryption key inside the session has its own 1-hour TTL
-# tracked independently — see accounts/encryption.py KEY_TTL_SECONDS.
-SESSION_COOKIE_AGE = 86400  # 24 hours — browser session alternative
+# Note: Django has two independent session lifetimes:
+#   1. SESSION_COOKIE_AGE  — server-side session record expiry (24 h).
+#   2. SESSION_EXPIRE_AT_BROWSER_CLOSE — cookie lifetime (session cookie).
+# They apply simultaneously: the session record is cleaned after 24 h
+# regardless of browser state, AND the cookie is discarded on browser close.
+# The encryption key inside the session has its own 1-hour TTL tracked
+# independently — see accounts/encryption.py KEY_TTL_SECONDS.
+SESSION_COOKIE_AGE = 86400  # 24 hours — server-side session record TTL
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG  # False in dev (HTTP), True in production (HTTPS)
+# ⚠️  WARNING: Never unconditionally set this to False in production.
+#    A staging or review environment might run with DEBUG=False over HTTP
+#    (e.g. behind a reverse proxy that terminates TLS). In that case,
+#    SESSION_COOKIE_SECURE must be True regardless of DEBUG.
+#    See also SECURE_PROXY_SSL_HEADER below.
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG  # False in dev (HTTP), True in production (HTTPS)
 
@@ -211,9 +219,9 @@ API_KEY_FINGERPRINT_PEPPER = os.getenv(
 )
 
 if not API_KEY_FINGERPRINT_PEPPER and not DEBUG:
-    warnings.warn(
-        "API_KEY_FINGERPRINT_PEPPER is not set. Key fingerprinting will use an empty "
-        "pepper, making HMAC-based duplicate detection weaker. Set this to a random "
-        "string in your .env file or environment.",
-        stacklevel=2,
+    raise RuntimeError(
+        "API_KEY_FINGERPRINT_PEPPER is not set. "
+        "This is required in production — key fingerprinting with an empty pepper "
+        "makes HMAC-based duplicate detection trivially bypassable. "
+        "Set a random string via the API_KEY_FINGERPRINT_PEPPER env variable."
     )

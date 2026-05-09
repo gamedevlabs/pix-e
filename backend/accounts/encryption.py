@@ -16,6 +16,7 @@ timestamp in the session. This means:
 
 import base64
 import logging
+import os
 import time
 from typing import Optional
 
@@ -25,24 +26,40 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
 
-_PBKDF2_SALT = b"pixe-session-key-v1"
-_PBKDF2_ITERATIONS = 600000
+# OWASP-recommended iterations for PBKDF2-HMAC-SHA256 as of 2024.
+# Source: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
+# Current recommendation: 600_000 iterations (updated Dec 2023).
+_PBKDF2_ITERATIONS = 600_000
 _SESSION_KEY_NAME = "user_encryption_key"
 _SESSION_EXPIRES_AT_NAME = "user_encryption_key_expires_at"
 KEY_TTL_SECONDS = 3600  # 1 hour (3600 seconds)
 
 
-def derive_encryption_key(plaintext_password: str) -> bytes:
+def derive_encryption_key(plaintext_password: str, salt: bytes) -> bytes:
     """
-    Derive a Fernet key from the user's plaintext password.
+    Derive a Fernet key from the user's plaintext password and a per-user salt.
+
+    Args:
+        plaintext_password: The user's plaintext password.
+        salt: Per-user random salt (16 bytes). Must be read from
+              ``UserSalt.salt`` — Django's ``BinaryField`` returns a
+              ``memoryview``, so callers need ``bytes(user_salt.salt)``.
+
+    Returns:
+        URL-safe-base64-encoded Fernet key (32 raw bytes → 44 base64 bytes).
     """
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=_PBKDF2_SALT,
+        salt=salt,
         iterations=_PBKDF2_ITERATIONS,
     )
     return base64.urlsafe_b64encode(kdf.derive(plaintext_password.encode("utf-8")))
+
+
+def generate_encryption_salt() -> bytes:
+    """Generate a cryptographically random 16-byte salt for a new user."""
+    return os.urandom(16)
 
 
 def store_key_in_session(session, key: bytes) -> None:

@@ -19,8 +19,15 @@ from rest_framework.views import APIView
 from accounts.constants import PROVIDER_DEFAULT_BASE_URLS
 from accounts.serializers import UserSerializer
 
-from .encryption import decrypt_api_key, get_encryption_key_from_session, store_key_in_session, clear_key_from_session
-from .models import UserApiKey
+from .encryption import (
+    decrypt_api_key,
+    derive_encryption_key,
+    generate_encryption_salt,
+    get_encryption_key_from_session,
+    store_key_in_session,
+    clear_key_from_session,
+)
+from .models import UserApiKey, UserSalt
 from .serializers import UserApiKeySerializer
 from .throttling import ApiKeyTestRateThrottle
 from rest_framework.throttling import UserRateThrottle
@@ -39,19 +46,27 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     def post(self, request):
-        from .encryption import derive_encryption_key
-
         password = request.data.get("password", "")
         user = authenticate(
             username=request.data.get("username", ""), password=password
         )
         if user:
             login(request, user)
-            # Derive encryption key from plaintext password and store in session
-            # with independent 1-hour TTL. This key expires separately from the
-            # Django session — the user stays logged in but must re-enter their
-            # password to use API key features after 1 hour.
-            key = derive_encryption_key(password)
+            # Get or create per-user salt for PBKDF2 key derivation.
+            # This salt is permanent — losing it makes all encrypted keys
+            # unrecoverable. Never delete or modify it after creation.
+            salt_obj, _ = UserSalt.objects.get_or_create(
+                user=user,
+                defaults={"salt": generate_encryption_salt()},
+            )
+            # Derive encryption key from password + per-user salt and store
+            # in session with independent 1-hour TTL. This key expires
+            # separately from the Django session — the user stays logged in
+            # but must re-enter their password to use API key features.
+            # WARNING: Changing the password changes the derived key.
+            # All previously encrypted API keys become unrecoverable.
+            # See ReestablishKeyView for re-encryption support.
+            key = derive_encryption_key(password, salt=bytes(salt_obj.salt))
             store_key_in_session(request.session, key)
             return Response({"id": user.id})
         return Response({"error": "Invalid credentials"}, status=400)
@@ -83,13 +98,18 @@ class ReestablishKeyView(APIView):
     The user's password is required to re-derive the Fernet key.
     This does NOT create a new Django session — it only refreshes the key
     within the existing session.
+
+    NOTE: Password changes render all previously encrypted API keys
+    unreachable because the Fernet key is derived from the password.
+    If the password has changed, the existing encrypted keys cannot be
+    decrypted. In that case, users must delete and re-add their API keys.
+    A future version should support a ``new_password`` parameter here to
+    trigger re-encryption of all stored keys with the new password.
     """
 
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        from .encryption import derive_encryption_key
-
         password = request.data.get("password", "")
         if not password:
             return Response(
@@ -102,7 +122,25 @@ class ReestablishKeyView(APIView):
                 {"error": "Wrong password"}, status=status.HTTP_403_FORBIDDEN
             )
 
-        store_key_in_session(request.session, derive_encryption_key(password))
+        # Retrieve the per-user salt. If the user never logged in since the
+        # salt feature was added, this will fail — but that shouldn't happen
+        # because salt is created on first login and the user is already
+        # authenticated here.
+        try:
+            salt_obj = user.encryption_salt
+        except UserSalt.DoesNotExist:
+            return Response(
+                {
+                    "error": (
+                        "Encryption salt not found. "
+                        "Please log out and log in again to initialize your encryption salt."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        key = derive_encryption_key(password, salt=bytes(salt_obj.salt))
+        store_key_in_session(request.session, key)
         return Response({"status": "ok"})
 
 
@@ -183,7 +221,8 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
         # Auto-disable key on provider auth failure
         if not success and should_auto_disable(message):
             api_key_record.is_active = False
-            api_key_record.save(update_fields=["is_active"])
+            api_key_record.disabled_reason = "auth_failure"
+            api_key_record.save(update_fields=["is_active", "disabled_reason"])
             logger.warning(
                 "API key auto-disabled: user=%s id=%s provider=%s",
                 request.user.id,
@@ -257,9 +296,19 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
 
 # === Key test & sanitization utilities ===
 
-AUTH_FAILURE_KEYWORDS = [
-    "401",
-    "403",
+AUTH_FAILURE_PATTERNS = [
+    # Full HTTP status patterns with word boundaries — matches "error 401"
+    # but NOT "error 4010" or "port 4030".
+    r"\b401\b",
+    r"\b403\b",
+    # Combined status + keyword
+    "http 401",
+    "http 403",
+    "status 401",
+    "status 403",
+    "401 unauthorized",
+    "403 forbidden",
+    # Provider-specific auth failure messages
     "unauthorized",
     "forbidden",
     "invalid api key",
@@ -267,26 +316,34 @@ AUTH_FAILURE_KEYWORDS = [
     "permission denied",
     "not authorized",
     "auth error",
+    "invalid authentication credentials",
+    "api key not found",
+    "credential",
 ]
+# Compile regex patterns once
+_AUTH_FAILURE_REGEX = [re.compile(p, re.IGNORECASE) for p in AUTH_FAILURE_PATTERNS]
 
 
 def should_auto_disable(error_message: str) -> bool:
     """Determine whether an API key should be auto-disabled based on a provider error.
 
-    Scans the error message for authentication-failure keywords (e.g.
-    ``"401"``, ``"unauthorized"``, ``"invalid api key"``). A match means
-    the provider definitively rejected the key, so it should be disabled
-    to prevent repeated failed calls.
+    Scans the error message for authentication-failure patterns (e.g.
+    ``\\b401\\b``, ``"unauthorized"``, ``"invalid api key"``). A match
+    means the provider definitively rejected the key, so it should be
+    disabled to prevent repeated failed calls.
+
+    Uses ``\\b401\\b``/``\\b403\\b`` (word-boundary regex) rather than bare
+    substring matching to avoid false-positives on port numbers, line
+    numbers, or other non-auth contexts.
 
     Args:
         error_message: The raw error string returned by the provider SDK.
 
     Returns:
-        ``True`` if the error contains an auth-failure keyword and the key
+        ``True`` if the error contains an auth-failure pattern and the key
         should be disabled; ``False`` otherwise.
     """
-    msg = error_message.lower()
-    return any(kw in msg for kw in AUTH_FAILURE_KEYWORDS)
+    return any(patt.search(error_message) for patt in _AUTH_FAILURE_REGEX)
 
 
 def sanitize_error_message(error_msg: str, api_key: str) -> str:
@@ -322,9 +379,9 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
     """Verify an API key by making a lightweight call to the provider.
 
     Dispatches to the appropriate SDK (OpenAI or Gemini) based on
-    *provider*. For OpenAI-compatible providers (``openai``, ``custom``,
-    ``morpheus``) it calls ``client.models.list()``; for ``gemini`` it
-    calls ``client.models.list()`` via the Google Generative AI SDK.
+    *provider*.  Uses a minimal chat completion (``max_tokens=1``) to
+    actually authenticate — model listing endpoints sometimes accept
+    invalid keys and don't trigger auth errors.
 
     Args:
         provider: Provider identifier (``"openai"``, ``"gemini"``,
@@ -352,14 +409,24 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
                 base_url=base_url or None,
                 timeout=10,
             )
-            client.models.list()
+            # Use a real chat call — model listing doesn't always auth
+            client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": "test"}],
+                max_tokens=1,
+            )
             return True, "Connected successfully."
 
         elif provider == "gemini":
             from google import genai
 
             client = genai.Client(api_key=api_key)
-            list(client.models.list())
+            # Use a real content generation call to validate the key
+            client.models.generate_content(
+                model="gemini-2.0-flash-exp",
+                contents="test",
+                config={"max_output_tokens": 1},
+            )
             return True, "Connected to Gemini API."
 
         else:
