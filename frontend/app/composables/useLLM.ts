@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { SessionExpiredError } from '~/utils/sessionFetch'
 import { PROVIDER_ICONS } from '~/utils/api-key'
 
 /**
@@ -97,7 +98,11 @@ export const useLLM = defineStore('llm', () => {
       if (!activeModel.value && result.length > 0) {
         activeModel.value = result[0].value
       }
-    } catch {
+    } catch (err) {
+      // Let session expiry bubble up so password modal appears
+      if (err instanceof SessionExpiredError) {
+        throw err
+      }
       // Fallback: if no user keys or not logged in, show nothing
       models.value = []
     } finally {

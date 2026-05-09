@@ -3,9 +3,11 @@ import type {
   MovieScriptAnalysisResponse,
   ScriptSceneAnalysis,
 } from '~/utils/movie-script-evaluator'
+import { useLLM } from '~/composables/useLLM'
 
 export function useMovieScriptEvaluatorApi() {
   const config = useRuntimeConfig()
+  const llm = useLLM()
 
   async function uploadFile(projectId: string, movieScriptFile: MovieScript) {
     try {
@@ -35,10 +37,11 @@ export function useMovieScriptEvaluatorApi() {
     projectId: string,
     script_id: number,
   ): Promise<MovieScriptAnalysisResponse> {
+    const apiKeyIdParam = llm.activeKeyId ? `&api_key_id=${llm.activeKeyId}` : ''
     try {
       return await $fetch(
         config.public.apiBase +
-          `/api/movie-script-evaluator/projects/${projectId}/analyze?script_id=${script_id}`,
+          `/api/movie-script-evaluator/projects/${projectId}/analyze?script_id=${script_id}${apiKeyIdParam}`,
         {
           method: 'GET',
           credentials: 'include',
