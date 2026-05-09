@@ -24,8 +24,8 @@ const {
 
 const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
 
-const {currentProject} = useProjectHandler()
-const {toggleSubstep, loadForProject} = useProjectWorkflow()
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
 if (currentProject.value?.id) {
   await loadForProject(currentProject.value.id)
 }

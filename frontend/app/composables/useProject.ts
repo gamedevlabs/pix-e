@@ -29,16 +29,13 @@ export const useProject = defineStore('project', () => {
     if (!projectId || projectId === activeProjectId.value) return
     isSwitching.value = true
     try {
-      const data = await $fetch<Project>(
-        `${config.public.apiBase}/projects/${projectId}/switch/`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-        },
-      )
+      const data = await $fetch<Project>(`${config.public.apiBase}/projects/${projectId}/switch/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
       activeProjectId.value = data.id
       await fetchProjects()
       success('Project switched!')

@@ -6,7 +6,7 @@
  */
 const config = useRuntimeConfig()
 
-const BASE_URL = config.public.apiBase + "/api/"
+const BASE_URL = config.public.apiBase + '/api/'
 
 export interface GenerationOptions {
   chartIds: string[]

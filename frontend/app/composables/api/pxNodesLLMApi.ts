@@ -22,20 +22,23 @@ export function usePxNodesLLMApi() {
     nodeId: string,
     validationIssues: NodeCoherenceIssue[] = [],
   ): Promise<FixNodeAPIResponse> {
-    return await $fetch<FixNodeAPIResponse>(`${config.public.apiBase}/api/llm/nodes/${nodeId}/fix/`, {
-      method: 'POST',
-      body: {
-        model: llm.active_llm,
-        validation_issues: validationIssues.map((issue) => ({
-          title: issue.title,
-          description: issue.description,
-        })),
+    return await $fetch<FixNodeAPIResponse>(
+      `${config.public.apiBase}/api/llm/nodes/${nodeId}/fix/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+          validation_issues: validationIssues.map((issue) => ({
+            title: issue.title,
+            description: issue.description,
+          })),
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+    )
   }
 
   async function acceptNodeFixAPICall(
