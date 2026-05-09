@@ -12,13 +12,13 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
-
+const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
-const BASE_URL = 'http://localhost:8000/'
+const BASE_URL = config.public.apiBase + "/api"
 const { success: successToast, error: errorToast } = usePixeToast()
 
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
@@ -122,7 +122,7 @@ async function handlePrecomputeArtifacts() {
       payload.node_id = selectedNodeForAnalysis.value.nodeId
     }
 
-    await $fetch(`${BASE_URL}context/precompute/`, {
+    await $fetch(`${BASE_URL}/context/precompute/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -144,7 +144,7 @@ async function handleResetArtifacts() {
   if (!confirmed) return
 
   try {
-    await $fetch(`${BASE_URL}context/precompute/reset/`, {
+    await $fetch(`${BASE_URL}/context/precompute/reset/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -378,6 +378,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
             value-key="value"
             label-key="label"
             size="sm"
+            :disabled="true"
           />
           <USelect
             v-model="precomputeStrategy"
@@ -385,6 +386,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
             value-key="value"
             label-key="label"
             size="sm"
+            :disabled="true"
           />
           <UButton
             size="sm"
@@ -392,6 +394,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
             color="primary"
             :loading="precomputeLoading"
             @click="handlePrecomputeArtifacts"
+            :disabled="true"
           >
             Precompute Artifacts
           </UButton>
@@ -401,6 +404,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
             color="error"
             variant="outline"
             @click="handleResetArtifacts"
+            :disabled="true"
           >
             Reset Cache
           </UButton>
@@ -413,7 +417,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
             size="lg"
             icon="i-heroicons-cpu-chip"
             color="warning"
-            :disabled="!selectedNodeForAnalysis"
+            :disabled="!selectedNodeForAnalysis || true"
             @click="openStrategyPanel"
           >
             Context Analysis
