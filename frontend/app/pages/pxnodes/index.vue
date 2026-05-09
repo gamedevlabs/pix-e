@@ -173,6 +173,7 @@ function getIssueTypeColor(type: string): string {
         variant="soft"
         icon="i-lucide-brain"
         @click="toggleMemoryPanel"
+        :disabled="true"
       >
         Structural Memory
       </UButton>
