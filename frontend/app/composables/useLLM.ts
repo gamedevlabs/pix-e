@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { SessionExpiredError } from '~/utils/sessionFetch'
 import { PROVIDER_ICONS } from '~/utils/api-key'
 
 /**
@@ -98,11 +97,7 @@ export const useLLM = defineStore('llm', () => {
       if (!activeModel.value && result.length > 0) {
         activeModel.value = result[0].value
       }
-    } catch (err) {
-      // Let session expiry bubble up so password modal appears
-      if (err instanceof SessionExpiredError) {
-        throw err
-      }
+    } catch {
       // Fallback: if no user keys or not logged in, show nothing
       models.value = []
     } finally {
@@ -114,13 +109,7 @@ export const useLLM = defineStore('llm', () => {
   /** Ensures models have been fetched at least once. Safe to call multiple times — subsequent calls are no-ops. */
   async function ensureInit() {
     if (!initialized.value) {
-      try {
-        await refreshModels()
-      } catch {
-        // Session expiry during initial load — no modal possible at mount time.
-        // LLM call wrappers (callWithRetry in usePillars) will catch and show the
-        // password modal when the user actually tries to use an AI feature.
-      }
+      await refreshModels()
     }
   }
 

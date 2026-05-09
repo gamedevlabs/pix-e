@@ -18,6 +18,7 @@ import type {
 } from '~/types/api-key'
 import { PROVIDER_ICONS, PROVIDER_LABELS, PROVIDER_OPTIONS } from '~/utils/api-key'
 import { SessionExpiredError } from '~/utils/sessionFetch'
+import { getSessionKey } from '~/composables/useSessionKey'
 
 const open = defineModel<boolean>('open', { default: false })
 const llmStore = useLLM()
@@ -64,7 +65,14 @@ watch([open, () => useState('apiKeyRefreshFlag', () => 0).value], async () => {
     } catch {
       /* */
     }
-    llmStore.refreshModels()
+    try {
+      await llmStore.refreshModels()
+    } catch (err) {
+      if (err instanceof SessionExpiredError) {
+        getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+        return
+      }
+    }
   }
 })
 
