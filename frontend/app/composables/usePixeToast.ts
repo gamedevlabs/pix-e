@@ -12,11 +12,9 @@ export function usePixeToast() {
   function error(error: unknown, fallback = 'Something went wrong', title = 'Error') {
     let description = fallback
 
-    if (error instanceof Error) {
-      description = error.message
-    } else if (typeof error === 'string') {
-      description = error
-    } else if (
+    // Fetch errors have both `message` (raw HTTP) and `data` (response body).
+    // Prioritize the response body — it has the user-facing message.
+    if (
       typeof error === 'object' &&
       error !== null &&
       'data' in error &&
@@ -30,6 +28,10 @@ export function usePixeToast() {
       } else if (typeof data.message === 'string') {
         description = data.message
       }
+    } else if (error instanceof Error) {
+      description = error.message
+    } else if (typeof error === 'string') {
+      description = error
     }
 
     toast.add({

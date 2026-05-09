@@ -179,14 +179,26 @@ class ModelManager:
                 is not owned by ``user``.
             ProviderError: If the resulting manager has no providers.
         """
-        from django.shortcuts import get_object_or_404
         from accounts.models import UserApiKey
         from accounts.encryption import decrypt_api_key
         from llm.providers.user_providers import _create_provider
 
-        api_key_obj = get_object_or_404(
-            UserApiKey, id=api_key_id, user=user, is_active=True
-        )
+        from django.http import Http404
+
+        try:
+            api_key_obj = UserApiKey.objects.get(id=api_key_id, user=user, is_active=True)
+        except UserApiKey.DoesNotExist:
+            # Check if the key exists but was disabled — give a helpful message
+            try:
+                disabled_key = UserApiKey.objects.get(id=api_key_id, user=user)
+            except UserApiKey.DoesNotExist:
+                raise Http404("API key not found.")
+            if disabled_key.disabled_reason == "auth_failure":
+                raise Http404(
+                    "This API key was disabled because the provider rejected it. "
+                    "Re-enter a valid key in Settings to re-enable it."
+                )
+            raise Http404("API key is disabled.")
         raw_key = decrypt_api_key(api_key_obj.encrypted_key, enc_key)
 
         manager = cls.__new__(cls)

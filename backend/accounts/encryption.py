@@ -9,7 +9,7 @@ and stored ONLY in the server-side Django session (never persisted).
 Key expiry is tracked INDEPENDENTLY from the Django session via a UTC
 timestamp in the session. This means:
 - The Django session can stay alive for days (user stays logged in | configurable)
-- The encryption key expires after KEY_TTL_SECONDS (1 hour) or when loggin out or when closing the tab
+- The encryption key expires after KEY_TTL_SECONDS (30s for testing) or when logging out or when closing the tab
 - When the key expires, the user gets a password prompt to re-derive it
 - The ReestablishKeyView only needs the password, not a new login
 """
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 _PBKDF2_ITERATIONS = 600_000
 _SESSION_KEY_NAME = "user_encryption_key"
 _SESSION_EXPIRES_AT_NAME = "user_encryption_key_expires_at"
-KEY_TTL_SECONDS = 3600  # 1 hour (3600 seconds)
+KEY_TTL_SECONDS = 30  # 30 seconds — intentionally short for testing
 
 
 def derive_encryption_key(plaintext_password: str, salt: bytes) -> bytes:

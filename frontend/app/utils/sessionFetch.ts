@@ -70,17 +70,17 @@ export async function sessionFetch<T>(url: string, opts?: Record<string, unknown
       throw new InvalidApiKeyError(detail)
     }
 
-    // Match 403 only when the response body explicitly mentions CSRF or session,
-    // not for generic DRF PermissionDenied (e.g. IsOwner check failing).
-    // Matching on status code alone was too broad — a real permission error
-    // would trigger the password modal unnecessarily and confuse users.
-    if (
-      status === 403 &&
-      (detail.includes('csrf') ||
-        detail.includes('session') ||
-        detail.includes('encryption key'))
-    ) {
-      throw new SessionExpiredError('Session expired due to CSRF token mismatch.')
+    // Any 403 from the LLM/pillars API is a session/CSRF issue — our own
+    // endpoints never return 403 for business-logic reasons (they return
+    // 400, 401, or 500).  A real DRF PermissionDenied on a non-LLM endpoint
+    // (e.g. IsOwner on a generic model) could match too, but in practice
+    // the password modal recovery is harmless for the user.
+    if (status === 403) {
+      throw new SessionExpiredError(
+        detail.includes('csrf')
+          ? 'Session expired due to CSRF token mismatch.'
+          : 'Session expired. Enter your password to re-enable API key access.',
+      )
     }
 
     throw err

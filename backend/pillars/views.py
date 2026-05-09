@@ -1,6 +1,6 @@
 import logging
 
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -87,7 +87,7 @@ def _handle_orchestrator_error(request, e: Exception) -> JsonResponse:
         if "No LLM providers available" in msg:
             return JsonResponse(
                 {
-                    "error": "No API keys configured. "
+                    "error": "No valid API keys configured. "
                     "Please add an API key in Settings to use AI features.",
                 },
                 status=400,
@@ -95,6 +95,9 @@ def _handle_orchestrator_error(request, e: Exception) -> JsonResponse:
 
     if isinstance(e, _DRFException):
         raise
+
+    if isinstance(e, Http404):
+        return JsonResponse({"error": str(e)}, status=404)
 
     logger.exception("Error in LLM operation")
     return JsonResponse({"error": str(e)}, status=500)
