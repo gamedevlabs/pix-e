@@ -18,15 +18,15 @@ def make_node(project, name="Node"):
     )
 
 
-def make_definition(project, name="Def"):
+def make_definition(project, name="Def", type="string"):
     return PxComponentDefinition.objects.create(
-        id=uuid.uuid4(), name=name, type="string", project=project
+        id=uuid.uuid4(), name=name, type=type, project=project
     )
 
 
-def make_component(node, definition):
+def make_component(node, definition, value="test"):
     return PxComponent.objects.create(
-        id=uuid.uuid4(), node=node, definition=definition, value="test"
+        id=uuid.uuid4(), node=node, definition=definition, value=value
     )
 
 
@@ -164,5 +164,77 @@ class TestCheckEdgeWithinSameChart:
         make_edge(chart, source=None, target=container)
 
         findings = StructuralChecker()._check_edge_within_same_chart(project_a)
+
+        assert findings == []
+
+
+# Regel 4: PxComponent.value Typ stimmt nicht mit PxComponentDefinition.type überein
+
+
+@pytest.mark.django_db
+class TestCheckComponentValueTypeMatch:
+    def test_number_type_with_string_value_raises_finding(self, project_a):
+        node = make_node(project_a)
+        definition = make_definition(project_a, name="NumDef", type="number")
+        make_component(node, definition, value="hello")
+
+        findings = StructuralChecker()._check_component_value_type_match(project_a)
+
+        assert len(findings) == 1
+        assert findings[0].category == "value_type_mismatch"
+        assert findings[0].severity == FindingSeverity.ERROR
+
+    def test_bool_type_with_int_value_raises_finding(self, project_a):
+        """Bool-as-int quirk: 42 must not pass the bool check even though bool subclasses int."""
+        node = make_node(project_a)
+        definition = make_definition(project_a, name="BoolDef", type="bool")
+        make_component(node, definition, value=42)
+
+        findings = StructuralChecker()._check_component_value_type_match(project_a)
+
+        assert len(findings) == 1
+        assert findings[0].category == "value_type_mismatch"
+        assert findings[0].severity == FindingSeverity.ERROR
+
+    def test_number_type_with_number_value_no_finding(self, project_a):
+        node = make_node(project_a)
+        definition = make_definition(project_a, name="NumDef", type="number")
+        make_component(node, definition, value=42)
+
+        findings = StructuralChecker()._check_component_value_type_match(project_a)
+
+        assert findings == []
+
+    def test_string_type_with_string_value_no_finding(self, project_a):
+        node = make_node(project_a)
+        definition = make_definition(project_a, name="StrDef", type="string")
+        make_component(node, definition, value="hello")
+
+        findings = StructuralChecker()._check_component_value_type_match(project_a)
+
+        assert findings == []
+
+    def test_bool_type_with_bool_value_no_finding(self, project_a):
+        node = make_node(project_a)
+        definition = make_definition(project_a, name="BoolDef", type="bool")
+        make_component(node, definition, value=True)
+
+        findings = StructuralChecker()._check_component_value_type_match(project_a)
+
+        assert findings == []
+
+    def test_value_none_skipped(self):
+        """Null guard: component with value=None produces no finding (NOT NULL in DB, so mocked)."""
+        mock_component = Mock()
+        mock_component.definition = Mock()
+        mock_component.value = None
+
+        with patch(
+            "pxnodes.llm.agents.consistency.structural.PxComponent.objects"
+        ) as mock_objects:
+            mock_objects.filter.return_value.select_related.return_value = [
+                mock_component
+            ]
+            findings = StructuralChecker()._check_component_value_type_match(Mock())
 
         assert findings == []

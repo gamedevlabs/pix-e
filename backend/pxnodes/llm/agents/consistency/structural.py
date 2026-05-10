@@ -17,6 +17,7 @@ class StructuralChecker:
         findings.extend(self._check_component_project_match(project))
         findings.extend(self._check_chart_container_project_match(project))
         findings.extend(self._check_edge_within_same_chart(project))
+        findings.extend(self._check_component_value_type_match(project))
         return findings
 
     def _check_component_project_match(
@@ -69,6 +70,47 @@ class StructuralChecker:
                         severity=FindingSeverity.ERROR,
                         category="cross_project_chart_container",
                         entity_id=str(container.id),
+                        message=msg,
+                    )
+                )
+        return findings
+
+    def _check_component_value_type_match(
+        self, project: Project
+    ) -> List[ConsistencyFinding]:
+        """Check each PxComponent's value type matches its definition's declared type."""
+        components = (
+            PxComponent.objects.filter(node__project=project)
+            .select_related("node", "definition")
+        )
+        findings = []
+        for c in components:
+            if c.definition is None:
+                continue
+            if c.value is None:
+                continue
+            value = c.value
+            expected = c.definition.type
+            if expected == "number":
+                # bool is a subclass of int in Python, so exclude it explicitly
+                ok = isinstance(value, (int, float)) and not isinstance(value, bool)
+            elif expected == "string":
+                ok = isinstance(value, str)
+            elif expected == "bool":
+                ok = isinstance(value, bool)
+            else:
+                # unknown type, ignore
+                continue
+            if not ok:
+                msg = (
+                    f"PxComponent {c.id} expected '{expected}' but value is of "
+                    f"type '{type(value).__name__}'."
+                )
+                findings.append(
+                    ConsistencyFinding(
+                        severity=FindingSeverity.ERROR,
+                        category="value_type_mismatch",
+                        entity_id=str(c.id),
                         message=msg,
                     )
                 )
