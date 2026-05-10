@@ -3,7 +3,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import LandingStandaloneModuleCard from '~/components/landing/LandingStandaloneModuleCard.vue'
 
 interface ProjectCard {
-  id: string
+  id: number
   label: string
   description?: string
   icon?: string
@@ -61,7 +61,7 @@ const standaloneModules: StandaloneModule[] = [
   },
 ]
 
-const getProjectMenuItems = (projectId: string): DropdownMenuItem[][] => [
+const getProjectMenuItems = (projectId: number): DropdownMenuItem[][] => [
   [
     {
       label: 'Edit',
@@ -89,7 +89,7 @@ const getProjectMenuItems = (projectId: string): DropdownMenuItem[][] => [
 ]
 
 // Ignore clicks that originated on the project's dropdown menu trigger.
-const handleProjectClick = async (projectId: string, event?: MouseEvent) => {
+const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
   if (event?.target && (event.target as HTMLElement).closest('.project-menu-button')) return
   await switchProject(projectId)
 }

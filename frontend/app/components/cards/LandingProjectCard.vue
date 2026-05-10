@@ -2,7 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 interface Props {
-  id: string
+  id: number
   label: string
   description?: string
   icon?: string

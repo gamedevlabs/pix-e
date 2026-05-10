@@ -5,14 +5,16 @@ const mock_projects = new ProjectApiEmulator()
 
 export const useProjectHandler = () => {
   // state
-  const currentProjectId = useState<string | null>('project_currentProjectId', () => null)
+  const currentProjectId = useState<number | null>('project_currentProjectId', () => null)
   const currentProject = useState<Project | null>('project_currentProject', () => null)
   // initializer must be synchronous for useState; fetch projects explicitly below
   const projects = useState<Project[]>('project_projects', () => [])
 
   const isProjectSelected = computed(() => !!currentProjectId.value)
 
-  const { createItem, fetchAll } = useCrudWithAuthentication<Project>('api/projects/')
+  const config = useRuntimeConfig()
+  const API_URL = config.public.apiBase + '/api/projects/'
+  const { createItem, fetchAll, fetchById } = useCrudWithAuthentication<Project>('api/projects/')
 
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
@@ -22,17 +24,30 @@ export const useProjectHandler = () => {
     return projectsList
   }
 
-  const fetchProjectById = async (id: string): Promise<Project | null> => {
-    return await mock_projects.getById(id)
+  const fetchProjectById = async (id: number): Promise<Project | null> => {
+    return await fetchById(id)
   }
 
-  const selectProject = async (projectOrId: string | Project) => {
-    if (typeof projectOrId === 'string') {
-      const p = await fetchProjectById(projectOrId)
+  const selectProject = async (projectOrId: number | Project) => {
+    console.log("project", projectOrId)
+    try {
+
+      const data = await $fetch<Project>(`${API_URL}${projectOrId}/switch/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value ?? '',
+          ...(import.meta.server ? useRequestHeaders(['cookie']) : {}),
+        } as HeadersInit,
+      })
+
+      //const p = await fetchProjectById(projectOrId)
+      const p = data
       if (p) {
         currentProjectId.value = p.id
         currentProject.value = p
       } else {
+        /*
         const now = new Date().toISOString()
         currentProjectId.value = projectOrId
         currentProject.value = {
@@ -45,10 +60,13 @@ export const useProjectHandler = () => {
           updated_at: now,
           icon: null,
         }
+
+         */
       }
-    } else {
-      currentProjectId.value = projectOrId.id
-      currentProject.value = projectOrId
+    } catch (err) {
+      //error.value = err
+      //errorToast(err)
+      throw err
     }
   }
 
@@ -105,7 +123,7 @@ export const useProjectHandler = () => {
     return deleted
   }
 
-  const switchProject = async (id: string) => {
+  const switchProject = async (id: number) => {
     await selectProject(id)
     navigateTo(`/dashboard?id=${id}`)
   }
@@ -114,7 +132,7 @@ export const useProjectHandler = () => {
     const route = useRoute()
 
     onMounted(() => {
-      const projectIdFromUrl = route.query.id as string | undefined
+      const projectIdFromUrl = route.query.id as number | undefined
       if (projectIdFromUrl && projectIdFromUrl !== currentProjectId.value) {
         selectProject(projectIdFromUrl)
       }
@@ -123,8 +141,10 @@ export const useProjectHandler = () => {
     watch(
       () => route.query.id,
       (newVal) => {
-        const id = newVal as string | undefined
-        if (id && id !== currentProjectId.value) selectProject(id)
+        const id = newVal as number | undefined
+        if (id && id !== currentProjectId.value) {
+          selectProject(id)
+        }
       },
     )
 

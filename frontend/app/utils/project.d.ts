@@ -2,7 +2,7 @@
 export type ProjectTargetPlatform = (typeof projectTargetPlatforms)[number]
 
 export interface Project {
-  id: string
+  id: number
   name: string
   description: string
   genre: string
