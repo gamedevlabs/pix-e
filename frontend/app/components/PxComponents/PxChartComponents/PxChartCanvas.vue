@@ -61,7 +61,7 @@ const {
   path,
   calculatePathFromSelection,
   resetPathCalculation,
-  updatePathHighlight,
+  updateNodeStyling,
   updateEdgeStyling,
 } = usePxChartPathCalculation(nodes, edges, settings)
 
@@ -318,7 +318,8 @@ const pxNodesInChart = computed(() => {
 async function updatePath() {
   if (selectedNodesInOrder.value.length >= 2) {
     await calculatePathFromSelection(selectedNodesInOrder.value)
-    await updatePathHighlight()
+    await updateNodeStyling()
+    await updateEdgeStyling()
   }
 }
 
@@ -342,7 +343,7 @@ async function onNodeSelectionChange(change: NodeSelectionChange) {
   } else {
     await resetPathCalculation()
   }
-  await updatePathHighlight()
+  await updateNodeStyling()
   await updateEdgeStyling()
 }
 

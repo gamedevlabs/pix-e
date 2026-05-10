@@ -425,36 +425,32 @@ export function usePxChartPathCalculation(
     softLocked.value = []
   }
 
-  async function updatePathHighlight() {
-    const pathNodeStyle = {
-      border: '3px solid var(--ui-primary)',
+  function getPathStyle(color: string) {
+    return {
+      border: `3px solid ${color}`,
       borderRadius: '10px',
-      boxShadow: '0 0 10px var(--ui-primary)',
+      boxShadow: `0 0 10px ${color}`,
     }
+  }
 
-    // use warn color for path parts behind a soft gate
-    const softGatedPathNodeStyle = {
-      border: '3px solid var(--ui-warning)',
-      borderRadius: '10px',
-      boxShadow: '0 0 10px var(--ui-warning)',
-    }
-
-    // use error color for selected nodes when no path connects them
-    const noPathNodeStyle = {
-      border: '3px solid var(--ui-error)',
-      borderRadius: '10px',
-      boxShadow: '0 0 10px var(--ui-error)',
-    }
-
+  async function updateNodeStyling() {
     // set style of nodes in calculated path
     for (const node of nodes.value) {
-      node.style = path.value.includes(node.id) ? pathNodeStyle : undefined
-      if (!node.style && selectedNodes.value.includes(node.id)) {
-        node.style = noPathNodeStyle
+      if (!path.value.length && selectedNodes.value.includes(node.id)) {
+        // use error color for selected nodes when no path connects them
+        node.style = getPathStyle('var(--ui-error)')
+      } else if (settings.value.show_soft_locks && softLocked.value.includes(node.id)) {
+        // use info color for nodes with potential soft locks
+        node.style = getPathStyle('var(--ui-info)')
+      } else if (settings.value.use_locks && gatedPath.value.nodes.includes(node)) {
+        // use warn color for path parts behind a soft gate
+        node.style = getPathStyle('var(--ui-warning)')
+      } else if (path.value.includes(node.id)) {
+        // use primary color for nodes in regular path
+        node.style = getPathStyle('var(--ui-primary)')
+      } else {
+        node.style = undefined
       }
-    }
-    for (const node of gatedPath.value.nodes) {
-      node.style = softGatedPathNodeStyle
     }
   }
 
@@ -463,19 +459,16 @@ export function usePxChartPathCalculation(
     const defaultPathStyle = { stroke: 'var(--ui-primary)' }
     const softGatedPathStyle = { stroke: 'var(--ui-warning)' }
 
-    if (!path.value.length && settings.value.use_locks) {
-      for (const edge of edges.value) {
-        edge.style = locked.value.includes(edge.id) ? lockedStyle : undefined
-      }
-    } else {
-      for (const edge of edges.value) {
-        edge.style = pathEdges.value.includes(edge) ? defaultPathStyle : undefined
-      }
-      if (settings.value.use_locks) {
-        for (const edge of gatedPath.value.edges) {
-          edge.style = softGatedPathStyle
+    for (const edge of edges.value) {
+        if (!path.value.length && settings.value.use_locks && locked.value.includes(edge.id)) {
+            edge.style = lockedStyle
+        } else if (settings.value.use_locks && gatedPath.value.edges.includes(edge)) {
+            edge.style = softGatedPathStyle
+        } else if (pathEdges.value.includes(edge)) {
+            edge.style = defaultPathStyle
+        } else {
+            edge.style = undefined
         }
-      }
     }
   }
 
@@ -483,7 +476,7 @@ export function usePxChartPathCalculation(
     path,
     calculatePathFromSelection,
     resetPathCalculation,
-    updatePathHighlight,
+    updateNodeStyling,
     updateEdgeStyling,
   }
 }
