@@ -14,11 +14,11 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from backend.llm import LLMOrchestrator
-from backend.llm.logfire_config import get_logfire
-from backend.llm.types import LLMRequest, LLMResponse
-from backend.llm.view_utils import get_model_id
 from game_concept.models import Project
+from llm import LLMOrchestrator
+from llm.logfire_config import get_logfire
+from llm.types import LLMRequest, LLMResponse
+from llm.view_utils import get_model_id
 from projects.utils import get_current_project
 
 # Import handlers and workflows to trigger auto-registration
