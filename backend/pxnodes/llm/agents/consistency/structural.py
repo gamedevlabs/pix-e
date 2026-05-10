@@ -2,9 +2,10 @@
 
 from typing import List
 
+from django.db.models import Count
 from game_concept.models import Project
 from pxcharts.models import PxChartContainer, PxChartEdge
-from pxnodes.models import PxComponent
+from pxnodes.models import PxComponent, PxNode
 
 from .schemas import ConsistencyFinding, FindingSeverity
 
@@ -18,6 +19,7 @@ class StructuralChecker:
         findings.extend(self._check_chart_container_project_match(project))
         findings.extend(self._check_edge_within_same_chart(project))
         findings.extend(self._check_component_value_type_match(project))
+        findings.extend(self._check_duplicate_node_names(project))
         return findings
 
     def _check_component_project_match(
@@ -143,4 +145,35 @@ class StructuralChecker:
                         message=msg,
                     )
                 )
+        return findings
+
+    def _check_duplicate_node_names(
+        self, project: Project
+    ) -> List[ConsistencyFinding]:
+        """Warn when multiple PxNodes share the same name within a project."""
+        duplicates = (
+            PxNode.objects.filter(project=project)
+            .values("name")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
+        )
+        findings = []
+        for dup in duplicates:
+            name = dup["name"]
+            ids = list(
+                PxNode.objects.filter(project=project, name=name)
+                .values_list("id", flat=True)
+            )
+            msg = (
+                f"Multiple PxNodes share the name '{name}' in this project "
+                f"({len(ids)} nodes: {', '.join(str(i) for i in ids)})."
+            )
+            findings.append(
+                ConsistencyFinding(
+                    severity=FindingSeverity.WARNING,
+                    category="duplicate_node_name",
+                    entity_id=str(ids[0]),
+                    message=msg,
+                )
+            )
         return findings

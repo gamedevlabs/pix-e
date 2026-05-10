@@ -238,3 +238,55 @@ class TestCheckComponentValueTypeMatch:
             findings = StructuralChecker()._check_component_value_type_match(Mock())
 
         assert findings == []
+
+
+# Regel 5: Doppelte PxNode-Namen im gleichen Projekt
+
+
+@pytest.mark.django_db
+class TestCheckDuplicateNodeNames:
+    def test_two_nodes_same_name_raises_finding(self, project_a):
+        make_node(project_a, name="Alpha")
+        make_node(project_a, name="Alpha")
+
+        findings = StructuralChecker()._check_duplicate_node_names(project_a)
+
+        assert len(findings) == 1
+        assert findings[0].category == "duplicate_node_name"
+        assert findings[0].severity == FindingSeverity.WARNING
+
+    def test_three_nodes_same_name_one_finding_all_ids_in_message(self, project_a):
+        make_node(project_a, name="Beta")
+        make_node(project_a, name="Beta")
+        make_node(project_a, name="Beta")
+
+        findings = StructuralChecker()._check_duplicate_node_names(project_a)
+
+        assert len(findings) == 1
+        assert findings[0].category == "duplicate_node_name"
+        assert "3 nodes" in findings[0].message
+
+    def test_two_nodes_different_names_no_finding(self, project_a):
+        make_node(project_a, name="Gamma")
+        make_node(project_a, name="Delta")
+
+        findings = StructuralChecker()._check_duplicate_node_names(project_a)
+
+        assert findings == []
+
+    def test_single_node_no_finding(self, project_a):
+        make_node(project_a, name="Epsilon")
+
+        findings = StructuralChecker()._check_duplicate_node_names(project_a)
+
+        assert findings == []
+
+    def test_same_name_different_projects_no_cross_finding(self, project_a, project_b):
+        make_node(project_a, name="Zeta")
+        make_node(project_b, name="Zeta")
+
+        findings_a = StructuralChecker()._check_duplicate_node_names(project_a)
+        findings_b = StructuralChecker()._check_duplicate_node_names(project_b)
+
+        assert findings_a == []
+        assert findings_b == []
