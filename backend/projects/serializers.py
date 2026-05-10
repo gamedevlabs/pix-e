@@ -11,7 +11,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "genres",
-            "target_platform",
+            "target_platforms",
             "is_current",
             "created_at",
             "updated_at",

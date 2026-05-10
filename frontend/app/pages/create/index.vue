@@ -63,7 +63,7 @@ const {
 
             <CreateStepDetails
               v-if="currentStep === 2"
-              v-model:genre="form.genre"
+              v-model:genre="form.genres"
               v-model:target-platform="form.targetPlatform"
               :submitting="submitting"
               :errors="errors"
@@ -73,7 +73,7 @@ const {
               v-if="currentStep === 3"
               :name="form.name"
               :short-description="form.shortDescription"
-              :genre="form.genre"
+              :genre="form.genres"
               :target-platform="form.targetPlatform"
               :icon-url="form.icon"
               :preview-url="previewUrl"

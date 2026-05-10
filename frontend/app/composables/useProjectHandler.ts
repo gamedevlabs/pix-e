@@ -8,19 +8,19 @@ export const useProjectHandler = () => {
   const currentProjectId = useState<number | null>('project_currentProjectId', () => null)
   const currentProject = useState<Project | null>('project_currentProject', () => null)
   // initializer must be synchronous for useState; fetch projects explicitly below
-  const projects = useState<Project[]>('project_projects', () => [])
+  //const projects = useState<Project[]>('project_projects', () => [])
 
   const isProjectSelected = computed(() => !!currentProjectId.value)
 
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase + '/api/projects/'
-  const { createItem, fetchAll, fetchById } = useCrudWithAuthentication<Project>('api/projects/')
+  const { items, createItem, updateItem, fetchAll, fetchById, deleteItem } = useCrudWithAuthentication<Project>('api/projects/')
 
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
     //const list = await mock_projects.getAll()
     const projectsList = await fetchAll()
-    projects.value = projectsList
+    //projects.value = projectsList
     return projectsList
   }
 
@@ -28,11 +28,10 @@ export const useProjectHandler = () => {
     return await fetchById(id)
   }
 
-  const selectProject = async (projectOrId: number | Project) => {
-    console.log("project", projectOrId)
+  const selectProject = async (projectId: number) => {
     try {
 
-      const data = await $fetch<Project>(`${API_URL}${projectOrId}/switch/`, {
+      const data = await $fetch<Project>(`${API_URL}${projectId}/switch/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -77,50 +76,25 @@ export const useProjectHandler = () => {
 
   const createProject = async (payload: Partial<Project>): Promise<Project> => {
     //const created = await mock_projects.create(payload)
+    console.log("project", payload)
     const data = createItem(payload)
-    projects.value = await mock_projects.getAll()
+    //projects.value = await mock_projects.getAll()
     return data
   }
 
-  const updateProject = async (id: string, data: Partial<Project>): Promise<Project | null> => {
-    const updated = await mock_projects.update(id, data)
-    projects.value = await mock_projects.getAll()
-    try {
-      const toast = useToast()
-      if (updated) {
-        toast.add({ title: 'Project updated', description: updated.name, color: 'success' })
-      } else {
-        toast.add({
-          title: 'Update failed',
-          description: `Project ${id} not found`,
-          color: 'warning',
-        })
-      }
-    } catch {
-      /* ignore */
-    }
-    return updated
+  const updateProject = async (id: number, payload: Partial<Project>): Promise<Project | null> => {
+    return await updateItem(id, payload)
   }
 
-  const deleteProject = async (id: string): Promise<boolean> => {
-    const deleted = await mock_projects.delete(id)
-    projects.value = await mock_projects.getAll()
+  const deleteProject = async (id: number): Promise<boolean> => {
     try {
-      const toast = useToast()
-      if (deleted) {
-        toast.add({ title: 'Project deleted', description: id, color: 'info' })
-        if (currentProjectId.value === id) unselectProject()
-      } else {
-        toast.add({
-          title: 'Delete failed',
-          description: `Project ${id} not found`,
-          color: 'warning',
-        })
-      }
+      await deleteItem(id)
+      if (currentProjectId.value === id) unselectProject()
+      return true
     } catch {
       /* ignore */
+      return false
     }
-    return deleted
   }
 
   const switchProject = async (id: number) => {
@@ -159,7 +133,7 @@ export const useProjectHandler = () => {
   return {
     currentProjectId,
     currentProject,
-    projects,
+    projects: items,
     isProjectSelected: readonly(isProjectSelected),
 
     fetchProjects,

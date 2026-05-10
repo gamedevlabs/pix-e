@@ -68,7 +68,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
 
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
-      await $fetch<T>(`${API_URL}${id}/`, {
+      const data = await $fetch<T>(`${API_URL}${id}/`, {
         method: 'PATCH',
         body: payload,
         credentials: 'include',
@@ -78,9 +78,11 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
       })
       success('Item updated successfully!')
       await fetchAll()
+      return data
     } catch (err) {
       error.value = err
       errorToast(err)
+      throw err
     }
   }
 
@@ -98,6 +100,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
     } catch (err) {
       error.value = err
       errorToast(err)
+      throw err
     }
   }
 

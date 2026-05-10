@@ -17,23 +17,7 @@ class Project(models.Model):
 
     genres = models.JSONField(default=list, blank=True)
 
-    TARGET_PLATFORM_WEB = "web"
-    TARGET_PLATFORM_MOBILE = "mobile"
-    TARGET_PLATFORM_DESKTOP = "desktop"
-    TARGET_PLATFORM_CONSOLE = "console"
-
-    TARGET_PLATFORM_CHOICES = [
-        (TARGET_PLATFORM_WEB, "Web"),
-        (TARGET_PLATFORM_MOBILE, "Mobile"),
-        (TARGET_PLATFORM_DESKTOP, "Desktop"),
-        (TARGET_PLATFORM_CONSOLE, "Console"),
-    ]
-
-    target_platform = models.CharField(
-        max_length=20,
-        choices=TARGET_PLATFORM_CHOICES,
-        default=TARGET_PLATFORM_DESKTOP,
-    )
+    target_platforms = models.JSONField(default=list, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

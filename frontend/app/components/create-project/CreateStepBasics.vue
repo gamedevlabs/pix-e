@@ -46,12 +46,15 @@ const isAvatarHovered = ref(false)
 
       <!-- Avatar with hover-to-upload -->
       <div class="flex flex-col items-center justify-center gap-4">
+        <!-- Disabled until functional in backend
         <div
           class="relative cursor-pointer"
           @mouseenter="isAvatarHovered = true"
           @mouseleave="isAvatarHovered = false"
           @click="$emit('open-upload-modal')"
         >
+        -->
+        <div>
           <UAvatar
             size="3xl"
             :src="previewUrl || iconUrl || undefined"
@@ -70,7 +73,7 @@ const isAvatarHovered = ref(false)
 
         <div class="flex flex-col items-center gap-1">
           <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Project Icon</p>
-          <p class="text-xs text-gray-500 text-center">You can upload your own icon</p>
+          <p class="text-xs text-gray-500 text-center">You cannot upload your own icon yet.</p>
         </div>
       </div>
     </div>

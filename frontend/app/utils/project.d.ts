@@ -5,8 +5,8 @@ export interface Project {
   id: number
   name: string
   description: string
-  genre: string
-  targetPlatform: ProjectTargetPlatform[] | ProjectTargetPlatform | string | string[]
+  genres: string[]
+  target_platforms: ProjectTargetPlatform[]
   is_current?: boolean
   created_at: string
   updated_at: string

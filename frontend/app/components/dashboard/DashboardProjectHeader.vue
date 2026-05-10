@@ -81,10 +81,10 @@ function navigateToSettings() {
           @click="navigateToSettings"
         />
         <div class="flex flex-col items-end gap-2">
-          <div v-if="currentProject?.targetPlatform?.length" class="flex items-center gap-2">
+          <div v-if="currentProject?.target_platforms?.length" class="flex items-center gap-2">
             <UTooltip
               v-for="platform in platformConfigs.filter((p) =>
-                (currentProject?.targetPlatform as string[])?.includes(p.value),
+                (currentProject?.target_platforms as string[])?.includes(p.value),
               )"
               :key="platform.value"
               :text="platform.label"
@@ -92,12 +92,9 @@ function navigateToSettings() {
               <UIcon :name="platform.icon" class="size-4 text-gray-500 dark:text-gray-400" />
             </UTooltip>
           </div>
-          <div v-if="currentProject?.genre" class="flex flex-wrap justify-end items-center gap-2">
+          <div v-if="currentProject?.genres" class="flex flex-wrap justify-end items-center gap-2">
             <UBadge
-              v-for="g in currentProject.genre
-                .split(',')
-                .map((s: string) => s.trim())
-                .filter(Boolean)"
+              v-for="g in currentProject.genres"
               :key="g"
               :label="g"
               size="sm"

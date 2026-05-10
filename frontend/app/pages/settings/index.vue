@@ -36,11 +36,11 @@ const { formData, originalProject, isLoading, isSaving, hasChanges, handleCancel
           <div class="space-y-6">
             <SettingsBasicInfoCard
               v-model:name="formData.name"
-              v-model:short-description="formData.shortDescription"
+              v-model:short-description="formData.description"
             />
             <SettingsProjectDetailsCard
-              v-model:genre="formData.genre"
-              v-model:target-platform="formData.targetPlatform"
+              v-model:genre="formData.genres"
+              v-model:target-platform="formData.target_platforms"
             />
           </div>
 

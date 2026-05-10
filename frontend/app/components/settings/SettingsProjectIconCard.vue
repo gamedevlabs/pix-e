@@ -61,7 +61,7 @@ function handleIconChange(event: Event) {
       </div>
 
       <div class="flex gap-2">
-        <label class="cursor-pointer">
+        <label class="cursor-not-allowed">
           <UButton
             label="Upload"
             icon="i-lucide-upload"
@@ -69,6 +69,7 @@ function handleIconChange(event: Event) {
             variant="outline"
             size="sm"
             as="span"
+            :disabled="true"
           />
           <input type="file" accept="image/*" class="hidden" @change="handleIconChange" />
         </label>
@@ -84,7 +85,7 @@ function handleIconChange(event: Event) {
       </div>
 
       <p class="text-xs text-gray-400 dark:text-gray-500 text-center">
-        PNG, JPG or GIF — displayed as your project avatar
+        PNG, JPG or GIF — displayed as your project avatar (not yet though)
       </p>
     </div>
   </UCard>

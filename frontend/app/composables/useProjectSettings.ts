@@ -15,13 +15,13 @@ export function useProjectSettings() {
 
   syncProjectFromUrl()
 
-  const projectId = computed(() => route.query.id as string | undefined)
+  const projectId = computed(() => route.query.id as number | undefined)
 
   const formData = reactive({
     name: '',
-    shortDescription: '',
-    genre: [] as string[],
-    targetPlatform: [] as ProjectTargetPlatform[],
+    description: '',
+    genres: [] as string[],
+    target_platforms: [] as ProjectTargetPlatform[],
     icon: null as string | null,
   })
 
@@ -32,20 +32,17 @@ export function useProjectSettings() {
   const hasChanges = computed(() => {
     if (!originalProject.value) return false
 
-    const originalGenres = originalProject.value.genre
-      .split(',')
-      .map((g) => g.trim())
-      .filter(Boolean)
-    const originalPlatforms = Array.isArray(originalProject.value.targetPlatform)
-      ? originalProject.value.targetPlatform
-      : [originalProject.value.targetPlatform]
+    const originalGenres = originalProject.value.genres
+    const originalPlatforms = Array.isArray(originalProject.value.target_platforms)
+      ? originalProject.value.target_platforms
+      : [originalProject.value.target_platforms]
 
     const nameChanged = formData.name !== originalProject.value.name
-    const descChanged = formData.shortDescription !== originalProject.value.shortDescription
+    const descChanged = formData.description !== originalProject.value.description
     const genresChanged =
-      JSON.stringify([...formData.genre].sort()) !== JSON.stringify([...originalGenres].sort())
+      JSON.stringify([...formData.genres].sort()) !== JSON.stringify([...originalGenres].sort())
     const platformsChanged =
-      JSON.stringify([...formData.targetPlatform].sort()) !==
+      JSON.stringify([...formData.target_platforms].sort()) !==
       JSON.stringify([...originalPlatforms].sort())
     const iconChanged = formData.icon !== originalProject.value.icon
 
@@ -59,7 +56,7 @@ export function useProjectSettings() {
         description: 'Please select a project to edit',
         color: 'error',
       })
-      router.push('/')
+      await router.push('/')
       return
     }
 
@@ -72,28 +69,26 @@ export function useProjectSettings() {
           description: `Project ${projectId.value} does not exist`,
           color: 'error',
         })
-        router.push('/')
+        await router.push('/')
         return
       }
 
       originalProject.value = project
       formData.name = project.name
-      formData.shortDescription = project.description
-      formData.genre = project.genre
-        .split(',')
-        .map((g) => g.trim())
-        .filter(Boolean)
-      formData.targetPlatform = (
-        Array.isArray(project.targetPlatform) ? project.targetPlatform : [project.targetPlatform]
+      formData.description = project.description
+      formData.genres = project.genres
+      formData.target_platforms = (
+        Array.isArray(project.target_platforms) ? project.target_platforms : [project.target_platforms]
       ) as ProjectTargetPlatform[]
       formData.icon = project.icon || null
-    } catch {
+    } catch (err) {
       toast.add({
         title: 'Error Loading Project',
         description: 'Failed to load project data',
         color: 'error',
       })
-      router.push('/')
+      console.log(err)
+      await router.push('/')
     } finally {
       isLoading.value = false
     }
@@ -114,24 +109,25 @@ export function useProjectSettings() {
     try {
       const updatedProject = await updateProject(projectId.value, {
         name: formData.name,
-        description: formData.shortDescription,
-        genre: formData.genre.join(', '),
-        targetPlatform: formData.targetPlatform,
-        icon: formData.icon,
+        description: formData.description,
+        genres: formData.genres,
+        target_platforms: formData.target_platforms,
+        //icon: formData.icon,
       })
 
       if (updatedProject) {
         originalProject.value = updatedProject
         // Refresh the sidebar's current project so name/icon updates appear instantly.
         // updateProject already shows a success toast — don't double-toast.
-        await selectProject(updatedProject)
+        await selectProject(updatedProject.id)
       }
-    } catch {
+    } catch (err) {
       toast.add({
         title: 'Error Saving Project',
         description: 'Failed to save project settings',
         color: 'error',
       })
+      console.log("error", err)
     } finally {
       isSaving.value = false
     }

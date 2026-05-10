@@ -29,7 +29,7 @@ export function useCreateProjectProcess() {
   const form = reactive({
     name: '',
     shortDescription: '',
-    genre: [] as string[],
+    genres: [] as string[],
     targetPlatform: [] as ProjectTargetPlatform[],
     icon: null as string | null,
   })
@@ -37,7 +37,7 @@ export function useCreateProjectProcess() {
   const errors = reactive({
     name: '',
     shortDescription: '',
-    genre: '',
+    genres: '',
     targetPlatform: '',
   })
 
@@ -47,13 +47,13 @@ export function useCreateProjectProcess() {
   const isUploadModalOpen = ref(false)
 
   // ─── Duplication ───────────────────────────────────────────────────────────
-  const duplicateId = computed(() => route.query.duplicate as string | undefined)
+  const duplicateId = computed(() => route.query.duplicate as number | undefined)
   const isDuplicating = ref(false)
 
   // ─── Computed ──────────────────────────────────────────────────────────────
   const canGoNext = computed(() => {
     if (currentStep.value === 1) return form.name && form.name.trim().length > 0
-    if (currentStep.value === 2) return form.genre.length > 0 && form.targetPlatform.length > 0
+    if (currentStep.value === 2) return form.genres.length > 0 && form.targetPlatform.length > 0
     return true
   })
 
@@ -75,7 +75,7 @@ export function useCreateProjectProcess() {
   function validateStep(step: number): boolean {
     errors.name = ''
     errors.shortDescription = ''
-    errors.genre = ''
+    errors.genres = ''
     errors.targetPlatform = ''
 
     if (step === 1) {
@@ -90,8 +90,8 @@ export function useCreateProjectProcess() {
     }
 
     if (step === 2) {
-      if (form.genre.length === 0) {
-        errors.genre = 'At least one genre is required'
+      if (form.genres.length === 0) {
+        errors.genres = 'At least one genre is required'
         return false
       }
       if (form.targetPlatform.length === 0) {
@@ -148,12 +148,9 @@ export function useCreateProjectProcess() {
 
       form.name = `${project.name} (Copy)`
       form.shortDescription = project.description
-      form.genre = project.genre
-        .split(',')
-        .map((g) => g.trim())
-        .filter(Boolean)
+      form.genres = project.genres
       form.targetPlatform = (
-        Array.isArray(project.targetPlatform) ? project.targetPlatform : [project.targetPlatform]
+        Array.isArray(project.target_platforms) ? project.target_platforms : [project.target_platforms]
       ) as ProjectTargetPlatform[]
       form.icon = project.icon || null
 
@@ -209,8 +206,8 @@ export function useCreateProjectProcess() {
       created = await createProject({
         name: form.name!.trim(),
         description: form.shortDescription?.trim() ?? '',
-        genre: form.genre.join(', '),
-        targetPlatform: form.targetPlatform as Project['targetPlatform'],
+        genres: form.genres,
+        target_platforms: form.targetPlatform as Project['target_platforms'],
         is_current: true,
         icon: iconToSend,
       })
