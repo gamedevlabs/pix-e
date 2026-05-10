@@ -2,7 +2,11 @@ import type { Edge, Node } from '@vue-flow/core'
 import { getConnectedEdges } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
 
-export function usePxChartPathCalculation(nodes: Ref<Node[]>, edges: Ref<Edge[]>) {
+export function usePxChartPathCalculation(
+  nodes: Ref<Node[]>,
+  edges: Ref<Edge[]>,
+  settings: Ref<PxChartSettings>,
+) {
   const { error: errorToast } = usePixeToast()
   const { items: pxLockDefinitions, fetchAll: fetchPxLockDefinitions } = usePxLockDefinitions()
   const { items: pxKeyDefinitions, fetchAll: fetchPxKeyDefinitions } = usePxKeyDefinitions()

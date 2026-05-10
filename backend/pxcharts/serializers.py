@@ -5,6 +5,7 @@ from .models import (
     PxChartContainer,
     PxChartContainerLayout,
     PxChartEdge,
+    PxChartPathSettings,
     PxLockAssignment,
 )
 
@@ -103,9 +104,7 @@ class PxLockAssignmentSerializer(serializers.ModelSerializer):
         chart_id = self.context["view"].kwargs.get("px_chart_pk")
 
         if str(data["edge"].px_chart_id) != chart_id:
-            raise serializers.ValidationError(
-                "Edge does not belong to the chart."
-            )
+            raise serializers.ValidationError("Edge does not belong to the chart.")
         return data
 
     def update(self, instance, validated_data):
@@ -239,6 +238,20 @@ class PxLockAssignmentSerializer(serializers.ModelSerializer):
                 "Edge does not belong to the chart."
             )
         return data
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)
+
+
+class PxChartPathSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PxChartPathSettings
+        fields = "__all__"
+        read_only_fields = ["owner", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:

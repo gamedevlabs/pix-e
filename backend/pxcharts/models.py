@@ -130,3 +130,26 @@ class PxLockAssignment(models.Model):
         # TODO: improve str
         return f"{self.node.name} - {self.definition.name}: ({self.count})"
 
+
+class PxChartPathSettings(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+
+    px_chart = models.ForeignKey(
+        PxChart, on_delete=models.CASCADE, related_name="settings"
+    )
+
+    use_locks = models.BooleanField()
+    ignore_consumable_keys = models.BooleanField()
+    show_soft_locks = models.BooleanField()
+
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["owner", "id"]
+
+    def __str__(self):
+        return f"Uses Locks: {self.use_locks}, \
+            Ignores Consumable Locks: {self.ignore_consumable_keys}, \
+            Shows Soft Locks: {self.show_soft_locks}"

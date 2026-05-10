@@ -435,7 +435,7 @@ class PxLockDefinition(models.Model):
 
     unlocked_by = models.ManyToManyField(PxKeyDefinition)
     soft_gate = models.BooleanField()
-    
+
     UNLOCK_MODE_CHOICES = [
         ("permanent", "Permanent"),
         ("temporary", "Temporary"),

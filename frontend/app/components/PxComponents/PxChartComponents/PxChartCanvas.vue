@@ -11,7 +11,7 @@ import {
   type NodeSelectionChange,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import { PxChartEdge, PxLockEditForm } from '#components'
+import { PxChartEdge, PxChartSettingsForm, PxLockEditForm } from '#components'
 const config = useRuntimeConfig()
 
 const emit = defineEmits<{
@@ -36,6 +36,8 @@ const { items: pxChartEdges, fetchAll: fetchPxChartEdges } = usePxChartEdges(pro
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
 )
+
+const { loadChartSettingsForUser, settings } = usePxChartSettings(props.chartId)
 
 const {
   nodes,
@@ -65,6 +67,7 @@ const {
 
 const overlay = useOverlay()
 const lockModal = overlay.create(PxLockEditForm)
+const settingsModal = overlay.create(PxChartSettingsForm)
 
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
@@ -184,6 +187,7 @@ onMounted(() => {
   fetchPxComponentDefinitions()
   fetchPxChartContainers()
   fetchPxChartEdges()
+  loadChartSettingsForUser()
 })
 
 async function onNodeDragStop(event: NodeDragEvent) {
@@ -351,6 +355,14 @@ async function handleEditLocks() {
   const { edgeId } = await lockModal.open({ selectedEdge: pxChartEdge, chartId: chartId }).result
   await updateLocksOnEdge(edgeId)
 }
+
+async function handleEditSettings() {
+  console.log(`Old PxChartPathSettings: ${JSON.stringify(settings.value)}`)
+  const { _newSettings } = await settingsModal.open({ chartId: chartId, settings: settings.value })
+    .result
+  await loadChartSettingsForUser()
+  console.log(`New PxChartPathSettings: ${JSON.stringify(settings.value)}`)
+}
 </script>
 
 <template>
@@ -419,6 +431,9 @@ async function handleEditLocks() {
         :content="{ align: 'center', side: 'right' }"
       >
         <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
+      </UTooltip>
+      <UTooltip text="Edit Settings" :content="{ align: 'center', side: 'right' }">
+        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="handleEditSettings" />
       </UTooltip>
     </Panel>
 

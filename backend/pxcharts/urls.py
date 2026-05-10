@@ -3,6 +3,7 @@ from rest_framework_nested import routers
 from .views import (
     PxChartContainerViewSet,
     PxChartEdgeViewSet,
+    PxChartPathSettingsViewSet,
     PxChartViewSet,
     PxLockAssignmentViewSet,
 )
@@ -17,5 +18,6 @@ charts_router.register(
 )
 
 charts_router.register(r"pxlocks", PxLockAssignmentViewSet, basename="pxlock")
+charts_router.register(r"settings", PxChartPathSettingsViewSet, basename="settings")
 
 urlpatterns = router.urls + charts_router.urls

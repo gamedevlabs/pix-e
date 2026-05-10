@@ -84,6 +84,18 @@ interface PxChartEdge {
   sourceHandle: string
   target: string
   targetHandle: string
+  locks: PxLock[]
+  created_at: string
+  updated_at: string
+  owner: number | null
+}
+
+interface PxChartSettings {
+  id: string
+  px_chart: string
+  use_locks: boolean
+  ignore_consumable_keys: boolean
+  show_soft_locks: boolean
   created_at: string
   updated_at: string
   owner: number | null
