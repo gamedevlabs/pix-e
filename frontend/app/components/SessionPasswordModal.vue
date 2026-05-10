@@ -1,13 +1,8 @@
-/**
- * Modal for re-establishing the session encryption key when it expires.
- *
- * The encryption key protecting stored API keys expires periodically (every hour).
- * This dialog prompts the user for their password to re-establish it.
- * After successful unlock, the pending API request is automatically retried.
- *
- * @emits success - Emitted after the encryption key is successfully re-established.
- * @emits close   - Emitted when the modal is dismissed without unlocking.
- */
+/** * Modal for re-establishing the session encryption key when it expires. * * The encryption key
+protecting stored API keys expires periodically (every hour). * This dialog prompts the user for
+their password to re-establish it. * After successful unlock, the pending API request is
+automatically retried. * * @emits success - Emitted after the encryption key is successfully
+re-established. * @emits close - Emitted when the modal is dismissed without unlocking. */
 <script setup lang="ts">
 const emit = defineEmits<{
   success: []

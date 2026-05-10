@@ -71,7 +71,10 @@ export function usePillars() {
     }
   }
 
-  async function fixPillarWithAI(pillar: Pillar, _validationIssues?: unknown): Promise<FixPillarAPIResponse | null> {
+  async function fixPillarWithAI(
+    pillar: Pillar,
+    _validationIssues?: unknown,
+  ): Promise<FixPillarAPIResponse | null> {
     try {
       const result = await callWithRetry(() => pillarsApi.fixPillarWithAIAPICall(pillar))
       return result ?? null
@@ -81,14 +84,20 @@ export function usePillars() {
     }
   }
 
-  async function acceptPillarFix(pillarId: number, name: string, description: string): Promise<Pillar> {
+  async function acceptPillarFix(
+    pillarId: number,
+    name: string,
+    description: string,
+  ): Promise<Pillar> {
     // TODO: implement when endpoint exists
     return { id: pillarId, name, description } as Pillar
   }
 
   async function getPillarContradictions() {
     try {
-      llmFeedback.value.contradictions = (await callWithRetry(() => pillarsApi.getPillarsContradictionsAPICall()))!
+      llmFeedback.value.contradictions = (await callWithRetry(() =>
+        pillarsApi.getPillarsContradictionsAPICall(),
+      ))!
     } catch (err) {
       handleLLMError(err)
     }
@@ -96,7 +105,9 @@ export function usePillars() {
 
   async function getPillarsCompleteness() {
     try {
-      llmFeedback.value.coverage = (await callWithRetry(() => pillarsApi.getPillarsCompletenessAPICall()))!
+      llmFeedback.value.coverage = (await callWithRetry(() =>
+        pillarsApi.getPillarsCompletenessAPICall(),
+      ))!
     } catch (err) {
       handleLLMError(err)
     }
@@ -104,7 +115,9 @@ export function usePillars() {
 
   async function getPillarsAdditions() {
     try {
-      llmFeedback.value.proposedAdditions = (await callWithRetry(() => pillarsApi.getPillarsAdditionsAPICall()))!
+      llmFeedback.value.proposedAdditions = (await callWithRetry(() =>
+        pillarsApi.getPillarsAdditionsAPICall(),
+      ))!
     } catch (err) {
       handleLLMError(err)
     }
@@ -112,7 +125,9 @@ export function usePillars() {
 
   async function getContextInPillarsFeedback() {
     try {
-      const result = await callWithRetry(() => pillarsApi.getContextInPillarsAPICall(additionalFeature.value))
+      const result = await callWithRetry(() =>
+        pillarsApi.getContextInPillarsAPICall(additionalFeature.value),
+      )
       if (result) featureFeedback.value = result
     } catch (err) {
       handleLLMError(err)
@@ -123,7 +138,7 @@ export function usePillars() {
     isEvaluating.value = true
     evaluationError.value = null
     try {
-      const _modeToUse = mode ?? executionMode.value  // used by evaluateAllAPICall when implemented
+      const _modeToUse = mode ?? executionMode.value // used by evaluateAllAPICall when implemented
       await callWithRetry(() => getPillarsInContextFeedback())
     } catch (err) {
       handleLLMError(err)

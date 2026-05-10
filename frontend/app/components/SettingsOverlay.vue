@@ -1,14 +1,8 @@
-/**
- * Settings overlay modal for managing personal API keys.
- *
- * Allows users to add, edit, test, and delete API keys for LLM providers
- * (OpenAI, Gemini, Morpheus, or custom OpenAI-compatible endpoints).
- * Keys are encrypted at rest.
- *
- * The add flow is two-step: first select a provider, then fill in key details.
- * Existing keys can be toggled active/inactive and tested for connectivity.
- * Edit mode allows updating the label, base URL, and active state.
- */
+/** * Settings overlay modal for managing personal API keys. * * Allows users to add, edit, test,
+and delete API keys for LLM providers * (OpenAI, Gemini, Morpheus, or custom OpenAI-compatible
+endpoints). * Keys are encrypted at rest. * * The add flow is two-step: first select a provider,
+then fill in key details. * Existing keys can be toggled active/inactive and tested for
+connectivity. * Edit mode allows updating the label, base URL, and active state. */
 <script setup lang="ts">
 import type {
   CreateApiKeyPayload,
@@ -342,7 +336,9 @@ async function handleTest(id: string) {
             :key="apiKey.id"
             :class="[
               'p-3 border rounded-lg',
-              apiKey.disabled_reason === 'auth_failure' ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : '',
+              apiKey.disabled_reason === 'auth_failure'
+                ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                : '',
             ]"
           >
             <!-- Normal view -->
@@ -353,11 +349,23 @@ async function handleTest(id: string) {
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-sm truncate">{{ apiKey.label }}</span>
                     <UBadge
-                      :color="apiKey.disabled_reason === 'auth_failure' ? 'error' : apiKey.is_active ? 'success' : 'neutral'"
+                      :color="
+                        apiKey.disabled_reason === 'auth_failure'
+                          ? 'error'
+                          : apiKey.is_active
+                            ? 'success'
+                            : 'neutral'
+                      "
                       variant="subtle"
                       size="xs"
                     >
-                      {{ apiKey.disabled_reason === 'auth_failure' ? 'Invalid' : apiKey.is_active ? 'Active' : 'Off' }}
+                      {{
+                        apiKey.disabled_reason === 'auth_failure'
+                          ? 'Invalid'
+                          : apiKey.is_active
+                            ? 'Active'
+                            : 'Off'
+                      }}
                     </UBadge>
                   </div>
                   <div class="text-xs text-dimmed truncate">
@@ -408,7 +416,12 @@ async function handleTest(id: string) {
                 />
               </div>
               <UInput v-model="editLabel" placeholder="Label" size="sm" />
-              <template v-if="editingId && keys.find(k => k.id === editingId)?.disabled_reason === 'auth_failure'">
+              <template
+                v-if="
+                  editingId &&
+                  keys.find((k) => k.id === editingId)?.disabled_reason === 'auth_failure'
+                "
+              >
                 <UInput
                   v-model="editKeyValue"
                   type="password"
@@ -416,8 +429,8 @@ async function handleTest(id: string) {
                   size="sm"
                 />
                 <p class="text-xs text-amber-600 dark:text-amber-400 -mt-2">
-                  This key was auto-disabled because the provider rejected it.
-                  Enter a new valid key to re-enable it.
+                  This key was auto-disabled because the provider rejected it. Enter a new valid key
+                  to re-enable it.
                 </p>
               </template>
               <template v-if="isEditCustom">
@@ -432,12 +445,22 @@ async function handleTest(id: string) {
                   size="xs"
                   :color="editIsActive ? 'success' : 'neutral'"
                   variant="outline"
-                  :disabled="editingId ? (keys.find(k => k.id === editingId)?.disabled_reason === 'auth_failure') : false"
+                  :disabled="
+                    editingId
+                      ? keys.find((k) => k.id === editingId)?.disabled_reason === 'auth_failure'
+                      : false
+                  "
                   @click="editIsActive = !editIsActive"
                 >
                   {{ editIsActive ? 'Enabled' : 'Disabled' }}
                 </UButton>
-                <span v-if="editingId && keys.find(k => k.id === editingId)?.disabled_reason === 'auth_failure'" class="text-xs text-amber-600 dark:text-amber-400">
+                <span
+                  v-if="
+                    editingId &&
+                    keys.find((k) => k.id === editingId)?.disabled_reason === 'auth_failure'
+                  "
+                  class="text-xs text-amber-600 dark:text-amber-400"
+                >
                   Must enter a new key to re-enable
                 </span>
               </div>

@@ -22,7 +22,9 @@ export function useSessionKey() {
 
   let retryFn: (() => Promise<unknown>) | null = null
 
-  async function reestablish(password: string): Promise<{ ok: boolean; error?: string; openSettings?: boolean }> {
+  async function reestablish(
+    password: string,
+  ): Promise<{ ok: boolean; error?: string; openSettings?: boolean }> {
     // First, do a GET to refresh the CSRF cookie (might be stale from key expiry)
     try {
       await $fetch(`${config.public.apiBase}/api/accounts/me/`, {
@@ -64,7 +66,10 @@ export function useSessionKey() {
       } else {
         // Retry failed — not a password issue. Close modal, show toast.
         dismissModal()
-        const isInvalidKey = detail.includes('API key is invalid') || detail.includes('disabled') || detail.includes('no valid')
+        const isInvalidKey =
+          detail.includes('API key is invalid') ||
+          detail.includes('disabled') ||
+          detail.includes('no valid')
         const msg = detail || 'Failed to refresh key'
         if (isInvalidKey) {
           toast.add({ title: 'API Key Invalid', description: msg, color: 'error' })

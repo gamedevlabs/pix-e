@@ -125,20 +125,23 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<GenerationResponse>(`${BASE_URL}api/structural-memory/generate/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-        body: {
-          chart_ids: options.chartIds,
-          force_regenerate: options.forceRegenerate ?? false,
-          skip_embeddings: options.skipEmbeddings ?? false,
-          llm_model: options.llmModel ?? 'gpt-4o-mini',
-          embedding_model: options.embeddingModel ?? 'text-embedding-3-small',
+      const response = await $fetch<GenerationResponse>(
+        `${BASE_URL}api/structural-memory/generate/`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-CSRFToken': useCookie('csrftoken').value,
+          } as HeadersInit,
+          body: {
+            chart_ids: options.chartIds,
+            force_regenerate: options.forceRegenerate ?? false,
+            skip_embeddings: options.skipEmbeddings ?? false,
+            llm_model: options.llmModel ?? 'gpt-4o-mini',
+            embedding_model: options.embeddingModel ?? 'text-embedding-3-small',
+          },
         },
-      })
+      )
 
       lastResult.value = response
 
@@ -210,19 +213,22 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<EvaluationResponse>(`${BASE_URL}api/structural-memory/evaluate/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
-        body: {
-          chart_id: options.chartId,
-          node_ids: options.nodeIds,
-          iterations: options.iterations ?? 3,
-          llm_model: options.llmModel ?? 'gpt-4o-mini',
+      const response = await $fetch<EvaluationResponse>(
+        `${BASE_URL}api/structural-memory/evaluate/`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'X-CSRFToken': useCookie('csrftoken').value,
+          } as HeadersInit,
+          body: {
+            chart_id: options.chartId,
+            node_ids: options.nodeIds,
+            iterations: options.iterations ?? 3,
+            llm_model: options.llmModel ?? 'gpt-4o-mini',
+          },
         },
-      })
+      )
 
       lastEvaluation.value = response.evaluation
 

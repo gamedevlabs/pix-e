@@ -1,11 +1,7 @@
-/**
- * Default application layout.
- *
- * Renders the header with navigation, user menu, model selector, and color mode
- * toggle. The main content area supports both sidebar and sidebar-less modes.
- * Hosts the SettingsOverlay (API key management modal) and SessionPasswordModal
- * (encryption key expiry handling) as application-wide overlays.
- */
+/** * Default application layout. * * Renders the header with navigation, user menu, model selector,
+and color mode * toggle. The main content area supports both sidebar and sidebar-less modes. * Hosts
+the SettingsOverlay (API key management modal) and SessionPasswordModal * (encryption key expiry
+handling) as application-wide overlays. */
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'

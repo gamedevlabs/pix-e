@@ -44,9 +44,9 @@ function handleDeclineAddition(suggestion: PillarDTO) {
       pillars.evaluationResult.value.additions.additions.filter(
         (s: { pillarId: number }) => s.pillarId !== suggestion.pillarId,
       )
-    }
-    toast.add({
-      title: 'Suggestion Declined',
+  }
+  toast.add({
+    title: 'Suggestion Declined',
     description: `"${suggestion.name}" has been dismissed.`,
     color: 'info',
   })
