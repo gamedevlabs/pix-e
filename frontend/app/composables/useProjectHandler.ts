@@ -1,8 +1,6 @@
 ﻿import type { Project } from '~/utils/project'
 import { ProjectApiEmulator } from '~/mock_data/mock_projects'
 
-const mock_projects = new ProjectApiEmulator()
-
 export const useProjectHandler = () => {
   // state
   const currentProjectId = useState<number | null>('project_currentProjectId', () => null)
@@ -14,14 +12,12 @@ export const useProjectHandler = () => {
 
   const config = useRuntimeConfig()
   const API_URL = config.public.apiBase + '/api/projects/'
-  const { items, createItem, updateItem, fetchAll, fetchById, deleteItem } = useCrudWithAuthentication<Project>('api/projects/')
+  const { items, createItem, updateItem, fetchAll, fetchById, deleteItem } =
+    useCrudWithAuthentication<Project>('api/projects/')
 
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
-    //const list = await mock_projects.getAll()
-    const projectsList = await fetchAll()
-    //projects.value = projectsList
-    return projectsList
+    return await fetchAll()
   }
 
   const fetchProjectById = async (id: number): Promise<Project | null> => {
@@ -29,44 +25,16 @@ export const useProjectHandler = () => {
   }
 
   const selectProject = async (projectId: number) => {
-    try {
-
-      const data = await $fetch<Project>(`${API_URL}${projectId}/switch/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value ?? '',
-          ...(import.meta.server ? useRequestHeaders(['cookie']) : {}),
-        } as HeadersInit,
-      })
-
-      //const p = await fetchProjectById(projectOrId)
-      const p = data
-      if (p) {
-        currentProjectId.value = p.id
-        currentProject.value = p
-      } else {
-        /*
-        const now = new Date().toISOString()
-        currentProjectId.value = projectOrId
-        currentProject.value = {
-          id: projectOrId,
-          name: `Project ${projectOrId}`,
-          description: '',
-          genre: 'Unknown',
-          targetPlatform: 'web',
-          created_at: now,
-          updated_at: now,
-          icon: null,
-        }
-
-         */
-      }
-    } catch (err) {
-      //error.value = err
-      //errorToast(err)
-      throw err
-    }
+    const data = await $fetch<Project>(`${API_URL}${projectId}/switch/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value ?? '',
+        ...(import.meta.server ? useRequestHeaders(['cookie']) : {}),
+      } as HeadersInit,
+    })
+    currentProjectId.value = data.id
+    currentProject.value = data
   }
 
   const unselectProject = () => {
@@ -75,11 +43,7 @@ export const useProjectHandler = () => {
   }
 
   const createProject = async (payload: Partial<Project>): Promise<Project> => {
-    //const created = await mock_projects.create(payload)
-    console.log("project", payload)
-    const data = createItem(payload)
-    //projects.value = await mock_projects.getAll()
-    return data
+    return createItem(payload)
   }
 
   const updateProject = async (id: number, payload: Partial<Project>): Promise<Project | null> => {

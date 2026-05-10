@@ -72,6 +72,7 @@ const getProjectMenuItems = (projectId: number): DropdownMenuItem[][] => [
       label: 'Duplicate',
       icon: 'i-lucide-copy',
       onSelect: () => router.push(`/create?duplicate=${projectId}`),
+      disabled: true,
     },
   ],
   [
