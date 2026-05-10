@@ -20,9 +20,9 @@ from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
 
 from accounts.constants import ProviderType
 from accounts.encryption import (
-    KEY_TTL_SECONDS,
     _SESSION_EXPIRES_AT_NAME,
     _SESSION_KEY_NAME,
+    KEY_TTL_SECONDS,
     clear_key_from_session,
     decrypt_api_key,
     derive_encryption_key,
@@ -83,6 +83,7 @@ def _login_and_store_key(client: APIClient, user: User) -> None:
 # ============================================================================
 # Model Tests
 # ============================================================================
+
 
 @override_settings(API_KEY_FINGERPRINT_PEPPER="test_pepper")
 class UserApiKeyModelTests(TestCase):
@@ -162,7 +163,9 @@ class UserApiKeyModelTests(TestCase):
             provider=ProviderType.OPENAI,
             label="My Test Key",
             encrypted_key=self.encrypted,
-            key_fingerprint=_make_fingerprint("sk-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+            key_fingerprint=_make_fingerprint(
+                "sk-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ),
             masked_key=_masked("sk-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
         )
         self.assertIsNotNone(key2.pk)
@@ -189,6 +192,7 @@ class UserApiKeyModelTests(TestCase):
 # ============================================================================
 # Encryption Tests
 # ============================================================================
+
 
 class EncryptionTests(TestCase):
     """Tests for encryption.py — derive, encrypt, decrypt, session helpers."""
@@ -235,6 +239,7 @@ class EncryptionTests(TestCase):
         self.assertEqual(len(key), 44)
         # Should be valid base64
         import base64
+
         decoded = base64.urlsafe_b64decode(key)
         self.assertEqual(len(decoded), 32)
 
@@ -327,6 +332,7 @@ class EncryptionTests(TestCase):
 # ============================================================================
 # Validation Tests
 # ============================================================================
+
 
 class ValidationTests(TestCase):
     """Tests for validation.py — provider-specific key format validation."""
@@ -432,6 +438,7 @@ class ValidationTests(TestCase):
 # API Tests
 # ============================================================================
 
+
 @override_settings(API_KEY_FINGERPRINT_PEPPER="test_pepper")
 class UserApiKeyAPITests(TestCase):
     """Tests for the ApiKeyViewSet CRUD and test endpoint."""
@@ -472,7 +479,9 @@ class UserApiKeyAPITests(TestCase):
 
     def test_create_returns_401_when_unauthenticated(self):
         """Verify POST returns 401 for an anonymous user."""
-        resp = self.client.post(self.list_url, {"provider": "openai", "label": "X", "key": "sk-test"})
+        resp = self.client.post(
+            self.list_url, {"provider": "openai", "label": "X", "key": "sk-test"}
+        )
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     # --- List ---------------------------------------------------------------
@@ -720,6 +729,7 @@ class UserApiKeyAPITests(TestCase):
 # LLM Integration Tests
 # ============================================================================
 
+
 class UserLLMOrchestratorMixinTests(TestCase):
     """Tests for the UserLLMOrchestratorMixin."""
 
@@ -730,6 +740,7 @@ class UserLLMOrchestratorMixinTests(TestCase):
     def _make_mixin(self):
         """Import inside test to avoid import errors if dependencies missing."""
         from llm.mixins import UserLLMOrchestratorMixin
+
         return UserLLMOrchestratorMixin()
 
     def test_get_llm_orchestrator_raises_not_authenticated_when_no_key_in_session(self):
@@ -812,6 +823,7 @@ class UserLLMOrchestratorMixinTests(TestCase):
 # ============================================================================
 # Throttling Tests
 # ============================================================================
+
 
 @override_settings(
     API_KEY_FINGERPRINT_PEPPER="test_pepper",

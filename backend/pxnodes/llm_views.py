@@ -13,11 +13,11 @@ from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
 from game_concept.utils import get_current_project
-from llm.mixins import UserLLMOrchestratorMixin
 from llm.logfire_config import get_logfire
-from pillars.view_utils import handle_orchestrator_error
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
+from pillars.view_utils import handle_orchestrator_error
 
 # Import handlers to trigger auto-registration
 from pxnodes.llm import handlers  # noqa: F401
@@ -47,8 +47,6 @@ class NodeFeedbackView(UserLLMOrchestratorMixin, ViewSet):
     """ViewSet for node LLM feedback operations."""
 
     permission_classes = [permissions.IsAuthenticated]
-
-
 
     @action(detail=True, methods=["POST"], url_path="validate")
     def validate_node(self, request: Request, pk: Optional[str] = None) -> JsonResponse:

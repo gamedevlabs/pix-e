@@ -11,7 +11,9 @@ from typing import Any, Dict, List, Optional
 from openai import (
     APIError,
     APITimeoutError,
-    AuthenticationError as OpenAIAuthError,
+)
+from openai import AuthenticationError as OpenAIAuthError
+from openai import (
     OpenAI,
 )
 from openai import RateLimitError as OpenAIRateLimitError
@@ -129,9 +131,7 @@ class OpenAIProvider(BaseProvider):
             for model in response.data:
                 model_id = model.id
                 # For non-OpenAI providers, include ALL models
-                if self.include_all_models or model_id.startswith(
-                    ("gpt-4", "gpt-3.5")
-                ):
+                if self.include_all_models or model_id.startswith(("gpt-4", "gpt-3.5")):
                     models.append(
                         ModelDetails(
                             name=model_id,

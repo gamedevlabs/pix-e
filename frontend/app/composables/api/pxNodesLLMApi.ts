@@ -8,7 +8,7 @@ export function usePxNodesLLMApi() {
       {
         method: 'POST',
         body: {
-          model: llm.active_llm,
+          model: llm.activeModelName,
         },
         credentials: 'include',
         headers: {
@@ -25,7 +25,7 @@ export function usePxNodesLLMApi() {
     return await $fetch<FixNodeAPIResponse>(`${config.public.apiBase}/llm/nodes/${nodeId}/fix/`, {
       method: 'POST',
       body: {
-        model: llm.active_llm,
+        model: llm.activeModelName,
         validation_issues: validationIssues.map((issue) => ({
           title: issue.title,
           description: issue.description,

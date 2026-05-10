@@ -8,13 +8,13 @@ import logging
 import os
 from typing import Optional, cast
 
-from accounts.encryption import get_encryption_key_from_session
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from accounts.encryption import get_encryption_key_from_session
 from game_concept.models import Project
 from game_concept.utils import get_current_project
 from llm.logfire_config import get_logfire
@@ -129,7 +129,9 @@ class SPARCV2EvaluateView(APIView):
                     # Get model preference
                     model_name = request.data.get("model", "")
                     if not model_name:
-                        return JsonResponse({"error": "Missing required field: 'model'"}, status=400)
+                        return JsonResponse(
+                            {"error": "Missing required field: 'model'"}, status=400
+                        )
                     model_id = get_model_id(model_name)
 
                     # Resolve optional inputs
@@ -192,7 +194,11 @@ class SPARCV2EvaluateView(APIView):
                         evaluation=evaluation,
                         user=request.user if request.user.is_authenticated else None,
                         mode="full",
-                        enc_key=get_encryption_key_from_session(request.session) if request.user.is_authenticated else None,
+                        enc_key=(
+                            get_encryption_key_from_session(request.session)
+                            if request.user.is_authenticated
+                            else None
+                        ),
                     )
 
                     if not result.success:
@@ -331,7 +337,9 @@ class SPARCV2AspectView(APIView):
                     # Get model preference
                     model_name = request.data.get("model", "")
                     if not model_name:
-                        return JsonResponse({"error": "Missing required field: 'model'"}, status=400)
+                        return JsonResponse(
+                            {"error": "Missing required field: 'model'"}, status=400
+                        )
                     model_id = get_model_id(model_name)
 
                     evaluation = create_evaluation(

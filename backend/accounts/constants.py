@@ -16,4 +16,3 @@ class ProviderType(models.TextChoices):
 PROVIDER_DEFAULT_BASE_URLS: Dict[str, str] = {
     "morpheus": "https://morpheus.cit.tum.de/api",
 }
-

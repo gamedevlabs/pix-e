@@ -263,6 +263,7 @@ class ContextArtifactsPrecomputeView(APIView):
         embedding_model = request.data.get("embedding_model", "text-embedding-3-small")
         skip_llm = request.data.get("skip_llm", False)
         from accounts.encryption import get_encryption_key_from_session as _get_key
+
         precompute_enc_key = _get_key(request.session)
         scope = request.data.get("scope", "all")  # global | node | all
 
@@ -564,6 +565,7 @@ class CoherenceEvaluateView(APIView):
             iterations = request.data.get("iterations", 3)
             llm_model = request.data.get("llm_model", "gpt-4o-mini")
             from accounts.encryption import get_encryption_key_from_session as _get_key
+
             enc_key = _get_key(request.session)
             project = get_current_project(request.user)
 
@@ -733,6 +735,7 @@ class StrategyEvaluateView(APIView):
         execution_mode = request.data.get("execution_mode", "monolithic")
         llm_model = request.data.get("llm_model", "gpt-4o-mini")
         from accounts.encryption import get_encryption_key_from_session as _get_key
+
         enc_key = _get_key(request.session)
 
         span_name = f"context.evaluate.pxnodes.{strategy}.{execution_mode}"
@@ -845,6 +848,7 @@ class StrategyEvaluateView(APIView):
 
                 if enc_key:
                     from llm import LLMOrchestrator as _Orch
+
                     model_manager = _Orch.for_user(request.user, enc_key).model_manager
                 else:
                     model_manager = ModelManager()

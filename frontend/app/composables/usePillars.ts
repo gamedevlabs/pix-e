@@ -1,6 +1,7 @@
 import { usePillarsApi } from '@/composables/api/pillarsApi'
 import { InvalidApiKeyError, SessionExpiredError } from '~/utils/sessionFetch'
 import { usePixeToast } from '~/composables/usePixeToast'
+import type { ExecutionMode } from '~/composables/useContextStrategies'
 import { getSessionKey } from '~/composables/useSessionKey'
 
 export function usePillars() {
@@ -27,6 +28,11 @@ export function usePillars() {
   })
 
   const additionalFeature = ref<string>('')
+  const isEvaluating = ref(false)
+  const executionMode = ref<ExecutionMode>('agentic')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const evaluationResult = ref<any>(null)
+  const evaluationError = ref<string | null>(null)
 
   /**
    * Wrap an async call so that SessionExpiredError triggers the password
@@ -65,12 +71,19 @@ export function usePillars() {
     }
   }
 
-  async function fixPillarWithAI(pillar: Pillar) {
+  async function fixPillarWithAI(pillar: Pillar, _validationIssues?: unknown): Promise<FixPillarAPIResponse | null> {
     try {
-      return await callWithRetry(() => pillarsApi.fixPillarWithAIAPICall(pillar))
+      const result = await callWithRetry(() => pillarsApi.fixPillarWithAIAPICall(pillar))
+      return result ?? null
     } catch (err) {
       handleLLMError(err)
+      return null
     }
+  }
+
+  async function acceptPillarFix(pillarId: number, name: string, description: string): Promise<Pillar> {
+    // TODO: implement when endpoint exists
+    return { id: pillarId, name, description } as Pillar
   }
 
   async function getPillarContradictions() {
@@ -83,7 +96,7 @@ export function usePillars() {
 
   async function getPillarsCompleteness() {
     try {
-      llmFeedback.value.coverage = await callWithRetry(() => pillarsApi.getPillarsCompletenessAPICall())
+      llmFeedback.value.coverage = (await callWithRetry(() => pillarsApi.getPillarsCompletenessAPICall()))!
     } catch (err) {
       handleLLMError(err)
     }
@@ -91,7 +104,7 @@ export function usePillars() {
 
   async function getPillarsAdditions() {
     try {
-      llmFeedback.value.proposedAdditions = await callWithRetry(() => pillarsApi.getPillarsAdditionsAPICall())
+      llmFeedback.value.proposedAdditions = (await callWithRetry(() => pillarsApi.getPillarsAdditionsAPICall()))!
     } catch (err) {
       handleLLMError(err)
     }
@@ -99,10 +112,37 @@ export function usePillars() {
 
   async function getContextInPillarsFeedback() {
     try {
-      featureFeedback.value = await callWithRetry(() => pillarsApi.getContextInPillarsAPICall(additionalFeature.value))
+      const result = await callWithRetry(() => pillarsApi.getContextInPillarsAPICall(additionalFeature.value))
+      if (result) featureFeedback.value = result
     } catch (err) {
       handleLLMError(err)
     }
+  }
+
+  async function evaluateAll(mode?: ExecutionMode) {
+    isEvaluating.value = true
+    evaluationError.value = null
+    try {
+      const _modeToUse = mode ?? executionMode.value  // used by evaluateAllAPICall when implemented
+      await callWithRetry(() => getPillarsInContextFeedback())
+    } catch (err) {
+      handleLLMError(err)
+    } finally {
+      isEvaluating.value = false
+    }
+  }
+
+  function setExecutionMode(mode: ExecutionMode) {
+    executionMode.value = mode
+  }
+
+  async function acceptAddition(name: string, description: string) {
+    return await pillarsApi.acceptAdditionAPICall(name, description)
+  }
+
+  function clearEvaluation() {
+    evaluationResult.value = null
+    evaluationError.value = null
   }
 
   function handleLLMError(err: unknown) {
@@ -128,9 +168,18 @@ export function usePillars() {
     updateDesignIdea,
     getPillarsInContextFeedback,
     fixPillarWithAI,
+    acceptPillarFix,
     getPillarContradictions,
     getPillarsCompleteness,
     getPillarsAdditions,
     getContextInPillarsFeedback,
+    isEvaluating,
+    executionMode,
+    evaluationResult,
+    evaluationError,
+    evaluateAll,
+    setExecutionMode,
+    acceptAddition,
+    clearEvaluation,
   }
 }

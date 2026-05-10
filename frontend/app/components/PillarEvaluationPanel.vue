@@ -17,7 +17,7 @@ async function handleAcceptAddition(suggestion: PillarDTO) {
     if (pillars.evaluationResult.value?.additions) {
       pillars.evaluationResult.value.additions.additions =
         pillars.evaluationResult.value.additions.additions.filter(
-          (s) => s.pillarId !== suggestion.pillarId,
+          (s: { pillarId: number }) => s.pillarId !== suggestion.pillarId,
         )
     }
 
@@ -42,11 +42,11 @@ function handleDeclineAddition(suggestion: PillarDTO) {
   if (pillars.evaluationResult.value?.additions) {
     pillars.evaluationResult.value.additions.additions =
       pillars.evaluationResult.value.additions.additions.filter(
-        (s) => s.pillarId !== suggestion.pillarId,
+        (s: { pillarId: number }) => s.pillarId !== suggestion.pillarId,
       )
-  }
-  toast.add({
-    title: 'Suggestion Declined',
+    }
+    toast.add({
+      title: 'Suggestion Declined',
     description: `"${suggestion.name}" has been dismissed.`,
     color: 'info',
   })

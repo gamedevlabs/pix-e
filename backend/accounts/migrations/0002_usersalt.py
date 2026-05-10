@@ -8,20 +8,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0001_initial'),
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("accounts", "0001_initial"),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserSalt',
+            name="UserSalt",
             fields=[
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='encryption_salt', serialize=False, to=settings.AUTH_USER_MODEL)),
-                ('salt', models.BinaryField(help_text='16-byte random salt', max_length=16)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        primary_key=True,
+                        related_name="encryption_salt",
+                        serialize=False,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "salt",
+                    models.BinaryField(help_text="16-byte random salt", max_length=16),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'User Encryption Salt',
+                "verbose_name": "User Encryption Salt",
             },
         ),
     ]

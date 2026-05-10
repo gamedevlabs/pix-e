@@ -1401,9 +1401,12 @@ def evaluate_node_agentic(
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
 
-    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini", user=user, enc_key=enc_key)
+    llm_provider = create_llm_provider(
+        model_name=model_id or "gpt-4o-mini", user=user, enc_key=enc_key
+    )
     if user and enc_key:
         from llm import LLMOrchestrator as _Orch
+
         model_manager = _Orch.for_user(user, enc_key).model_manager
     else:
         model_manager = ModelManager()
@@ -1456,9 +1459,12 @@ def evaluate_node_monolithic(
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
 
-    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini", user=user, enc_key=enc_key)
+    llm_provider = create_llm_provider(
+        model_name=model_id or "gpt-4o-mini", user=user, enc_key=enc_key
+    )
     if user and enc_key:
         from llm import LLMOrchestrator as _Orch
+
         model_manager = _Orch.for_user(user, enc_key).model_manager
     else:
         model_manager = ModelManager()

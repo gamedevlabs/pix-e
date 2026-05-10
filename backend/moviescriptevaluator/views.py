@@ -5,7 +5,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from llm.mixins import UserLLMOrchestratorMixin
-
 from moviescriptevaluator.forms import MovieScriptForm
 from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
 from moviescriptevaluator.models import (

@@ -48,6 +48,7 @@ class LLMProviderAdapter:
             self.model_manager = model_manager
         elif user and enc_key:
             from llm import LLMOrchestrator
+
             self.model_manager = LLMOrchestrator.for_user(user, enc_key).model_manager
         else:
             self.model_manager = ModelManager()

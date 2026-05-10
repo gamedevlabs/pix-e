@@ -24,9 +24,7 @@ from llm.providers.capabilities import (
     filter_by_capabilities,
     find_best_model,
 )
-from llm.providers.gemini_provider import GeminiProvider
 from llm.providers.ollama_provider import OllamaProvider
-from llm.providers.openai_provider import OpenAIProvider
 from llm.types import (
     CapabilityRequirements,
     ModelDetails,
@@ -181,14 +179,16 @@ class ModelManager:
                 is not owned by ``user``.
             ProviderError: If the resulting manager has no providers.
         """
-        from accounts.models import UserApiKey
-        from accounts.encryption import decrypt_api_key
-        from llm.providers.user_providers import _create_provider
-
         from django.http import Http404
 
+        from accounts.encryption import decrypt_api_key
+        from accounts.models import UserApiKey
+        from llm.providers.user_providers import _create_provider
+
         try:
-            api_key_obj = UserApiKey.objects.get(id=api_key_id, user=user, is_active=True)
+            api_key_obj = UserApiKey.objects.get(
+                id=api_key_id, user=user, is_active=True
+            )
         except UserApiKey.DoesNotExist:
             # Check if the key exists but was disabled — give a helpful message
             try:

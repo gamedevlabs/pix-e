@@ -1,22 +1,18 @@
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from llm import get_config
 from llm.mixins import UserLLMOrchestratorMixin
-from llm.exceptions import AuthenticationError, OrchestratorError, ProviderError
 from llm.types import LLMRequest
 
 # Import handlers to trigger auto-registration
 from pillars.llm import handlers  # noqa: F401
 
-from accounts.models import UserApiKey
 from .models import Pillar
 from .serializers import PillarSerializer
 from .view_utils import (
-    build_context_payload,
     get_project_concept,
     handle_orchestrator_error,
 )
@@ -123,7 +119,8 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
 
             if not game_concept:
                 return JsonResponse(
-                    {"error": "No game concept found. Create a game concept first."}, status=404
+                    {"error": "No game concept found. Create a game concept first."},
+                    status=404,
                 )
 
             model = request.data.get("model", "gemini")
@@ -149,9 +146,15 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
                 model_id=model_id,
             )
 
-            completeness_response = self.get_llm_orchestrator(request).execute(completeness_request)
-            contradictions_response = self.get_llm_orchestrator(request).execute(contradictions_request)
-            additions_response = self.get_llm_orchestrator(request).execute(additions_request)
+            completeness_response = self.get_llm_orchestrator(request).execute(
+                completeness_request
+            )
+            contradictions_response = self.get_llm_orchestrator(request).execute(
+                contradictions_request
+            )
+            additions_response = self.get_llm_orchestrator(request).execute(
+                additions_request
+            )
 
             combined_result = {
                 "coverage": completeness_response.results,
@@ -172,7 +175,8 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
 
             if not game_concept:
                 return JsonResponse(
-                    {"error": "No game concept found. Create a game concept first."}, status=404
+                    {"error": "No game concept found. Create a game concept first."},
+                    status=404,
                 )
 
             model = request.data.get("model", "gemini")
@@ -201,7 +205,8 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
 
             if not game_concept:
                 return JsonResponse(
-                    {"error": "No game concept found. Create a game concept first."}, status=404
+                    {"error": "No game concept found. Create a game concept first."},
+                    status=404,
                 )
 
             model = request.data.get("model", "gemini")
@@ -230,7 +235,8 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
 
             if not game_concept:
                 return JsonResponse(
-                    {"error": "No game concept found. Create a game concept first."}, status=404
+                    {"error": "No game concept found. Create a game concept first."},
+                    status=404,
                 )
 
             model = request.data.get("model", "gemini")

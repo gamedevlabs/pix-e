@@ -11,13 +11,13 @@ import os
 import time
 from typing import Any, Dict, Generator, List, Optional, cast
 
-from accounts.encryption import get_encryption_key_from_session
 from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from accounts.encryption import get_encryption_key_from_session
 from llm.events import EventCollector
 from llm.logfire_config import get_logfire
 from llm.types import AgentOutputEvent, AgentStartedEvent
@@ -162,7 +162,11 @@ class SPARCV2StreamView(APIView):
                     temp_file_path,
                     concept_meta,
                     request.data.get("project_id"),
-                    enc_key=get_encryption_key_from_session(request.session) if request.user.is_authenticated else None,
+                    enc_key=(
+                        get_encryption_key_from_session(request.session)
+                        if request.user.is_authenticated
+                        else None
+                    ),
                 ),
                 content_type="text/event-stream",
             )

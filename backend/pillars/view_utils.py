@@ -69,7 +69,10 @@ def handle_orchestrator_error(request, e: Exception) -> JsonResponse:
             if count:
                 logger.warning(
                     "Auto-disabled %d %s API key(s) for user %s: %s",
-                    count, provider, request.user.id, str(e)[:120],
+                    count,
+                    provider,
+                    request.user.id,
+                    str(e)[:120],
                 )
             return JsonResponse(
                 {

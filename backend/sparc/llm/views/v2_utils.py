@@ -116,6 +116,7 @@ def run_router_workflow(
     config = get_config()
     if user and user.is_authenticated and enc_key:
         from llm import LLMOrchestrator as Orch
+
         model_manager = Orch.for_user(user, enc_key).model_manager
     else:
         model_manager = ModelManager(config)

@@ -245,9 +245,7 @@ const groups = computed(() => [
             :icon="llmStore.activeModelIcon"
             class="max-w-[20rem]"
             :ui="{
-              width: 'max-w-[20rem]',
               value: 'truncate',
-              option: 'truncate',
             }"
           />
           <UButton

@@ -84,8 +84,7 @@ class LLMOrchestrator:
         """
         if not enc_key:
             raise RuntimeError(
-                "No encryption key in session. "
-                "User must log in to access API keys."
+                "No encryption key in session. " "User must log in to access API keys."
             )
         orch = cls.__new__(cls)
         orch.config = get_config()
@@ -120,8 +119,7 @@ class LLMOrchestrator:
         """
         if not enc_key:
             raise RuntimeError(
-                "No encryption key in session. "
-                "User must log in to access API keys."
+                "No encryption key in session. " "User must log in to access API keys."
             )
         orch = cls.__new__(cls)
         orch.config = get_config()

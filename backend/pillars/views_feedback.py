@@ -23,10 +23,10 @@ from pillars.utils import (
 
 from .view_utils import (
     build_context_payload,
-    handle_orchestrator_error,
     build_context_payload_from_text,
     get_project_concept,
     get_project_pillars,
+    handle_orchestrator_error,
 )
 
 logger = logging.getLogger(__name__)

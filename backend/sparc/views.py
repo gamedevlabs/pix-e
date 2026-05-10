@@ -15,12 +15,12 @@ from rest_framework.exceptions import NotAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from game_concept.models import Project
+from game_concept.utils import get_current_project
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest, LLMResponse
 from llm.view_utils import get_model_id
-from game_concept.models import Project
-from game_concept.utils import get_current_project
 
 # Import handlers and workflows to trigger auto-registration
 from sparc.llm import handlers, workflows  # noqa: F401
@@ -29,6 +29,7 @@ from sparc.models import SPARCEvaluation, SPARCEvaluationResult
 from sparc.serializers import SPARCEvaluationSerializer
 
 logger = logging.getLogger(__name__)
+
 
 def _user_friendly_error(e: Exception) -> str:
     """Translate common provider errors into readable messages."""
@@ -41,7 +42,7 @@ def _user_friendly_error(e: Exception) -> str:
     if "Request timed out" in msg:
         return (
             "The provider request timed out. "
-            "The model may be overloaded or unavailable. Try again later or switch models."
+            "The model may be overloaded or unavailable. Try again later or switch models."  # noqa: E501
         )
     if "not found" in msg.lower() and "available:" in msg.lower():
         return (
@@ -49,8 +50,10 @@ def _user_friendly_error(e: Exception) -> str:
             "Pick one from the available models list."
         )
     if "invalid api key" in msg.lower():
-        return "Your API key was rejected by the provider. Re-enter a valid key in Settings."
+        return "Your API key was rejected by the provider. Re-enter a valid key in Settings."  # noqa: E501
     return msg
+
+
 ASPECT_MAPPING = {
     "player_experience": "player_experience",
     "theme": "theme",
@@ -64,13 +67,15 @@ ASPECT_MAPPING = {
     "opportunities_risks": "opportunities_risks",
 }
 
+
 def _get_orchestrator(request: Request) -> LLMOrchestrator:
     """Get a per-user orchestrator using the user's API keys (no env-var fallback)."""
     from accounts.encryption import get_encryption_key_from_session
+
     enc_key = get_encryption_key_from_session(request.session)
     if not enc_key or not request.user.is_authenticated:
         raise NotAuthenticated(
-            detail="Encryption key expired. Enter your password to re-enable API key access."
+            detail="Encryption key expired. Enter your password to re-enable API key access."  # noqa: E501
         )
     return LLMOrchestrator.for_user(request.user, enc_key)
 
@@ -309,7 +314,8 @@ def _run_sparc_evaluation(
                 logfire.exception(error_event, error=str(e))
                 logger.exception("Error in SPARC evaluation: %s", e)
                 return JsonResponse(
-                    {"error": _user_friendly_error(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"error": _user_friendly_error(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
 
@@ -342,8 +348,6 @@ class SPARCQuickScanView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated]
-
-
 
     def post(self, request: Request) -> JsonResponse:
         """Execute quick scan evaluation with agentic execution."""
@@ -404,8 +408,6 @@ class SPARCMonolithicView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated]
-
-
 
     def post(self, request: Request) -> JsonResponse:
         """Execute monolithic evaluation with handler-based execution."""

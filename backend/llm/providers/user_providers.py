@@ -102,7 +102,9 @@ def _create_provider(
     try:
         if provider_type in ("openai", "custom", "morpheus"):
             config = {"api_key": api_key, "timeout": 30}
-            effective_url = base_url or PROVIDER_DEFAULT_BASE_URLS.get(provider_type, "")
+            effective_url = base_url or PROVIDER_DEFAULT_BASE_URLS.get(
+                provider_type, ""
+            )
             if effective_url:
                 config["base_url"] = effective_url
             if provider_type in ("morpheus", "custom"):

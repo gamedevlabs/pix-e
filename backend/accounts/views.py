@@ -14,23 +14,23 @@ from django.utils.timezone import now
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from accounts.constants import PROVIDER_DEFAULT_BASE_URLS
 from accounts.serializers import UserSerializer
 
 from .encryption import (
+    clear_key_from_session,
     decrypt_api_key,
     derive_encryption_key,
     generate_encryption_salt,
     get_encryption_key_from_session,
     store_key_in_session,
-    clear_key_from_session,
 )
 from .models import UserApiKey, UserSalt
 from .serializers import UserApiKeySerializer
 from .throttling import ApiKeyTestRateThrottle
-from rest_framework.throttling import UserRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -247,8 +247,12 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-
-    @action(detail=False, methods=["GET"], url_path="models", throttle_classes=[UserRateThrottle])
+    @action(
+        detail=False,
+        methods=["GET"],
+        url_path="models",
+        throttle_classes=[UserRateThrottle],
+    )
     def list_models(self, request):
         """
         List all available models from user's active API keys.
@@ -264,7 +268,9 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
             # User is logged in but encryption key TTL expired.
             # Return 401 — frontend shows password modal.
             return Response(
-                {"error": "Encryption key expired. Enter your password to re-enable API key access."},
+                {
+                    "error": "Encryption key expired. Enter your password to re-enable API key access."
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -277,19 +283,22 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
             effective_base_url = key_record.base_url or PROVIDER_DEFAULT_BASE_URLS.get(
                 key_record.provider, ""
             )
-            models = _list_models_for_key(key_record.provider, raw_key, effective_base_url)
+            models = _list_models_for_key(
+                key_record.provider, raw_key, effective_base_url
+            )
             model_entries = [
-                {"name": m.name, "provider": m.provider, "type": m.type}
-                for m in models
+                {"name": m.name, "provider": m.provider, "type": m.type} for m in models
             ]
 
             # Always include the key entry even with empty models (key exists, just no models)
-            result.append({
-                "id": str(key_record.id),
-                "label": key_record.label,
-                "provider": key_record.provider,
-                "models": model_entries,
-            })
+            result.append(
+                {
+                    "id": str(key_record.id),
+                    "label": key_record.label,
+                    "provider": key_record.provider,
+                    "models": model_entries,
+                }
+            )
 
         return Response({"keys": result})
 
@@ -449,9 +458,9 @@ def _list_models_for_key(provider: str, api_key: str, base_url: str = ""):
     """
     try:
         if provider in ("openai", "custom", "morpheus"):
-            from llm.types import ModelCapabilities, ModelDetails
-
             from openai import OpenAI
+
+            from llm.types import ModelCapabilities, ModelDetails
 
             client = OpenAI(api_key=api_key, base_url=base_url or None, timeout=10)
             response = client.models.list()
@@ -473,10 +482,12 @@ def _list_models_for_key(provider: str, api_key: str, base_url: str = ""):
         elif provider == "gemini":
             from llm.providers.gemini_provider import GeminiProvider
 
-            provider_instance = GeminiProvider({
-                "api_key": api_key,
-                "timeout": 10,
-            })
+            provider_instance = GeminiProvider(
+                {
+                    "api_key": api_key,
+                    "timeout": 10,
+                }
+            )
             return provider_instance.list_models()
 
         else:

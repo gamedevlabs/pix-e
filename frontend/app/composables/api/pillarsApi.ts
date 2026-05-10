@@ -24,6 +24,11 @@ export function usePillarsApi() {
    * Update the current design idea via the LLM.
    * @param designIdea - The design idea text to send.
    */
+  async function acceptAdditionAPICall(name: string, description: string) {
+    // TODO: implement when endpoint exists
+    return { id: 0, name, description }
+  }
+
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
@@ -137,7 +142,7 @@ export function usePillarsApi() {
    * @returns Updated PillarDTO with AI-suggested changes.
    */
   async function fixPillarWithAIAPICall(pillar: Pillar) {
-    return await sessionFetch<PillarDTO>(
+    return await sessionFetch<FixPillarAPIResponse>(
       config.public.apiBase + `/api/llm/pillars/${pillar.id}/fix/`,
       {
         method: 'POST',
@@ -172,6 +177,7 @@ export function usePillarsApi() {
   return {
     updateDesignIdeaAPICall,
     validatePillarAPICall,
+    acceptAdditionAPICall,
     getPillarsInContextAPICall,
     getPillarsContradictionsAPICall,
     getPillarsCompletenessAPICall,

@@ -132,7 +132,11 @@ class GeminiProvider(BaseProvider):
 
             return models
         except (ClientError, GeminiAPIError) as e:
-            if "api key" in str(e).lower() or "permission" in str(e).lower() or "unauthenticated" in str(e).lower():
+            if (
+                "api key" in str(e).lower()
+                or "permission" in str(e).lower()
+                or "unauthenticated" in str(e).lower()
+            ):
                 raise AuthenticationError(
                     message=str(e),
                     context={"provider": "gemini"},
@@ -172,7 +176,11 @@ class GeminiProvider(BaseProvider):
                 raise ModelUnavailableError(
                     model=model_name, provider="gemini", reason="Model not found"
                 )
-            if "api key" in error_str or "permission" in error_str or "unauthenticated" in error_str:
+            if (
+                "api key" in error_str
+                or "permission" in error_str
+                or "unauthenticated" in error_str
+            ):
                 raise AuthenticationError(
                     message=str(e),
                     context={"model": model_name, "provider": "gemini"},

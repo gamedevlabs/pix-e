@@ -97,7 +97,7 @@ export const useLLM = defineStore('llm', () => {
         activeModel.value = ''
       }
       if (!activeModel.value && result.length > 0) {
-        activeModel.value = result[0].value
+        activeModel.value = result[0]!.value
       }
     } catch (err) {
       // Session expiry must propagate so callers show the password modal

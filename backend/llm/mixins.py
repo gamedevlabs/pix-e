@@ -38,7 +38,5 @@ class UserLLMOrchestratorMixin:
             "api_key_id"
         )
         if api_key_id:
-            return LLMOrchestrator.for_user_and_key(
-                request.user, api_key_id, enc_key
-            )
+            return LLMOrchestrator.for_user_and_key(request.user, api_key_id, enc_key)
         return LLMOrchestrator.for_user(request.user, enc_key)
