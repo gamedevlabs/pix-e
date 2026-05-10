@@ -54,14 +54,6 @@ export function usePxChartPathCalculation(
     }
     return res
   }
-  
-  function isSoftGate(lock: PxLock) {
-    return pxLockDefinitionsById.value[lock.definition]!.soft_gate
-  }
-
-  const softGatedEdges = computed(() => {
-    return edges.value.filter(edge => edge.data.locks.every((lock: PxLock) => isSoftGate(lock)))
-  })
 
   function mergePxKeySets(keyset1: PxKeySet, keyset2: PxKeySet) {
     const res = { ...keyset1 }
@@ -152,14 +144,6 @@ export function usePxChartPathCalculation(
     return !canUnlock(keys, softGates, false)
   }
 
-  function countConsumable(keys: PxKeySet) : number {
-    let sum = 0
-    for (const [defId, count] of Object.entries(keys)) {
-        if (pxKeyDefinitionsById.value[defId]!.consumable) sum += count
-    }
-    return sum
-  }
-
   // removes consumed keys for each valid combination of inventory keyset and unlocking key combination
   function removeConsumed(inventory: PxKeySet[], locks: PxLock[]): PxKeySet[] {
     if (!locks.length) return inventory
@@ -196,37 +180,6 @@ export function usePxChartPathCalculation(
     }
 
     return updatedInventory
-  }
-
-  // removes consumed keys heuristically: chooses unlocking key combination with smallest number of consumable keys
-  function _consumedKeys(keysInInventory: PxKeySet, locks: PxLock[]) : PxKeySet {
-    if (!locks.length) return {}
-
-    const consumableRequirements = locks
-        .map(lock => pxLockDefinitionsById.value[lock.definition]!.unlocked_by)
-        .filter(requiredKeys => requiredKeys.filter(keyDef => pxKeyDefinitionsById.value[keyDef]!.consumable).length)
-
-    if (!consumableRequirements.length) return {}
-
-    const unlockingKeySets: PxKeySet[] = cartesian(consumableRequirements)
-        .map(keys => getKeySetFromDefArray(keys))
-    console.log(`unlockingKeySets: ${JSON.stringify(unlockingKeySets)}`)
-    console.log(`keysInInventory: ${JSON.stringify(keysInInventory)}`)
-
-    const unlockedKeySets: PxKeySet[] = unlockingKeySets
-        .filter((unlocking) => Object.entries(unlocking)
-            .every(([keyDefId, count]) => 
-                // locks can be unlocked if keys are present and, if consumable, present at least as many times as required
-                keysInInventory[keyDefId] &&
-                (!pxKeyDefinitionsById.value[keyDefId]!.consumable || keysInInventory[keyDefId] >= count))
-        )
-        .sort((ks1, ks2) => countConsumable(ks1) - countConsumable(ks2)); // heuristic to determine which keys to consume
-    
-    if (!unlockedKeySets.length) return {}
-    
-    const bestKeySet = unlockedKeySets[0]!
-    
-    return Object.fromEntries(Object.entries(bestKeySet).filter(([keyDef, _count]) => pxKeyDefinitionsById.value[keyDef]!.consumable))
   }
 
   function canUnlock(keysInInventory: PxKeySet, locks: PxLock[], unlockSoftGates: boolean = true) {
