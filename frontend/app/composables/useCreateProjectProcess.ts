@@ -147,7 +147,7 @@ export function useCreateProjectProcess() {
       }
 
       form.name = `${project.name} (Copy)`
-      form.shortDescription = project.shortDescription
+      form.shortDescription = project.description
       form.genre = project.genre
         .split(',')
         .map((g) => g.trim())
@@ -208,9 +208,10 @@ export function useCreateProjectProcess() {
 
       created = await createProject({
         name: form.name!.trim(),
-        shortDescription: form.shortDescription?.trim() ?? '',
+        description: form.shortDescription?.trim() ?? '',
         genre: form.genre.join(', '),
         targetPlatform: form.targetPlatform as Project['targetPlatform'],
+        is_current: true,
         icon: iconToSend,
       })
     } catch {

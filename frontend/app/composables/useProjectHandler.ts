@@ -12,6 +12,8 @@ export const useProjectHandler = () => {
 
   const isProjectSelected = computed(() => !!currentProjectId.value)
 
+  const { createItem } = useCrudWithAuthentication<Project>('api/projects/')
+
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
     const list = await mock_projects.getAll()
@@ -35,7 +37,7 @@ export const useProjectHandler = () => {
         currentProject.value = {
           id: projectOrId,
           name: `Project ${projectOrId}`,
-          shortDescription: '',
+          description: '',
           genre: 'Unknown',
           targetPlatform: 'web',
           created_at: now,
@@ -54,8 +56,9 @@ export const useProjectHandler = () => {
     currentProject.value = null
   }
 
-  const createProject = async (data: Partial<Project>): Promise<Project> => {
-    const created = await mock_projects.create(data)
+  const createProject = async (payload: Partial<Project>): Promise<Project> => {
+    const created = await mock_projects.create(payload)
+    const data = createItem(payload)
     projects.value = await mock_projects.getAll()
     return created
   }

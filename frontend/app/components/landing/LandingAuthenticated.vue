@@ -43,7 +43,7 @@ const projectCards = computed<ProjectCard[]>(() => {
   return list.map((p) => ({
     id: p.id,
     label: p.name,
-    description: p.shortDescription || undefined,
+    description: p.description || undefined,
     icon: p.icon || undefined,
     initials: getInitials(p.name),
     updatedAt: p.updated_at,

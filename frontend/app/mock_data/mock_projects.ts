@@ -11,7 +11,7 @@ export class ProjectApiEmulator {
       {
         id: 'pixe',
         name: 'pix:e',
-        shortDescription: 'This project contains all the old data from the other pix:e devs.',
+        description: 'This project contains all the old data from the other pix:e devs.',
         genre: 'Tool',
         targetPlatform: 'web',
         created_at: '2024-01-01T10:00:00.000Z',
@@ -21,7 +21,7 @@ export class ProjectApiEmulator {
       {
         id: '29673',
         name: 'Demo Project',
-        shortDescription: 'An experimental narrative project with example scenes.',
+        description: 'An experimental narrative project with example scenes.',
         genre: 'Narrative, Adventure, Story-Driven',
         targetPlatform: 'desktop, web, console',
         created_at: '2024-06-15T08:30:00.000Z',
@@ -31,7 +31,7 @@ export class ProjectApiEmulator {
       {
         id: '1648843',
         name: 'Mobile Game',
-        shortDescription: 'Mock mobile-oriented project.',
+        description: 'Mock mobile-oriented project.',
         genre: 'Puzzle, Casual, Strategy',
         targetPlatform: 'mobile',
         created_at: '2025-02-10T12:00:00.000Z',
@@ -55,7 +55,7 @@ export class ProjectApiEmulator {
     const newProject: Project = {
       id: data.id || `${Date.now()}`,
       name: data.name || 'Untitled Project',
-      shortDescription: data.shortDescription || '',
+      description: data.description || '',
       genre: data.genre || 'Unknown',
       targetPlatform: (data.targetPlatform as Project['targetPlatform']) ?? 'web',
       created_at: (data.created_at as string) || now,
@@ -75,7 +75,7 @@ export class ProjectApiEmulator {
     const updated: Project = {
       id: existing.id,
       name: data.name ?? existing.name,
-      shortDescription: data.shortDescription ?? existing.shortDescription,
+      description: data.description ?? existing.description,
       genre: data.genre ?? existing.genre,
       targetPlatform: (data.targetPlatform as Project['targetPlatform']) ?? existing.targetPlatform,
       created_at: existing.created_at,

@@ -65,7 +65,7 @@ function navigateToSettings() {
             {{ currentProject?.name || 'Project' }}
           </h1>
           <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
-            {{ currentProject?.shortDescription || 'No description' }}
+            {{ currentProject?.description || 'No description' }}
           </p>
         </div>
       </div>

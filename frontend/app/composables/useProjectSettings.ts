@@ -78,7 +78,7 @@ export function useProjectSettings() {
 
       originalProject.value = project
       formData.name = project.name
-      formData.shortDescription = project.shortDescription
+      formData.shortDescription = project.description
       formData.genre = project.genre
         .split(',')
         .map((g) => g.trim())
@@ -114,7 +114,7 @@ export function useProjectSettings() {
     try {
       const updatedProject = await updateProject(projectId.value, {
         name: formData.name,
-        shortDescription: formData.shortDescription,
+        description: formData.shortDescription,
         genre: formData.genre.join(', '),
         targetPlatform: formData.targetPlatform,
         icon: formData.icon,
