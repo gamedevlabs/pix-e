@@ -14,10 +14,33 @@ class Project(models.Model):
     is_current = models.BooleanField(
         default=False, help_text="Whether this is the user's current project"
     )
+
+    genres = models.JSONField(default=list, blank=True)
+
+    TARGET_PLATFORM_WEB = "web"
+    TARGET_PLATFORM_MOBILE = "mobile"
+    TARGET_PLATFORM_DESKTOP = "desktop"
+    TARGET_PLATFORM_CONSOLE = "console"
+
+    TARGET_PLATFORM_CHOICES = [
+        (TARGET_PLATFORM_WEB, "Web"),
+        (TARGET_PLATFORM_MOBILE, "Mobile"),
+        (TARGET_PLATFORM_DESKTOP, "Desktop"),
+        (TARGET_PLATFORM_CONSOLE, "Console"),
+    ]
+
+    target_platform = models.CharField(
+        max_length=20,
+        choices=TARGET_PLATFORM_CHOICES,
+        default=TARGET_PLATFORM_DESKTOP,
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        db_table = "projects_project"
+        ordering = ["-updated_at"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user"],
@@ -25,8 +48,6 @@ class Project(models.Model):
                 name="one_current_project_per_user",
             )
         ]
-        ordering = ["-updated_at"]
-        db_table = "projects_project"
 
     def __str__(self) -> str:
         return f"{self.user.username}'s project: {self.name or 'Untitled'}"
