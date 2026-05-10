@@ -12,10 +12,8 @@ class PxChart(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     project = models.ForeignKey(
-        "game_concept.Project",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        "projects.Project",
+        on_delete=models.CASCADE,
         related_name="pxcharts",
     )
     associatedNode = models.ForeignKey(
@@ -45,7 +43,7 @@ class PxChartContainer(models.Model):
         PxNode, on_delete=models.SET_NULL, null=True, blank=True
     )
 
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

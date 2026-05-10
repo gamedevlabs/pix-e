@@ -12,11 +12,11 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
-from game_concept.utils import get_current_project
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
+from projects.utils import get_current_project
 
 # Import handlers to trigger auto-registration
 from pxnodes.llm import handlers  # noqa: F401

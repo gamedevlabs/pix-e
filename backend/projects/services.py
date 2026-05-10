@@ -6,6 +6,7 @@ import uuid
 
 from django.contrib.auth.models import User
 
+from game_concept.models import GameConcept
 from pillars.models import Pillar
 from pxcharts.models import (
     PxChart,
@@ -15,7 +16,7 @@ from pxcharts.models import (
 )
 from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
 
-from .models import GameConcept, Project
+from .models import Project
 
 
 def clone_project(

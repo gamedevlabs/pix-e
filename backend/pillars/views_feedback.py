@@ -7,7 +7,6 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
-from game_concept.utils import get_current_project
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
@@ -20,6 +19,7 @@ from pillars.utils import (
     save_execution_result_llm_calls,
     save_pillar_llm_call,
 )
+from projects.utils import get_current_project
 
 from .view_utils import (
     build_context_payload,

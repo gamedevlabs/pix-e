@@ -445,7 +445,7 @@ class SPARCRouterWorkflow:
 
             # Resolve project if not explicitly provided
             if not project_id:
-                from game_concept.utils import get_current_project
+                from projects.utils import get_current_project
 
                 project = get_current_project(user)
                 project_id = project.id if project else None

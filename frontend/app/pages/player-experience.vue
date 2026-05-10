@@ -15,7 +15,7 @@ definePageMeta({
     title: 'Player Experience',
     icon: 'i-lucide-chart-no-axes-gantt',
     navGroup: 'main',
-    navOrder: 2,
+    navOrder: 3,
     showInNav: true,
   },
 })

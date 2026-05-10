@@ -8,12 +8,10 @@ class PxNode(models.Model):
     id = models.UUIDField(primary_key=True, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     project = models.ForeignKey(
-        "game_concept.Project",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        "projects.Project",
+        on_delete=models.CASCADE,
         related_name="pxnodes",
     )
 
@@ -33,12 +31,10 @@ class PxComponentDefinition(models.Model):
     TYPE_CHOICES = [("number", "Number"), ("string", "String"), ("boolean", "Boolean")]
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     project = models.ForeignKey(
-        "game_concept.Project",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        "projects.Project",
+        on_delete=models.CASCADE,
         related_name="pxcomponentdefinitions",
     )
 

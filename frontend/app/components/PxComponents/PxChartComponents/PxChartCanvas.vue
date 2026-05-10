@@ -15,6 +15,10 @@ import { PxChartEdge } from '#components'
 const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
+const emit = defineEmits<{
+  (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
+}>()
+
 const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
@@ -185,6 +189,7 @@ async function onNodeDragStop(event: NodeDragEvent) {
 
 async function onConnect(connection: Connection) {
   await addEdge(connection)
+  emit('edgeConnected')
   updatePath()
 }
 
@@ -201,6 +206,7 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
 
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
+  emit('nodeAddedToContainer')
   fetchPxNodes()
   fetchPxChartContainers()
 }
@@ -266,7 +272,13 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   // for now, just create a container
   const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
   await addContainer(pos.x, pos.y)
+  emit('containerAdded')
   fetchPxChartContainers()
+}
+
+async function handleAddContainerFromPanel() {
+  await addContainer(0, 0)
+  emit('containerAdded')
 }
 
 const pxNodeIdsInPath = computed(() => {
@@ -348,7 +360,11 @@ async function onSelectionChange(change: NodeSelectionChange) {
       <PxChartContainer
         v-bind="customNodeProps"
         @delete="handleDeletePxGraphContainer"
-        @add-px-node="handleAddPxNode"
+        @add-px-node="
+          (containerId, nodeId) => {
+            handleAddPxNode(containerId, nodeId)
+          }
+        "
         @edit="handleUpdatePxGraphContainer"
       />
     </template>
@@ -364,7 +380,12 @@ async function onSelectionChange(change: NodeSelectionChange) {
 
     <Panel :position="'bottom-left'">
       <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-plus" color="primary" @click="addContainer(0, 0)" />
+        <UButton
+          size="xl"
+          icon="i-lucide-plus"
+          color="primary"
+          @click="handleAddContainerFromPanel"
+        />
       </UTooltip>
     </Panel>
 

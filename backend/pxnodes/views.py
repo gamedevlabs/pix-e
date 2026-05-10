@@ -8,8 +8,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from game_concept.utils import get_current_game_concept, get_current_project
+from game_concept.utils import get_current_game_concept
 from pillars.models import Pillar
+from projects.utils import get_current_project
 from pxcharts.models import PxChart
 from pxnodes.llm.context.artifacts import ArtifactInventory
 from pxnodes.llm.context.base.types import StrategyType

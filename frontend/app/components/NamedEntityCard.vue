@@ -14,6 +14,9 @@ const emit = defineEmits<{
 
 const draft = ref({ ...props.namedEntity })
 
+// Helper to check if name is valid
+const isValid = computed(() => !!draft.value.name?.trim())
+
 watch(
   () => props.isBeingEdited,
   (newVal) => {
@@ -28,6 +31,7 @@ function emitEdit() {
 }
 
 function emitUpdate() {
+  if (!isValid.value) return
   emit('update', draft.value)
 }
 
@@ -46,10 +50,10 @@ function emitDelete() {
   >
     <template #header>
       <div v-if="!isBeingEdited" class="header">
-        <h2 class="font-semibold text-lg">
+        <h2 class="font-semibold text-lg overflow-hidden text-ellipsis whitespace-nowrap mr-2">
           {{ props.namedEntity.name }}
         </h2>
-        <div>
+        <div class="shrink-0">
           <UButton
             v-if="showEdit"
             aria-label="Edit"
@@ -69,61 +73,68 @@ function emitDelete() {
         </div>
       </div>
 
-      <div v-else class="header">
+      <div v-else class="header gap-2">
         <UInput
           v-model="draft.name"
-          class="max-w-44"
-          variant="subtle"
+          class="grow min-w-0"
+          variant="outline"
           placeholder="Enter name here..."
+          autofocus
+          @keydown.enter.prevent="emitUpdate"
         />
-        <div>
-          <UButton
-            aria-label="Update"
-            icon="i-lucide-save"
-            color="primary"
-            variant="ghost"
-            @click="emitUpdate"
-          />
-          <UButton
-            aria-label="Cancel"
-            icon="i-lucide-x"
-            color="error"
-            variant="ghost"
-            @click="emitEdit"
-          />
-        </div>
       </div>
     </template>
 
     <template #default>
       <div v-if="'description' in namedEntity">
-        <p v-if="!isBeingEdited">{{ namedEntity.description }}</p>
+        <p v-if="!isBeingEdited" class="text-sm break-words">
+          {{ namedEntity.description }}
+        </p>
         <UTextarea
           v-else
           v-model="draft.description"
           placeholder="Enter description here..."
-          size="lg"
-          variant="subtle"
-          :rows="1"
+          size="md"
+          variant="outline"
+          :rows="3"
           autoresize
           class="w-full"
+          @keydown.ctrl.enter="emitUpdate"
         />
       </div>
 
-      <div v-if="!isBeingEdited">
+      <div v-if="!isBeingEdited" class="mt-2">
         <slot name="default" />
       </div>
-      <div v-else>
+      <div v-else class="mt-2">
         <slot name="defaultEdit" />
       </div>
     </template>
 
-    <template v-if="$slots.footerExtra || $slots.footerExtraEdit" #footer>
+    <template v-if="isBeingEdited || $slots.footerExtra || $slots.footerExtraEdit" #footer>
       <div v-if="!isBeingEdited">
         <slot name="footerExtra" />
       </div>
-      <div v-else>
+      <div v-else class="flex flex-col gap-2">
         <slot name="footerExtraEdit" />
+        <div class="flex items-center justify-end gap-2">
+          <UButton
+            aria-label="Cancel"
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            @click="emitEdit"
+          />
+          <UButton
+            aria-label="Save"
+            label="Save"
+            icon="i-lucide-check"
+            color="primary"
+            variant="solid"
+            :disabled="!isValid"
+            @click="emitUpdate"
+          />
+        </div>
       </div>
     </template>
   </UCard>

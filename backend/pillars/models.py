@@ -6,10 +6,8 @@ class Pillar(models.Model):
         "auth.User", on_delete=models.CASCADE, related_name="pillars"
     )
     project = models.ForeignKey(
-        "game_concept.Project",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        "projects.Project",
+        on_delete=models.CASCADE,
         related_name="pillars",
     )
 

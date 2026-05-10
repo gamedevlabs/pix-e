@@ -39,6 +39,8 @@ export function useAuthentication() {
     }
   }
 
+  //let authPromise: Promise<boolean> | null = null
+
   async function checkAuthentication(): Promise<boolean> {
     try {
       checkedLogin.value = true
