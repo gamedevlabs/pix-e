@@ -7,7 +7,7 @@ export function usePxChartPathCalculation(
   edges: Ref<Edge[]>,
   settings: Ref<PxChartSettings>,
 ) {
-  const { error: errorToast } = usePixeToast()
+  const { info: infoToast } = usePixeToast()
   const { items: pxLockDefinitions, fetchAll: fetchPxLockDefinitions } = usePxLockDefinitions()
   const { items: pxKeyDefinitions, fetchAll: fetchPxKeyDefinitions } = usePxKeyDefinitions()
 
@@ -16,6 +16,7 @@ export function usePxChartPathCalculation(
   const path = ref<string[]>([]) // TODO: deprecate?
   const pathEdges = ref<Edge[]>([])
   const locked = ref<string[]>([])
+  const softLocked = ref<string[]>([])
 
   type PxKeySet = Record<string, number>
 
@@ -74,6 +75,9 @@ export function usePxChartPathCalculation(
     let keys: PxKeySet = {}
     const gatedNodes: Node[] = []
     const gatedEdges: Edge[] = []
+
+    if (!settings.value.use_locks) return { nodes: gatedNodes, edges: gatedEdges }
+
     let softUnlock = false
     for(const step of pathNodesAndEdges.value) {
         if (softUnlock) {
@@ -224,13 +228,14 @@ export function usePxChartPathCalculation(
         .map(keys => getKeySetFromDefArray(keys))
 
     // edge is unlockable if any unlocking key set is a subset of the available keys
-    const canUnlock = unlockingKeySets
-        .some((unlocking) => Object.entries(unlocking)
-            .every(([key, count]) => 
-                // locks can be unlocked if keys are present and, if consumable, present at least as many times as required
-                keysInInventory[key] &&
-                (!pxKeyDefinitionsById.value[key]!.consumable || keysInInventory[key] >= count))
-        )
+    const canUnlock = unlockingKeySets.some((unlocking) =>
+      Object.entries(unlocking).every(
+        ([key, count]) =>
+          // locks can be unlocked if keys are present and, if consumable, present at least as many times as required
+          keysInInventory[key] &&
+          (!pxKeyDefinitionsById.value[key]!.consumable || settings.value.ignore_consumable_keys || keysInInventory[key] >= count),
+      ),
+    )
     return canUnlock
   }
 
@@ -240,9 +245,9 @@ export function usePxChartPathCalculation(
         keys: PxKeySet[]
   }
 
-  async function dijkstraInChart(sourceId: string, targetId: string, ignoreLocks: boolean = false) {
+  async function dijkstraInChart(sourceId: string, targetId: string, useLocks: boolean = true) {
     // initialize
-    if (!ignoreLocks) {
+    if (useLocks) {
       await fetchPxLockDefinitions()
       await fetchPxKeyDefinitions()
     }
@@ -279,7 +284,7 @@ export function usePxChartPathCalculation(
       let outEdges = getConnectedEdges(node.id, edges.value)
           .filter((edge) => edge.source === node.id)
 
-      if (!ignoreLocks) {
+      if (useLocks) {
         // check for locked transitions
         const [unlockedOutEdges, lockedOutEdges] = outEdges
           .reduce(
@@ -306,11 +311,32 @@ export function usePxChartPathCalculation(
           dist.set(outNodeId, alt)
           const idx = findIndex(q, ['id', outNodeId])
           q[idx]!.prio = alt
-          
-          if (!ignoreLocks) {
-            const inventoryAfterConsumption: PxKeySet[] = removeConsumed(inventory, outEdge.data.locks)
+
+          if (useLocks && !settings.value.ignore_consumable_keys) {
+            let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
+              inventory,
+              outEdge.data.locks,
+            )
+            // a potential softlock occurs when unlock is possible with some, but not all keysets in inventory
+            // this must be checked before removing fully consumed keysets
+            if (inventoryAfterConsumption.length !== inventory.length) {
+              softLocked.value.push(outNodeId)
+            }
+            inventoryAfterConsumption = inventoryAfterConsumption.filter(
+              (keyset) => Object.entries(keyset).length > 0,
+            )
+            // console.log(`inventoryAfterConsumption: ${JSON.stringify(inventoryAfterConsumption)}`)
+
             // unprocessed nodes only have one keyset, so we can just index into the array
-            q[idx]!.keys = inventoryAfterConsumption.map(keyset => ({ ...keyset, ...q[idx]!.keys[0] })) // TODO: find better solution or document better
+            q[idx]!.keys = inventoryAfterConsumption.map((keyset) => ({
+              ...keyset,
+              ...q[idx]!.keys[0],
+            }))
+          } else if (useLocks && settings.value.ignore_consumable_keys) {
+            q[idx]!.keys = inventory.map((keyset) => ({
+              ...keyset,
+              ...q[idx]!.keys[0],
+            }))
           }
 
           q.sort((n1, n2) => n2.prio - n1.prio)
@@ -344,7 +370,7 @@ export function usePxChartPathCalculation(
     return seq.reverse()
   }
 
-  async function dijkstraInChartMultiple(selected: string[], ignoreLocks: boolean = false) {
+  async function dijkstraInChartMultiple(selected: string[], useLocks: boolean = true) {
     let fullPath: string[] = []
 
     if (selected.length < 2) {
@@ -354,7 +380,7 @@ export function usePxChartPathCalculation(
     fullPath.push(selected[0]!)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const nextSeq = await dijkstraInChart(selected[i]!, selected[i + 1]!, ignoreLocks)
+      const nextSeq = await dijkstraInChart(selected[i]!, selected[i + 1]!, useLocks)
       if (!nextSeq.length) {
         return []
       }
@@ -366,32 +392,19 @@ export function usePxChartPathCalculation(
 
   async function calculatePathFromSelection(selected: string[]) {
     console.log(`Starting path calculation...`)
+    console.log(`Used settings: ${JSON.stringify(settings.value)}`)
     console.log(`Found ${nodes.value.length} nodes.`)
     console.log(`Input (length ${selected.length}): ${selected.toString()}`)
     selectedNodes.value = selected
     let newPath: string[] = []
     //let newPathIgnoringLocks: string[] = []
     if (selected.length == 2 && selected[0] && selected[1]) {
-      newPath = await dijkstraInChart(selected[0], selected[1])
+      newPath = await dijkstraInChart(selected[0], selected[1], settings.value.use_locks)
       if (!newPath.length) {
-        newPath = await dijkstraInChart(selected[1], selected[0])
+        newPath = await dijkstraInChart(selected[1], selected[0], settings.value.use_locks)
       }
-
-      /*
-      if(!newPath.length) {
-        newPathIgnoringLocks = await dijkstraInChart(selected[0], selected[1], true)
-      }
-      if (!newPathIgnoringLocks.length) {
-        newPathIgnoringLocks = await dijkstraInChart(selected[1], selected[0], true)
-      }*/
     } else {
-      newPath = await dijkstraInChartMultiple(selected)
-
-      /*
-      if (!newPath.length) {
-        newPathIgnoringLocks = await dijkstraInChartMultiple(selected, true)
-      }
-        */
+      newPath = await dijkstraInChartMultiple(selected, settings.value.use_locks)
     }
 
     if (!newPath.length) {
@@ -409,6 +422,7 @@ export function usePxChartPathCalculation(
     pathEdges.value = []
     locked.value = []
     selectedNodes.value = []
+    softLocked.value = []
   }
 
   async function updatePathHighlight() {
@@ -447,12 +461,9 @@ export function usePxChartPathCalculation(
   async function updateEdgeStyling() {
     const lockedStyle = { stroke: 'var(--ui-error)' }
     const defaultPathStyle = { stroke: 'var(--ui-primary)' }
-    const softGatedPathStyle = { stroke: 'var(--ui-warning)' } // TODO: check contrast
+    const softGatedPathStyle = { stroke: 'var(--ui-warning)' }
 
-    //console.log(`pathNodesAndEdges: ${JSON.stringify(pathNodesAndEdges.value)}`)
-    console.log(`gatedPath: ${JSON.stringify(gatedPath.value)}`)
-
-    if (!path.value.length) {
+    if (!path.value.length && settings.value.use_locks) {
       for (const edge of edges.value) {
         edge.style = locked.value.includes(edge.id) ? lockedStyle : undefined
       }
@@ -460,8 +471,10 @@ export function usePxChartPathCalculation(
       for (const edge of edges.value) {
         edge.style = pathEdges.value.includes(edge) ? defaultPathStyle : undefined
       }
-      for (const edge of gatedPath.value.edges) {
-        edge.style = softGatedPathStyle
+      if (settings.value.use_locks) {
+        for (const edge of gatedPath.value.edges) {
+          edge.style = softGatedPathStyle
+        }
       }
     }
   }

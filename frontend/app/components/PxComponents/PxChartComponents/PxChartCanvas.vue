@@ -63,7 +63,7 @@ const {
   resetPathCalculation,
   updatePathHighlight,
   updateEdgeStyling,
-} = usePxChartPathCalculation(nodes, edges)
+} = usePxChartPathCalculation(nodes, edges, settings)
 
 const overlay = useOverlay()
 const lockModal = overlay.create(PxLockEditForm)
