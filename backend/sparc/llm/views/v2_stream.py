@@ -11,6 +11,7 @@ import os
 import time
 from typing import Any, Dict, Generator, List, Optional, cast
 
+from accounts.encryption import get_encryption_key_from_session
 from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
 from rest_framework import permissions
@@ -96,7 +97,13 @@ class SPARCV2StreamView(APIView):
                     status=400,
                 )
 
-            model_name = request.data.get("model", "openai")
+            model_name = request.data.get("model", "")
+            if not model_name:
+                return StreamingHttpResponse(
+                    self._error_stream("Missing required field: 'model'"),
+                    content_type="text/event-stream",
+                    status=400,
+                )
             model_id = get_model_id(model_name)
             context_text = request.data.get("context", "")
             pillar_mode = request.data.get("pillar_mode", "smart")
@@ -155,6 +162,7 @@ class SPARCV2StreamView(APIView):
                     temp_file_path,
                     concept_meta,
                     request.data.get("project_id"),
+                    enc_key=get_encryption_key_from_session(request.session) if request.user.is_authenticated else None,
                 ),
                 content_type="text/event-stream",
             )
@@ -186,6 +194,7 @@ class SPARCV2StreamView(APIView):
         temp_file_path: Optional[str] = None,
         concept_meta: Optional[Dict[str, str]] = None,
         project_id: Optional[int] = None,
+        enc_key: Optional[bytes] = None,
     ) -> Generator[str, None, None]:
         """Stream evaluation progress and results."""
         logfire = get_logfire()
@@ -249,6 +258,7 @@ class SPARCV2StreamView(APIView):
                             evaluation=evaluation,
                             user=user if user.is_authenticated else None,
                             mode="full",
+                            enc_key=enc_key,
                             event_collector=event_collector,
                         )
                     )

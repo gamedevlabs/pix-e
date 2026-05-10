@@ -72,8 +72,8 @@ class ModelManager:
         self._model_cache: Optional[List[ModelDetails]] = None
         self._cache_timestamp: Optional[float] = None
 
-        # Initialize all available providers
-        self._init_providers()
+        # NOTE: Providers are NOT initialized from env vars anymore.
+        # Use ModelManager.for_user() or for_user_and_key() for per-user API keys.
 
     # ============================================
     # Factory Methods for Per-User Keys
@@ -125,8 +125,10 @@ class ModelManager:
             if name != "ollama" and providers
         )
         if not has_user_keys:
-            logger.info("No user API keys found — falling back to env-var providers")
-            manager._init_providers()
+            raise ProviderError(
+                message="No valid API keys configured. Add an API key in Settings.",
+                provider="none",
+            )
         else:
             # Ensure Ollama is added from config if not already present
             if "ollama" not in manager._provider_list:
@@ -280,89 +282,6 @@ class ModelManager:
         for name, plist in self._provider_list.items():
             if plist:
                 self.providers[name] = plist[0]
-
-    def _init_providers(self) -> None:
-        """
-        Initialize all configured LLM providers from env config.
-
-        Tries to initialize Ollama, OpenAI, and Gemini based on configuration.
-        Providers that fail to initialize are skipped with a warning.
-        """
-        # Initialize Ollama (local)
-        try:
-            ollama = OllamaProvider(
-                {
-                    "base_url": self.config.ollama_base_url,
-                    "timeout": self.config.ollama_timeout_seconds,
-                }
-            )
-            if ollama.is_available():
-                self.providers["ollama"] = ollama
-                self._provider_list.setdefault("ollama", []).append(ollama)
-                logger.info("✅ Ollama provider initialized")
-            else:
-                logger.info("⚠️  Ollama provider not available")
-        except Exception as e:
-            logger.warning(f"⚠️  Ollama provider initialization failed: {e}")
-
-        # Initialize OpenAI (cloud)
-        if self.config.openai_api_key:
-            try:
-                openai = OpenAIProvider(
-                    {
-                        "api_key": self.config.openai_api_key,
-                        "organization": self.config.openai_organization,
-                        "timeout": self.config.openai_timeout_seconds,
-                    }
-                )
-                if openai.is_available():
-                    self.providers["openai"] = openai
-                    self._provider_list.setdefault("openai", []).append(openai)
-                    logger.info("✅ OpenAI provider initialized")
-                else:
-                    logger.warning("⚠️  OpenAI provider not available")
-            except Exception as e:
-                logger.warning(f"⚠️  OpenAI provider initialization failed: {e}")
-        else:
-            logger.info("⚠️  OpenAI API key not configured")
-
-        # Initialize Gemini (cloud)
-        if self.config.gemini_api_key:
-            try:
-                gemini = GeminiProvider(
-                    {
-                        "api_key": self.config.gemini_api_key,
-                        "timeout": self.config.gemini_timeout_seconds,
-                    }
-                )
-                if gemini.is_available():
-                    self.providers["gemini"] = gemini
-                    self._provider_list.setdefault("gemini", []).append(gemini)
-                    logger.info("✅ Gemini provider initialized")
-                else:
-                    logger.warning("⚠️  Gemini provider not available")
-            except Exception as e:
-                logger.warning(f"⚠️  Gemini provider initialization failed: {e}")
-        else:
-            logger.info("⚠️  Gemini API key not configured")
-
-        self._rebuild_model_registry()
-
-        # Ensure at least one provider is available
-        if not self.providers:
-            raise ProviderError(
-                message="No LLM providers available. Configure at least one provider (Ollama, OpenAI, or Gemini).",  # noqa: E501
-                provider="none",
-            )
-
-        provider_names = ", ".join(self.providers.keys())
-        logger.info(
-            f"📊 Initialized {len(self.providers)} provider(s): {provider_names}"
-        )
-
-    # ============================================
-    # Model Listing
-    # ============================================
 
     def list_models(self, refresh: bool = False) -> List[ModelDetails]:
         """
@@ -562,16 +481,15 @@ class ModelManager:
             max_tokens: Maximum tokens to generate
             **kwargs: Provider-specific parameters
         """
-        model = self._find_model_by_name(model_name)
-        provider = self.providers[model.provider]
+        model_details, provider = self._find_model_by_name(model_name)
 
-        if not model.capabilities.json_strict:
+        if not model_details.capabilities.json_strict:
             logger.warning(f"Model {model_name} may not have strict JSON support")
 
         # Use async method if available, fall back to sync wrapped in thread
         if hasattr(provider, "generate_structured_async"):
             return await provider.generate_structured_async(
-                model_name=model.name,
+                model_name=model_details.name,
                 prompt=prompt,
                 response_schema=response_schema,
                 temperature=temperature,
@@ -584,7 +502,7 @@ class ModelManager:
 
             return await asyncio.to_thread(
                 provider.generate_structured,
-                model_name=model.name,
+                model_name=model_details.name,
                 prompt=prompt,
                 response_schema=response_schema,
                 temperature=temperature,

@@ -1377,6 +1377,9 @@ def evaluate_node_agentic(
     model_id: Optional[str] = None,
     strategy: str = "structural_memory",
     dimensions: Optional[List[str]] = None,
+    *,
+    user: Optional[Any] = None,
+    enc_key: Optional[bytes] = None,
 ) -> Dict[str, Any]:
     """
     Convenience function to evaluate a node using agentic workflow.
@@ -1398,8 +1401,12 @@ def evaluate_node_agentic(
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
 
-    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini")
-    model_manager = ModelManager()
+    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini", user=user, enc_key=enc_key)
+    if user and enc_key:
+        from llm import LLMOrchestrator as _Orch
+        model_manager = _Orch.for_user(user, enc_key).model_manager
+    else:
+        model_manager = ModelManager()
 
     strategy_type = StrategyType(strategy)
 
@@ -1426,6 +1433,9 @@ def evaluate_node_monolithic(
     chart_id: str,
     model_id: Optional[str] = None,
     strategy: str = "structural_memory",
+    *,
+    user: Optional[Any] = None,
+    enc_key: Optional[bytes] = None,
 ) -> Dict[str, Any]:
     """
     Convenience function to evaluate a node using monolithic workflow.
@@ -1446,8 +1456,12 @@ def evaluate_node_monolithic(
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
 
-    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini")
-    model_manager = ModelManager()
+    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini", user=user, enc_key=enc_key)
+    if user and enc_key:
+        from llm import LLMOrchestrator as _Orch
+        model_manager = _Orch.for_user(user, enc_key).model_manager
+    else:
+        model_manager = ModelManager()
 
     strategy_type = StrategyType(strategy)
 

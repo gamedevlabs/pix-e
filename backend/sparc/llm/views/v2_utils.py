@@ -109,11 +109,16 @@ def run_router_workflow(
     evaluation: SPARCEvaluation,
     user: Optional[User],
     mode: str,
+    enc_key: Optional[bytes] = None,
     target_aspects: Optional[list[str]] = None,
     event_collector: Optional[EventCollector] = None,
 ):
     config = get_config()
-    model_manager = ModelManager(config)
+    if user and user.is_authenticated and enc_key:
+        from llm import LLMOrchestrator as Orch
+        model_manager = Orch.for_user(user, enc_key).model_manager
+    else:
+        model_manager = ModelManager(config)
     event_collector = event_collector or EventCollector()
 
     workflow = SPARCRouterWorkflow(

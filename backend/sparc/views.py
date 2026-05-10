@@ -11,13 +11,14 @@ from typing import Any, Callable, Optional
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import permissions, status, viewsets
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from backend.llm import LLMOrchestrator
-from backend.llm.logfire_config import get_logfire
-from backend.llm.types import LLMRequest, LLMResponse
-from backend.llm.view_utils import get_model_id
+from llm import LLMOrchestrator
+from llm.logfire_config import get_logfire
+from llm.types import LLMRequest, LLMResponse
+from llm.view_utils import get_model_id
 from game_concept.models import Project
 from game_concept.utils import get_current_project
 
@@ -28,6 +29,28 @@ from sparc.models import SPARCEvaluation, SPARCEvaluationResult
 from sparc.serializers import SPARCEvaluationSerializer
 
 logger = logging.getLogger(__name__)
+
+def _user_friendly_error(e: Exception) -> str:
+    """Translate common provider errors into readable messages."""
+    msg = str(e)
+    if "Failed to parse structured response" in msg:
+        return (
+            "The selected model does not support structured JSON output. "
+            "Try a different model (e.g. kimi-k2.6 or glm-5.1)."
+        )
+    if "Request timed out" in msg:
+        return (
+            "The provider request timed out. "
+            "The model may be overloaded or unavailable. Try again later or switch models."
+        )
+    if "not found" in msg.lower() and "available:" in msg.lower():
+        return (
+            "The selected model is not available on your API provider. "
+            "Pick one from the available models list."
+        )
+    if "invalid api key" in msg.lower():
+        return "Your API key was rejected by the provider. Re-enter a valid key in Settings."
+    return msg
 ASPECT_MAPPING = {
     "player_experience": "player_experience",
     "theme": "theme",
@@ -40,6 +63,16 @@ ASPECT_MAPPING = {
     "purpose": "purpose",
     "opportunities_risks": "opportunities_risks",
 }
+
+def _get_orchestrator(request: Request) -> LLMOrchestrator:
+    """Get a per-user orchestrator using the user's API keys (no env-var fallback)."""
+    from accounts.encryption import get_encryption_key_from_session
+    enc_key = get_encryption_key_from_session(request.session)
+    if not enc_key or not request.user.is_authenticated:
+        raise NotAuthenticated(
+            detail="Encryption key expired. Enter your password to re-enable API key access."
+        )
+    return LLMOrchestrator.for_user(request.user, enc_key)
 
 
 def save_sparc_evaluation(
@@ -235,7 +268,12 @@ def _run_sparc_evaluation(
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                model_name = request.data.get("model", "openai")
+                model_name = request.data.get("model", "")
+                if not model_name:
+                    return JsonResponse(
+                        {"error": "Missing required field: 'model'"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 model_id = get_model_id(model_name)
 
                 llm_request = _build_llm_request(
@@ -271,7 +309,7 @@ def _run_sparc_evaluation(
                 logfire.exception(error_event, error=str(e))
                 logger.exception("Error in SPARC evaluation: %s", e)
                 return JsonResponse(
-                    {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"error": _user_friendly_error(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
 
@@ -303,11 +341,9 @@ class SPARCQuickScanView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.orchestrator = LLMOrchestrator()
+
 
     def post(self, request: Request) -> JsonResponse:
         """Execute quick scan evaluation with agentic execution."""
@@ -318,7 +354,7 @@ class SPARCQuickScanView(APIView):
 
         return _run_sparc_evaluation(
             request=request,
-            orchestrator=self.orchestrator,
+            orchestrator=_get_orchestrator(request),
             operation="quick_scan",
             mode="quick_scan",
             span_name=f"sparc.evaluate.quick_scan.{context_strategy}.agentic",
@@ -367,17 +403,15 @@ class SPARCMonolithicView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.orchestrator = LLMOrchestrator()
+
 
     def post(self, request: Request) -> JsonResponse:
         """Execute monolithic evaluation with handler-based execution."""
         return _run_sparc_evaluation(
             request=request,
-            orchestrator=self.orchestrator,
+            orchestrator=_get_orchestrator(request),
             operation="monolithic",
             mode="monolithic",
             span_name="sparc.evaluate.monolithic.default.monolithic",
@@ -407,6 +441,6 @@ class SPARCEvaluationViewSet(viewsets.ReadOnlyModelViewSet):
     Read-only access to evaluation history.
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = SPARCEvaluationSerializer
     queryset = SPARCEvaluation.objects.all().order_by("-created_at")

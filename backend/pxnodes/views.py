@@ -262,6 +262,8 @@ class ContextArtifactsPrecomputeView(APIView):
         llm_model = request.data.get("llm_model", "gpt-4o-mini")
         embedding_model = request.data.get("embedding_model", "text-embedding-3-small")
         skip_llm = request.data.get("skip_llm", False)
+        from accounts.encryption import get_encryption_key_from_session as _get_key
+        precompute_enc_key = _get_key(request.session)
         scope = request.data.get("scope", "all")  # global | node | all
 
         try:
@@ -298,6 +300,8 @@ class ContextArtifactsPrecomputeView(APIView):
                 llm_provider = LLMProviderAdapter(
                     model_name=llm_model,
                     temperature=0,
+                    user=request.user if request.user.is_authenticated else None,
+                    enc_key=precompute_enc_key,
                 )
             inventory = ArtifactInventory(llm_provider=llm_provider)
 
@@ -559,6 +563,8 @@ class CoherenceEvaluateView(APIView):
             node_ids = request.data.get("node_ids")
             iterations = request.data.get("iterations", 3)
             llm_model = request.data.get("llm_model", "gpt-4o-mini")
+            from accounts.encryption import get_encryption_key_from_session as _get_key
+            enc_key = _get_key(request.session)
             project = get_current_project(request.user)
 
             # Verify user owns the chart
@@ -591,6 +597,8 @@ class CoherenceEvaluateView(APIView):
                 llm_provider = LLMProviderAdapter(
                     model_name=llm_model,
                     temperature=0,
+                    user=request.user if request.user.is_authenticated else None,
+                    enc_key=enc_key,
                 )
 
                 # Create evaluator
@@ -724,6 +732,8 @@ class StrategyEvaluateView(APIView):
         project = get_current_project(request.user)
         execution_mode = request.data.get("execution_mode", "monolithic")
         llm_model = request.data.get("llm_model", "gpt-4o-mini")
+        from accounts.encryption import get_encryption_key_from_session as _get_key
+        enc_key = _get_key(request.session)
 
         span_name = f"context.evaluate.pxnodes.{strategy}.{execution_mode}"
         with logfire.span(
@@ -818,6 +828,8 @@ class StrategyEvaluateView(APIView):
                 llm_provider = create_llm_provider(
                     model_name=llm_model,
                     temperature=0,
+                    user=request.user if request.user.is_authenticated else None,
+                    enc_key=enc_key,
                 )
 
                 strategy_type = StrategyType(strategy)
@@ -831,7 +843,11 @@ class StrategyEvaluateView(APIView):
                     PxNodesCoherenceWorkflow,
                 )
 
-                model_manager = ModelManager()
+                if enc_key:
+                    from llm import LLMOrchestrator as _Orch
+                    model_manager = _Orch.for_user(request.user, enc_key).model_manager
+                else:
+                    model_manager = ModelManager()
 
                 if execution_mode == "agentic":
                     # Use agentic workflow with 4 parallel dimension agents

@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     "player_expectations",
     "moviescriptevaluator",
     "player_expectations_new",
+    "game_concept",
+    "sparc",
 ]
 
 REST_FRAMEWORK = {

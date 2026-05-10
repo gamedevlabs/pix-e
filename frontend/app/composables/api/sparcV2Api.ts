@@ -21,7 +21,7 @@ export function useSparcV2Api() {
       const formData = new FormData()
       formData.append('game_text', gameText)
       formData.append('context', context)
-      formData.append('model', llm.active_llm || 'openai')
+      formData.append('model', llm.activeModelName )
       formData.append('pillar_mode', pillarMode)
       formData.append('context_strategy', contextStrategy)
       formData.append('document', document)
@@ -41,7 +41,7 @@ export function useSparcV2Api() {
         body: {
           game_text: gameText,
           context: context,
-          model: llm.active_llm,
+          model: llm.activeModelName,
           pillar_mode: pillarMode,
           context_strategy: contextStrategy,
         },
@@ -74,7 +74,7 @@ export function useSparcV2Api() {
         const formData = new FormData()
         formData.append('game_text', gameText)
         formData.append('context', context)
-        formData.append('model', llm.active_llm || 'openai')
+        formData.append('model', llm.activeModelName )
         formData.append('pillar_mode', pillarMode)
         formData.append('context_strategy', contextStrategy)
         formData.append('document', document)
@@ -86,7 +86,7 @@ export function useSparcV2Api() {
         body = JSON.stringify({
           game_text: gameText,
           context: context,
-          model: llm.active_llm,
+          model: llm.activeModelName,
           pillar_mode: pillarMode,
           context_strategy: contextStrategy,
         })
@@ -165,7 +165,7 @@ export function useSparcV2Api() {
         aspect: aspect,
         context: context,
         context_strategy: contextStrategy,
-        model: llm.active_llm,
+        model: llm.activeModelName,
       },
       credentials: 'include',
       headers: {
@@ -189,7 +189,7 @@ export function useSparcV2Api() {
           aspects: aspects,
           context: context,
           context_strategy: contextStrategy,
-          model: llm.active_llm,
+          model: llm.activeModelName,
         },
         credentials: 'include',
         headers: {

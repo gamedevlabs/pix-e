@@ -243,7 +243,12 @@ const groups = computed(() => [
             "
             value-key="value"
             :icon="llmStore.activeModelIcon"
-            class="w-56"
+            class="max-w-[20rem]"
+            :ui="{
+              width: 'max-w-[20rem]',
+              value: 'truncate',
+              option: 'truncate',
+            }"
           />
           <UButton
             v-else

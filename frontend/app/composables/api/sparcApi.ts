@@ -8,7 +8,7 @@ export function useSparcApi() {
       body: {
         game_text: gameText,
         context: context,
-        model: llm.active_llm,
+        model: llm.activeModelName,
       },
       credentials: 'include',
       headers: {
@@ -23,7 +23,7 @@ export function useSparcApi() {
       body: {
         game_text: gameText,
         context: context,
-        model: llm.active_llm,
+        model: llm.activeModelName,
       },
       credentials: 'include',
       headers: {

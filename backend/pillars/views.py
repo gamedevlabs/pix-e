@@ -4,14 +4,22 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from llm import LLMOrchestrator, get_config
+from llm import get_config
+from llm.mixins import UserLLMOrchestratorMixin
+from llm.exceptions import AuthenticationError, OrchestratorError, ProviderError
 from llm.types import LLMRequest
 
 # Import handlers to trigger auto-registration
 from pillars.llm import handlers  # noqa: F401
 
-from .models import GameDesignDescription, Pillar
-from .serializers import GameDesignSerializer, PillarSerializer
+from accounts.models import UserApiKey
+from .models import Pillar
+from .serializers import PillarSerializer
+from .view_utils import (
+    build_context_payload,
+    get_project_concept,
+    handle_orchestrator_error,
+)
 
 # Create your views here.
 
@@ -40,32 +48,7 @@ class PillarViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class DesignView(ModelViewSet):
-    serializer_class = GameDesignSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return GameDesignDescription.objects.filter(user=self.request.user)
-
-    def get_object(self):
-        return GameDesignDescription.objects.get(user=self.request.user)
-
-    @action(detail=False, methods=["GET"], url_path="get_or_create")
-    def get_or_create(self, request):
-        obj, created = GameDesignDescription.objects.get_or_create(
-            user=self.request.user, defaults={"description": ""}
-        )
-        serializer = self.get_serializer(obj)
-        return Response(
-            serializer.data,
-            status=201 if created else 200,
-        )
-
-
-class PillarFeedbackView(ViewSet):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.orchestrator = LLMOrchestrator()
+class PillarFeedbackView(UserLLMOrchestratorMixin, ViewSet):
 
     @action(detail=True, methods=["POST"], url_path="validate")
     def validate_pillar(self, request, pk):
@@ -85,16 +68,12 @@ class PillarFeedbackView(ViewSet):
             )
 
             # Execute through orchestrator
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
 
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in validate_pillar: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)
 
     @action(detail=True, methods=["POST"], url_path="fix")
     def fix_pillar(self, request, pk):
@@ -114,7 +93,7 @@ class PillarFeedbackView(ViewSet):
             )
 
             # Execute through orchestrator
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
 
             # Update pillar with improved version
             improved = response.results
@@ -127,17 +106,10 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse(data, status=200)
 
         except Exception as e:
-            print(f"Error in fix_pillar: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)
 
 
-class LLMFeedbackView(ViewSet):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.orchestrator = LLMOrchestrator()
+class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
 
     @action(detail=False, methods=["POST"], url_path="overall")
     def overall_feedback(self, request):
@@ -146,14 +118,12 @@ class LLMFeedbackView(ViewSet):
         This replicates the old evaluate_pillars_in_context behavior.
         """
         try:
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
-            ).first()
+            game_concept = get_project_concept(self.request.user)
             pillars = list(Pillar.objects.filter(user=request.user))
 
-            if not design:
+            if not game_concept:
                 return JsonResponse(
-                    {"error": "No game design description found"}, status=404
+                    {"error": "No game concept found. Create a game concept first."}, status=404
                 )
 
             model = request.data.get("model", "gemini")
@@ -163,25 +133,25 @@ class LLMFeedbackView(ViewSet):
             completeness_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_completeness",
-                data={"pillars_text": pillars_text, "context": design.description},
+                data={"pillars_text": pillars_text, "context": game_concept.content},
                 model_id=model_id,
             )
             contradictions_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_contradictions",
-                data={"pillars_text": pillars_text, "context": design.description},
+                data={"pillars_text": pillars_text, "context": game_concept.content},
                 model_id=model_id,
             )
             additions_request = LLMRequest(
                 feature="pillars",
                 operation="suggest_additions",
-                data={"pillars_text": pillars_text, "context": design.description},
+                data={"pillars_text": pillars_text, "context": game_concept.content},
                 model_id=model_id,
             )
 
-            completeness_response = self.orchestrator.execute(completeness_request)
-            contradictions_response = self.orchestrator.execute(contradictions_request)
-            additions_response = self.orchestrator.execute(additions_request)
+            completeness_response = self.get_llm_orchestrator(request).execute(completeness_request)
+            contradictions_response = self.get_llm_orchestrator(request).execute(contradictions_request)
+            additions_response = self.get_llm_orchestrator(request).execute(additions_request)
 
             combined_result = {
                 "coverage": completeness_response.results,
@@ -192,23 +162,17 @@ class LLMFeedbackView(ViewSet):
             return JsonResponse(combined_result, status=200)
 
         except Exception as e:
-            print(f"Error in overall_feedback: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="completeness")
     def completeness(self, request):
         try:
             pillars = list(Pillar.objects.filter(user=request.user))
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
-            ).first()
+            game_concept = get_project_concept(self.request.user)
 
-            if not design:
+            if not game_concept:
                 return JsonResponse(
-                    {"error": "No game design description found"}, status=404
+                    {"error": "No game concept found. Create a game concept first."}, status=404
                 )
 
             model = request.data.get("model", "gemini")
@@ -218,32 +182,26 @@ class LLMFeedbackView(ViewSet):
                 operation="evaluate_completeness",
                 data={
                     "pillars_text": format_pillars_text(pillars),
-                    "context": design.description,
+                    "context": game_concept.content,
                 },
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in completeness: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="contradictions")
     def contradictions(self, request):
         try:
             pillars = list(Pillar.objects.filter(user=request.user))
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
-            ).first()
+            game_concept = get_project_concept(self.request.user)
 
-            if not design:
+            if not game_concept:
                 return JsonResponse(
-                    {"error": "No game design description found"}, status=404
+                    {"error": "No game concept found. Create a game concept first."}, status=404
                 )
 
             model = request.data.get("model", "gemini")
@@ -253,32 +211,26 @@ class LLMFeedbackView(ViewSet):
                 operation="evaluate_contradictions",
                 data={
                     "pillars_text": format_pillars_text(pillars),
-                    "context": design.description,
+                    "context": game_concept.content,
                 },
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in contradictions: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="additions")
     def additions(self, request):
         try:
             pillars = list(Pillar.objects.filter(user=request.user))
-            design = GameDesignDescription.objects.filter(
-                user=self.request.user
-            ).first()
+            game_concept = get_project_concept(self.request.user)
 
-            if not design:
+            if not game_concept:
                 return JsonResponse(
-                    {"error": "No game design description found"}, status=404
+                    {"error": "No game concept found. Create a game concept first."}, status=404
                 )
 
             model = request.data.get("model", "gemini")
@@ -288,20 +240,16 @@ class LLMFeedbackView(ViewSet):
                 operation="suggest_additions",
                 data={
                     "pillars_text": format_pillars_text(pillars),
-                    "context": design.description,
+                    "context": game_concept.content,
                 },
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in additions: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)
 
     @action(detail=False, methods=["POST"], url_path="context")
     def context(self, request):
@@ -324,12 +272,8 @@ class LLMFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = self.get_llm_orchestrator(request).execute(llm_request)
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
-            print(f"Error in context: {e}")
-            import traceback
-
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)}, status=500)
+            return handle_orchestrator_error(request, e)

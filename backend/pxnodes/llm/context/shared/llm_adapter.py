@@ -29,6 +29,9 @@ class LLMProviderAdapter:
         model_name: Optional[str] = None,
         temperature: float = 0,
         max_tokens: Optional[int] = None,
+        *,
+        user: Optional[Any] = None,
+        enc_key: Optional[bytes] = None,
     ):
         """
         Initialize LLM adapter.
@@ -38,8 +41,16 @@ class LLMProviderAdapter:
             model_name: Specific model to use (auto-selects if not provided)
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate
+            user: Django user for per-user API keys
+            enc_key: Session encryption key for per-user API keys
         """
-        self.model_manager = model_manager or ModelManager()
+        if model_manager:
+            self.model_manager = model_manager
+        elif user and enc_key:
+            from llm import LLMOrchestrator
+            self.model_manager = LLMOrchestrator.for_user(user, enc_key).model_manager
+        else:
+            self.model_manager = ModelManager()
         self.model_name = model_name
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -122,6 +133,9 @@ class LLMProviderAdapter:
 def create_llm_provider(
     model_name: Optional[str] = None,
     temperature: float = 0,
+    *,
+    user: Optional[Any] = None,
+    enc_key: Optional[bytes] = None,
 ) -> LLMProviderAdapter:
     """
     Create an LLM provider adapter.
@@ -129,11 +143,15 @@ def create_llm_provider(
     Args:
         model_name: Specific model to use (auto-selects if None)
         temperature: Sampling temperature
+        user: Django user for per-user API keys
+        enc_key: Session encryption key for per-user API keys
 
     Returns:
         LLMProviderAdapter instance
     """
     return LLMProviderAdapter(
         model_name=model_name,
-        temperature=0,
+        temperature=temperature,
+        user=user,
+        enc_key=enc_key,
     )

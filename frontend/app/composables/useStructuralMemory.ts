@@ -5,7 +5,8 @@
  * for PX nodes in selected charts.
  */
 
-const BASE_URL = 'http://localhost:8000/'
+const config = useRuntimeConfig()
+const BASE_URL = config.public.apiBase + '/'
 
 export interface GenerationOptions {
   chartIds: string[]
@@ -124,7 +125,7 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<GenerationResponse>(`${BASE_URL}structural-memory/generate/`, {
+      const response = await $fetch<GenerationResponse>(`${BASE_URL}api/structural-memory/generate/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -166,7 +167,7 @@ export function useStructuralMemory() {
    */
   async function getStats(chartIds: string[]): Promise<ChartStats[]> {
     try {
-      const response = await $fetch<StatsResponse>(`${BASE_URL}structural-memory/stats/`, {
+      const response = await $fetch<StatsResponse>(`${BASE_URL}api/structural-memory/stats/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -209,7 +210,7 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<EvaluationResponse>(`${BASE_URL}structural-memory/evaluate/`, {
+      const response = await $fetch<EvaluationResponse>(`${BASE_URL}api/structural-memory/evaluate/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
