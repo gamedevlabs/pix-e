@@ -31,7 +31,10 @@ class UserLLMOrchestratorMixin:
         enc_key = get_encryption_key_from_session(request.session)
         if not enc_key:
             raise NotAuthenticated(
-                detail="Encryption key expired. Enter your password to re-enable API key access."
+                detail=(
+                    "Encryption key expired. Enter your password"
+                    " to re-enable API key access."
+                ),
             )
 
         api_key_id = request.data.get("api_key_id") or request.query_params.get(
