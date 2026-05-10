@@ -13,19 +13,29 @@ def create_projects_and_attach_elements(apps, schema_editor):
     user_ids = set()
 
     user_ids.update(
-        Pillar.objects.filter(project__isnull=True).values_list("user_id", flat=True).distinct()
+        Pillar.objects.filter(project__isnull=True)
+        .values_list("user_id", flat=True)
+        .distinct()
     )
     user_ids.update(
-        GameConcept.objects.filter(project__isnull=True).values_list("user_id", flat=True).distinct()
+        GameConcept.objects.filter(project__isnull=True)
+        .values_list("user_id", flat=True)
+        .distinct()
     )
     user_ids.update(
-        PxChart.objects.filter(project__isnull=True).values_list("owner_id", flat=True).distinct()
+        PxChart.objects.filter(project__isnull=True)
+        .values_list("owner_id", flat=True)
+        .distinct()
     )
     user_ids.update(
-        PxNode.objects.filter(project__isnull=True).values_list("owner_id", flat=True).distinct()
+        PxNode.objects.filter(project__isnull=True)
+        .values_list("owner_id", flat=True)
+        .distinct()
     )
     user_ids.update(
-        PxComponentDefinition.objects.filter(project__isnull=True).values_list("owner_id", flat=True).distinct()
+        PxComponentDefinition.objects.filter(project__isnull=True)
+        .values_list("owner_id", flat=True)
+        .distinct()
     )
 
     for user_id in user_ids:
@@ -74,7 +84,9 @@ def reverse_migration(apps, schema_editor):
     GameConcept.objects.filter(project__in=migrated_projects).update(project=None)
     PxChart.objects.filter(project__in=migrated_projects).update(project=None)
     PxNode.objects.filter(project__in=migrated_projects).update(project=None)
-    PxComponentDefinition.objects.filter(project__in=migrated_projects).update(project=None)
+    PxComponentDefinition.objects.filter(project__in=migrated_projects).update(
+        project=None
+    )
 
     migrated_projects.delete()
 
@@ -87,7 +99,7 @@ class Migration(migrations.Migration):
         ("pillars", "0014_alter_pillar_project"),
         ("game_concept", "0005_delete_project"),
         ("pxcharts", "0012_alter_pxchart_project_alter_pxchartcontainer_owner"),
-        ("pxnodes", "0014_alter_pxcomponentdefinition_owner_and_more")
+        ("pxnodes", "0014_alter_pxcomponentdefinition_owner_and_more"),
     ]
 
     operations = [
