@@ -95,8 +95,10 @@ def get_encryption_key_from_session(session) -> Optional[bytes]:
         session.pop(_SESSION_EXPIRES_AT_NAME, None)
         return None
 
-    # Bump TTL on every access — active users stay authenticated
-    session[_SESSION_EXPIRES_AT_NAME] = time.time() + KEY_TTL_SECONDS
+    # Only extend the TTL if more than half has elapsed
+    # to avoid unnecessary session mutations on every read.
+    if expires_at - time.time() < KEY_TTL_SECONDS // 2:
+        session[_SESSION_EXPIRES_AT_NAME] = time.time() + KEY_TTL_SECONDS
     return key.encode("utf-8")
 
 

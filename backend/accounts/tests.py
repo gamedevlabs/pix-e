@@ -439,7 +439,10 @@ class ValidationTests(TestCase):
 # ============================================================================
 
 
-@override_settings(API_KEY_FINGERPRINT_PEPPER="test_pepper")
+@override_settings(
+    API_KEY_FINGERPRINT_PEPPER="test_pepper",
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
+)
 class UserApiKeyAPITests(TestCase):
     """Tests for the ApiKeyViewSet CRUD and test endpoint."""
 
@@ -715,9 +718,9 @@ class UserApiKeyAPITests(TestCase):
     @patch("accounts.views._list_models_for_key")
     def test_models_endpoint_returns_model_list(self, mock_list_models):
         """Verify GET /models/ returns models from active keys."""
-        mock_list_models.return_value = [
-            MagicMock(name="gpt-4o", provider="openai", type="cloud"),
-        ]
+        m = MagicMock(provider="openai", type="cloud")
+        m.name = "gpt-4o"
+        mock_list_models.return_value = [m]
         self._create_key_in_db()
         _login_and_store_key(self.client, self.user)
         resp = self.client.get(self.list_url + "models/")
@@ -827,6 +830,7 @@ class UserLLMOrchestratorMixinTests(TestCase):
 
 @override_settings(
     API_KEY_FINGERPRINT_PEPPER="test_pepper",
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
     REST_FRAMEWORK={
         "DEFAULT_THROTTLE_CLASSES": [
             "rest_framework.throttling.UserRateThrottle",
