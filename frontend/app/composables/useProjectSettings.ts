@@ -78,7 +78,9 @@ export function useProjectSettings() {
       formData.description = project.description
       formData.genres = project.genres
       formData.target_platforms = (
-        Array.isArray(project.target_platforms) ? project.target_platforms : [project.target_platforms]
+        Array.isArray(project.target_platforms)
+          ? project.target_platforms
+          : [project.target_platforms]
       ) as ProjectTargetPlatform[]
       formData.icon = project.icon || null
     } catch (err) {
@@ -127,7 +129,7 @@ export function useProjectSettings() {
         description: 'Failed to save project settings',
         color: 'error',
       })
-      console.log("error", err)
+      console.log('error', err)
     } finally {
       isSaving.value = false
     }

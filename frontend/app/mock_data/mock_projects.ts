@@ -77,7 +77,8 @@ export class ProjectApiEmulator {
       name: data.name ?? existing.name,
       description: data.description ?? existing.description,
       genres: data.genres ?? existing.genres,
-      target_platforms: (data.target_platforms as Project['target_platforms']) ?? existing.target_platforms,
+      target_platforms:
+        (data.target_platforms as Project['target_platforms']) ?? existing.target_platforms,
       created_at: existing.created_at,
       updated_at: new Date().toISOString(),
       icon: (data.icon as string | null) ?? existing.icon ?? null,

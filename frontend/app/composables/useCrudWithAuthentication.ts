@@ -8,7 +8,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   const API_URL = config.public.apiBase + '/' + apiUrl
   const projectStore = useProject()
 
-  async function fetchAll() : Promise<T[]> {
+  async function fetchAll(): Promise<T[]> {
     loading.value = true
     try {
       const data = await $fetch<T[]>(API_URL, {
@@ -46,7 +46,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
     }
   }
 
-  async function createItem(payload: Partial<T>) : Promise<T> {
+  async function createItem(payload: Partial<T>): Promise<T> {
     try {
       const data = await $fetch<T>(API_URL, {
         method: 'POST',
@@ -108,7 +108,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
     () => projectStore.activeProjectId,
     async (nextId, previousId) => {
       if (previousId !== null && nextId !== previousId) {
-        console.log("weird fetchAll going on")
+        console.log('weird fetchAll going on')
         await fetchAll()
       }
     },

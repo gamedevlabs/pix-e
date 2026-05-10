@@ -1,5 +1,4 @@
 ﻿import type { Project } from '~/utils/project'
-import { ProjectApiEmulator } from '~/mock_data/mock_projects'
 
 export const useProjectHandler = () => {
   // state

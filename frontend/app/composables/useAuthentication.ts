@@ -57,7 +57,6 @@ export function useAuthentication() {
       // Rules: ESLint: no-explicit-any, vue: catch-only-any-or-unknown
       return false
     }
-
   }
 
   async function logout(): Promise<boolean> {

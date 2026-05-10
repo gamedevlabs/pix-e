@@ -150,7 +150,9 @@ export function useCreateProjectProcess() {
       form.shortDescription = project.description
       form.genres = project.genres
       form.targetPlatform = (
-        Array.isArray(project.target_platforms) ? project.target_platforms : [project.target_platforms]
+        Array.isArray(project.target_platforms)
+          ? project.target_platforms
+          : [project.target_platforms]
       ) as ProjectTargetPlatform[]
       form.icon = project.icon || null
 
