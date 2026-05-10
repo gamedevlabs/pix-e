@@ -63,6 +63,18 @@ export function usePxChartPathCalculation(
     return edges.value.filter(edge => edge.data.locks.every((lock: PxLock) => isSoftGate(lock)))
   })
 
+  function mergePxKeySets(keyset1: PxKeySet, keyset2: PxKeySet) {
+    const res = { ...keyset1 }
+    for (const [def, count] of Object.entries(keyset2)) {
+      if (!res[def]) {
+        res[def] = count
+      } else {
+        res[def] += count
+      }
+    }
+    return res
+  }
+  
   const pathNodes = computed(() => {
     return path.value.map(nodeId => nodes.value.find(node => node.id === nodeId)!)
   })
@@ -328,15 +340,9 @@ export function usePxChartPathCalculation(
             // console.log(`inventoryAfterConsumption: ${JSON.stringify(inventoryAfterConsumption)}`)
 
             // unprocessed nodes only have one keyset, so we can just index into the array
-            q[idx]!.keys = inventoryAfterConsumption.map((keyset) => ({
-              ...keyset,
-              ...q[idx]!.keys[0],
-            }))
+            q[idx]!.keys = inventoryAfterConsumption.map((keyset) => (mergePxKeySets(keyset, q[idx]!.keys[0]!)))
           } else if (useLocks && settings.value.ignore_consumable_keys) {
-            q[idx]!.keys = inventory.map((keyset) => ({
-              ...keyset,
-              ...q[idx]!.keys[0],
-            }))
+            q[idx]!.keys = inventory.map((keyset) => (mergePxKeySets(keyset, q[idx]!.keys[0]!)))
           }
 
           q.sort((n1, n2) => n2.prio - n1.prio)
