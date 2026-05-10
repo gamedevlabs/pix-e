@@ -46,7 +46,7 @@ class UserApiKeyAdmin(admin.ModelAdmin):
             {
                 "fields": ["key_fingerprint", "masked_key"],
                 "classes": ["collapse"],
-                "description": "Sensitive fields — encrypted_key is excluded from admin views",
+                "description": "Sensitive fields — encrypted_key excluded",
             },
         ),
         (

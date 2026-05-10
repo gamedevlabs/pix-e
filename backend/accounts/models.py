@@ -39,13 +39,16 @@ class UserApiKey(models.Model):
     )
     masked_key = models.CharField(
         max_length=20,
-        help_text="Pre-computed masked display key (e.g. '\u2022\u2022\u2022\u2022abcd')",
+        help_text="Pre-computed masked display key (e.g. '••••abcd')",
     )
     base_url = models.URLField(
         max_length=500,
         blank=True,
         default="",
-        help_text="Custom API base URL — e.g. https://api.openai.com/v1 (NOT the completions endpoint)",
+        help_text=(
+            "Custom API base URL — e.g. https://api.openai.com/v1"
+            " (NOT the completions endpoint)"
+        ),
     )
     is_active = models.BooleanField(default=True)
     disabled_reason = models.CharField(

@@ -12,17 +12,15 @@ from unittest.mock import MagicMock, patch
 
 from cryptography.fernet import InvalidToken
 from django.contrib.auth.models import User
-from django.db import transaction
 from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
+from rest_framework.test import APIClient, APIRequestFactory
 
 from accounts.constants import ProviderType
 from accounts.encryption import (
     _SESSION_EXPIRES_AT_NAME,
     _SESSION_KEY_NAME,
-    KEY_TTL_SECONDS,
     clear_key_from_session,
     decrypt_api_key,
     derive_encryption_key,
@@ -73,7 +71,10 @@ def _masked(raw_key: str) -> str:
 
 
 def _login_and_store_key(client: APIClient, user: User) -> None:
-    """Authenticate the client as *user* and store a valid encryption key in the session."""
+    """
+    Authenticate the client as *user* and store a valid
+    encryption key in the session.
+    """
     client.force_login(user)
     session = client.session
     store_key_in_session(session, _TEST_FERNET_KEY)
@@ -263,7 +264,7 @@ class EncryptionTests(TestCase):
     # --- session helpers ----------------------------------------------------
 
     def test_store_and_get_session_round_trip(self):
-        """Verify store_key_in_session → get_encryption_key_from_session returns the key."""
+        """Verify store → get encryption key from session returns the key."""
         session = {}
         store_key_in_session(session, self.enc_key)
         self.assertIn(_SESSION_KEY_NAME, session)
@@ -292,14 +293,15 @@ class EncryptionTests(TestCase):
             self.assertIsNone(retrieved)
 
     def test_get_encryption_key_bumps_ttl_on_access(self):
-        """Verify TTL is bumped forward on every successful access."""
+        """Verify TTL is bumped forward when sufficient time has elapsed."""
         session = {}
         store_key_in_session(session, self.enc_key)
         original_expires = session[_SESSION_EXPIRES_AT_NAME]
 
-        # Access the key (should bump TTL)
-        retrieved = get_encryption_key_from_session(session)
-        self.assertEqual(retrieved, self.enc_key)
+        # Advance time by 11s so TTL extension threshold is crossed
+        with patch("accounts.encryption.time.time", return_value=time.time() + 11):
+            retrieved = get_encryption_key_from_session(session)
+            self.assertEqual(retrieved, self.enc_key)
         # Verify the TTL was extended
         self.assertGreater(session[_SESSION_EXPIRES_AT_NAME], original_expires)
 
@@ -549,7 +551,7 @@ class UserApiKeyAPITests(TestCase):
         self.assertEqual(UserApiKey.objects.filter(user=self.user).count(), 1)
 
     def test_create_rejects_duplicate_fingerprint(self):
-        """Verify creating a key with the same raw key (same fingerprint) is rejected."""
+        """Verify creating a key with same raw key (same fingerprint) is rejected."""
         self._create_key_in_db()
         _login_and_store_key(self.client, self.user)
         payload = {
@@ -830,7 +832,6 @@ class UserLLMOrchestratorMixinTests(TestCase):
 
 @override_settings(
     API_KEY_FINGERPRINT_PEPPER="test_pepper",
-    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
     REST_FRAMEWORK={
         "DEFAULT_THROTTLE_CLASSES": [
             "rest_framework.throttling.UserRateThrottle",

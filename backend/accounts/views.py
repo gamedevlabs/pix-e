@@ -133,7 +133,7 @@ class ReestablishKeyView(APIView):
                 {
                     "error": (
                         "Encryption salt not found. "
-                        "Please log out and log in again to initialize your encryption salt."
+                        "Log out and log in again to initialize your encryption salt."
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -268,9 +268,7 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
             # User is logged in but encryption key TTL expired.
             # Return 401 — frontend shows password modal.
             return Response(
-                {
-                    "error": "Encryption key expired. Enter your password to re-enable API key access."
-                },
+                {"error": "Encryption key expired. Re-enter your password."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -290,7 +288,7 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
                 {"name": m.name, "provider": m.provider, "type": m.type} for m in models
             ]
 
-            # Always include the key entry even with empty models (key exists, just no models)
+            # Always include the key entry even with empty models
             result.append(
                 {
                     "id": str(key_record.id),

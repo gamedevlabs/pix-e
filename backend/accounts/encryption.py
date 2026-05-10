@@ -9,7 +9,8 @@ and stored ONLY in the server-side Django session (never persisted).
 Key expiry is tracked INDEPENDENTLY from the Django session via a UTC
 timestamp in the session. This means:
 - The Django session can stay alive for days (user stays logged in | configurable)
-- The encryption key expires after KEY_TTL_SECONDS (30s for testing) or when logging out or when closing the tab
+- The encryption key expires after KEY_TTL_SECONDS (30s for testing)
+  or when logging out or when closing the tab
 - When the key expires, the user gets a password prompt to re-derive it
 - The ReestablishKeyView only needs the password, not a new login
 """
@@ -20,14 +21,15 @@ import os
 import time
 from typing import Optional
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
 
 # OWASP-recommended iterations for PBKDF2-HMAC-SHA256 as of 2024.
-# Source: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2
+# Source: https://cheatsheetseries.owasp.org/cheatsheets/
+#   Password_Storage_Cheat_Sheet.html#pbkdf2
 # Current recommendation: 600_000 iterations (updated Dec 2023).
 _PBKDF2_ITERATIONS = 600_000
 _SESSION_KEY_NAME = "user_encryption_key"
@@ -95,9 +97,9 @@ def get_encryption_key_from_session(session) -> Optional[bytes]:
         session.pop(_SESSION_EXPIRES_AT_NAME, None)
         return None
 
-    # Only extend the TTL if more than half has elapsed
+    # Only extend the TTL if at least 10s has elapsed since last bump
     # to avoid unnecessary session mutations on every read.
-    if expires_at - time.time() < KEY_TTL_SECONDS // 2:
+    if expires_at - time.time() < KEY_TTL_SECONDS - 10:
         session[_SESSION_EXPIRES_AT_NAME] = time.time() + KEY_TTL_SECONDS
     return key.encode("utf-8")
 
