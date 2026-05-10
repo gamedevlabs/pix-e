@@ -39,22 +39,40 @@ export function useAuthentication() {
     }
   }
 
+  let authPromise: Promise<boolean> | null = null
+
   async function checkAuthentication(): Promise<boolean> {
-    try {
-      checkedLogin.value = true
-      user.value = await $fetch<User>(config.public.apiBase + '/api/accounts/me/', {
-        method: 'GET',
-        credentials: 'include',
-        headers: useRequestHeaders(['cookie']),
-      })
-      return true
-    } catch {
-      user.value = null
-      // Handling the exception more precise requires dancing around the ESLinter and Vues internal ruleset
-      // which would not even remove the console error on the 401 Unauthorized
-      // Rules: ESLint: no-explicit-any, vue: catch-only-any-or-unknown
-      return false
+    if (checkedLogin.value) {
+      return !!user.value
     }
+
+    if (authPromise) {
+      return authPromise
+    }
+
+    authPromise = (async () => {
+      try {
+        user.value = await $fetch<User>(
+          config.public.apiBase + '/api/accounts/me/',
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: import.meta.server
+              ? useRequestHeaders(['cookie'])
+              : undefined,
+          },
+        )
+        return true
+      } catch {
+        user.value = null
+        return false
+      } finally {
+        checkedLogin.value = true
+        authPromise = null
+      }
+    })()
+
+    return authPromise
   }
 
   async function logout(): Promise<boolean> {

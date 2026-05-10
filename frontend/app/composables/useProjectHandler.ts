@@ -12,13 +12,14 @@ export const useProjectHandler = () => {
 
   const isProjectSelected = computed(() => !!currentProjectId.value)
 
-  const { createItem } = useCrudWithAuthentication<Project>('api/projects/')
+  const { createItem, fetchAll } = useCrudWithAuthentication<Project>('api/projects/')
 
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
-    const list = await mock_projects.getAll()
-    projects.value = list
-    return list
+    //const list = await mock_projects.getAll()
+    const projectsList = await fetchAll()
+    projects.value = projectsList
+    return projectsList
   }
 
   const fetchProjectById = async (id: string): Promise<Project | null> => {
@@ -57,10 +58,10 @@ export const useProjectHandler = () => {
   }
 
   const createProject = async (payload: Partial<Project>): Promise<Project> => {
-    const created = await mock_projects.create(payload)
+    //const created = await mock_projects.create(payload)
     const data = createItem(payload)
     projects.value = await mock_projects.getAll()
-    return created
+    return data
   }
 
   const updateProject = async (id: string, data: Partial<Project>): Promise<Project | null> => {
