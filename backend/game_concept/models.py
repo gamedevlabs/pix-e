@@ -20,8 +20,6 @@ class GameConcept(models.Model):
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name="game_concepts",
     )
     content = models.TextField(help_text="The game idea text")

@@ -8,8 +8,6 @@ class Pillar(models.Model):
     project = models.ForeignKey(
         "projects.Project",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name="pillars",
     )
 
