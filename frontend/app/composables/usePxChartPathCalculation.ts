@@ -161,39 +161,42 @@ export function usePxChartPathCalculation(
   }
 
   // removes consumed keys for each valid combination of inventory keyset and unlocking key combination
-  function removeConsumed(inventory: PxKeySet[], locks: PxLock[]) : PxKeySet[] {
+  function removeConsumed(inventory: PxKeySet[], locks: PxLock[]): PxKeySet[] {
     if (!locks.length) return inventory
 
     const consumableRequirements = locks
-        .map(lock => pxLockDefinitionsById.value[lock.definition]!.unlocked_by)
-        .filter(requiredKeys => requiredKeys.filter(keyDef => pxKeyDefinitionsById.value[keyDef]!.consumable).length)
+      .map((lock) => pxLockDefinitionsById.value[lock.definition]!.unlocked_by)
+      .filter(
+        (requiredKeys) =>
+          requiredKeys.filter((keyDef) => pxKeyDefinitionsById.value[keyDef]!.consumable).length,
+      )
 
     if (!consumableRequirements.length) return inventory
 
-    const unlockingKeySets: PxKeySet[] = cartesian(consumableRequirements)
-        .map(keys => getKeySetFromDefArray(keys))
+    const unlockingKeySets: PxKeySet[] = cartesian(consumableRequirements).map((keys) =>
+      getKeySetFromDefArray(keys),
+    )
     //console.log(`unlockingKeySets: ${JSON.stringify(unlockingKeySets)}`)
     //console.log(`keysInInventory: ${JSON.stringify(inventory)}`)
 
-    let updatedKeySets: PxKeySet[] = []
+    const updatedInventory: PxKeySet[] = []
     for (const keyset of inventory) {
-        for (const unlocking of unlockingKeySets) {
-            const canUnlock = Object.entries(unlocking)
-                .every(([keyDefId, count]) => 
-                    // locks can be unlocked if keys are present and, if consumable, present at least as many times as required
-                    keyset[keyDefId] &&
-                    (!pxKeyDefinitionsById.value[keyDefId]!.consumable || keyset[keyDefId] >= count))
-            if (canUnlock) {
-                // if current keyset matches unlocking configuration: add current keyset (minus required consumable keys) to new inventory
-                updatedKeySets.push(pxKeySetDifference(keyset, unlocking))
-            }
+      for (const unlocking of unlockingKeySets) {
+        const canUnlock = Object.entries(unlocking).every(
+          ([keyDefId, count]) =>
+            // locks can be unlocked if keys are present and, if consumable, present at least as many times as required
+            keyset[keyDefId] &&
+            (!pxKeyDefinitionsById.value[keyDefId]!.consumable || keyset[keyDefId] >= count),
+        )
+        if (canUnlock) {
+          // if current keyset matches unlocking configuration: add current keyset (minus required consumable keys) to new inventory
+          updatedInventory.push(pxKeySetDifference(keyset, unlocking))
         }
+      }
     }
-    updatedKeySets = updatedKeySets.filter(keyset => Object.entries(keyset).length > 0)
-    // console.log(`updatedKeySets: ${JSON.stringify(updatedKeySets)}`)
-    
-    return updatedKeySets
-  } 
+
+    return updatedInventory
+  }
 
   // removes consumed keys heuristically: chooses unlocking key combination with smallest number of consumable keys
   function _consumedKeys(keysInInventory: PxKeySet, locks: PxLock[]) : PxKeySet {
