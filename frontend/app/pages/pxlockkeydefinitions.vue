@@ -95,7 +95,7 @@ const defaultLockState: PxLockDefState = {
   unlock_mode: 'permanent',
 }
 
-const lockState = ref<PxLockDefState>(defaultLockState)
+const lockState = ref<PxLockDefState>({ ...defaultLockState })
 
 function validateLockDefInput(state: Partial<PxLockDefState>): FormError[] {
   const errors = []
@@ -212,12 +212,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               :search-input="false"
             />
           </UFormField>
-          <UFormField
-            name="unlocked_by"
-            label="Unlocked By"
-            orientation="horizontal"
-            required
-          >
+          <UFormField name="unlocked_by" label="Unlocked By" orientation="horizontal" required>
             <USelectMenu
               v-model="lockState.unlocked_by"
               :items="keysForSelection"
