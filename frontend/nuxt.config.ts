@@ -32,10 +32,20 @@ export default defineNuxtConfig({
   ],
 
   css: ['~/assets/css/main.css'],
+
+  icon: {
+    provider: 'server',
+    clientBundle: {
+      scan: true,
+    },
+    localApiEndpoint: '/_icons',
+  },
+
   runtimeConfig: {
     apiUrl: process.env.NUXT_API_URL ?? 'http://backend-dev:8000',
     public: { apiBase: process.env.NUXT_PUBLIC_API_BASE ?? '' },
   },
+
   vite: {
     optimizeDeps: {
       include: ['@vue/devtools-core', '@vue/devtools-kit', 'pinia', 'chart.js'],
