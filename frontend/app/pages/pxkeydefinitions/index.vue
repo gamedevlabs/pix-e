@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { FormError } from '@nuxt/ui'
+
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -22,23 +24,30 @@ onMounted(() => {
 
 const items = ref(['item', 'ability'])
 
-interface KeyState {
+interface PxKeyDefState {
   name: string
-  type: PxKeyTypesType
+  type: PxKeyTypesType | undefined
   consumable: boolean
   fixed: boolean
   unique: boolean
 }
 
-const defaultState: KeyState = {
+const defaultState: PxKeyDefState = {
   name: '',
-  type: 'none',
+  type: undefined,
   consumable: false,
   fixed: false,
   unique: false,
 }
 
-const state = ref<KeyState>(defaultState)
+const state = ref<PxKeyDefState>(defaultState)
+
+function validate(state: Partial<PxKeyDefState>): FormError[] {
+  const errors = []
+  if (!state.name) errors.push({ name: 'name', message: 'Required' })
+  if (!state.type) errors.push({ name: 'type', message: 'Required' })
+  return errors
+}
 
 async function handleCreate() {
   await createPxKeyDefinition({ ...state.value })
@@ -54,7 +63,7 @@ async function handleUpdate(updatedDefinition: PxKeyDefinition) {
   <div class="p-8">
     <h1 class="text-2xl font-bold mb-6">PxKey Definitions</h1>
 
-    <UForm :state="state" class="mb-6 space-y-4" @submit="handleCreate">
+    <UForm :state="state" class="mb-6 space-y-4" :validate="validate" @submit="handleCreate">
       <UFormField>
         <UInput v-model="state.name" type="text" placeholder="Name" />
       </UFormField>
