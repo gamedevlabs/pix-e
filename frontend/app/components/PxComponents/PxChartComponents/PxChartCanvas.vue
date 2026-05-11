@@ -58,7 +58,7 @@ const {
 } = usePxChartsCanvasApi(chartId)
 
 const {
-  path,
+  result,
   calculatePathFromSelection,
   resetPathCalculation,
   updateNodeStyling,
@@ -301,7 +301,7 @@ async function handleAddContainerFromPanel() {
 
 const pxNodeIdsInPath = computed(() => {
   const nodes: Array<string | null> = []
-  path.value.forEach((containerId) => {
+  result.value.pathNodes.forEach((containerId) => {
     const container = pxChartContainers.value.find((container) => container.id === containerId)
     if (container) {
       nodes.push(container.content)
