@@ -30,7 +30,7 @@ export interface LockInfo {
 }
 
 const emit = defineEmits<{
-  close: (payload: { edgeId: string }) => void
+  close: [edgeId: string]
 }>()
 
 function getNameFromDefinitionId(defId: string) {
@@ -112,7 +112,7 @@ async function onSubmit() {
     info.currentCount = info.newCount
   })
 
-  emit('close', { edgeId: props.selectedEdge.id })
+  emit('close', props.selectedEdge.id)
   console.log(`updated state: ${JSON.stringify(state.value)}`)
 }
 
@@ -125,7 +125,7 @@ function getColor(lockInfo: LockInfo) {
 <template>
   <UModal
     :title="'Edit Locks on Edge'"
-    :close="{ onClick: () => emit('close', { edgeId: selectedEdge.id }) }"
+    :close="{ onClick: () => emit('close', selectedEdge.id) }"
   >
     <template #body>
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
