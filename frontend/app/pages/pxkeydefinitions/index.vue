@@ -4,12 +4,7 @@ definePageMeta({
   pageConfig: {
     type: 'project-required',
     showSidebar: true,
-    title: 'PxKey Definitions',
-    icon: 'i-lucide-key',
-    navGroup: 'main',
-    navParent: 'pxlockkeydefinitions',
-    navOrder: 2,
-    showInNav: true,
+    showInNav: false,
   },
 })
 
