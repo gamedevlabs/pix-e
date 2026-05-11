@@ -1,0 +1,18 @@
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile
+
+  ################################################################################################
+  #                                     LOCAL configuration                                      #
+  ################################################################################################
+  backend-dev:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        DJANGO_PORT: $DJANGO_PORT_DEV
+  frontend-dev:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile

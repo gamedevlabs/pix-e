@@ -1,20 +1,22 @@
 FROM node:22-alpine AS builder
 
-LABEL authors="richterw"
+LABEL authors="Werner Richter, Alexander Wudy"
 
-# Stage 1: build the Nuxt static site
-
+################################################################################################
+#                              Step 1: Build the Nuxt static site                              #
+################################################################################################
 WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm install
+COPY package*.json ./
 RUN npm ci
-COPY frontend/ .
+COPY . .
 # CRITICAL: We use generate, NOT build, to produce a truly static dist/
 RUN npm run generate  # Outputs static files to .output/public
 
 
-# Stage 2: Serve with Caddy
+################################################################################################
+#                          Step 2: Provide site via Caddy web server                           #
+################################################################################################
 FROM caddy:2-alpine
-COPY --from=builder /app/.output/public /usr/share/caddy/html
-COPY ./Caddyfile /etc/caddy/Caddyfile
-EXPOSE 80 443
+COPY --from=builder /app/.output/public /www
+COPY Caddyfile /etc/caddy/Caddyfile
+EXPOSE 80

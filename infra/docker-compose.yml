@@ -1,0 +1,110 @@
+services:
+  ################################################################################################
+  #                                    General Configuration                                     #
+  ################################################################################################
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+  
+  ################################################################################################
+  #                                      DEV configuration                                       #
+  ################################################################################################
+  frontend-dev:
+    image: ghcr.io/gamedevlabs/pix-e/frontend:feature-pipeline-rework
+    env_file:
+      - .env
+    
+  backend-dev:
+    image: ghcr.io/gamedevlabs/pix-e/backend:feature-pipeline-rework
+    env_file:
+      - .env
+    environment:
+      DJANGO_PORT: ${DJANGO_PORT_DEV}
+    volumes:
+      - sqlite_dev:/app/data
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-dev:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_DEV}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_DEV}
+      POSTGRES_DB: ${POSTGRES_DB_DEV}
+    volumes:
+      - postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER_DEV -d $POSTGRES_DB_DEV"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+
+  ################################################################################################
+  #                                    RELEASE configuration                                     #
+  ################################################################################################
+  frontend-prod:
+    profiles:
+      - prod
+    image: ghcr.io/gamedevlabs/pix-e/frontend:feature-pipeline-rework
+    env_file:
+      - .env
+  
+  backend-prod:
+    profiles:
+      - prod
+    image: ghcr.io/gamedevlabs/pix-e/backend:feature-pipeline-rework
+    env_file:
+      - .env
+    environment:
+      DJANGO_PORT: ${DJANGO_PORT_PROD}
+    volumes:
+      - sqlite_prod:/app/data
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres-prod:
+    profiles:
+      - prod
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER_PROD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_PROD}
+      POSTGRES_DB: ${POSTGRES_DB_PROD}
+    volumes:
+      - postgres_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER_PROD -d $POSTGRES_DB_PROD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
+  sqlite_dev: {}
+  sqlite_prod: {}
+  postgres_dev: {}
+  postgres_prod: {}
