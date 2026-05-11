@@ -1,4 +1,5 @@
 import { useProject } from '@/composables/useProject'
+import { useApi } from '~/composables/useApi'
 
 // Shared state - singleton pattern for cross-component reactivity
 const designIdea = ref<string>('')
@@ -8,14 +9,14 @@ const isLoadingHistory = ref(false)
 const isRestoringConcept = ref(false)
 
 export function useGameConcept() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const { success, error: errorToast } = usePixeToast()
   const projectStore = useProject()
 
   async function fetchGameConcept() {
     try {
-      const data = await $fetch<{ content: string }>(
-        `${config.public.apiBase}/api/game-concept/current/`,
+      const data = await apiFetch<{ content: string }>(
+        `/api/game-concept/current/`,
         {
           credentials: 'include',
           headers: useRequestHeaders(['cookie']),
@@ -33,7 +34,7 @@ export function useGameConcept() {
 
     isSavingConcept.value = true
     try {
-      await $fetch(`${config.public.apiBase}/api/game-concept/update_current/`, {
+      await apiFetch(`/api/game-concept/update_current/`, {
         method: 'POST',
         body: { content: designIdea.value },
         credentials: 'include',
@@ -54,8 +55,8 @@ export function useGameConcept() {
   async function fetchConceptHistory() {
     isLoadingHistory.value = true
     try {
-      const data = await $fetch<GameConcept[]>(
-        `${config.public.apiBase}/api/game-concept/history/`,
+      const data = await apiFetch<GameConcept[]>(
+        `/api/game-concept/history/`,
         {
           credentials: 'include',
           headers: useRequestHeaders(['cookie']),
@@ -72,8 +73,8 @@ export function useGameConcept() {
   async function restoreConcept(conceptId: number) {
     isRestoringConcept.value = true
     try {
-      const data = await $fetch<GameConcept>(
-        `${config.public.apiBase}/api/game-concept/${conceptId}/restore/`,
+      const data = await apiFetch<GameConcept>(
+        `/api/game-concept/${conceptId}/restore/`,
         {
           method: 'POST',
           credentials: 'include',

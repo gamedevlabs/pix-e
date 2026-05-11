@@ -1,3 +1,5 @@
+import { useApi } from '~/composables/useApi'
+
 type AspectSentimentRow = {
   dominant_aspect: string
   dominant_sentiment: 'positive' | 'neutral' | 'negative'
@@ -38,7 +40,7 @@ const confusionPaletteBase = [
 ]
 
 export function usePlayerExpectationCharts() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   // reactive chart state
   const aspectChartData = ref(null)
   const sentimentChartData = ref(null)
@@ -49,7 +51,6 @@ export function usePlayerExpectationCharts() {
 
   const loading = ref(false)
   const error = ref<unknown>(null)
-  const baseUrl = config.public.apiBase + '/api'
 
   // ---------- shaping helpers ----------
   function toAspectBar(data: Record<string, number>) {
@@ -129,12 +130,12 @@ export function usePlayerExpectationCharts() {
         heatmap,
         topConfusions,
       ] = await Promise.all([
-        $fetch<{ data: Record<string, number> }>(`${baseUrl}/aspect-frequency`),
-        $fetch<{ data: AspectSentimentRow[] }>(`${baseUrl}/aspect-sentiment`),
-        $fetch<{ data: TrendRow[] }>(`${baseUrl}/trend-over-time`),
-        $fetch<{ data: Record<string, number> }>(`${baseUrl}/sentiment-pie`),
-        $fetch<{ data: Record<string, Record<string, number>> }>(`${baseUrl}/heatmap`),
-        $fetch<{ data: ConfusionRow[] }>(`${baseUrl}/top-confusions`),
+        apiFetch<{ data: Record<string, number> }>(`/api/aspect-frequency`),
+        apiFetch<{ data: AspectSentimentRow[] }>(`/api/aspect-sentiment`),
+        apiFetch<{ data: TrendRow[] }>(`/api/trend-over-time`),
+        apiFetch<{ data: Record<string, number> }>(`/api/sentiment-pie`),
+        apiFetch<{ data: Record<string, Record<string, number>> }>(`/api/heatmap`),
+        apiFetch<{ data: ConfusionRow[] }>(`/api/top-confusions`),
       ])
 
       aspectChartData.value = toAspectBar(aspectFrequency.data)

@@ -13,6 +13,7 @@
  * UI changes -> update refs -> toQueryParams() -> load() -> backend returns JSON -> rows/meta updated.
  */
 import { computed, ref } from 'vue'
+import { useApi } from '~/composables/useApi'
 // export ... makes availble for other files
 //  Record<K, V>, key, value pairs
 export const GAME_NAMES: Record<number, string> = {
@@ -243,9 +244,8 @@ function dateStrToUnixSeconds(dateStr: string, endOfDay: boolean) {
 
 //Main composable function.
 export function usePlayerExpectationsNewDatasetExplorer() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const loading = ref(false)
-  const baseUrl = config.public.apiBase + '/api/player-expectations-new'
   // ref creates a reactive value...if the value changes, Vue will automatically update the UI.
   //access the real value via .value
   const error = ref<unknown>(null)
@@ -403,7 +403,7 @@ export function usePlayerExpectationsNewDatasetExplorer() {
     loading.value = true
     error.value = null
     try {
-      const res = await $fetch<ReviewsResponse>(`${baseUrl}/dataset-explorer/reviews/`, {
+      const res = await apiFetch<ReviewsResponse>(`/api/player-expectations-new/dataset-explorer/reviews/`, {
         query: toQueryParams(),
       })
       rows.value = res.data

@@ -6,6 +6,6 @@ localhost {
     }
 
     handle {
-        reverse_proxy frontend-dev:80
+        reverse_proxy frontend-dev:3000
     }
 }

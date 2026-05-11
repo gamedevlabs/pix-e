@@ -11,6 +11,7 @@ import type {
   DashboardPolarity,
   DimensionKey,
 } from '~/utils/playerExpectationsNewDashboard'
+import { useApi } from '~/composables/useApi'
 
 // Turn [10, 20, 30] into "10,20,30" for query params.
 function toCsv(nums: number[]): string | undefined {
@@ -25,18 +26,8 @@ function toLangCsv(langs: DashboardLanguage[]): string | undefined {
 
 // Runtime config can optionally provide a different API origin (e.g. another domain).
 // this was done for the ngrok usecase where basepath differed
-export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
-  const cfg = useRuntimeConfig()
-
-  // Base URL for all endpoints used by this composable.
-  function joinBase(origin: string | undefined, path: string) {
-    const o = (origin ?? '').trim()
-    if (!o) return path // same-origin => "/api/..."
-    return `${o.replace(/\/$/, '')}${path}`
-  }
-
-  const base =
-    apiBase ?? joinBase(cfg?.public?.apiBase as string | undefined, '/api/player-expectations-new')
+export function usePlayerExpectationsNewDashboardCompare() {
+  const { apiFetch } = useApi()
 
   const alive = ref(true)
 
@@ -100,13 +91,13 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
 
   async function fetchJson<T>(url: string, params: Record<string, string | number | undefined>) {
     // controller is created per load()
-    return await $fetch<T>(url, { query: params, signal: controller?.signal })
+    return await apiFetch<T>(url, { query: params, signal: controller?.signal })
   }
 
   // Load one heatmap (aesthetics/features/pain) for a given scope
   async function loadHeatmap(scope: CompareScope, dimension: DimensionKey) {
     const p = scopeParams(scope)
-    return await fetchJson<CompareHeatmapCodes>(`${base}/dashboard/compare/heatmap-codes/`, {
+    return await fetchJson<CompareHeatmapCodes>(`/api/player-expectations-new/dashboard/compare/heatmap-codes/`, {
       ...p,
       dimension,
     })
@@ -118,14 +109,14 @@ export function usePlayerExpectationsNewDashboardCompare(apiBase?: string) {
     const p = scopeParams(scope)
 
     const [kpis, sent, ts, codes, heatA, heatF, heatP] = await Promise.all([
-      fetchJson<CompareKpis>(`${base}/dashboard/compare/kpis/`, p),
-      fetchJson<CompareSentiments>(`${base}/dashboard/compare/sentiments/`, p),
+      fetchJson<CompareKpis>(`/api/player-expectations-new/dashboard/compare/kpis/`, p),
+      fetchJson<CompareSentiments>(`/api/player-expectations-new/dashboard/compare/sentiments/`, p),
 
       // NEW: timeline
-      fetchJson<CompareTimeseries>(`${base}/dashboard/compare/timeseries/`, p),
+      fetchJson<CompareTimeseries>(`/api/player-expectations-new/dashboard/compare/timeseries/`, p),
 
       // Drivers table should be “most mentioned aspects regardless of level”
-      fetchJson<CompareTopCodes>(`${base}/dashboard/compare/top-codes/`, {
+      fetchJson<CompareTopCodes>(`/api/player-expectations-new/dashboard/compare/top-codes/`, {
         ...p,
         level: 'all',
         limit: 20,

@@ -33,10 +33,23 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
-    public: {
-      apiBase:
-        process.env.NUXT_PUBLIC_API_BASE ??
-        (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000'),
+    apiUrl: process.env.NUXT_API_URL ?? 'http://backend-dev:8000',
+    public: { apiBase: process.env.NUXT_PUBLIC_API_BASE ?? '' },
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['@vue/devtools-core', '@vue/devtools-kit', 'pinia', 'chart.js'],
+    },
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 1000,
+      },
+
+      hmr: {
+        protocol: 'wss',
+        clientPort: 443,
+      },
     },
   },
 })

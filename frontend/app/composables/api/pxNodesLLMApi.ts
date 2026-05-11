@@ -1,10 +1,12 @@
+import { useApi } from '~/composables/useApi'
+
 export function usePxNodesLLMApi() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const llm = useLLM()
 
   async function validateNodeAPICall(nodeId: string): Promise<NodeValidationFeedback> {
-    return await $fetch<NodeValidationFeedback>(
-      `${config.public.apiBase}/api/llm/nodes/${nodeId}/validate/`,
+    return await apiFetch<NodeValidationFeedback>(
+      `/api/llm/nodes/${nodeId}/validate/`,
       {
         method: 'POST',
         body: {
@@ -22,8 +24,8 @@ export function usePxNodesLLMApi() {
     nodeId: string,
     validationIssues: NodeCoherenceIssue[] = [],
   ): Promise<FixNodeAPIResponse> {
-    return await $fetch<FixNodeAPIResponse>(
-      `${config.public.apiBase}/api/llm/nodes/${nodeId}/fix/`,
+    return await apiFetch<FixNodeAPIResponse>(
+      `/api/llm/nodes/${nodeId}/fix/`,
       {
         method: 'POST',
         body: {
@@ -47,7 +49,7 @@ export function usePxNodesLLMApi() {
     description: string,
     components: { id: string; value: string | number | boolean | null }[] = [],
   ): Promise<PxNode> {
-    return await $fetch<PxNode>(`${config.public.apiBase}/api/llm/nodes/${nodeId}/accept-fix/`, {
+    return await apiFetch<PxNode>(`/api/llm/nodes/${nodeId}/accept-fix/`, {
       method: 'POST',
       body: {
         name,

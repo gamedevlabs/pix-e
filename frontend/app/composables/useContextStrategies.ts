@@ -1,3 +1,5 @@
+import { useApi } from '~/composables/useApi'
+
 /**
  * Composable for Context Strategy API.
  *
@@ -8,9 +10,7 @@
  * - hmem: Vector embeddings with positional index routing (Sun & Zeng 2025)
  * - combined: Structural data + hierarchical organization
  */
-const config = useRuntimeConfig()
-
-const BASE_URL = config.public.apiBase + '/api/'
+const { apiFetch } = useApi()
 
 export type StrategyType =
   | 'full_context'
@@ -155,8 +155,8 @@ export function useContextStrategies() {
    */
   async function fetchStrategies(): Promise<StrategyInfo[]> {
     try {
-      const response = await $fetch<{ strategies: StrategyInfo[] }>(
-        `${BASE_URL}context/strategies/`,
+      const response = await apiFetch<{ strategies: StrategyInfo[] }>(
+        `/api/context/strategies/`,
         {
           method: 'GET',
           credentials: 'include',
@@ -179,11 +179,11 @@ export function useContextStrategies() {
     const modeToUse = options.executionMode ?? executionMode.value
 
     try {
-      const response = await $fetch<{
+      const response = await apiFetch<{
         success: boolean
         execution_mode: string
         result: EvaluationResult
-      }>(`${BASE_URL}context/evaluate/`, {
+      }>(`/api/context/evaluate/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -251,8 +251,8 @@ export function useContextStrategies() {
     error.value = null
 
     try {
-      const response = await $fetch<{ success: boolean; comparison: ComparisonResult }>(
-        `${BASE_URL}context/compare/`,
+      const response = await apiFetch<{ success: boolean; comparison: ComparisonResult }>(
+        `/api/context/compare/`,
         {
           method: 'POST',
           credentials: 'include',
@@ -295,7 +295,7 @@ export function useContextStrategies() {
 
     try {
       // Backend returns: { success, strategy, context, layers, metadata, triples_count, facts_count }
-      const response = await $fetch<{
+      const response = await apiFetch<{
         success: boolean
         strategy: string
         context: string
@@ -303,7 +303,7 @@ export function useContextStrategies() {
         metadata: Record<string, unknown>
         triples_count: number
         facts_count: number
-      }>(`${BASE_URL}context/build/`, {
+      }>(`/api/context/build/`, {
         method: 'POST',
         credentials: 'include',
         headers: {

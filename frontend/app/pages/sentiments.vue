@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useApi } from '~/composables/useApi'
+
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -32,12 +34,12 @@ if (currentProject.value?.id) {
 
 // Fetch data from API
 const fetchSentiments = async () => {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   loading.value = true
   error.value = null
   try {
-    const sentiments = await $fetch(
-      config.public.apiBase + '/api/sentiments/?type=${selectedDataset.value}',
+    const sentiments = await apiFetch(
+      '/api/sentiments/?type=${selectedDataset.value}',
     )
     allSentiments.value = sentiments.data
   } catch (err) {

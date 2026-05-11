@@ -1,12 +1,12 @@
+import { useApi } from '~/composables/useApi'
+
 /**
  * Composable for Structural Memory generation.
  *
  * Handles generating knowledge triples, atomic facts, and embeddings
  * for PX nodes in selected charts.
  */
-const config = useRuntimeConfig()
-
-const BASE_URL = config.public.apiBase + '/api/'
+  const { apiFetch } = useApi()
 
 export interface GenerationOptions {
   chartIds: string[]
@@ -125,7 +125,7 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<GenerationResponse>(`${BASE_URL}structural-memory/generate/`, {
+      const response = await apiFetch<GenerationResponse>(`/api/structural-memory/generate/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -167,7 +167,7 @@ export function useStructuralMemory() {
    */
   async function getStats(chartIds: string[]): Promise<ChartStats[]> {
     try {
-      const response = await $fetch<StatsResponse>(`${BASE_URL}structural-memory/stats/`, {
+      const response = await apiFetch<StatsResponse>(`/api/structural-memory/stats/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -210,7 +210,7 @@ export function useStructuralMemory() {
     error.value = null
 
     try {
-      const response = await $fetch<EvaluationResponse>(`${BASE_URL}structural-memory/evaluate/`, {
+      const response = await apiFetch<EvaluationResponse>(`/api/structural-memory/evaluate/`, {
         method: 'POST',
         credentials: 'include',
         headers: {

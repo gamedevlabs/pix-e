@@ -1,11 +1,13 @@
+import { useApi } from '~/composables/useApi'
+
 export function usePillarsApi() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const llm = useLLM()
 
   async function updateDesignIdeaAPICall(designIdea: string) {
     if (designIdea.trim() === '') return
     try {
-      await $fetch(config.public.apiBase + '/api/llm/design/', {
+      await apiFetch('/api/llm/design/', {
         method: 'PUT',
         body: {
           description: designIdea.trim(),
@@ -21,8 +23,8 @@ export function usePillarsApi() {
   }
 
   async function validatePillarAPICall(pillar: Pillar) {
-    pillar.llm_feedback = await $fetch<PillarFeedback>(
-      `${config.public.apiBase}/api/llm/pillars/${pillar.id}/validate/`,
+    pillar.llm_feedback = await apiFetch<PillarFeedback>(
+      `/api/llm/pillars/${pillar.id}/validate/`,
       {
         method: 'POST',
         body: {
@@ -37,8 +39,8 @@ export function usePillarsApi() {
   }
 
   async function fixPillarWithAIAPICall(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
-    return await $fetch<FixPillarAPIResponse>(
-      `${config.public.apiBase}/api/llm/pillars/${pillar.id}/fix/`,
+    return await apiFetch<FixPillarAPIResponse>(
+      `/api/llm/pillars/${pillar.id}/fix/`,
       {
         method: 'POST',
         body: {
@@ -57,8 +59,8 @@ export function usePillarsApi() {
   }
 
   async function acceptPillarFixAPICall(pillarId: number, name: string, description: string) {
-    return await $fetch<Pillar>(
-      `${config.public.apiBase}/api/llm/pillars/${pillarId}/accept-fix/`,
+    return await apiFetch<Pillar>(
+      `/api/llm/pillars/${pillarId}/accept-fix/`,
       {
         method: 'POST',
         body: {
@@ -74,8 +76,8 @@ export function usePillarsApi() {
   }
 
   async function getContextInPillarsAPICall(context: string) {
-    return await $fetch<ContextInPillarsFeedback>(
-      `${config.public.apiBase}/api/llm/feedback/context/`,
+    return await apiFetch<ContextInPillarsFeedback>(
+      `/api/llm/feedback/context/`,
       {
         method: 'POST',
         body: {
@@ -93,8 +95,8 @@ export function usePillarsApi() {
   // --- New agentic evaluation endpoints ---
 
   async function evaluateAllAPICall(executionMode: ExecutionMode = 'agentic') {
-    return await $fetch<EvaluateAllResponse>(
-      `${config.public.apiBase}/api/llm/feedback/evaluate-all/`,
+    return await apiFetch<EvaluateAllResponse>(
+      `/api/llm/feedback/evaluate-all/`,
       {
         method: 'POST',
         body: {
@@ -110,8 +112,8 @@ export function usePillarsApi() {
   }
 
   async function resolveContradictionsAPICall(contradictions: ContradictionsResponse) {
-    return await $fetch<ContradictionResolutionResponse>(
-      `${config.public.apiBase}/api/llm/feedback/resolve-contradictions/`,
+    return await apiFetch<ContradictionResolutionResponse>(
+      `/api/llm/feedback/resolve-contradictions/`,
       {
         method: 'POST',
         body: {
@@ -127,7 +129,7 @@ export function usePillarsApi() {
   }
 
   async function acceptAdditionAPICall(name: string, description: string) {
-    return await $fetch<Pillar>(`${config.public.apiBase}/api/llm/feedback/accept-addition/`, {
+    return await apiFetch<Pillar>(`/api/llm/feedback/accept-addition/`, {
       method: 'POST',
       body: {
         name,
