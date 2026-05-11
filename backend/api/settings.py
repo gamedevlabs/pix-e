@@ -227,3 +227,12 @@ if not API_KEY_FINGERPRINT_PEPPER and not DEBUG:
         "makes HMAC-based duplicate detection trivially bypassable. "
         "Set a random string via the API_KEY_FINGERPRINT_PEPPER env variable."
     )
+
+# === Test Configuration ===
+# Skip seed-data migrations during test runs — they load 120MB of CSV via
+# pandas and cause OOM crashes on machines with limited memory.
+if "test" in sys.argv or "pytest" in sys.argv[0]:
+    MIGRATION_MODULES = {
+        "player_expectations": None,
+        "player_expectations_new": None,
+    }

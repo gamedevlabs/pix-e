@@ -111,7 +111,7 @@ class TestAgentModeExecution:
         # Should have a warning about fallback
         assert response.warnings is not None
         assert len(response.warnings) > 0
-        assert any("agent workflow" in w.message.lower() for w in response.warnings)
+        assert any("agent mode" in w.message.lower() for w in response.warnings)
 
 
 class TestInvalidExecutionMode:

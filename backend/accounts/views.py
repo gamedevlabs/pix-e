@@ -411,13 +411,13 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
         if provider in ("openai", "custom", "morpheus"):
             from openai import OpenAI
 
-            client = OpenAI(
+            openai_client = OpenAI(
                 api_key=api_key,
                 base_url=base_url or None,
                 timeout=10,
             )
             # Use a real chat call — model listing doesn't always auth
-            client.chat.completions.create(
+            openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=1,
@@ -427,9 +427,9 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
         elif provider == "gemini":
             from google import genai
 
-            client = genai.Client(api_key=api_key)
+            gemini_client = genai.Client(api_key=api_key)
             # Use a real content generation call to validate the key
-            client.models.generate_content(
+            gemini_client.models.generate_content(
                 model="gemini-2.0-flash-exp",
                 contents="test",
                 config={"max_output_tokens": 1},

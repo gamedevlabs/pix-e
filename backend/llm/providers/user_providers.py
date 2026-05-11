@@ -6,7 +6,7 @@ session-derived encryption key (from their login password).
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from django.contrib.auth import get_user_model
 
@@ -18,7 +18,10 @@ from llm.providers.gemini_provider import GeminiProvider
 from llm.providers.ollama_provider import OllamaProvider
 from llm.providers.openai_provider import OpenAIProvider
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
 logger = logging.getLogger(__name__)
 
 

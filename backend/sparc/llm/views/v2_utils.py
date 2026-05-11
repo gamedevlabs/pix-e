@@ -149,8 +149,14 @@ def run_router_workflow(
 
 
 def save_uploaded_document(uploaded_file) -> tuple[Dict[str, Any], str]:
-    file_type = validate_file_type(uploaded_file.name, settings.ALLOWED_DOCUMENT_TYPES)
-    validate_file_size(uploaded_file.size, settings.DOCUMENT_MAX_SIZE_MB)
+    file_type = validate_file_type(
+        uploaded_file.name,
+        getattr(settings, "ALLOWED_DOCUMENT_TYPES", ["pdf", "txt"]),
+    )
+    validate_file_size(
+        uploaded_file.size,
+        getattr(settings, "DOCUMENT_MAX_SIZE_MB", 10),
+    )
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix=f".{file_type}",

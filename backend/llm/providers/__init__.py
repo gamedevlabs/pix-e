@@ -6,6 +6,10 @@ This package contains all provider implementations:
 - Cloud providers: OpenAI, Gemini
 """
 
+# Lightweight imports only — heavy SDKs (openai, google.genai) are imported
+# internally by each provider when first used, not at package import time.
+# This avoids loading 100MB+ of SDK dependencies when the LLM module is
+# imported (e.g. during test database setup), which caused OOM crashes.
 from llm.providers.base import BaseProvider, GenerationResult
 from llm.providers.capabilities import (
     compare_capabilities,
@@ -16,26 +20,19 @@ from llm.providers.capabilities import (
     matches_requirements,
     rank_models,
 )
-from llm.providers.gemini_provider import GeminiProvider
 from llm.providers.manager import ModelManager
 from llm.providers.ollama_provider import OllamaProvider
-from llm.providers.openai_provider import OpenAIProvider
 
 __all__ = [
-    # Base classes
     "BaseProvider",
     "GenerationResult",
-    # Providers
     "OllamaProvider",
-    "OpenAIProvider",
-    "GeminiProvider",
     "ModelManager",
-    # Capability utilities
-    "matches_requirements",
+    "compare_capabilities",
     "filter_by_capabilities",
     "find_best_model",
-    "rank_models",
     "get_capability_summary",
     "get_models_with_capability",
-    "compare_capabilities",
+    "matches_requirements",
+    "rank_models",
 ]

@@ -832,6 +832,7 @@ class UserLLMOrchestratorMixinTests(TestCase):
 
 @override_settings(
     API_KEY_FINGERPRINT_PEPPER="test_pepper",
+    CACHES={"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}},
     REST_FRAMEWORK={
         "DEFAULT_THROTTLE_CLASSES": [
             "rest_framework.throttling.UserRateThrottle",
