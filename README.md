@@ -15,7 +15,7 @@ docker compose up
    then ignore it, as it is expected to show up when running the application locally.
 
 For more information about the current Docker and Reverse Proxy setup, check out
-[the infrastructure README.md](infra/README.md).
+[the infrastructure README.md](infra/README.md)
 
 ## Deprecation notice
 npm support is still available, but will be removed after the pipeline switch has
