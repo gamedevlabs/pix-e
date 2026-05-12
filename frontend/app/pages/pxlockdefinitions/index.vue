@@ -37,7 +37,7 @@ interface PxLockDefState {
   name: string
   soft_gate: boolean
   unlocked_by: string[]
-  unlock_mode: PxLockUnlockModeType
+  unlock_mode: PxUnlockModeType
 }
 
 const defaultState: PxLockDefState = {

@@ -125,7 +125,6 @@ class PxLockAssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = PxLockAssignmentSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
-    # TODO adapt queryset
     def get_queryset(self):
         if self.action == "list":
             chart_id = self.kwargs["px_chart_pk"]
@@ -136,7 +135,6 @@ class PxLockAssignmentViewSet(viewsets.ModelViewSet):
             )
         return PxLockAssignment.objects.order_by("created_at")
 
-    # TODO adapt creation
     def perform_create(self, serializer):
         chart_id = self.kwargs["px_chart_pk"]
         serializer.save(id=uuid.uuid4(), px_chart_id=chart_id, owner=self.request.user)
@@ -146,7 +144,6 @@ class PxChartPathSettingsViewSet(viewsets.ModelViewSet):
     serializer_class = PxChartPathSettingsSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
-    # TODO adapt queryset
     def get_queryset(self):
         if self.action == "list":
             chart_id = self.kwargs["px_chart_pk"]
@@ -157,7 +154,6 @@ class PxChartPathSettingsViewSet(viewsets.ModelViewSet):
             )
         return PxChartPathSettings.objects.order_by("created_at")
 
-    # TODO adapt creation
     def perform_create(self, serializer):
         chart_id = self.kwargs["px_chart_pk"]
         serializer.save(id=uuid.uuid4(), px_chart_id=chart_id, owner=self.request.user)

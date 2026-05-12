@@ -48,9 +48,7 @@ const state: Ref<Record<string, LockInfo>> = ref({})
 async function initialize() {
   await fetchPxLocks()
   await fetchPxKeyDefinitions()
-  //console.log('initializing state...')
 
-  let lockCount = 0
   pxLockDefinitions.value.forEach((def) => {
     const instance = pxLocks.value.find(
       (lock) => lock.edge === props.selectedEdge.id && lock.definition === def.id,
@@ -64,7 +62,6 @@ async function initialize() {
         lockId: instance.id,
         unlockedBy: getNamesOfUnlockingKeys(def),
       }
-      lockCount += instance.count
     } else {
       state.value[def.id] = {
         defId: def.id,
@@ -77,10 +74,14 @@ async function initialize() {
     }
   })
 
+  /*
   console.log(
-    `successfully initialized state. found ${lockCount} locks for edge with id ${props.selectedEdge.id}`,
+    `Successfully initialized PxLockEditForm state. Found ${Object.values(state.value)
+      .map((entry) => entry.currentCount)
+      .reduce((a, b) => a + b, 0)} locks for edge with id ${props.selectedEdge.id}`,
   )
   console.log(`initial state: ${JSON.stringify(state.value)}`)
+  */
 }
 
 async function onSubmit() {
@@ -113,7 +114,7 @@ async function onSubmit() {
   })
 
   emit('close', props.selectedEdge.id)
-  console.log(`updated state: ${JSON.stringify(state.value)}`)
+  //console.log(`updated state: ${JSON.stringify(state.value)}`)
 }
 
 function getColor(lockInfo: LockInfo) {

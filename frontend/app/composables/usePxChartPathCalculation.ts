@@ -68,8 +68,6 @@ export function usePxChartPathCalculation(
     // sort (descending so we can use pop)
     q.sort((n1, n2) => n2.prio - n1.prio)
 
-    console.log(`Queue: ${JSON.stringify(q)}`)
-
     // iterate
     let found = false
     let inventory: PxKeySet[] = []
@@ -79,8 +77,6 @@ export function usePxChartPathCalculation(
       if (!node) {
         break
       }
-
-      console.log(`Node Id: ${node.id}, Inventory: ${JSON.stringify(node.keys)}`)
 
       let outEdges = getConnectedEdges(node.id, edges.value).filter(
         (edge) => edge.source === node.id,
@@ -170,7 +166,6 @@ export function usePxChartPathCalculation(
 
     result.value.locked = result.value.locked.concat(allLockedEdges)
     result.value.pathEdges = seqEdges.reverse()
-    console.log(`pathEdges: ${result.value.pathEdges.toString()}`)
     return seq.reverse()
   }
 
@@ -196,7 +191,7 @@ export function usePxChartPathCalculation(
 
   async function calculatePathFromSelection(selected: string[]) {
     console.log(`Starting path calculation...`)
-    console.log(`Used settings: ${JSON.stringify(settings.value)}`)
+    console.log(`Using settings: ${JSON.stringify(settings.value)}`)
     console.log(`Found ${nodes.value.length} nodes.`)
     console.log(`Input (length ${selected.length}): ${selected.toString()}`)
     selectedNodes.value = selected
@@ -215,7 +210,7 @@ export function usePxChartPathCalculation(
     }
     result.value.pathNodes = newPath
     console.log(
-      `Finished path calculation!\nResult (length ${result.value.pathNodes.length}): ${JSON.stringify(result.value)}`,
+      `Finished path calculation!\nResult (length ${result.value.pathNodes.length}): ${JSON.stringify(result.value, null, 2)}`,
     )
   }
 

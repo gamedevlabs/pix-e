@@ -127,8 +127,7 @@ class PxLockAssignment(models.Model):
         unique_together = ["owner", "id"]
 
     def __str__(self):
-        # TODO: improve str
-        return f"{self.node.name} - {self.definition.name}: ({self.count})"
+        return f"{self.count}x Lock {self.definition.name} on {self.edge}"
 
 
 class PxChartPathSettings(models.Model):

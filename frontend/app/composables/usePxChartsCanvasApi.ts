@@ -113,16 +113,16 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
     let node
     try {
-        node = await fetchPxNode(nodeId)
+      node = await fetchPxNode(nodeId)
     } catch (err) {
-        alert('Failed to fetch PxNode: ' + err.message)
-        error.value = 'Failed to fetch PxNode'
-        return []
+      alert('Failed to fetch PxNode: ' + err.message)
+      error.value = 'Failed to fetch PxNode'
+      return []
     }
     if (!node) {
-        alert('Failed to fetch PxNode')
-        error.value = 'Failed to fetch PxNode'
-        return []
+      alert('Failed to fetch PxNode')
+      error.value = 'Failed to fetch PxNode'
+      return []
     }
     return node.keys
   }
@@ -342,10 +342,6 @@ export function usePxChartsCanvasApi(chartId: string) {
       console.warn('Could not find edge.')
     } else {
       edge.data.locks = await getLocksForEdge(edgeId)
-      console.log(`Updated locks on edge ${edgeId}. It now has ${edge.data.locks.length} locks.`)
-      console.log(
-        `Locks ids on edge ${edgeId}: ${edge.data.locks.map((lock) => lock.id).toString()}`,
-      )
     }
   }
 
