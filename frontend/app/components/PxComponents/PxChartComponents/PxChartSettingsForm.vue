@@ -68,12 +68,14 @@ async function onSubmit() {
               label="Ignore Consumable Keys"
               description="When enabled, consumable keys will be treated as if they were reusable."
               :disabled="!state.use_locks"
+              :color="state.use_locks ? 'primary' : 'neutral'"
             />
             <USwitch
               v-model="state.show_soft_locks"
               label="Show Soft Locks"
               description="When enabled, potential soft-locks will be highlighted."
               :disabled="!state.use_locks"
+              :color="state.use_locks ? 'primary' : 'neutral'"
             />
 
             <UButton class="right-0 mt-6" type="submit"> Submit </UButton>
