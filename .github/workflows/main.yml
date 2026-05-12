@@ -72,6 +72,7 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: api.settings
           SECRET_KEY: dummy
+          SQLITE_DB_PATH: db.sqlite3
         run: |
           python manage.py makemigrations --check --dry-run
           python manage.py migrate --noinput
