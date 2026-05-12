@@ -108,16 +108,26 @@ export function usePxChartsCanvasApi(chartId: string) {
    */
 
   async function getKeysForNode(nodeId: string | null): Promise<PxKey[]> {
-    // TODO: improve error handling
     if (!nodeId) {
       return []
     }
-    const node = await fetchPxNode(nodeId)
-    return node!.keys
+    let node
+    try {
+        node = await fetchPxNode(nodeId)
+    } catch (err) {
+        alert('Failed to fetch PxNode: ' + err.message)
+        error.value = 'Failed to fetch PxNode'
+        return []
+    }
+    if (!node) {
+        alert('Failed to fetch PxNode')
+        error.value = 'Failed to fetch PxNode'
+        return []
+    }
+    return node.keys
   }
 
   async function getLocksForEdge(edgeId: string | null): Promise<PxLock[]> {
-    // TODO: improve error handling
     if (!edgeId) {
       return []
     }
