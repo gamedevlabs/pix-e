@@ -12,12 +12,12 @@ const isBeingEdited = ref(false)
 
 type EditableKeyDefinition = Pick<
   PxKeyDefinition,
-  'name' | 'type' | 'consumable' | 'fixed' | 'unique'
+  'name' | 'key_type' | 'consumable' | 'fixed' | 'unique'
 >
 
 const editForm: Ref<EditableKeyDefinition> = ref({
   name: props.definition.name,
-  type: props.definition.type,
+  key_type: props.definition.key_type,
   consumable: props.definition.consumable,
   fixed: props.definition.fixed,
   unique: props.definition.unique,
@@ -60,7 +60,7 @@ const keyTypes = ref(['item', 'ability'])
     <template #default>
       <div v-if="!isBeingEdited" class="grid grid-cols-2 gap-6">
         <b>Type</b>
-        {{ definition.type }}
+        {{ definition.key_type }}
         <b>Consumable</b>
         <!--
             this is a bit unclean as the value should be based on props.definition, 
@@ -74,7 +74,10 @@ const keyTypes = ref(['item', 'ability'])
       </div>
       <div v-else class="grid grid-cols-2 gap-6">
         <b>Type</b>
-        <USelectMenu v-model="editForm.type" :items="keyTypes" :search-input="false" />
+        <USelect
+          v-model="editForm.key_type"
+          :items="keyTypes"
+        />
         <b>Consumable</b>
         <UCheckbox v-model="editForm.consumable" />
         <b>Fixed</b>

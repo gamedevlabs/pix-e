@@ -391,7 +391,7 @@ class PxKeyDefinition(models.Model):
     name = models.CharField(max_length=255)
 
     TYPE_CHOICES = [("item", "Item"), ("ability", "Ability")]
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    key_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
 
     consumable = models.BooleanField()
     fixed = models.BooleanField()
