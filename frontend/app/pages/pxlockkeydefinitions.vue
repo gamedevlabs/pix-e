@@ -38,7 +38,7 @@ onMounted(() => {
 
 interface PxKeyDefState {
   name: string
-  type: PxKeyTypesType | undefined
+  key_type: PxKeyTypesType | undefined
   consumable: boolean
   fixed: boolean
   unique: boolean
@@ -46,7 +46,7 @@ interface PxKeyDefState {
 
 const defaultKeyState: PxKeyDefState = {
   name: '',
-  type: undefined,
+  key_type: undefined,
   consumable: false,
   fixed: false,
   unique: false,
@@ -57,7 +57,7 @@ const keyState = ref<PxKeyDefState>({ ...defaultKeyState })
 function validateKeyDefInput(state: Partial<PxKeyDefState>): FormError[] {
   const errors = []
   if (!state.name) errors.push({ name: 'name', message: 'Required' })
-  if (!state.type) errors.push({ name: 'type', message: 'Required' })
+  if (!state.key_type) errors.push({ name: 'key_type', message: 'Required' })
   return errors
 }
 
@@ -130,9 +130,9 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               size="lg"
             />
           </UFormField>
-          <UFormField label="Type" name="type" orientation="horizontal" required>
+          <UFormField label="Type" name="key_type" orientation="horizontal" required>
             <USelectMenu
-              v-model="keyState.type"
+              v-model="keyState.key_type"
               :items="pxKeyTypesForSelection"
               label-key="label"
               value-key="value"

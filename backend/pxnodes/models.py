@@ -405,7 +405,7 @@ class PxKeyDefinition(models.Model):
         unique_together = ["owner", "id"]
 
     def __str__(self):
-        return f"{self.name} ({self.type})"
+        return f"{self.name} ({self.key_type})"
 
 
 class PxKeyAssignment(models.Model):
