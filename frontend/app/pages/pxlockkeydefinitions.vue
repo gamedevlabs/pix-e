@@ -161,7 +161,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           >
             <UCheckbox v-model="keyState.unique" />
           </UFormField>
-          <UButton type="submit" :block="true" class="mt-4">Create Key</UButton>
+          <UButton type="submit" :block="true" class="mt-4">Create PxKey Definition</UButton>
         </UForm>
         <UScrollArea
           v-if="pxKeyDefinitions.length"
@@ -199,7 +199,11 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               size="lg"
             />
           </UFormField>
-          <UFormField label="Soft Gate" orientation="horizontal" description="A lock that can also be passed without the key(s), e.g. by skilled players.">
+          <UFormField
+            label="Soft Gate"
+            orientation="horizontal"
+            description="A lock that can also be passed without the key(s), e.g. by skilled players."
+          >
             <UCheckbox v-model="lockState.soft_gate" />
           </UFormField>
           <UFormField label="Unlock Mode" orientation="horizontal">
@@ -223,7 +227,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               class="min-w-max"
             />
           </UFormField>
-          <UButton type="submit" :block="true" class="mt-4">Create Lock</UButton>
+          <UButton type="submit" :block="true" class="mt-4">Create PxLock Definition</UButton>
         </UForm>
 
         <UScrollArea
