@@ -403,9 +403,12 @@ export function usePlayerExpectationsNewDatasetExplorer() {
     loading.value = true
     error.value = null
     try {
-      const res = await apiFetch<ReviewsResponse>(`/api/player-expectations-new/dataset-explorer/reviews/`, {
-        query: toQueryParams(),
-      })
+      const res = await apiFetch<ReviewsResponse>(
+        `/api/player-expectations-new/dataset-explorer/reviews/`,
+        {
+          query: toQueryParams(),
+        },
+      )
       rows.value = res.data
       meta.value = res.meta
     } catch (e) {

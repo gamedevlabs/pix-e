@@ -101,7 +101,7 @@ export function useSparcV2Api() {
         headers,
         credentials: 'include',
         body,
-        responseType: 'stream'
+        responseType: 'stream',
       })
 
       if (!stream) {

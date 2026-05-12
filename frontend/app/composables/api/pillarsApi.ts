@@ -39,76 +39,64 @@ export function usePillarsApi() {
   }
 
   async function fixPillarWithAIAPICall(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
-    return await apiFetch<FixPillarAPIResponse>(
-      `/api/llm/pillars/${pillar.id}/fix/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-          validation_issues: validationIssues.map((issue) => ({
-            title: issue.title,
-            description: issue.description,
-          })),
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
+    return await apiFetch<FixPillarAPIResponse>(`/api/llm/pillars/${pillar.id}/fix/`, {
+      method: 'POST',
+      body: {
+        model: llm.active_llm,
+        validation_issues: validationIssues.map((issue) => ({
+          title: issue.title,
+          description: issue.description,
+        })),
       },
-    )
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
   }
 
   async function acceptPillarFixAPICall(pillarId: number, name: string, description: string) {
-    return await apiFetch<Pillar>(
-      `/api/llm/pillars/${pillarId}/accept-fix/`,
-      {
-        method: 'POST',
-        body: {
-          name,
-          description,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
+    return await apiFetch<Pillar>(`/api/llm/pillars/${pillarId}/accept-fix/`, {
+      method: 'POST',
+      body: {
+        name,
+        description,
       },
-    )
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
   }
 
   async function getContextInPillarsAPICall(context: string) {
-    return await apiFetch<ContextInPillarsFeedback>(
-      `/api/llm/feedback/context/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-          context: context,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
+    return await apiFetch<ContextInPillarsFeedback>(`/api/llm/feedback/context/`, {
+      method: 'POST',
+      body: {
+        model: llm.active_llm,
+        context: context,
       },
-    )
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
   }
 
   // --- New agentic evaluation endpoints ---
 
   async function evaluateAllAPICall(executionMode: ExecutionMode = 'agentic') {
-    return await apiFetch<EvaluateAllResponse>(
-      `/api/llm/feedback/evaluate-all/`,
-      {
-        method: 'POST',
-        body: {
-          model: llm.active_llm,
-          execution_mode: executionMode,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
+    return await apiFetch<EvaluateAllResponse>(`/api/llm/feedback/evaluate-all/`, {
+      method: 'POST',
+      body: {
+        model: llm.active_llm,
+        execution_mode: executionMode,
       },
-    )
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
   }
 
   async function resolveContradictionsAPICall(contradictions: ContradictionsResponse) {

@@ -15,13 +15,10 @@ export function useGameConcept() {
 
   async function fetchGameConcept() {
     try {
-      const data = await apiFetch<{ content: string }>(
-        `/api/game-concept/current/`,
-        {
-          credentials: 'include',
-          headers: useRequestHeaders(['cookie']),
-        },
-      )
+      const data = await apiFetch<{ content: string }>(`/api/game-concept/current/`, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
       designIdea.value = data?.content ?? ''
     } catch {
       // No current concept exists, that's ok
@@ -55,13 +52,10 @@ export function useGameConcept() {
   async function fetchConceptHistory() {
     isLoadingHistory.value = true
     try {
-      const data = await apiFetch<GameConcept[]>(
-        `/api/game-concept/history/`,
-        {
-          credentials: 'include',
-          headers: useRequestHeaders(['cookie']),
-        },
-      )
+      const data = await apiFetch<GameConcept[]>(`/api/game-concept/history/`, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
       conceptHistory.value = data || []
     } catch (err) {
       errorToast(err)
@@ -73,16 +67,13 @@ export function useGameConcept() {
   async function restoreConcept(conceptId: number) {
     isRestoringConcept.value = true
     try {
-      const data = await apiFetch<GameConcept>(
-        `/api/game-concept/${conceptId}/restore/`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-        },
-      )
+      const data = await apiFetch<GameConcept>(`/api/game-concept/${conceptId}/restore/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
       designIdea.value = data.content
       success('Game concept restored!')
       // Refresh history

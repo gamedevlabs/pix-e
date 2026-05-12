@@ -15,17 +15,14 @@ export function useMovieScriptEvaluatorApi() {
       formData.append('project', projectId)
       formData.append('file', movieScriptFile.file)
 
-      return await apiFetch(
-        `/api/movie-script-evaluator/projects/${projectId}/script/`,
-        {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-        },
-      )
+      return await apiFetch(`/api/movie-script-evaluator/projects/${projectId}/script/`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
     } catch (error) {
       console.error('Error fetching: ', error)
       throw error

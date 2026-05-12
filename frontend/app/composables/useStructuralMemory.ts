@@ -6,7 +6,7 @@ import { useApi } from '~/composables/useApi'
  * Handles generating knowledge triples, atomic facts, and embeddings
  * for PX nodes in selected charts.
  */
-  const { apiFetch } = useApi()
+const { apiFetch } = useApi()
 
 export interface GenerationOptions {
   chartIds: string[]

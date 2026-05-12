@@ -155,13 +155,10 @@ export function useContextStrategies() {
    */
   async function fetchStrategies(): Promise<StrategyInfo[]> {
     try {
-      const response = await apiFetch<{ strategies: StrategyInfo[] }>(
-        `/api/context/strategies/`,
-        {
-          method: 'GET',
-          credentials: 'include',
-        },
-      )
+      const response = await apiFetch<{ strategies: StrategyInfo[] }>(`/api/context/strategies/`, {
+        method: 'GET',
+        credentials: 'include',
+      })
       availableStrategies.value = response.strategies
       return response.strategies
     } catch (err) {

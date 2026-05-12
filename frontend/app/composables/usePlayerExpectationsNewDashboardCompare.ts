@@ -97,10 +97,13 @@ export function usePlayerExpectationsNewDashboardCompare() {
   // Load one heatmap (aesthetics/features/pain) for a given scope
   async function loadHeatmap(scope: CompareScope, dimension: DimensionKey) {
     const p = scopeParams(scope)
-    return await fetchJson<CompareHeatmapCodes>(`/api/player-expectations-new/dashboard/compare/heatmap-codes/`, {
-      ...p,
-      dimension,
-    })
+    return await fetchJson<CompareHeatmapCodes>(
+      `/api/player-expectations-new/dashboard/compare/heatmap-codes/`,
+      {
+        ...p,
+        dimension,
+      },
+    )
   }
 
   // Load all data blocks needed for one side (Left OR Right).
