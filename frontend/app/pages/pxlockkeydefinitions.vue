@@ -199,7 +199,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               size="lg"
             />
           </UFormField>
-          <UFormField label="Soft Gate" orientation="horizontal">
+          <UFormField label="Soft Gate" orientation="horizontal" description="A lock that can also be passed without the key(s), e.g. by skilled players.">
             <UCheckbox v-model="lockState.soft_gate" />
           </UFormField>
           <UFormField label="Unlock Mode" orientation="horizontal">
