@@ -4,7 +4,7 @@ const props = defineProps<{ chartId: string; settings: PxChartSettings }>()
 const { updateItem: updateSettings } = usePxChartSettings(props.chartId)
 
 const emit = defineEmits<{
-  close: (payload: { newSettings: EditableSettings }) => void
+  close: [newSettings: EditableSettings]
 }>()
 
 export type EditableSettings = Pick<
@@ -35,15 +35,12 @@ const items = [
 
 async function onSubmit() {
   await updateSettings(props.settings.id, state.value)
-  emit('close', { newSettings: state.value })
+  emit('close', state.value)
 }
 </script>
 
 <template>
-  <UModal
-    :title="'PxChart Settings'"
-    :close="{ onClick: () => emit('close', { newSettings: state }) }"
-  >
+  <UModal :title="'PxChart Settings'" :close="{ onClick: () => emit('close', state) }">
     <template #body>
       <UTabs :items="items" class="gap-8 w-full">
         <template #pathfinding>

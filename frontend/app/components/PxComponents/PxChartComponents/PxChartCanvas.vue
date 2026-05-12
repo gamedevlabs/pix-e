@@ -354,8 +354,8 @@ async function handleEditLocks() {
   const pxChartEdge = pxChartEdges.value.find((pxEdge) => pxEdge.id === selectedEdge.id)!
 
   await lockModal
-    .open({ selectedEdge: pxChartEdge, chartId: chartId }).result
-    .then(async (edgeId) => await updateLocksOnEdge(edgeId))
+    .open({ selectedEdge: pxChartEdge, chartId: chartId })
+    .result.then(async (edgeId) => await updateLocksOnEdge(edgeId))
 }
 
 async function handleEditSettings() {

@@ -2,11 +2,7 @@ import type { Edge, Node } from '@vue-flow/core'
 import { getConnectedEdges } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
 
-import {
-  type PxKeySet,
-  getKeySetFromKeyAssignment,
-  mergePxKeySets,
-} from '~/utils/pxkeysets'
+import { type PxKeySet, getKeySetFromKeyAssignment, mergePxKeySets } from '~/utils/pxkeysets'
 
 import type { PxChartPathCalculationResult } from '#imports'
 
@@ -28,9 +24,18 @@ export function usePxChartPathCalculation(
     softLocked: [],
   })
 
-  const { updateNodeStyling, updateEdgeStyling } = usePxChartPathStyling(nodes, edges, selectedNodes, settings, result, pxLockDefinitions, pxKeyDefinitions)
+  const { updateNodeStyling, updateEdgeStyling } = usePxChartPathStyling(
+    nodes,
+    edges,
+    selectedNodes,
+    settings,
+    result,
+    pxLockDefinitions,
+    pxKeyDefinitions,
+  )
 
-  const { canUnlock, removeConsumed, pxKeyDefinitionsById, getKeysInNode } = usePxChartPathCalculationUnlock(nodes, settings, pxLockDefinitions, pxKeyDefinitions)
+  const { canUnlock, removeConsumed, pxKeyDefinitionsById, getKeysInNode } =
+    usePxChartPathCalculationUnlock(nodes, settings, pxLockDefinitions, pxKeyDefinitions)
 
   interface QueueNode {
     id: string
@@ -217,10 +222,10 @@ export function usePxChartPathCalculation(
   async function resetPathCalculation() {
     // reset path itself and locked edges
     result.value = {
-        pathNodes: [],
-        pathEdges: [],
-        locked: [],
-        softLocked: [],
+      pathNodes: [],
+      pathEdges: [],
+      locked: [],
+      softLocked: [],
     }
     selectedNodes.value = []
   }

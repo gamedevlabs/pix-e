@@ -123,10 +123,7 @@ function getColor(lockInfo: LockInfo) {
 </script>
 
 <template>
-  <UModal
-    :title="'Edit Locks on Edge'"
-    :close="{ onClick: () => emit('close', selectedEdge.id) }"
-  >
+  <UModal :title="'Edit Locks on Edge'" :close="{ onClick: () => emit('close', selectedEdge.id) }">
     <template #body>
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField v-for="[id, lockInfo] of Object.entries(state)" :key="id" :name="`state.${id}`">

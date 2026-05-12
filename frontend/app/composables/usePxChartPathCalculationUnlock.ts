@@ -1,13 +1,12 @@
 import type { Node } from '@vue-flow/core'
-import { pxKeySetDifference, getKeySetFromDefArray } from "#imports"
+import { pxKeySetDifference, getKeySetFromDefArray } from '#imports'
 
 export function usePxChartPathCalculationUnlock(
-    nodes: Ref<Node[]>,
-    settings: Ref<PxChartSettings>,
-    pxLockDefinitions: Ref<PxLockDefinition[]>,
-    pxKeyDefinitions: Ref<PxKeyDefinition[]>,
+  nodes: Ref<Node[]>,
+  settings: Ref<PxChartSettings>,
+  pxLockDefinitions: Ref<PxLockDefinition[]>,
+  pxKeyDefinitions: Ref<PxKeyDefinition[]>,
 ) {
-
   const pxLockDefinitionsById: ComputedRef<Record<string, PxLockDefinition>> = computed(() => {
     return pxLockDefinitions.value.reduce((acc, def) => ({ [def.id]: def, ...acc }), {})
   })
@@ -24,7 +23,7 @@ export function usePxChartPathCalculationUnlock(
     return nodes.value.find((node) => node.id === nodeId)!.data.keys
   }
 
-    // assumes non-soft gate locks can be unlocked with available keys
+  // assumes non-soft gate locks can be unlocked with available keys
   function isSoftUnlock(keys: PxKeySet, locks: PxLock[]) {
     if (!locks || !locks.length) return false
 
@@ -129,4 +128,3 @@ export function usePxChartPathCalculationUnlock(
     consumableKeyDefs,
   }
 }
-

@@ -15,8 +15,12 @@ export function usePxChartPathCalculationResult(
   pxKeyDefinitions: Ref<PxKeyDefinition[]>,
   result: Ref<PxChartPathCalculationResult>,
 ) {
-
-  const { getKeysInNode, isSoftUnlock } = usePxChartPathCalculationUnlock(nodes, settings, pxLockDefinitions, pxKeyDefinitions)
+  const { getKeysInNode, isSoftUnlock } = usePxChartPathCalculationUnlock(
+    nodes,
+    settings,
+    pxLockDefinitions,
+    pxKeyDefinitions,
+  )
 
   const pathNodesAndEdges = computed(() => {
     return Array.from(Array(result.value.pathNodes.length), (_, i) => ({
@@ -47,6 +51,6 @@ export function usePxChartPathCalculationResult(
   })
 
   return {
-    gatedPath
+    gatedPath,
   }
 }

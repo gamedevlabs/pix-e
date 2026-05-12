@@ -9,7 +9,14 @@ export function usePxChartPathStyling(
   pxLockDefinitions: Ref<PxLockDefinition[]>,
   pxKeyDefinitions: Ref<PxKeyDefinition[]>,
 ) {
-  const { gatedPath } = usePxChartPathCalculationResult(nodes, edges, settings, pxLockDefinitions, pxKeyDefinitions, result)
+  const { gatedPath } = usePxChartPathCalculationResult(
+    nodes,
+    edges,
+    settings,
+    pxLockDefinitions,
+    pxKeyDefinitions,
+    result,
+  )
 
   function getPathStyle(color: string) {
     return {
@@ -46,7 +53,11 @@ export function usePxChartPathStyling(
     const softGatedPathStyle = { stroke: 'var(--ui-warning)' }
 
     for (const edge of edges.value) {
-      if (!result.value.pathNodes.length && settings.value.use_locks && result.value.locked.includes(edge.id)) {
+      if (
+        !result.value.pathNodes.length &&
+        settings.value.use_locks &&
+        result.value.locked.includes(edge.id)
+      ) {
         edge.style = lockedStyle
       } else if (settings.value.use_locks && gatedPath.value.edges.includes(edge)) {
         edge.style = softGatedPathStyle

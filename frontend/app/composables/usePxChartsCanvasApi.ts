@@ -329,7 +329,6 @@ export function usePxChartsCanvasApi(chartId: string) {
   async function updateLocksOnEdge(edgeId: string) {
     const edge = edges.value.find((e) => e.id === edgeId)
     if (!edge) {
-      // TODO: improve error handling?
       console.warn('Could not find edge.')
     } else {
       edge.data.locks = await getLocksForEdge(edgeId)

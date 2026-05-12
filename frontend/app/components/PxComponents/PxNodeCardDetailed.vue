@@ -9,7 +9,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update', updatedNode: PxNode): void
   (e: 'delete', nodeId: string): void
-  (e: 'deleteComponent' | 'addComponent' | 'deleteKey' | 'addKey' , nodeId: string, componentId: string): void
+  (
+    e: 'deleteComponent' | 'addComponent' | 'deleteKey' | 'addKey',
+    nodeId: string,
+    componentId: string,
+  ): void
 }>()
 
 const isBeingEdited = ref(false)
@@ -249,7 +253,6 @@ async function handleAddKey() {
         <h2 class="font-semibold text-lg mb-2">Description</h2>
         <UTextarea v-model="editForm.description" />
       </div>
-      
     </template>
 
     <template #footer>
