@@ -359,11 +359,9 @@ async function handleEditLocks() {
 }
 
 async function handleEditSettings() {
-  console.log(`Old PxChartPathSettings: ${JSON.stringify(settings.value)}`)
-  const { _newSettings } = await settingsModal.open({ chartId: chartId, settings: settings.value })
-    .result
-  await loadChartSettingsForUser()
-  console.log(`New PxChartPathSettings: ${JSON.stringify(settings.value)}`)
+  await settingsModal
+    .open({ chartId: chartId, settings: settings.value })
+    .result.then(async () => await loadChartSettingsForUser())
 }
 </script>
 
