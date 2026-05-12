@@ -76,7 +76,7 @@ services:
     volumes:
       - sqlite_prod:/app/data
     depends_on:
-      postgres-dev:
+      postgres-prod:
         condition: service_healthy
     restart: unless-stopped
 
@@ -98,8 +98,6 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    ports:
-      - "5433:5432"
 
 volumes:
   caddy_data: {}
