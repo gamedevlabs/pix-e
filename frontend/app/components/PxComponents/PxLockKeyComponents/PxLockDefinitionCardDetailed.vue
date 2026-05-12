@@ -43,8 +43,6 @@ function emitDelete() {
   emit('delete', props.definition.id)
 }
 
-const unlockModes = ref(['permanent', 'temporary', 'reversible', 'collapsible'])
-
 const unlockedByKeyNames = computed(() => {
   return props.keysForSelection
     .filter((key) => props.definition.unlocked_by.includes(key.value))
@@ -70,7 +68,7 @@ const unlockedByKeyNames = computed(() => {
         <b>Soft Gate</b>
         <UCheckbox v-model="editForm.soft_gate" :disabled="true" color="neutral" />
         <b>Unlock Mode</b>
-        {{ definition.unlock_mode }}
+        {{ pxUnlockModeDisplayNames[definition.unlock_mode] }}
         <b>Unlocked By</b>
         <ul>
           <li v-for="name in unlockedByKeyNames" :key="name">{{ name }}</li>
@@ -80,7 +78,12 @@ const unlockedByKeyNames = computed(() => {
         <b>Soft Gate</b>
         <UCheckbox v-model="editForm.soft_gate" />
         <b>Unlock Mode</b>
-        <USelect v-model="editForm.unlock_mode" :items="unlockModes" />
+        <USelect
+          v-model="editForm.unlock_mode"
+          :items="pxUnlockModesForSelection"
+          label-key="label"
+          value-key="value"
+        />
         <b>Unlocked By</b>
         <USelectMenu
           v-model="editForm.unlocked_by"

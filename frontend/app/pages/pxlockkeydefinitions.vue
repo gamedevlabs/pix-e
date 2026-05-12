@@ -34,10 +34,7 @@ const {
 onMounted(() => {
   fetchPxLockDefinitions()
   fetchPxKeyDefinitions()
-  console.log(`Key Definitions: ${pxKeyDefinitions.value.toString()}`)
 })
-
-const keyTypes = ref(['item', 'ability'])
 
 interface PxKeyDefState {
   name: string
@@ -73,11 +70,9 @@ async function handleUpdateKey(updatedDefinition: PxKeyDefinition) {
   await updatePxKeyDefinition(updatedDefinition.id, updatedDefinition)
 }
 
-const unlockModes = ref(['permanent', 'temporary', 'reversible', 'collapsible'])
-
 export type PxKeySelectMenuItem = SelectMenuItem & { label: string; value: string }
 
-const keysForSelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
+const keysForUnlockedBySelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
   return pxKeyDefinitions.value.map((def) => ({ label: def.name, value: def.id }))
 })
 
@@ -85,7 +80,7 @@ interface PxLockDefState {
   name: string
   soft_gate: boolean
   unlocked_by: string[]
-  unlock_mode: PxLockUnlockModeType
+  unlock_mode: PxUnlockModeType
 }
 
 const defaultLockState: PxLockDefState = {
@@ -138,7 +133,9 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           <UFormField label="Type" name="type" orientation="horizontal" required>
             <USelectMenu
               v-model="keyState.type"
-              :items="keyTypes"
+              :items="pxKeyTypesForSelection"
+              label-key="label"
+              value-key="value"
               placeholder="Select Type"
               :search-input="false"
             />
@@ -208,14 +205,17 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           <UFormField label="Unlock Mode" orientation="horizontal">
             <USelectMenu
               v-model="lockState.unlock_mode"
-              :items="unlockModes"
+              :items="pxUnlockModesForSelection"
+              label-key="label"
+              value-key="value"
+              placeholder="Select Type"
               :search-input="false"
             />
           </UFormField>
           <UFormField name="unlocked_by" label="Unlocked By" orientation="horizontal" required>
             <USelectMenu
               v-model="lockState.unlocked_by"
-              :items="keysForSelection"
+              :items="keysForUnlockedBySelection"
               :value-key="'value'"
               multiple
               :search-input="false"
@@ -236,7 +236,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
         >
           <PxLockDefinitionCardDetailed
             :definition="item"
-            :keys-for-selection="keysForSelection"
+            :keys-for-selection="keysForUnlockedBySelection"
             class="min-w-100"
             @edit="handleUpdateLock"
             @delete="deletePxLockDefinition"

@@ -40,8 +40,6 @@ function cancelEdit() {
 function emitDelete() {
   emit('delete', props.definition.id)
 }
-
-const keyTypes = ref(['item', 'ability'])
 </script>
 <template>
   <UCard class="hover:shadow-lg transition">
@@ -60,7 +58,7 @@ const keyTypes = ref(['item', 'ability'])
     <template #default>
       <div v-if="!isBeingEdited" class="grid grid-cols-2 gap-6">
         <b>Type</b>
-        {{ definition.key_type }}
+        {{ pxKeyTypesDisplayNames[definition.key_type] }}
         <b>Consumable</b>
         <!--
             this is a bit unclean as the value should be based on props.definition, 
@@ -76,7 +74,9 @@ const keyTypes = ref(['item', 'ability'])
         <b>Type</b>
         <USelect
           v-model="editForm.key_type"
-          :items="keyTypes"
+          :items="pxKeyTypesForSelection"
+          label-key="label"
+          value-key="value"
         />
         <b>Consumable</b>
         <UCheckbox v-model="editForm.consumable" />
