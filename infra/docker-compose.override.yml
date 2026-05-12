@@ -12,6 +12,7 @@ services:
       dockerfile: Dockerfile
       args:
         DJANGO_PORT: $DJANGO_PORT_DEV
+        SQLITE_DB_PATH: /app/data/db.sqlite3
     ports:
       - "8000:${DJANGO_PORT_DEV:-8000}"
 

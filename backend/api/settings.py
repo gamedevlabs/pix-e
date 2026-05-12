@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 from llm.logfire_config import configure_logfire
@@ -26,10 +27,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Load environment variables from .env file
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / "infra" / ".env")
 
 # Load environment variables from .env file
-load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv(BASE_DIR.parent / "infra" / ".env")
 
 configure_logfire()
 
@@ -136,12 +137,13 @@ WSGI_APPLICATION = "api.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+db_path_env = os.getenv("SQLITE_DB_PATH", "/app/data/db.sqlite3")
+DB_PATH = Path(db_path_env).resolve()
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.getenv("SQLITE_DB_PATH", "/app/data/db.sqlite3").replace(
-            "$BASE_DIR", str(BASE_DIR)
-        ),
+        "NAME": str(DB_PATH),
     }
 }
 
