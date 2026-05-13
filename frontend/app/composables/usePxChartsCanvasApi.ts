@@ -96,9 +96,9 @@ export function usePxChartsCanvasApi(chartId: string) {
       sourceHandle: e.sourceHandle,
       target: e.target,
       targetHandle: e.targetHandle,
-      markerEnd: edgeDefaultValues.markerEnd,
+      markerEnd: e.bidirectional ? undefined : edgeDefaultValues.markerEnd,
       type: edgeDefaultValues.type,
-      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id) },
+      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id), bidirectional: e.bidirectional },
     }))
   }
 
@@ -363,6 +363,7 @@ export function usePxChartsCanvasApi(chartId: string) {
         targetHandle: connection.targetHandle!,
         px_chart: chartId,
         locks: [],
+        bidirectional: false,
       })
     } catch (err) {
       alert('Could not add edge: ' + err.message)
