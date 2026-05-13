@@ -19,7 +19,7 @@ const { fetchById: fetchPxNodeById } = usePxNodes()
 
 onMounted(() => {
   getDefinition()
-  getEdge()
+  getNode()
 })
 
 const associatedDefinition = ref<PxKeyDefinition | null>(null)
@@ -33,7 +33,7 @@ async function getDefinition() {
   associatedDefinition.value = await fetchPxDefinitionById(props.pxkey.definition)
 }
 
-async function getEdge() {
+async function getNode() {
   if (props.node) {
     associatedNode.value = props.node
     return
@@ -49,7 +49,9 @@ async function handleDelete(id: string) {
 </script>
 
 <template>
-  <div v-if="!associatedNode || !associatedDefinition">Loading PxKey {{ pxkey.id }}</div>
+  <div v-if="!associatedNode || !associatedDefinition">
+    Loading PxKey {{ pxkey.id }} KEY: {{ JSON.stringify(pxkey) }}
+  </div>
   <PxKeyCardPreview
     v-else-if="visualizationStyle === 'preview' && readOnly"
     :pxkey="pxkey"

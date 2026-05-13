@@ -437,7 +437,6 @@ async function handleEditSettings() {
       >
         <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
       </UTooltip>
-      
     </Panel>
 
     <!-- Context Strategy Analysis Button -->

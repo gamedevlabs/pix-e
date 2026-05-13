@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { PxComponentCreationForm, PxNodeFixModal } from '#components'
-import PxKeyCreationForm from './PxLockKeyComponents/PxKeyCreationForm.vue';
+import PxKeyCreationForm from './PxLockKeyComponents/PxKeyCreationForm.vue'
 
 const props = defineProps<{
   node: PxNode
