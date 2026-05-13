@@ -1,5 +1,3 @@
-"""Orchestrates structural + semantic consistency checks for the pix:e schema."""
-
 from typing import List, Optional
 
 from game_concept.models import Project
@@ -29,6 +27,7 @@ class ConsistencyWorkflow:
         return ConsistencyReport(findings=findings)
 
     def _run_semantic_checks(self, project: Project) -> List[ConsistencyFinding]:
+        from .semantic.node_coherence import NodeCoherenceAgent
         from .semantic.pillar_alignment import PillarAlignmentAgent
 
         if self._model_manager is None:
@@ -38,34 +37,62 @@ class ConsistencyWorkflow:
         pillars = list(project.pillars.all())
         nodes = list(project.pxnodes.all())
 
-        if not pillars or not nodes:
-            return findings
-
-        try:
-            agent = PillarAlignmentAgent()
-            data = {
-                "pillars_section": self._format_pillars(pillars),
-                "nodes_section": self._format_nodes(nodes),
-            }
-            context = {"model_manager": self._model_manager, "data": data}
-            result = agent.execute(context)
-
-            if result.success and result.data:
-                for item in result.data.get("findings", []):
-                    findings.append(
-                        ConsistencyFinding(
-                            severity=FindingSeverity.WARNING,
-                            category="pillar_misalignment",
-                            entity_id=item.get("node_id", ""),
-                            message=(
-                                f"[pillar {item.get('pillar_id', '')}] "
-                                f"{item.get('explanation', '')} "
-                                f"(confidence: {item.get('confidence', 0):.2f})"
-                            ),
+        if pillars and nodes:
+            try:
+                agent = PillarAlignmentAgent()
+                data = {
+                    "pillars_section": self._format_pillars(pillars),
+                    "nodes_section": self._format_nodes(nodes),
+                }
+                context = {"model_manager": self._model_manager, "data": data}
+                result = agent.execute(context)
+                if result.success and result.data:
+                    for item in result.data.get("findings", []):
+                        findings.append(
+                            ConsistencyFinding(
+                                severity=FindingSeverity.WARNING,
+                                category="pillar_misalignment",
+                                entity_id=item.get("node_id", ""),
+                                message=(
+                                    f"[pillar {item.get('pillar_id', '')}] "
+                                    f"{item.get('explanation', '')} "
+                                    f"(confidence: {item.get('confidence', 0):.2f})"
+                                ),
+                            )
                         )
-                    )
-        except Exception:
-            pass
+            except Exception:
+                pass
+
+        if len(nodes) >= 2:
+            try:
+                agent = NodeCoherenceAgent()
+                data = {
+                    "nodes": [
+                        {
+                            "id": str(n.id),
+                            "name": n.name,
+                            "description": n.description,
+                        }
+                        for n in nodes
+                    ],
+                }
+                context = {"model_manager": self._model_manager, "data": data}
+                result = agent.execute(context)
+                if result.success and result.data:
+                    for item in result.data.get("contradictions", []):
+                        findings.append(
+                            ConsistencyFinding(
+                                severity=FindingSeverity.WARNING,
+                                category="node_contradiction",
+                                entity_id=item.get("node_a_id", ""),
+                                message=(
+                                    f"[vs {item.get('node_b_name', '')}] "
+                                    f"{item.get('message', '')}"
+                                ),
+                            )
+                        )
+            except Exception:
+                pass
 
         return findings
 
