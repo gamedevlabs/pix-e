@@ -26,9 +26,8 @@ class StructuralChecker:
         self, project: Project
     ) -> List[ConsistencyFinding]:
         """Check each PxComponent's definition belongs to the node's project."""
-        components = (
-            PxComponent.objects.filter(node__project=project)
-            .select_related("node", "definition", "definition__project")
+        components = PxComponent.objects.filter(node__project=project).select_related(
+            "node", "definition", "definition__project"
         )
         findings = []
         for c in components:
@@ -53,10 +52,9 @@ class StructuralChecker:
         self, project: Project
     ) -> List[ConsistencyFinding]:
         """Check each PxChartContainer's content (PxNode) belongs to the same project as its PxChart."""
-        containers = (
-            PxChartContainer.objects.filter(px_chart__project=project)
-            .select_related("px_chart", "content", "content__project")
-        )
+        containers = PxChartContainer.objects.filter(
+            px_chart__project=project
+        ).select_related("px_chart", "content", "content__project")
         findings = []
         for container in containers:
             if container.content is None:
@@ -81,9 +79,8 @@ class StructuralChecker:
         self, project: Project
     ) -> List[ConsistencyFinding]:
         """Check each PxComponent's value type matches its definition's declared type."""
-        components = (
-            PxComponent.objects.filter(node__project=project)
-            .select_related("node", "definition")
+        components = PxComponent.objects.filter(node__project=project).select_related(
+            "node", "definition"
         )
         findings = []
         for c in components:
@@ -122,9 +119,8 @@ class StructuralChecker:
         self, project: Project
     ) -> List[ConsistencyFinding]:
         """Check each PxChartEdge's source and target reside in the same chart."""
-        edges = (
-            PxChartEdge.objects.filter(px_chart__project=project)
-            .select_related("source", "target", "source__px_chart", "target__px_chart")
+        edges = PxChartEdge.objects.filter(px_chart__project=project).select_related(
+            "source", "target", "source__px_chart", "target__px_chart"
         )
         findings = []
         for edge in edges:
@@ -147,9 +143,7 @@ class StructuralChecker:
                 )
         return findings
 
-    def _check_duplicate_node_names(
-        self, project: Project
-    ) -> List[ConsistencyFinding]:
+    def _check_duplicate_node_names(self, project: Project) -> List[ConsistencyFinding]:
         """Warn when multiple PxNodes share the same name within a project."""
         duplicates = (
             PxNode.objects.filter(project=project)
@@ -161,8 +155,9 @@ class StructuralChecker:
         for dup in duplicates:
             name = dup["name"]
             ids = list(
-                PxNode.objects.filter(project=project, name=name)
-                .values_list("id", flat=True)
+                PxNode.objects.filter(project=project, name=name).values_list(
+                    "id", flat=True
+                )
             )
             msg = (
                 f"Multiple PxNodes share the name '{name}' in this project "

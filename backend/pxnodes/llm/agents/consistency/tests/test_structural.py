@@ -12,6 +12,7 @@ from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
 
 # Helpers
 
+
 def make_node(project, name="Node"):
     return PxNode.objects.create(
         id=uuid.uuid4(), name=name, description="", project=project
@@ -55,6 +56,7 @@ def make_edge(chart, source, target, source_handle="a", target_handle="b"):
 
 # Regel 1: PxComponent.definition gehört zu einem anderen Projekt
 
+
 @pytest.mark.django_db
 class TestCheckComponentProjectMatch:
     def test_cross_project_definition_raises_finding(self, project_a, project_b):
@@ -91,7 +93,6 @@ class TestCheckComponentProjectMatch:
             findings = StructuralChecker()._check_component_project_match(Mock())
 
         assert findings == []
-
 
 
 # Regel 2: PxChartContainer.content gehört zu einem anderen Projekt als sein PxChart
