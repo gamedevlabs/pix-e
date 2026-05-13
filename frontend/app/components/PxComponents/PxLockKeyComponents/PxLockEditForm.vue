@@ -95,11 +95,9 @@ async function onSubmit() {
         count: info.newCount,
       })
       info.lockId = lockId
-      console.log(`Created new lock with id ${lockId}`)
     } else if (info.lockId && info.currentCount > 0 && info.newCount === 0) {
       // delete existing lock
       await deletePxLock(info.lockId)
-      console.log(`Deleted lock with id ${info.lockId}`)
       info.lockId = undefined
     } else if (info.lockId && info.currentCount !== info.newCount) {
       // update existing lock
@@ -108,7 +106,6 @@ async function onSubmit() {
         definition: info.defId,
         count: info.newCount,
       })
-      console.log(`Updated lock with id ${info.lockId}`)
     }
     info.currentCount = info.newCount
   })

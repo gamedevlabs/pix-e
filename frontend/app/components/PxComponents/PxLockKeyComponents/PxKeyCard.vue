@@ -49,9 +49,7 @@ async function handleDelete(id: string) {
 </script>
 
 <template>
-  <div v-if="!associatedNode || !associatedDefinition">
-    Loading PxKey {{ pxkey.id }} KEY: {{ JSON.stringify(pxkey) }}
-  </div>
+  <div v-if="!associatedNode || !associatedDefinition">Loading PxKey {{ pxkey.id }}</div>
   <PxKeyCardPreview
     v-else-if="visualizationStyle === 'preview' && readOnly"
     :pxkey="pxkey"
