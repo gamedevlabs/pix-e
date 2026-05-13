@@ -39,47 +39,10 @@ class PxComponentDefinitionSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxNodeSerializer(serializers.ModelSerializer):
+class PxKeyAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PxNode
-        fields = [
-            "id",
-            "name",
-            "description",
-            "owner",
-            "project",
-            "updated_at",
-            "created_at",
-        ]
-        read_only_fields = ["owner", "project", "created_at", "updated_at"]
-
-    def update(self, instance, validated_data):
-        if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError(
-                {"id": "Cannot update ID after creation."}
-            )
-        return super().update(instance, validated_data)
-
-
-class PxNodeDetailSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=True)
-    components = PxComponentSerializer(many=True, read_only=True)
-    charts = PxChartSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = PxNode
-        fields = [
-            "id",
-            "name",
-            "description",
-            "components",
-            "charts",
-            "owner",
-            "project",
-            "updated_at",
-            "created_at",
-        ]
-        read_only_fields = ["owner", "project", "created_at", "updated_at"]
+        model = PxKeyAssignment
+        fields = "__all__"
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
@@ -102,19 +65,6 @@ class PxKeyDefinitionSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class PxKeyAssignmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PxKeyAssignment
-        fields = "__all__"
-
-    def update(self, instance, validated_data):
-        if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError(
-                {"id": "Cannot update ID after creation."}
-            )
-        return super().update(instance, validated_data)
-
-
 class PxNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxNode
@@ -123,10 +73,11 @@ class PxNodeSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "owner",
+            "project",
             "updated_at",
             "created_at",
         ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
@@ -152,10 +103,11 @@ class PxNodeDetailSerializer(serializers.ModelSerializer):
             "keys",
             "charts",
             "owner",
+            "project",
             "updated_at",
             "created_at",
         ]
-        read_only_fields = ["owner", "created_at", "updated_at"]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
