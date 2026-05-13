@@ -16,7 +16,7 @@ export function usePxChartsCanvasApi(chartId: string) {
     createItem: createPxChartContainer,
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
-  const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+  const { createItem: createPxEdge, deleteItem: deletePxEdge, updateItem: updatePxEdge } = usePxChartEdges(chartId)
   const { fetchById: fetchPxNode, fetchAll: fetchPxNodes, items: _pxNodes } = usePxNodes()
   const { fetchAll: fetchPxLocks, items: pxLocks } = usePxLocks(chartId)
   const { fetchAll: fetchPxKeys, items: pxKeys } = usePxKeys()
@@ -411,6 +411,17 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
   }
 
+  async function changeEdgeDirectionality(edgeId: string) {
+    const edge = edges.value.find((e) => e.id === edgeId)
+    if (!edge) {
+      console.warn('Could not find edge.')
+    } else {
+      edge.data.bidirectional = !edge.data.bidirectional
+      edge.markerEnd = edge.data.bidirectional ? undefined : edgeDefaultValues.markerEnd
+      await updatePxEdge(edgeId, { bidirectional: edge.data.bidirectional })
+    }
+  }
+
   return {
     nodes,
     edges,
@@ -432,5 +443,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     deleteEdge,
     updateLocksOnEdge,
     getKeysForNode,
+    changeEdgeDirectionality,
   }
 }

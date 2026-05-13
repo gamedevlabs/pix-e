@@ -63,6 +63,7 @@ const {
   deleteEdge,
   updateLocksOnEdge,
   getKeysForNode,
+  changeEdgeDirectionality,
 } = usePxChartsCanvasApi(chartId)
 
 const {
