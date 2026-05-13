@@ -52,7 +52,8 @@ class StructuralChecker:
     def _check_chart_container_project_match(
         self, project: Project
     ) -> List[ConsistencyFinding]:
-        """Check each PxChartContainer's content (PxNode) belongs to the same project as its PxChart."""
+        """Check each PxChartContainer's content (PxNode) belongs to the same project
+        as its PxChart."""
         containers = PxChartContainer.objects.filter(
             px_chart__project=project
         ).select_related("px_chart", "content", "content__project")
@@ -79,7 +80,8 @@ class StructuralChecker:
     def _check_component_value_type_match(
         self, project: Project
     ) -> List[ConsistencyFinding]:
-        """Check each PxComponent's value type matches its definition's declared type."""
+        """Check each PxComponent's value type matches its definition's declared
+        type."""
         components = PxComponent.objects.filter(node__project=project).select_related(
             "node", "definition"
         )

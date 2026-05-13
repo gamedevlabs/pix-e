@@ -159,7 +159,8 @@ class TestCheckEdgeWithinSameChart:
         assert findings == []
 
     def test_source_or_target_none_skipped(self, project_a):
-        """Null guard: edge with source=None (dangling after container deletion) produces no finding."""
+        """Null guard: edge with source=None (dangling after container deletion)
+        produces no finding."""
         chart = make_chart(project_a)
         container = make_container(chart)
         make_edge(chart, source=None, target=container)
@@ -186,7 +187,8 @@ class TestCheckComponentValueTypeMatch:
         assert findings[0].severity == FindingSeverity.ERROR
 
     def test_bool_type_with_int_value_raises_finding(self, project_a):
-        """Bool-as-int quirk: 42 must not pass the bool check even though bool subclasses int."""
+        """Bool-as-int quirk: 42 must not pass the bool check even though bool
+        subclasses int."""
         node = make_node(project_a)
         definition = make_definition(project_a, name="BoolDef", type="bool")
         make_component(node, definition, value=42)
@@ -225,7 +227,8 @@ class TestCheckComponentValueTypeMatch:
         assert findings == []
 
     def test_value_none_skipped(self):
-        """Null guard: component with value=None produces no finding (NOT NULL in DB, so mocked)."""
+        """Null guard: component with value=None produces no finding
+        (NOT NULL in DB, so mocked)."""
         mock_component = Mock()
         mock_component.definition = Mock()
         mock_component.value = None
