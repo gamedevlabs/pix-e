@@ -1,5 +1,6 @@
 import { usePillarsApi } from '@/composables/api/pillarsApi'
 import { useProject } from '@/composables/useProject'
+import { useApi } from '~/composables/useApi'
 
 // Shared state - singleton pattern for cross-component reactivity
 const items = ref<Pillar[]>([])
@@ -20,10 +21,9 @@ const evaluationError = ref<string | null>(null)
 const executionMode = ref<ExecutionMode>('agentic')
 
 export function usePillars() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const pillarsApi = usePillarsApi()
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = `${config.public.apiBase}/api/llm/pillars/`
   const projectStore = useProject()
 
   // Use shared game concept state
@@ -43,7 +43,7 @@ export function usePillars() {
   async function fetchAll() {
     loading.value = true
     try {
-      const data = await $fetch<Pillar[]>(API_URL, {
+      const data = await apiFetch<Pillar[]>('/api/llm/pillars/', {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
@@ -58,7 +58,7 @@ export function usePillars() {
 
   async function createItem(payload: Partial<Pillar>) {
     try {
-      const result = await $fetch<Pillar>(API_URL, {
+      const result = await apiFetch<Pillar>('/api/llm/pillars/', {
         method: 'POST',
         body: payload,
         credentials: 'include',
@@ -78,7 +78,7 @@ export function usePillars() {
 
   async function updateItem(id: number | string, payload: Partial<Pillar>) {
     try {
-      await $fetch<Pillar>(`${API_URL}${id}/`, {
+      await apiFetch<Pillar>(`/api/llm/pillars/${id}/`, {
         method: 'PATCH',
         body: payload,
         credentials: 'include',
@@ -96,7 +96,7 @@ export function usePillars() {
 
   async function deleteItem(id: number | string) {
     try {
-      await $fetch<null>(`${API_URL}${id}/`, {
+      await apiFetch<null>(`/api/llm/pillars/${id}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

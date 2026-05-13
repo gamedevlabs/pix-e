@@ -1,0 +1,11 @@
+localhost {
+    encode gzip
+
+    handle /api/* {
+        reverse_proxy backend-dev:{$DJANGO_PORT_DEV}
+    }
+
+    handle {
+        reverse_proxy frontend-dev:3000
+    }
+}

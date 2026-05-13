@@ -12,7 +12,8 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
-const config = useRuntimeConfig()
+import { useApi } from '~/composables/useApi'
+const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
@@ -22,7 +23,6 @@ const emit = defineEmits<{
 const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
-const BASE_URL = config.public.apiBase + '/api'
 const { success: successToast, error: errorToast } = usePixeToast()
 
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
@@ -126,7 +126,7 @@ async function handlePrecomputeArtifacts() {
       payload.node_id = selectedNodeForAnalysis.value.nodeId
     }
 
-    await $fetch(`${BASE_URL}/context/precompute/`, {
+    await apiFetch(`/api/context/precompute/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -148,7 +148,7 @@ async function handleResetArtifacts() {
   if (!confirmed) return
 
   try {
-    await $fetch(`${BASE_URL}/context/precompute/reset/`, {
+    await apiFetch(`/api/context/precompute/reset/`, {
       method: 'POST',
       credentials: 'include',
       headers: {

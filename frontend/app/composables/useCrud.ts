@@ -1,15 +1,16 @@
+import { useApi } from '~/composables/useApi'
+
 export function useCrud<T>(apiUrl: string) {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const items = ref<T[]>([])
   const loading = ref(false)
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = config.public.apiBase + '/' + apiUrl
 
   async function fetchAll() {
     loading.value = true
     try {
-      const data = await $fetch<T[]>(API_URL, {
+      const data = await apiFetch<T[]>(apiUrl, {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
@@ -25,7 +26,7 @@ export function useCrud<T>(apiUrl: string) {
   async function fetchById(id: number | string) {
     loading.value = true
     try {
-      return await $fetch<T>(`${API_URL}${id}`)
+      return await apiFetch<T>(`${apiUrl}${id}`)
     } catch (err) {
       error.value = err
       return null
@@ -36,7 +37,7 @@ export function useCrud<T>(apiUrl: string) {
 
   async function createItem(payload: Partial<T>) {
     try {
-      const result = await $fetch<T>(API_URL, {
+      const result = await apiFetch<T>(apiUrl, {
         method: 'POST',
         body: payload,
         credentials: 'include',
@@ -56,7 +57,7 @@ export function useCrud<T>(apiUrl: string) {
 
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
-      await $fetch<T>(`${API_URL}${id}/`, {
+      await apiFetch<T>(`${apiUrl}${id}/`, {
         method: 'PATCH',
         body: payload,
         credentials: 'include',
@@ -74,7 +75,7 @@ export function useCrud<T>(apiUrl: string) {
 
   async function deleteItem(id: number | string) {
     try {
-      await $fetch<null>(`${API_URL}${id}/`, {
+      await apiFetch<null>(`${apiUrl}${id}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

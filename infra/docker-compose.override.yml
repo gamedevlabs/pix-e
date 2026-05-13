@@ -1,0 +1,32 @@
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile
+
+  ################################################################################################
+  #                                     LOCAL configuration                                      #
+  ################################################################################################
+  backend-dev:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        DJANGO_PORT: $DJANGO_PORT_DEV
+        SQLITE_DB_PATH: /app/data/db.sqlite3
+    ports:
+      - "8000:${DJANGO_PORT_DEV:-8000}"
+
+  frontend-dev:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - NUXT_HOST=0.0.0.0
+      - NITROPACK_HOST=0.0.0.0
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    extra_hosts:
+      - "localhost:host-gateway"

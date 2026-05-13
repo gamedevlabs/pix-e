@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 from llm.logfire_config import configure_logfire
@@ -25,10 +27,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Load environment variables from .env file
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / "infra" / ".env")
 
 # Load environment variables from .env file
-load_dotenv(BASE_DIR.parent / ".env")
+load_dotenv(BASE_DIR.parent / "infra" / ".env")
 
 configure_logfire()
 
@@ -41,7 +43,7 @@ SECRET_KEY = "django-insecure-wxqcjs8ufub1x#x)nwi-y4k+sv@$r@9-=&dp!8r=sp8ee=#lh%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list = ["pixie.soc.cit.tum.de", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS: list = ["pixie.soc.cit.tum.de", "localhost", "127.0.0.1", "backend-dev"]
 
 # Application definition
 
@@ -132,17 +134,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "api.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+db_path_env = os.getenv("SQLITE_DB_PATH", "/app/data/db.sqlite3")
+DB_PATH = Path(db_path_env).resolve()
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": str(DB_PATH),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -163,7 +166,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -174,7 +176,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

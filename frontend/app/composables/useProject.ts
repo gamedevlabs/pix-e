@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useApi } from '~/composables/useApi'
 
 export const useProject = defineStore('project', () => {
   const projects = ref<Project[]>([])
@@ -7,12 +8,12 @@ export const useProject = defineStore('project', () => {
   const isSwitching = ref(false)
   const isCloning = ref(false)
   const { success, error: errorToast } = usePixeToast()
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
 
   async function fetchProjects() {
     isLoading.value = true
     try {
-      const data = await $fetch<Project[]>(`${config.public.apiBase}/projects/`, {
+      const data = await apiFetch<Project[]>(`/api/projects/`, {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
@@ -29,7 +30,7 @@ export const useProject = defineStore('project', () => {
     if (!projectId || projectId === activeProjectId.value) return
     isSwitching.value = true
     try {
-      const data = await $fetch<Project>(`${config.public.apiBase}/projects/${projectId}/switch/`, {
+      const data = await apiFetch<Project>(`/api/projects/${projectId}/switch/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -59,7 +60,7 @@ export const useProject = defineStore('project', () => {
     if (!projectId) return
     isCloning.value = true
     try {
-      await $fetch<Project>(`${config.public.apiBase}/projects/${projectId}/clone/`, {
+      await apiFetch<Project>(`/api/projects/${projectId}/clone/`, {
         method: 'POST',
         body: payload,
         credentials: 'include',

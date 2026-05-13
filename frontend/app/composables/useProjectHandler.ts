@@ -1,4 +1,5 @@
 ﻿import type { Project } from '~/utils/project'
+import { useApi } from '~/composables/useApi'
 
 export const useProjectHandler = () => {
   // state
@@ -9,8 +10,7 @@ export const useProjectHandler = () => {
 
   const isProjectSelected = computed(() => !!currentProjectId.value)
 
-  const config = useRuntimeConfig()
-  const API_URL = config.public.apiBase + '/api/projects/'
+  const { apiFetch } = useApi()
   const { items, createItem, updateItem, fetchAll, fetchById, deleteItem } =
     useCrudWithAuthentication<Project>('api/projects/')
 
@@ -24,7 +24,7 @@ export const useProjectHandler = () => {
   }
 
   const selectProject = async (projectId: number) => {
-    const data = await $fetch<Project>(`${API_URL}${projectId}/switch/`, {
+    const data = await apiFetch<Project>(`/api/projects/${projectId}/switch/`, {
       method: 'POST',
       credentials: 'include',
       headers: {

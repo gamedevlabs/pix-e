@@ -1,15 +1,16 @@
+import { useApi } from '~/composables/useApi'
+
 export function usePxExport() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const loading = ref<boolean>(false)
   const error = ref<unknown>(null)
-  const API_URL = config.public.apiBase + '/api/'
   const { success, error: errorToast } = usePixeToast()
 
   async function exportPxData(): Promise<object> {
     loading.value = true
     let data
     try {
-      data = await $fetch<object>(API_URL + 'pxexport/', {
+      data = await apiFetch<object>('/api/pxexport/', {
         credentials: 'include',
         headers: {
           'X-CSRFToken': useCookie('csrftoken').value,
@@ -27,7 +28,7 @@ export function usePxExport() {
 
   async function importPxData(payload: object) {
     try {
-      await $fetch<object>(API_URL + 'pximport/', {
+      await apiFetch<object>('/api/pximport/', {
         method: 'POST',
         body: payload,
         credentials: 'include',

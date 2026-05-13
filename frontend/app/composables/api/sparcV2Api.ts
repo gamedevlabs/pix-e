@@ -1,3 +1,5 @@
+import { useApi } from '~/composables/useApi'
+
 export interface ProgressEvent {
   stage: string
   message: string
@@ -6,7 +8,7 @@ export interface ProgressEvent {
 }
 
 export function useSparcV2Api() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const llm = useLLM()
 
   async function runV2EvaluateAPICall(
@@ -26,7 +28,7 @@ export function useSparcV2Api() {
       formData.append('context_strategy', contextStrategy)
       formData.append('document', document)
 
-      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/`, {
+      return await apiFetch<SPARCV2Response>(`/api/sparc/v2/evaluate/`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -36,7 +38,7 @@ export function useSparcV2Api() {
       })
     } else {
       // Keep existing JSON approach when no document
-      return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/`, {
+      return await apiFetch<SPARCV2Response>(`/api/sparc/v2/evaluate/`, {
         method: 'POST',
         body: {
           game_text: gameText,
@@ -63,8 +65,6 @@ export function useSparcV2Api() {
     onError: (error: string) => void,
     document?: File | null,
   ) {
-    const url = `${config.public.apiBase}/api/sparc/v2/evaluate-stream/`
-
     try {
       // Use FormData if document is provided, otherwise use JSON
       let body: FormData | string
@@ -96,19 +96,20 @@ export function useSparcV2Api() {
         }
       }
 
-      const response = await fetch(url, {
+      const stream = await apiFetch<ReadableStream>('/api/sparc/v2/evaluate-stream/', {
         method: 'POST',
         headers,
         credentials: 'include',
         body,
+        responseType: 'stream',
       })
 
-      if (!response.body) {
+      if (!stream) {
         onError('No response body')
         return
       }
 
-      const reader = response.body.getReader()
+      const reader = stream.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
 
@@ -158,7 +159,7 @@ export function useSparcV2Api() {
     context: string = '',
     contextStrategy: SparcContextStrategy = 'router',
   ) {
-    return await $fetch<SPARCV2Response>(`${config.public.apiBase}/api/sparc/v2/evaluate/aspect/`, {
+    return await apiFetch<SPARCV2Response>(`/api/sparc/v2/evaluate/aspect/`, {
       method: 'POST',
       body: {
         game_text: gameText,
@@ -180,23 +181,20 @@ export function useSparcV2Api() {
     context: string = '',
     contextStrategy: SparcContextStrategy = 'router',
   ) {
-    return await $fetch<SPARCV2Response>(
-      `${config.public.apiBase}/api/sparc/v2/evaluate/aspects/`,
-      {
-        method: 'POST',
-        body: {
-          game_text: gameText,
-          aspects: aspects,
-          context: context,
-          context_strategy: contextStrategy,
-          model: llm.active_llm,
-        },
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
+    return await apiFetch<SPARCV2Response>(`/api/sparc/v2/evaluate/aspects/`, {
+      method: 'POST',
+      body: {
+        game_text: gameText,
+        aspects: aspects,
+        context: context,
+        context_strategy: contextStrategy,
+        model: llm.active_llm,
       },
-    )
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
   }
 
   return {
