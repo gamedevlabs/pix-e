@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from game_concept.models import Project
+from llm.providers.manager import ModelManager
 
 from .workflow import ConsistencyWorkflow
 
@@ -35,5 +36,7 @@ class ConsistencyCheckView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        report = ConsistencyWorkflow().check_project(project)
+        report = ConsistencyWorkflow(model_manager=ModelManager()).check_project(
+            project
+        )
         return Response(report.model_dump())
