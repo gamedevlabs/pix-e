@@ -417,6 +417,9 @@ async function handleEditSettings() {
     </template>
 
     <Panel :position="'top-left'">
+      <UTooltip text="Edit Settings" :content="{ align: 'center', side: 'right' }">
+        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="handleEditSettings" />
+      </UTooltip>
       <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
         <UButton
           size="xl"
@@ -425,6 +428,8 @@ async function handleEditSettings() {
           @click="handleAddContainerFromPanel"
         />
       </UTooltip>
+
+      <!-- Edge-specific Action, only available when edge is selected -->
       <UTooltip
         v-if="getSelectedEdges.length === 1"
         text="Add or Edit Locks"
@@ -432,9 +437,7 @@ async function handleEditSettings() {
       >
         <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
       </UTooltip>
-      <UTooltip text="Edit Settings" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="handleEditSettings" />
-      </UTooltip>
+      
     </Panel>
 
     <!-- Context Strategy Analysis Button -->
