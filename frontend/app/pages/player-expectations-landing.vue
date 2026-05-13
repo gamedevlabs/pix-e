@@ -21,7 +21,7 @@ definePageMeta({
   <UContainer class="py-10 space-y-10">
     <!-- Hero Section -->
     <section class="text-center">
-      <h1 class="text-4xl font-bold mb-4">Welcome to the player expectation section of pix:e 🎉</h1>
+      <h1 class="text-4xl font-bold mb-4">Welcome to the player expectations section of pix:e</h1>
       <p class="text-gray-500 dark:text-gray-400 mb-4">
         A data driven analytics platform that transforms unstructured Steam reviews into actionable
         player expectation insights.
@@ -76,18 +76,18 @@ definePageMeta({
       <UCard class="hover:shadow-lg transition">
         <template #header>
           <h2 class="font-semibold text-lg">
-            <NuxtLink to="/player-expectations"> Dashboard (legacy) </NuxtLink>
+            <NuxtLink to="/player-expectations"> Dashboard (Legacy) </NuxtLink>
           </h2>
         </template>
         <p>
           A static interface that provides a high level overview of extracted player expectations
-          and aspect level sentiment across the complete legacy dataset.
+          and aspect level sentiment across the complete Legacy dataset.
         </p>
       </UCard>
       <UCard class="hover:shadow-lg transition">
         <template #header>
           <h2 class="font-semibold text-lg">
-            <NuxtLink to="/sentiments"> Sentiment Analysis (legacy) </NuxtLink>
+            <NuxtLink to="/sentiments"> Sentiment Analysis (Legacy) </NuxtLink>
           </h2>
         </template>
         <p>

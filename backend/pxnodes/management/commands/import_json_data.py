@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from game_concept.models import Project
-from game_concept.utils import get_current_project
+from projects.utils import get_current_project
 from pxcharts.models import (
     PxChart,
     PxChartContainer,

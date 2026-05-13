@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, Optional
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
-from game_concept.utils import get_current_game_concept, get_current_project
+from game_concept.utils import get_current_game_concept
 from pillars.models import Pillar
+from projects.utils import get_current_project
 from pxcharts.models import PxChart
 from pxnodes.llm.context.base.types import EvaluationScope
 from pxnodes.llm.context.hmem.strategy import HMEMStrategy

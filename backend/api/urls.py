@@ -31,4 +31,5 @@ urlpatterns = [
     path("api/", include("pximportexport.urls")),
     path("api/player-expectations/", include("player_expectations.urls")),
     path("api/movie-script-evaluator/", include("moviescriptevaluator.urls")),
+    path("api/projects/", include("projects.urls")),
 ]

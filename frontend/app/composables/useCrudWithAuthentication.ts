@@ -8,7 +8,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   const API_URL = config.public.apiBase + '/' + apiUrl
   const projectStore = useProject()
 
-  async function fetchAll() {
+  async function fetchAll(): Promise<T[]> {
     loading.value = true
     try {
       const data = await $fetch<T[]>(API_URL, {
@@ -18,9 +18,11 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
         } as HeadersInit,
       })
       items.value = data || []
+      return data
     } catch (err) {
       error.value = err
       errorToast(err)
+      throw err
     } finally {
       loading.value = false
     }
@@ -44,9 +46,9 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
     }
   }
 
-  async function createItem(payload: Partial<T>) {
+  async function createItem(payload: Partial<T>): Promise<T> {
     try {
-      await $fetch<T>(API_URL, {
+      const data = await $fetch<T>(API_URL, {
         method: 'POST',
         body: payload,
         credentials: 'include',
@@ -56,15 +58,17 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
       })
       success('Item created successfully!')
       await fetchAll()
+      return data
     } catch (err) {
       error.value = err
       errorToast(err)
+      throw err
     }
   }
 
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
-      await $fetch<T>(`${API_URL}${id}/`, {
+      const data = await $fetch<T>(`${API_URL}${id}/`, {
         method: 'PATCH',
         body: payload,
         credentials: 'include',
@@ -74,9 +78,11 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
       })
       success('Item updated successfully!')
       await fetchAll()
+      return data
     } catch (err) {
       error.value = err
       errorToast(err)
+      throw err
     }
   }
 
@@ -94,6 +100,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
     } catch (err) {
       error.value = err
       errorToast(err)
+      throw err
     }
   }
 
@@ -101,6 +108,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
     () => projectStore.activeProjectId,
     async (nextId, previousId) => {
       if (previousId !== null && nextId !== previousId) {
+        console.log('weird fetchAll going on')
         await fetchAll()
       }
     },

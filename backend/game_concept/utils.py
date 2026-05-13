@@ -1,13 +1,8 @@
 from typing import Optional
 
-from django.contrib.auth.models import User
+from projects.models import Project
 
-from .models import GameConcept, Project
-
-
-def get_current_project(user: User) -> Optional[Project]:
-    """Return the user's current project if set."""
-    return Project.objects.filter(user=user, is_current=True).first()
+from .models import GameConcept
 
 
 def get_current_game_concept(project: Optional[Project]) -> Optional[GameConcept]:

@@ -4,7 +4,7 @@ export function usePxNodesLLMApi() {
 
   async function validateNodeAPICall(nodeId: string): Promise<NodeValidationFeedback> {
     return await $fetch<NodeValidationFeedback>(
-      `${config.public.apiBase}/llm/nodes/${nodeId}/validate/`,
+      `${config.public.apiBase}/api/llm/nodes/${nodeId}/validate/`,
       {
         method: 'POST',
         body: {
@@ -22,20 +22,23 @@ export function usePxNodesLLMApi() {
     nodeId: string,
     validationIssues: NodeCoherenceIssue[] = [],
   ): Promise<FixNodeAPIResponse> {
-    return await $fetch<FixNodeAPIResponse>(`${config.public.apiBase}/llm/nodes/${nodeId}/fix/`, {
-      method: 'POST',
-      body: {
-        model: llm.active_llm,
-        validation_issues: validationIssues.map((issue) => ({
-          title: issue.title,
-          description: issue.description,
-        })),
+    return await $fetch<FixNodeAPIResponse>(
+      `${config.public.apiBase}/api/llm/nodes/${nodeId}/fix/`,
+      {
+        method: 'POST',
+        body: {
+          model: llm.active_llm,
+          validation_issues: validationIssues.map((issue) => ({
+            title: issue.title,
+            description: issue.description,
+          })),
+        },
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
       },
-      credentials: 'include',
-      headers: {
-        'X-CSRFToken': useCookie('csrftoken').value,
-      } as HeadersInit,
-    })
+    )
   }
 
   async function acceptNodeFixAPICall(
@@ -44,7 +47,7 @@ export function usePxNodesLLMApi() {
     description: string,
     components: { id: string; value: string | number | boolean | null }[] = [],
   ): Promise<PxNode> {
-    return await $fetch<PxNode>(`${config.public.apiBase}/llm/nodes/${nodeId}/accept-fix/`, {
+    return await $fetch<PxNode>(`${config.public.apiBase}/api/llm/nodes/${nodeId}/accept-fix/`, {
       method: 'POST',
       body: {
         name,

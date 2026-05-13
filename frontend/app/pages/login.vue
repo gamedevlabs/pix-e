@@ -1,9 +1,7 @@
 ﻿<script setup lang="ts">
 import type { FormError } from '@nuxt/ui'
+import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
 
-// ============================================================================
-// PAGE CONFIG - Edit these settings for this module
-// ============================================================================
 definePageMeta({
   pageConfig: {
     type: 'public',
@@ -11,14 +9,22 @@ definePageMeta({
     title: 'Login',
   },
 })
-// ============================================================================
 
-const state = reactive({
-  username: '',
-  password: '',
-})
+const state = reactive({ username: '', password: '' })
 const authentication = useAuthentication()
 const show = ref(false)
+
+const { loadForUser, toggleSubstep } = useProjectWorkflow()
+const isLoggedIn = computed(() => authentication.isLoggedIn.value)
+
+onMounted(async () => {
+  // Don't progress the onboarding wizard until the user is actually logged in.
+  if (!isLoggedIn.value) return
+
+  await loadForUser()
+  // Opening the login page counts as completing the first substep.
+  await toggleSubstep('user-onb-1', 'user-onb-1-1')
+})
 
 const validate = (state: { username: string; password: string }): FormError[] => {
   const errors = []
@@ -32,6 +38,8 @@ const toast = useToast()
 async function handleLogin() {
   const success = await authentication.login(state.username, state.password)
   if (success) {
+    // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
+    await toggleSubstep('user-onb-1', 'user-onb-1-2')
     toast.add({
       title: 'Login Successful',
       description: `Welcome Back ${state.username}`,
@@ -54,6 +62,8 @@ async function handleRegistration() {
   }
   const success = await authentication.register(state.username, state.password)
   if (success) {
+    // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
+    await toggleSubstep('user-onb-1', 'user-onb-1-2')
     toast.add({
       title: 'Registration Successful',
       description: `Welcome ${state.username}`,
@@ -71,6 +81,8 @@ async function handleRegistration() {
 
 <template>
   <div class="items-center justify-center flex-col flex">
+    <OnboardingTrigger mode="floating" />
+
     <h1 class="text-2xl font-bold mb-4">Login</h1>
     <UForm :validate="validate" :state="state" class="space-y-4 w-60">
       <UFormField label="Username" name="username" size="lg" required>

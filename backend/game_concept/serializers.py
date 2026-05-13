@@ -4,22 +4,10 @@ Serializers for the game_concept app.
 
 from rest_framework import serializers
 
-from .models import GameConcept, Project
-from .utils import get_current_project
+from projects.models import Project
+from projects.utils import get_current_project
 
-
-class ProjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = [
-            "id",
-            "name",
-            "description",
-            "is_current",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+from .models import GameConcept
 
 
 class GameConceptSerializer(serializers.ModelSerializer):

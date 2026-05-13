@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from game_concept.utils import get_current_project
+from projects.utils import get_current_project
 from pxcharts.models import PxChart, PxChartContainer, PxChartEdge
 from pxcharts.permissions import IsOwner
 from pxcharts.serializers import (

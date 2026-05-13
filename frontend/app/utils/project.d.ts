@@ -2,13 +2,13 @@
 export type ProjectTargetPlatform = (typeof projectTargetPlatforms)[number]
 
 export interface Project {
-  id: string
+  id: number
   name: string
-  shortDescription: string
-  genre: string
-  targetPlatform: ProjectTargetPlatform[] | ProjectTargetPlatform | string | string[]
+  description: string
+  genres: string[]
+  target_platforms: ProjectTargetPlatform[]
+  is_current?: boolean
   created_at: string
   updated_at: string
-  // Optional icon data URL (base64) or remote URL
   icon?: string | null
 }

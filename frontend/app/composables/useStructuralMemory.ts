@@ -4,8 +4,9 @@
  * Handles generating knowledge triples, atomic facts, and embeddings
  * for PX nodes in selected charts.
  */
+const config = useRuntimeConfig()
 
-const BASE_URL = 'http://localhost:8000/'
+const BASE_URL = config.public.apiBase + '/api/'
 
 export interface GenerationOptions {
   chartIds: string[]

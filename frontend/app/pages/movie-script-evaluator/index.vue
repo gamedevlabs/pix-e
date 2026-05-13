@@ -5,13 +5,12 @@
 // ============================================================================
 import type { MovieProject } from '~/utils/movie-script-evaluator'
 definePageMeta({
-  middleware: ['authentication'],
   pageConfig: {
     type: 'standalone',
     showSidebar: false,
     title: 'Movie Script Evaluator',
     icon: 'i-lucide-film',
-    navGroup: 'main',
+    navGroup: 'tools',
     navOrder: 5,
     showInNav: false,
   },
@@ -19,15 +18,22 @@ definePageMeta({
 
 const { user } = useAuthentication()
 
-// Im not sure, if its a good approach
+const { currentProject } = useProjectHandler()
+const { toggleSubstep, loadForProject } = useProjectWorkflow()
+if (currentProject.value?.id) {
+  await loadForProject(currentProject.value.id)
+}
+
 const {
   items: movieScriptProjects,
   fetchAll,
   createItem: createMovieScriptProject,
 } = useMovieScriptEvaluator()
 
-onMounted(() => {
-  fetchAll()
+onMounted(async () => {
+  await fetchAll()
+  // mse-1-1: "Open Movie Script Evaluator" — completes as soon as this page mounts
+  await toggleSubstep('mse-1', 'mse-1-1')
 })
 
 const newItem = ref<MovieProject | null>(null)
