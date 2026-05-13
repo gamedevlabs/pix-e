@@ -1,3 +1,3 @@
 export function usePxLockDefinitions() {
-  return useCrudForPxWithAuthentication<PxLockDefinition>('pxlockdefinitions/')
+  return useCrudForPxWithAuthentication<PxLockDefinition>('api/pxlockdefinitions/')
 }

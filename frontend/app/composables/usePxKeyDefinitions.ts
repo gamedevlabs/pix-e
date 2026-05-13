@@ -1,3 +1,3 @@
 export function usePxKeyDefinitions() {
-  return useCrudForPxWithAuthentication<PxKeyDefinition>('pxkeydefinitions/')
+  return useCrudForPxWithAuthentication<PxKeyDefinition>('api/pxkeydefinitions/')
 }
