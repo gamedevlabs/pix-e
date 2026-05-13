@@ -3,6 +3,7 @@
 from typing import List
 
 from django.db.models import Count
+
 from game_concept.models import Project
 from pxcharts.models import PxChartContainer, PxChartEdge
 from pxnodes.models import PxComponent, PxNode
