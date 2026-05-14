@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 _PBKDF2_ITERATIONS = 600_000
 _SESSION_KEY_NAME = "user_encryption_key"
 _SESSION_EXPIRES_AT_NAME = "user_encryption_key_expires_at"
-KEY_TTL_SECONDS = 30  # 30 seconds — intentionally short for testing
+KEY_TTL_SECONDS = 3600
 
 
 def derive_encryption_key(plaintext_password: str, salt: bytes) -> bytes:
