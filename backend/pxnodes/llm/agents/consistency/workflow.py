@@ -29,6 +29,7 @@ class ConsistencyWorkflow:
     def _run_semantic_checks(self, project: Project) -> List[ConsistencyFinding]:
         from .semantic.node_coherence import NodeCoherenceAgent
         from .semantic.pillar_alignment import PillarAlignmentAgent
+        from .semantic.terminology_consistency import TerminologyConsistencyAgent
 
         if self._model_manager is None:
             return []
@@ -87,6 +88,39 @@ class ConsistencyWorkflow:
                                 entity_id=item.get("node_a_id", ""),
                                 message=(
                                     f"[vs {item.get('node_b_name', '')}] "
+                                    f"{item.get('message', '')}"
+                                ),
+                            )
+                        )
+            except Exception:
+                pass
+
+        if len(nodes) >= 2:
+            try:
+                agent = TerminologyConsistencyAgent()
+                data = {
+                    "nodes": [
+                        {
+                            "id": str(n.id),
+                            "name": n.name,
+                            "description": n.description,
+                        }
+                        for n in nodes
+                    ],
+                }
+                context = {"model_manager": self._model_manager, "data": data}
+                result = agent.execute(context)
+                if result.success and result.data:
+                    for item in result.data.get("conflicts", []):
+                        findings.append(
+                            ConsistencyFinding(
+                                severity=FindingSeverity.INFO,
+                                category="terminology_inconsistency",
+                                entity_id=item.get("node_a_id", ""),
+                                message=(
+                                    f"['{item.get('term_a', '')}' vs "
+                                    f"'{item.get('term_b', '')}' in "
+                                    f"{item.get('node_b_name', '')}] "
                                     f"{item.get('message', '')}"
                                 ),
                             )
