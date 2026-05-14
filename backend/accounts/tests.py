@@ -186,12 +186,14 @@ class EncryptionTests(TestCase):
         key = derive_encryption_key(self.password, self.salt)
         self.assertEqual(len(key), 44)
         import base64
+
         decoded = base64.urlsafe_b64decode(key)
         self.assertEqual(len(decoded), 32)
 
     def test_derive_with_orm_salt_does_not_crash(self):
         user = User.objects.create_user(username="saltuser", password="pw123")
         from accounts.models import UserSalt
+
         salt_obj = UserSalt.objects.create(user=user, salt=generate_encryption_salt())
         salt_obj.refresh_from_db()
         key = derive_encryption_key("pw123", salt=bytes(salt_obj.salt))
@@ -220,7 +222,9 @@ class EncryptionTests(TestCase):
         session = {}
         store_key_in_session(session, self.enc_key)
         original_expires = session[_SESSION_EXPIRES_AT_NAME]
-        with patch("accounts.encryption.time.time", return_value=original_expires - 3500):
+        with patch(
+            "accounts.encryption.time.time", return_value=original_expires - 3500
+        ):
             retrieved = get_encryption_key_from_session(session)
             self.assertEqual(retrieved, self.enc_key)
         self.assertGreater(session[_SESSION_EXPIRES_AT_NAME], original_expires)
@@ -346,13 +350,17 @@ class UserApiKeyAPITests(TestCase):
 
     def test_list_returns_401_when_unauthenticated(self):
         resp = self.client.get(self.list_url)
-        self.assertIn(resp.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertIn(
+            resp.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+        )
 
     def test_create_returns_401_when_unauthenticated(self):
         resp = self.client.post(
             self.list_url, {"provider": "openai", "label": "X", "key": "sk-test"}
         )
-        self.assertIn(resp.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertIn(
+            resp.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+        )
 
     def test_list_returns_users_keys(self):
         self._create_key_in_db()

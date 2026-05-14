@@ -106,9 +106,7 @@ async function handleSubmit() {
       (Array.isArray(baseUrlErr) && baseUrlErr[0]) ||
       (typeof baseUrlErr === 'string' && baseUrlErr)
     formError.value =
-      (typeof detail === 'string' && detail) ||
-      firstFieldErr ||
-      'Failed to save key'
+      (typeof detail === 'string' && detail) || firstFieldErr || 'Failed to save key'
   } finally {
     isSubmitting.value = false
   }
