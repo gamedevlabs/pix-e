@@ -1,14 +1,8 @@
-/**
- * Settings overlay modal for managing personal API keys.
- *
- * Allows users to add, edit, and delete API keys for LLM providers
- * (OpenAI, Gemini, Morpheus, or custom OpenAI-compatible endpoints).
- * Keys are encrypted at rest.
- *
- * The add flow is two-step: first select a provider, then fill in key details.
- * Existing keys can be toggled active/inactive.
- * Edit mode allows updating the label, base URL, and active state.
- */
+/** * Settings overlay modal for managing personal API keys. * * Allows users to add, edit, and
+delete API keys for LLM providers * (OpenAI, Gemini, Morpheus, or custom OpenAI-compatible
+endpoints). * Keys are encrypted at rest. * * The add flow is two-step: first select a provider,
+then fill in key details. * Existing keys can be toggled active/inactive. * Edit mode allows
+updating the label, base URL, and active state. */
 <script setup lang="ts">
 import type {
   CreateApiKeyPayload,
@@ -115,9 +109,7 @@ async function handleSubmit() {
       (Array.isArray(baseUrlErr) && baseUrlErr[0]) ||
       (typeof baseUrlErr === 'string' && baseUrlErr)
     formError.value =
-      (typeof detail === 'string' && detail) ||
-      firstFieldErr ||
-      'Failed to save key'
+      (typeof detail === 'string' && detail) || firstFieldErr || 'Failed to save key'
   } finally {
     isSubmitting.value = false
   }
