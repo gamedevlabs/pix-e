@@ -131,7 +131,7 @@ class TestAutoModelSelection:
         mock_model_details.name = "gemini-2.0-flash-exp"
         mock_model_details.type = "cloud"
         mock_model_details.provider = "gemini"
-        mock_model_manager._find_model_by_name.return_value = mock_model_details
+        mock_model_manager._find_model_by_name.return_value = (mock_model_details, Mock())
 
         # No model_id specified
         request = LLMRequest(
@@ -162,7 +162,7 @@ class TestAutoModelSelection:
         mock_model_details.name = "gemini-2.0-flash-exp"
         mock_model_details.type = "cloud"
         mock_model_details.provider = "gemini"
-        mock_model_manager._find_model_by_name.return_value = mock_model_details
+        mock_model_manager._find_model_by_name.return_value = (mock_model_details, Mock())
 
         request = LLMRequest(
             feature="pillars",

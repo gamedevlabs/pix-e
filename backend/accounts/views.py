@@ -306,9 +306,9 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
             from google import genai
 
             gemini_client = genai.Client(api_key=api_key)
-            models = list(gemini_client.models.list())
+            gemini_models = list(gemini_client.models.list())
             first_model = next(
-                (m.name for m in models if m.name and "/" not in m.name),
+                (m.name for m in gemini_models if m.name and "/" not in m.name),
                 "gemini-2.0-flash-exp",
             )
             gemini_client.models.generate_content(

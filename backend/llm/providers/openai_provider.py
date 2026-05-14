@@ -135,7 +135,9 @@ class OpenAIProvider(BaseProvider):
 
             for model in response.data:
                 model_id = model.id
-                if self.include_all_models or model_id.startswith(("gpt-5", "gpt-4", "gpt-3.5")):
+                if self.include_all_models or model_id.startswith(
+                    ("gpt-5", "gpt-4", "gpt-3.5")
+                ):
                     models.append(
                         ModelDetails(
                             name=model_id,

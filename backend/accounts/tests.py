@@ -7,7 +7,6 @@ API CRUD endpoints.
 
 import hashlib
 import hmac
-import time
 from unittest.mock import MagicMock, patch
 
 from cryptography.fernet import InvalidToken
@@ -579,6 +578,7 @@ class UserLLMOrchestratorMixinTests(TestCase):
 
     def _make_mixin(self):
         from llm.mixins import UserLLMOrchestratorMixin
+
         return UserLLMOrchestratorMixin()
 
     def test_get_llm_orchestrator_raises_not_authenticated_when_no_key_in_session(self):
@@ -690,7 +690,9 @@ class ThrottlingTests(TestCase):
         resp = anon_client.post(
             f"/api/accounts/api-keys/{self.key.pk}/test/",
         )
-        self.assertIn(resp.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertIn(
+            resp.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+        )
 
     @patch("accounts.views.test_provider_connection")
     def test_test_endpoint_rate_limited_after_limit(self, mock_test):
@@ -702,4 +704,6 @@ class ThrottlingTests(TestCase):
         self.assertEqual(resp2.status_code, status.HTTP_200_OK)
         resp3 = self.client.post(test_url)
         # May be 429 or 200 depending on cache — accept either
-        self.assertIn(resp3.status_code, [status.HTTP_200_OK, status.HTTP_429_TOO_MANY_REQUESTS])
+        self.assertIn(
+            resp3.status_code, [status.HTTP_200_OK, status.HTTP_429_TOO_MANY_REQUESTS]
+        )

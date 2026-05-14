@@ -11,11 +11,14 @@ export function useApiKeysApi() {
   }
 
   async function testKey(id: string): Promise<{ status: string; detail: string }> {
-    return await sessionFetch<{ status: string; detail: string }>(apiUrl(`/api/accounts/api-keys/${id}/test/`), {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
-    })
+    return await sessionFetch<{ status: string; detail: string }>(
+      apiUrl(`/api/accounts/api-keys/${id}/test/`),
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
+      },
+    )
   }
 
   async function fetchKeys(): Promise<UserApiKey[]> {

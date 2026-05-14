@@ -62,7 +62,10 @@ export async function sessionFetch<T>(url: string, opts?: Record<string, unknown
       ''
 
     // Key expired → throw typed error that UI can catch
-    if (status === 401 && (detail.includes(KEY_EXPIRED_MSG) || detail.includes(SESSION_EXPIRED_MSG))) {
+    if (
+      status === 401 &&
+      (detail.includes(KEY_EXPIRED_MSG) || detail.includes(SESSION_EXPIRED_MSG))
+    ) {
       throw new SessionExpiredError(detail)
     }
 
