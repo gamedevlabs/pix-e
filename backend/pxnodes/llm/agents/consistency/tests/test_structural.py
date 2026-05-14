@@ -1,5 +1,3 @@
-"""Tests for Layer 1 structural consistency checks (StructuralChecker)."""
-
 import uuid
 from unittest.mock import Mock, patch
 

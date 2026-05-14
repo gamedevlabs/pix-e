@@ -1,5 +1,3 @@
-"""Tests for TerminologyConsistencyAgent finding-parsing logic in ConsistencyWorkflow."""
-
 from unittest.mock import MagicMock, patch
 
 from llm.types import AgentResult

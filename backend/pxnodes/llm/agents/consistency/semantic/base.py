@@ -1,5 +1,3 @@
-"""Base class for semantic consistency agents."""
-
 from typing import Any, Dict
 
 from llm.agent_runtime import BaseAgent
@@ -7,8 +5,7 @@ from pxnodes.llm.agents.consistency.schemas import FindingSeverity
 
 
 class SemanticConsistencyAgent(BaseAgent):
-    """Base class for LLM-based semantic consistency checks.
-
+    """
     Subclasses must define:
     - name: Agent identifier
     - category: Consistency finding category string

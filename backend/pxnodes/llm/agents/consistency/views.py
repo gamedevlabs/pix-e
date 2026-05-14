@@ -1,5 +1,3 @@
-"""REST API view for the Consistency Agent."""
-
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,7 +13,12 @@ class ConsistencyCheckView(APIView):
     """Run consistency checks on a project and return the findings.
 
     POST /api/llm/consistency/check/
-    { "project_id": "<uuid>" }
+    {
+        "project_id": "<uuid>",
+        "min_confidence": 0.0  (optional, float 0.0–1.0, default 0.0)
+    }
+
+    Semantic findings whose confidence is below min_confidence are omitted.
     """
 
     permission_classes = [IsAuthenticated]
@@ -36,7 +39,10 @@ class ConsistencyCheckView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        report = ConsistencyWorkflow(model_manager=ModelManager()).check_project(
-            project
+        min_confidence = float(request.data.get("min_confidence", 0.0))
+        workflow = ConsistencyWorkflow(
+            model_manager=ModelManager(),
+            min_confidence=min_confidence,
         )
+        report = workflow.check_project(project)
         return Response(report.model_dump())

@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from game_concept.models import Project
@@ -5,6 +6,8 @@ from llm.providers.manager import ModelManager
 
 from .schemas import ConsistencyFinding, ConsistencyReport, FindingSeverity
 from .structural import StructuralChecker
+
+logger = logging.getLogger(__name__)
 
 
 class ConsistencyWorkflow:
@@ -15,9 +18,14 @@ class ConsistencyWorkflow:
     entities are the unit of analysis.
     """
 
-    def __init__(self, model_manager: Optional[ModelManager] = None) -> None:
+    def __init__(
+        self,
+        model_manager: Optional[ModelManager] = None,
+        min_confidence: float = 0.0,
+    ) -> None:
         self._structural = StructuralChecker()
         self._model_manager = model_manager
+        self._min_confidence = min_confidence
 
     def check_project(self, project: Project) -> ConsistencyReport:
         findings: List[ConsistencyFinding] = []
@@ -49,6 +57,8 @@ class ConsistencyWorkflow:
                 result = agent.execute(context)
                 if result.success and result.data:
                     for item in result.data.get("findings", []):
+                        if item.get("confidence", 1.0) < self._min_confidence:
+                            continue
                         findings.append(
                             ConsistencyFinding(
                                 severity=FindingSeverity.WARNING,
@@ -61,8 +71,12 @@ class ConsistencyWorkflow:
                                 ),
                             )
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception(
+                    "Semantic check '%s' failed: %s",
+                    agent.__class__.__name__,
+                    e,
+                )
 
         if len(nodes) >= 2:
             try:
@@ -81,6 +95,8 @@ class ConsistencyWorkflow:
                 result = agent.execute(context)
                 if result.success and result.data:
                     for item in result.data.get("contradictions", []):
+                        if item.get("confidence", 1.0) < self._min_confidence:
+                            continue
                         findings.append(
                             ConsistencyFinding(
                                 severity=FindingSeverity.WARNING,
@@ -92,8 +108,12 @@ class ConsistencyWorkflow:
                                 ),
                             )
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception(
+                    "Semantic check '%s' failed: %s",
+                    agent.__class__.__name__,
+                    e,
+                )
 
         if len(nodes) >= 2:
             try:
@@ -112,6 +132,8 @@ class ConsistencyWorkflow:
                 result = agent.execute(context)
                 if result.success and result.data:
                     for item in result.data.get("conflicts", []):
+                        if item.get("confidence", 1.0) < self._min_confidence:
+                            continue
                         findings.append(
                             ConsistencyFinding(
                                 severity=FindingSeverity.INFO,
@@ -125,8 +147,12 @@ class ConsistencyWorkflow:
                                 ),
                             )
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception(
+                    "Semantic check '%s' failed: %s",
+                    agent.__class__.__name__,
+                    e,
+                )
 
         return findings
 

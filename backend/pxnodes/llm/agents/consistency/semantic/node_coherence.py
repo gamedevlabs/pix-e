@@ -1,5 +1,3 @@
-"""Node Coherence semantic consistency agent."""
-
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
