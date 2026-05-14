@@ -84,6 +84,7 @@ class OpenAIProvider(BaseProvider):
         """
         super().__init__(config)
         self._is_available: Optional[bool] = None
+        self.include_all_models: bool = config.get("include_all_models", False)
 
         api_key = config.get("api_key")
         if not api_key:
@@ -127,15 +128,14 @@ class OpenAIProvider(BaseProvider):
             return False
 
     def list_models(self) -> List[ModelDetails]:
-        """List available OpenAI models (filters for GPT models only)."""
+        """List available OpenAI models."""
         try:
             response = self.client.models.list()
             models = []
 
             for model in response.data:
                 model_id = model.id
-                # Only include GPT models
-                if model_id.startswith(("gpt-5", "gpt-4", "gpt-3.5")):
+                if self.include_all_models or model_id.startswith(("gpt-5", "gpt-4", "gpt-3.5")):
                     models.append(
                         ModelDetails(
                             name=model_id,

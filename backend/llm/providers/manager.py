@@ -7,11 +7,12 @@ Central manager that handles:
 - Direct model selection (user-specified)
 - Automatic model selection (based on requirements)
 - Fallback and retry logic
+- Per-user API key support
 """
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from llm.config import Config, get_config
 from llm.exceptions import (
@@ -39,31 +40,32 @@ logger = logging.getLogger(__name__)
 class ModelManager:
     """
     Central manager for all LLM providers and models.
+
+    Supports three creation paths:
+
+    1. **Global / env-var based** (``ModelManager()``) — reads API keys
+       from environment variables via ``Config``.
+    2. **Per-user, all keys** (``ModelManager.for_user(user, enc_key)``) —
+       loads every active ``UserApiKey`` for the given user.
+    3. **Per-user, single key** (``ModelManager.for_user_and_key(user, api_key_id, enc_key)``)  —  # noqa: E501
+       loads exactly one ``UserApiKey``.
+
+    Model resolution uses a ``_model_registry`` (``model_name → provider_instance``)
+    for O(1) lookup, supporting multiple providers with the same model name.
     """
 
     def __init__(self, config: Optional[Config] = None):
-        """
-        Initialize the model manager.
-
-        Args:
-            config: Configuration instance (uses default if not provided)
-        """
         self.config = config or get_config()
         self.providers: Dict[str, BaseProvider] = {}
+        self._provider_list: Dict[str, List[BaseProvider]] = {}
+        self._model_registry: Dict[str, BaseProvider] = {}
+        self._registry_built: bool = False
         self._model_cache: Optional[List[ModelDetails]] = None
         self._cache_timestamp: Optional[float] = None
 
-        # Initialize all available providers
-        self._init_providers()
+        self._init_env_providers()
 
-    def _init_providers(self) -> None:
-        """
-        Initialize all configured LLM providers.
-
-        Tries to initialize Ollama, OpenAI, and Gemini based on configuration.
-        Providers that fail to initialize are skipped with a warning.
-        """
-        # Initialize Ollama (local)
+    def _init_env_providers(self) -> None:
         try:
             ollama = OllamaProvider(
                 {
@@ -72,14 +74,14 @@ class ModelManager:
                 }
             )
             if ollama.is_available():
+                self._provider_list.setdefault("ollama", []).append(ollama)
                 self.providers["ollama"] = ollama
-                logger.info("✅ Ollama provider initialized")
+                logger.info("Ollama provider initialized")
             else:
-                logger.info("⚠️  Ollama provider not available")
+                logger.info("Ollama provider not available")
         except Exception as e:
-            logger.warning(f"⚠️  Ollama provider initialization failed: {e}")
+            logger.warning(f"Ollama provider initialization failed: {e}")
 
-        # Initialize OpenAI (cloud)
         if self.config.openai_api_key:
             try:
                 openai = OpenAIProvider(
@@ -90,16 +92,16 @@ class ModelManager:
                     }
                 )
                 if openai.is_available():
+                    self._provider_list.setdefault("openai", []).append(openai)
                     self.providers["openai"] = openai
-                    logger.info("✅ OpenAI provider initialized")
+                    logger.info("OpenAI provider initialized")
                 else:
-                    logger.warning("⚠️  OpenAI provider not available")
+                    logger.warning("OpenAI provider not available")
             except Exception as e:
-                logger.warning(f"⚠️  OpenAI provider initialization failed: {e}")
+                logger.warning(f"OpenAI provider initialization failed: {e}")
         else:
-            logger.info("⚠️  OpenAI API key not configured")
+            logger.info("OpenAI API key not configured")
 
-        # Initialize Gemini (cloud)
         if self.config.gemini_api_key:
             try:
                 gemini = GeminiProvider(
@@ -109,36 +111,148 @@ class ModelManager:
                     }
                 )
                 if gemini.is_available():
+                    self._provider_list.setdefault("gemini", []).append(gemini)
                     self.providers["gemini"] = gemini
-                    logger.info("✅ Gemini provider initialized")
+                    logger.info("Gemini provider initialized")
                 else:
-                    logger.warning("⚠️  Gemini provider not available")
+                    logger.warning("Gemini provider not available")
             except Exception as e:
-                logger.warning(f"⚠️  Gemini provider initialization failed: {e}")
+                logger.warning(f"Gemini provider initialization failed: {e}")
         else:
-            logger.info("⚠️  Gemini API key not configured")
+            logger.info("Gemini API key not configured")
 
-        # Ensure at least one provider is available
-        if not self.providers:
+    @classmethod
+    def for_user(cls, user, enc_key: bytes) -> "ModelManager":
+        from llm.providers.user_providers import create_providers_for_user
+
+        manager = cls.__new__(cls)
+        manager.config = get_config()
+        manager.providers = {}
+        manager._model_registry = {}
+        manager._registry_built = False
+        manager._provider_list = {}
+        manager._model_cache = None
+        manager._cache_timestamp = None
+
+        user_providers = create_providers_for_user(user, enc_key)
+        manager._provider_list.update(user_providers)
+
+        has_user_keys = any(
+            providers
+            for name, providers in manager._provider_list.items()
+            if name != "ollama" and providers
+        )
+        if not has_user_keys:
             raise ProviderError(
-                message="No LLM providers available. Configure at least one provider (Ollama, OpenAI, or Gemini).",  # noqa: E501
+                message="No valid API keys configured. Add an API key in Settings.",
+                provider="none",
+            )
+        else:
+            if "ollama" not in manager._provider_list:
+                try:
+                    ollama = OllamaProvider(
+                        {
+                            "base_url": manager.config.ollama_base_url,
+                            "timeout": manager.config.ollama_timeout_seconds,
+                        }
+                    )
+                    if ollama.is_available():
+                        manager._provider_list.setdefault("ollama", []).append(ollama)
+                    else:
+                        logger.debug("Ollama not available, skipping")
+                except Exception:
+                    logger.debug("Ollama not available, skipping")
+
+        if not manager._provider_list:
+            raise ProviderError(
+                message="No LLM providers available. Add an API key in Settings.",
                 provider="none",
             )
 
-        provider_names = ", ".join(self.providers.keys())
-        logger.info(
-            f"📊 Initialized {len(self.providers)} provider(s): " f"{provider_names}"
-        )
+        manager._sync_providers_map()
+        return manager
+
+    @classmethod
+    def for_user_and_key(cls, user, api_key_id: str, enc_key: bytes) -> "ModelManager":
+        from django.http import Http404
+
+        from accounts.encryption import decrypt_api_key
+        from accounts.models import UserApiKey
+        from llm.providers.user_providers import _create_provider
+
+        try:
+            api_key_obj = UserApiKey.objects.get(
+                id=api_key_id, user=user, is_active=True
+            )
+        except UserApiKey.DoesNotExist:
+            try:
+                disabled_key = UserApiKey.objects.get(id=api_key_id, user=user)
+            except UserApiKey.DoesNotExist:
+                raise Http404("API key not found.")
+            if disabled_key.disabled_reason == "auth_failure":
+                raise Http404(
+                    "This API key was disabled because the provider rejected it. "
+                    "Re-enter a valid key in Settings to re-enable it."
+                )
+            raise Http404("API key is disabled.")
+        raw_key = decrypt_api_key(api_key_obj.encrypted_key, enc_key)
+
+        manager = cls.__new__(cls)
+        manager.config = get_config()
+        manager.providers = {}
+        manager._model_registry = {}
+        manager._registry_built = False
+        manager._provider_list = {}
+        manager._model_cache = None
+        manager._cache_timestamp = None
+
+        provider = _create_provider(api_key_obj.provider, raw_key, api_key_obj.base_url)
+        if provider:
+            manager._provider_list[api_key_obj.provider] = [provider]
+
+        try:
+            ollama = OllamaProvider(
+                {
+                    "base_url": manager.config.ollama_base_url,
+                    "timeout": manager.config.ollama_timeout_seconds,
+                }
+            )
+            if ollama.is_available():
+                manager._provider_list.setdefault("ollama", []).append(ollama)
+            else:
+                logger.debug("Ollama not available, skipping")
+        except Exception:
+            logger.debug("Ollama not available, skipping")
+
+        manager._sync_providers_map()
+        return manager
+
+    def _ensure_registry(self) -> None:
+        if not self._registry_built:
+            self._rebuild_model_registry()
+            self._registry_built = True
+
+    def _rebuild_model_registry(self) -> None:
+        self._model_registry = {}
+        for provider_name, provider_list in self._provider_list.items():
+            for provider in provider_list:
+                try:
+                    models = provider.list_models()
+                    for model in models:
+                        if model.name not in self._model_registry:
+                            self._model_registry[model.name] = provider
+                except Exception as e:
+                    logger.warning(f"Failed to list models from {provider_name}: {e}")
+
+    def _sync_providers_map(self) -> None:
+        self.providers = {}
+        for name, plist in self._provider_list.items():
+            if plist:
+                self.providers[name] = plist[0]
 
     def list_models(self, refresh: bool = False) -> List[ModelDetails]:
-        """
-        List all available models from all providers.
-
-        Results are cached for performance. Use refresh=True to bypass cache.
-        """
         now = time.time()
 
-        # Check if cache is valid
         if (
             not refresh
             and self._model_cache is not None
@@ -148,17 +262,19 @@ class ModelManager:
         ):
             return self._model_cache
 
-        # Fetch models from all providers
         all_models = []
-        for provider_name, provider in self.providers.items():
-            try:
-                models = provider.list_models()
-                all_models.extend(models)
-                logger.debug(f"Listed {len(models)} models from {provider_name}")
-            except Exception as e:
-                logger.warning(f"Failed to list models from {provider_name}: {e}")
+        seen_model_names = set()
+        for provider_name, provider_list in self._provider_list.items():
+            for provider in provider_list:
+                try:
+                    models = provider.list_models()
+                    for model in models:
+                        if model.name not in seen_model_names:
+                            all_models.append(model)
+                            seen_model_names.add(model.name)
+                except Exception as e:
+                    logger.warning(f"Failed to list models from {provider_name}: {e}")
 
-        # Update cache
         if self.config.cache_enabled:
             self._model_cache = all_models
             self._cache_timestamp = now
@@ -171,45 +287,41 @@ class ModelManager:
         capability_filter: Optional[CapabilityRequirements] = None,
         refresh: bool = False,
     ) -> List[ModelDetails]:
-        """
-        List models for frontend selection with optional filtering.
-        """
         models = self.list_models(refresh=refresh)
 
-        # Filter by provider
         if provider_filter:
             models = [m for m in models if m.provider == provider_filter]
 
-        # Filter by capabilities
         if capability_filter:
             models = filter_by_capabilities(models, capability_filter)
 
         return models
 
     def get_model_inventory(self, refresh: bool = False) -> ModelInventory:
-        """
-        Get complete model inventory matching API spec.
-        """
         models = self.list_models(refresh=refresh)
         return ModelInventory(models=models)
 
-    def _find_model_by_name(self, model_name: str) -> ModelDetails:
-        """
-        Find a model by name across all providers.
-        """
-        all_models = self.list_models()
+    def _find_model_by_name(self, model_name: str) -> Tuple[ModelDetails, BaseProvider]:
+        self._ensure_registry()
+        provider = self._model_registry.get(model_name)
+        if not provider:
+            available_names = list(self._model_registry.keys())[:5]
+            available_str = ", ".join(available_names) if available_names else "none"
+            raise ModelUnavailableError(
+                model=model_name,
+                provider="unknown",
+                reason=f"Model '{model_name}' not found. Available: {available_str}...",
+            )
 
-        for model in all_models:
+        models = provider.list_models()
+        for model in models:
             if model.name == model_name:
-                return model
+                return model, provider
 
-        # Model not found
-        available_names = [m.name for m in all_models[:5]]
-        available_str = ", ".join(available_names)
         raise ModelUnavailableError(
             model=model_name,
-            provider="unknown",
-            reason=f"Model not found. Available models: {available_str}...",
+            provider=provider.provider_name,
+            reason=f"Model '{model_name}' not found in provider's model list",
         )
 
     def generate_with_model(
@@ -220,26 +332,10 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> GenerationResult:
-        """
-        Generate text using a specific model (user-selected).
+        model_details, provider = self._find_model_by_name(model_name)
 
-        This is the PRIMARY method for user-driven model selection.
-        Uses exactly the model specified - no automatic selection.
-
-        Args:
-            model_name: Exact model name to use
-            prompt: Text prompt
-            temperature: Sampling temperature (0.0-1.0)
-            max_tokens: Maximum tokens to generate
-            **kwargs: Provider-specific parameters
-        """
-        # Find the model
-        model = self._find_model_by_name(model_name)
-        provider = self.providers[model.provider]
-
-        # Generate with the specified model
         text = provider.generate_text(
-            model_name=model.name,
+            model_name=model_details.name,
             prompt=prompt,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -247,7 +343,7 @@ class ModelManager:
         )
 
         return GenerationResult(
-            text=text, model=model.name, provider=provider.provider_name
+            text=text, model=model_details.name, provider=provider.provider_name
         )
 
     def generate_structured_with_model(
@@ -259,28 +355,13 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
-        """
-        Generate structured output using a specific model (user-selected).
+        model_details, provider = self._find_model_by_name(model_name)
 
-        Args:
-            model_name: Exact model name to use
-            prompt: Text prompt
-            response_schema: Pydantic model for response structure
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
-            **kwargs: Provider-specific parameters
-        """
-        # Find the model
-        model = self._find_model_by_name(model_name)
-        provider = self.providers[model.provider]
-
-        # Check if model supports structured output
-        if not model.capabilities.json_strict:
+        if not model_details.capabilities.json_strict:
             logger.warning(f"Model {model_name} may not have strict JSON support")
 
-        # Generate structured output
         return provider.generate_structured(
-            model_name=model.name,
+            model_name=model_details.name,
             prompt=prompt,
             response_schema=response_schema,
             temperature=temperature,
@@ -297,27 +378,14 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
-        """
-        Generate structured output asynchronously for parallel execution.
+        model_details, provider = self._find_model_by_name(model_name)
 
-        Args:
-            model_name: Exact model name to use
-            prompt: Text prompt
-            response_schema: Pydantic model for response structure
-            temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
-            **kwargs: Provider-specific parameters
-        """
-        model = self._find_model_by_name(model_name)
-        provider = self.providers[model.provider]
-
-        if not model.capabilities.json_strict:
+        if not model_details.capabilities.json_strict:
             logger.warning(f"Model {model_name} may not have strict JSON support")
 
-        # Use async method if available, fall back to sync wrapped in thread
         if hasattr(provider, "generate_structured_async"):
             return await provider.generate_structured_async(
-                model_name=model.name,
+                model_name=model_details.name,
                 prompt=prompt,
                 response_schema=response_schema,
                 temperature=temperature,
@@ -325,12 +393,11 @@ class ModelManager:
                 **kwargs,
             )
         else:
-            # Fall back to sync method in thread for providers without async
             import asyncio
 
             return await asyncio.to_thread(
                 provider.generate_structured,
-                model_name=model.name,
+                model_name=model_details.name,
                 prompt=prompt,
                 response_schema=response_schema,
                 temperature=temperature,
@@ -344,20 +411,9 @@ class ModelManager:
         model_preference: ModelPreference = "auto",
         preferred_provider: Optional[str] = None,
     ) -> ModelDetails:
-        """
-        Automatically select the best model based on requirements.
+        models = self.list_models()
 
-        Selection strategy:
-        1. Filter by capability requirements
-        2. Apply model preference (local/cloud/auto)
-        3. Prefer specific provider if requested
-        4. Rank by context window size
-        5. Return best match
-        """
-        all_models = self.list_models()
-
-        # Filter by capabilities
-        matching = filter_by_capabilities(all_models, requirements)
+        matching = filter_by_capabilities(models, requirements)
 
         if not matching:
             raise ModelUnavailableError(
@@ -366,7 +422,6 @@ class ModelManager:
                 reason=f"No models match requirements: {requirements.model_dump()}",
             )
 
-        # Apply model preference
         if model_preference == "local":
             local_models = [m for m in matching if m.type == "local"]
             if local_models:
@@ -375,16 +430,14 @@ class ModelManager:
         elif model_preference == "cloud":
             matching = [m for m in matching if m.type == "cloud"]
             prefer_local = False
-        else:  # auto
+        else:
             prefer_local = self.config.default_model_preference == "local"
 
-        # Prefer specific provider if requested
-        if preferred_provider and preferred_provider in self.providers:
+        if preferred_provider:
             provider_models = [m for m in matching if m.provider == preferred_provider]
             if provider_models:
                 matching = provider_models
 
-        # Find best model
         best = find_best_model(matching, requirements, prefer_local)
 
         if not best:
@@ -406,23 +459,20 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> GenerationResult:
-        """
-        Generate text with automatic model selection.
-
-        Use this when:
-        - Backend operation needs a model but user hasn't chosen
-        - You want "smart" model selection based on requirements
-        """
-        # Use basic requirements if not specified
         if requirements is None:
             requirements = CapabilityRequirements(min_context_window=None)
 
-        # Select best model
         model = self.auto_select_model(requirements, model_preference)
-        provider = self.providers[model.provider]
+        self._ensure_registry()
+        provider_info = self._model_registry.get(model.name)
 
-        # Generate
-        text = provider.generate_text(
+        if not provider_info:
+            raise ProviderError(
+                message=f"Provider for model '{model.name}' not found in registry",
+                provider="unknown",
+            )
+
+        text = provider_info.generate_text(
             model_name=model.name,
             prompt=prompt,
             temperature=temperature,
@@ -431,20 +481,15 @@ class ModelManager:
         )
 
         return GenerationResult(
-            text=text, model=model.name, provider=provider.provider_name
+            text=text, model=model.name, provider=provider_info.provider_name
         )
 
     def get_provider_status(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Get status of all providers for monitoring/debugging.
-        """
         status = {}
-
         for name, provider in self.providers.items():
             try:
                 is_available = provider.is_available()
                 model_count = len(provider.list_models()) if is_available else 0
-
                 status[name] = {
                     "available": is_available,
                     "model_count": model_count,
@@ -458,5 +503,4 @@ class ModelManager:
                     "type": provider.provider_type,
                     "name": name,
                 }
-
         return status

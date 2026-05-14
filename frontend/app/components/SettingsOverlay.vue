@@ -17,11 +17,14 @@ import type {
   UserApiKey,
 } from '~/types/api-key'
 import { PROVIDER_ICONS, PROVIDER_LABELS, PROVIDER_OPTIONS } from '~/utils/api-key'
+import { SessionExpiredError } from '~/utils/sessionFetch'
+import { getSessionKey } from '~/composables/useSessionKey'
 import { useApiKeysApi } from '~/composables/api/apiKeysApi'
 
 const open = defineModel<boolean>('open', { default: false })
+const llmStore = useLLM()
 
-const { fetchKeys, createKey, updateKey, deleteKey } = useApiKeysApi()
+const { fetchKeys, createKey, updateKey, deleteKey, testKey } = useApiKeysApi()
 const keys = ref<UserApiKey[]>([])
 const toast = useToast()
 
@@ -35,6 +38,7 @@ const formBaseUrl = ref('')
 const isSubmitting = ref(false)
 const formError = ref('')
 const deletingId = ref<string | null>(null)
+const testingId = ref<string | null>(null)
 
 // Edit state
 const editingId = ref<string | null>(null)
@@ -59,6 +63,11 @@ watch(open, async (val) => {
       keys.value = await fetchKeys()
     } catch {
       /* */
+    }
+    try {
+      await llmStore.refreshModels()
+    } catch {
+      getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
     }
   }
 })
@@ -154,7 +163,7 @@ async function handleEditSubmit() {
   }
 }
 
-// === Delete ===
+// === Delete / Test ===
 
 async function handleDelete(id: string) {
   deletingId.value = id
@@ -166,6 +175,37 @@ async function handleDelete(id: string) {
     toast.add({ title: 'Failed to delete key', color: 'error' })
   } finally {
     deletingId.value = null
+  }
+}
+
+async function handleTest(id: string) {
+  testingId.value = id
+  try {
+    const result = await testKey(id)
+    toast.add({
+      title: result.status === 'ok' ? 'Key works!' : 'Key test failed',
+      description: result.detail,
+      color: result.status === 'ok' ? 'success' : 'error',
+    })
+  } catch (err) {
+    if (err instanceof SessionExpiredError) {
+      getSessionKey().handleSessionExpired(() => handleTest(id))
+      return
+    }
+    toast.add({ title: 'Key test failed', description: 'Could not connect', color: 'error' })
+  } finally {
+    testingId.value = null
+  }
+  try {
+    keys.value = await fetchKeys()
+  } catch {
+    /* */
+  }
+  if (editingId.value === id) {
+    const updated = keys.value.find((k) => k.id === id)
+    if (updated) {
+      editIsActive.value = updated.is_active
+    }
   }
 }
 </script>
@@ -347,6 +387,14 @@ async function handleDelete(id: string) {
                 />
                 <UButton
                   variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-plug"
+                  size="sm"
+                  :loading="testingId === apiKey.id"
+                  @click="handleTest(apiKey.id)"
+                />
+                <UButton
+                  variant="ghost"
                   color="error"
                   icon="i-lucide-trash-2"
                   size="sm"
@@ -418,6 +466,14 @@ async function handleDelete(id: string) {
                 </span>
               </div>
               <div class="flex justify-end gap-2">
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-plug"
+                  size="sm"
+                  :loading="testingId === editingId"
+                  @click="editingId ? handleTest(editingId) : undefined"
+                />
                 <UButton variant="ghost" size="sm" @click="cancelEdit">Cancel</UButton>
                 <UButton size="sm" :loading="isEditing" @click="handleEditSubmit">Save</UButton>
               </div>

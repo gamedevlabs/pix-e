@@ -43,6 +43,7 @@ useOnboardingProgress(searchOpen)
     </main>
 
     <UFooter />
+    <SessionPasswordModal />
   </div>
 </template>
 

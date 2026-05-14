@@ -53,10 +53,10 @@ const dropdownItems = computed(() => [
           @click="apiKeysOpen = true"
         />
         <USelect
-          v-model="llmStore.active_llm"
-          :items="llmStore.llm_models"
+          v-model="llmStore.activeModel"
+          :items="llmStore.models"
           value-key="value"
-          :icon="llmStore.llm_icon"
+          :icon="llmStore.activeModelIcon"
           class="w-48"
         />
         <UDropdownMenu :items="dropdownItems">

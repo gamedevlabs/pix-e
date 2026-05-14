@@ -30,6 +30,8 @@ export function useAuthentication() {
       if (!success) {
         return false
       }
+      const llmStore = useLLM()
+      llmStore.refreshModels()
       const route = useRoute()
       const redirectTo = (route.query.redirect as string) || '/'
       await router.push(redirectTo)
@@ -49,6 +51,8 @@ export function useAuthentication() {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
+      const llmStore = useLLM()
+      llmStore.refreshModels()
       return true
     } catch {
       user.value = null

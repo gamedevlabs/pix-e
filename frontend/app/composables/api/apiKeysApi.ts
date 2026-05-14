@@ -1,9 +1,22 @@
 import type { UserApiKey, CreateApiKeyPayload, UpdateApiKeyPayload } from '~/types/api-key'
+import { sessionFetch } from '~/utils/sessionFetch'
 
 export function useApiKeysApi() {
   const config = useRuntimeConfig()
   const baseUrl = config.public.apiBase
   const csrfToken = useCookie('csrftoken')
+
+  function apiUrl(path: string) {
+    return `${baseUrl}${path}`
+  }
+
+  async function testKey(id: string): Promise<{ status: string; detail: string }> {
+    return await sessionFetch<{ status: string; detail: string }>(apiUrl(`/api/accounts/api-keys/${id}/test/`), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
+    })
+  }
 
   async function fetchKeys(): Promise<UserApiKey[]> {
     return await $fetch<UserApiKey[]>(`${baseUrl}/api/accounts/api-keys/`, {
@@ -37,5 +50,5 @@ export function useApiKeysApi() {
     })
   }
 
-  return { fetchKeys, createKey, updateKey, deleteKey }
+  return { fetchKeys, createKey, updateKey, deleteKey, testKey }
 }
