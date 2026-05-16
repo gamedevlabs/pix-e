@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 import sys
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -40,6 +41,11 @@ configure_logfire()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-wxqcjs8ufub1x#x)nwi-y4k+sv@$r@9-=&dp!8r=sp8ee=#lh%"
 
+# HelpDesk Token/data
+GITHUB_HELPDESK_TOKEN = os.getenv("GITHUB_HELPDESK_TOKEN", "")
+GITHUB_HELPDESK_OWNER = os.getenv("GITHUB_HELPDESK_OWNER", "")
+GITHUB_HELPDESK_REPO = os.getenv("GITHUB_HELPDESK_REPO", "")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -67,6 +73,7 @@ INSTALLED_APPS = [
     "moviescriptevaluator",
     "player_expectations_new",
     "projects",
+    "helpdesk",
 ]
 
 REST_FRAMEWORK = {

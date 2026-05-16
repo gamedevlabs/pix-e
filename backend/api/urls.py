@@ -32,4 +32,5 @@ urlpatterns = [
     path("api/player-expectations/", include("player_expectations.urls")),
     path("api/movie-script-evaluator/", include("moviescriptevaluator.urls")),
     path("api/projects/", include("projects.urls")),
+    path("api/helpdesk/", include("helpdesk.urls")),
 ]
