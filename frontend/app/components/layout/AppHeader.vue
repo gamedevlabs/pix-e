@@ -34,6 +34,7 @@ const dropdownItems = computed(() => [
     </template>
 
     <template #right>
+      <NeedHelpCard />
       <UColorModeSwitch />
 
       <UButton
