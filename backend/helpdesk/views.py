@@ -19,7 +19,10 @@ class HelpdeskTicketView(APIView):
         if not ticket_type or not title or not description:
             return Response(
                 {
-                    "error": "type, title, and description are required for creating a ticket"
+                    "error": (
+                        "type, title, and description are required "
+                        "for creating a ticket"
+                    )
                 },
                 status=400,
             )
@@ -49,8 +52,13 @@ class HelpdeskTicketView(APIView):
 """
 
         # post & create issue
+        github_issue_url = (
+            "https://api.github.com/repos/"
+            f"{settings.GITHUB_HELPDESK_OWNER}/"
+            f"{settings.GITHUB_HELPDESK_REPO}/issues"
+        )
         github_response = requests.post(
-            f"https://api.github.com/repos/{settings.GITHUB_HELPDESK_OWNER}/{settings.GITHUB_HELPDESK_REPO}/issues",
+            github_issue_url,
             headers={
                 "Authorization": f"Bearer {settings.GITHUB_HELPDESK_TOKEN}",
                 "Accept": "application/vnd.github+json",
