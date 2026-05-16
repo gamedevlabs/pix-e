@@ -12,6 +12,7 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
+import PXChartToolbar from '~/components/PxComponents/PxChartComponents/PXChartToolbar.vue'
 const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -41,6 +42,8 @@ const {
   pxChartError,
   loadGraph,
   addContainer,
+  addContainerWithExistingNode,
+  addContainerWithNewNode,
   updateContainer,
   applyDefaultNodeChanges,
   addNodeToContainer,
@@ -204,6 +207,7 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
+//TODO:call this function at some point when adding container automatically???
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
   emit('nodeAddedToContainer')
@@ -266,6 +270,18 @@ async function onEdgesChange(changes: EdgeChange[]) {
   applyDefaultEdgeChanges(defaultChanges)
 }
 
+//TODO: change where new container is put (relative to screen, not canvas)
+async function handleAddContainerFromPanel(newNode = false) {
+  if (newNode) {
+    await addContainerWithNewNode(0, 0)
+    emit('containerAdded')
+  } else {
+    await addContainerWithExistingNode(0, 0)
+    emit('containerAdded')
+  }
+}
+
+//TODO: this adds container with right click,supposed to open drop down menu?
 async function onContextMenu(mouseEvent: MouseEvent) {
   // prevent the browser's default menu
   mouseEvent.preventDefault()
@@ -274,11 +290,6 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   await addContainer(pos.x, pos.y)
   emit('containerAdded')
   fetchPxChartContainers()
-}
-
-async function handleAddContainerFromPanel() {
-  await addContainer(0, 0)
-  emit('containerAdded')
 }
 
 const pxNodeIdsInPath = computed(() => {
@@ -335,6 +346,13 @@ async function onSelectionChange(change: NodeSelectionChange) {
     :px-components="pxComponents"
     :px-component-definitions="pxComponentDefinitions"
   />
+
+  <!-- TODO: Toolbar -->
+  <PXChartToolbar
+    @addExistingNode="handleAddContainerFromPanel(false)"
+    @addNewNode="handleAddContainerFromPanel(true)"
+  />
+
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
@@ -377,17 +395,6 @@ async function onSelectionChange(change: NodeSelectionChange) {
         @edit="handleUpdatePxGraphContainer"
       />
     </template>
-
-    <Panel :position="'bottom-left'">
-      <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-        <UButton
-          size="xl"
-          icon="i-lucide-plus"
-          color="primary"
-          @click="handleAddContainerFromPanel"
-        />
-      </UTooltip>
-    </Panel>
 
     <!-- Context Strategy Analysis Button -->
     <Panel :position="'top-right'">

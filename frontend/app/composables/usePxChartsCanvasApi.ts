@@ -1,6 +1,8 @@
-﻿import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
+﻿import type { Connection, Edge, EdgeChange, Node, NodeChange, NodeProps } from '@vue-flow/core'
 import { useVueFlow, MarkerType } from '@vue-flow/core'
 import merge from 'lodash.merge'
+import { PxChartContainerAddPxNodeForm } from '#components'
+
 
 export function usePxChartsCanvasApi(chartId: string) {
   const nodes = ref<Node[]>([])
@@ -39,6 +41,11 @@ export function usePxChartsCanvasApi(chartId: string) {
       height: 20,
     },
   }
+
+  //TODO: added to open addNodeForm from here
+  const overlay = useOverlay()
+  const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
+
 
   // Load graph with Vue Flow properties
   async function loadGraph() {
@@ -129,6 +136,23 @@ export function usePxChartsCanvasApi(chartId: string) {
         px_chart: chartId,
       },
     })
+      return newId
+  }
+
+  //TODO: method used to add node to container on creation
+  async function addContainerWithExistingNode(position_x = 0, position_y = 0) {
+
+      const containerId = await addContainer(position_x, position_y)
+      const nodeId = await modalAddPxNode.open().result
+
+      if (!nodeId) return
+
+      await addNodeToContainer(containerId, nodeId)
+  }
+
+  async function addContainerWithNewNode(position_x = 0, position_y = 0) {
+      const containerId = await addContainer(position_x, position_y)
+
   }
 
   async function updateContainer(updatedContainer: Partial<PxChartContainer>) {
@@ -299,6 +323,8 @@ export function usePxChartsCanvasApi(chartId: string) {
     pxChartError,
     loadGraph,
     addContainer,
+    addContainerWithExistingNode,
+    addContainerWithNewNode,
     updateContainer,
     applyDefaultNodeChanges,
     addNodeToContainer,
