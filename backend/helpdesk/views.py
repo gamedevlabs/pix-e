@@ -18,7 +18,9 @@ class HelpdeskTicketView(APIView):
         # checks request validity & helpdesk config
         if not ticket_type or not title or not description:
             return Response(
-                {"error": "type, title, and description are required for creating a ticket"},
+                {
+                    "error": "type, title, and description are required for creating a ticket"
+                },
                 status=400,
             )
 
@@ -64,7 +66,8 @@ class HelpdeskTicketView(APIView):
 
         if github_response.status_code != 201:
             return Response(
-                {"error": "Could not create helpdesk ticket"}, status=502,
+                {"error": "Could not create helpdesk ticket"},
+                status=502,
             )
 
         issue = github_response.json()
@@ -73,5 +76,6 @@ class HelpdeskTicketView(APIView):
             {
                 "number": issue["number"],
                 "url": issue["html_url"],
-            }, status=201,
+            },
+            status=201,
         )
