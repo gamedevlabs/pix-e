@@ -1,6 +1,5 @@
 import { useSessionLog } from '~/composables/useSessionLog'
 
-
 export const useApi = () => {
   const config = useRuntimeConfig()
   const csrfToken = useCookie('csrftoken')
