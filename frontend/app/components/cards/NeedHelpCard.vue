@@ -14,8 +14,15 @@ const requestTitle = ref('')
 // showing success/error pop ups
 const toast = useToast()
 
+// session logging
+const attachLogs = ref(true)
+const { getLogs, addLog } = useSessionLog()
+
 // open / close logic for the form
 function openRequestForm() {
+  // log form opening
+  addLog('info', 'helpdesk_form_opened')
+
   showRequestForm.value = true
 }
 
@@ -29,6 +36,7 @@ function resetRequestForm() {
   formDescription.value = ''
   userContact.value = ''
   requestTitle.value = ''
+  attachLogs.value = true
 }
 
 // check if contact details are needed
@@ -47,6 +55,12 @@ const checkRequestForm = computed(() => {
 
 // sending request
 async function submitRequestForm() {
+  // log form submit
+  addLog('info', 'helpdesk_form_submit_clicked', {
+    type: requestType.value,
+    hasContact: userContact.value.trim().length > 0,
+  })
+
   if (!checkRequestForm.value) {
     toast.add({
       title: 'Submission failed',
@@ -66,6 +80,7 @@ async function submitRequestForm() {
         title: requestTitle.value,
         description: formDescription.value,
         contact: userContact.value,
+        logs: requestType.value === 'Bug Report' && attachLogs.value ? getLogs() : null,
       },
     })
 
@@ -132,6 +147,14 @@ async function submitRequestForm() {
             <option>Help Request</option>
             <option>Feature Request</option>
           </select>
+
+          <!-- Bug Report: offer option to attach session logs for bug report -->
+          <UCheckbox
+            v-if="requestType === 'Bug Report'"
+            v-model="attachLogs"
+            label="Attach session logs?"
+            class="-mt-2 mb-4"
+          />
 
           <!-- Request description -->
           <p class="text-sm mb-1">

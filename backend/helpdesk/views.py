@@ -1,7 +1,9 @@
 import requests
+import json
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from llm.logfire_config import get_logfire
 
 
 class HelpdeskTicketView(APIView):
@@ -14,6 +16,15 @@ class HelpdeskTicketView(APIView):
         title = str(request.data.get("title", "")).strip()
         description = str(request.data.get("description", "")).strip()
         user_contact = str(request.data.get("contact", "")).strip()
+        session_logs = request.data.get("logs")
+        print("HELPDESK SESSION LOGS:", bool(session_logs), type(session_logs))
+
+        logfire = get_logfire()
+        logfire.info(
+            "helpdesk.ticket_submitted",
+            ticket_type=ticket_type,
+            has_session_logs=bool(session_logs),
+        )
 
         # checks request validity & helpdesk config
         if not ticket_type or not title or not description:
@@ -49,6 +60,14 @@ class HelpdeskTicketView(APIView):
 ## Contact Details
 {user_contact or "Not provided"}
 
+"""
+        if session_logs:
+            issue_body += f"""
+## Session Logs
+
+```json
+{json.dumps(session_logs, indent=2)}
+```
 """
 
         # post & create issue
