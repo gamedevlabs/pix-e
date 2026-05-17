@@ -108,7 +108,7 @@ export interface EvaluationResponse {
 
 export function useStructuralMemory() {
   const { apiFetch } = useApi()
-  
+
   const loading = ref(false)
   const evaluating = ref(false)
   const error = ref<string | null>(null)
