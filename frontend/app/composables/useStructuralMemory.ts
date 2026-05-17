@@ -6,7 +6,6 @@ import { useApi } from '~/composables/useApi'
  * Handles generating knowledge triples, atomic facts, and embeddings
  * for PX nodes in selected charts.
  */
-const { apiFetch } = useApi()
 
 export interface GenerationOptions {
   chartIds: string[]
@@ -108,6 +107,8 @@ export interface EvaluationResponse {
 }
 
 export function useStructuralMemory() {
+  const { apiFetch } = useApi()
+  
   const loading = ref(false)
   const evaluating = ref(false)
   const error = ref<string | null>(null)

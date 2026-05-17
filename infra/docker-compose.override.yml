@@ -23,10 +23,16 @@ services:
       target: development
     volumes:
       - ../frontend:/app
-      - /app/node_modules
+      - frontend-node-modules:/app/node_modules
+      - frontend-nuxt-cache:/app/.nuxt
     environment:
       - NUXT_HOST=0.0.0.0
-      - NITROPACK_HOST=0.0.0.0
+      - HOST=0.0.0.0
+      - NITRO_HOST=0.0.0.0
       - NODE_TLS_REJECT_UNAUTHORIZED=0
     extra_hosts:
       - "localhost:host-gateway"
+
+volumes:
+  frontend-node-modules:
+  frontend-nuxt-cache:

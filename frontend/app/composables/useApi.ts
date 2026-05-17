@@ -9,7 +9,7 @@ export const useApi = () => {
   const apiFetch = $fetch.create({
     baseURL: baseURL as string,
     onResponseError({ response }) {
-      console.error('API Error:', response.status, response._data)
+      console.error('API Error (call: ' + baseURL + '):', response.status, response._data)
     },
     headers: headers as HeadersInit,
 

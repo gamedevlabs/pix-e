@@ -12,7 +12,7 @@ export const useProjectHandler = () => {
 
   const { apiFetch } = useApi()
   const { items, createItem, updateItem, fetchAll, fetchById, deleteItem } =
-    useCrudWithAuthentication<Project>('api/projects/')
+    useCrudWithAuthentication<Project>('/api/projects/')
 
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
