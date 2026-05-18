@@ -40,7 +40,8 @@ RESPONSE FORMAT (JSON):
       "node_b_id": "<uuid of second node>",
       "node_b_name": "<name of second node>",
       "term_b": "<term used in second node>",
-      "message": "Clear description of why these terms appear to refer to the same concept",
+      "message": "Clear description of why these terms appear to refer"
+      " to the same concept",
       "confidence": <float between 0.0 and 1.0>
     }}
   ]

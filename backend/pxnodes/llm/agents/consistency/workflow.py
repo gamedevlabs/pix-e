@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from game_concept.models import Project
 from llm.providers.manager import ModelManager
@@ -48,8 +48,8 @@ class ConsistencyWorkflow:
 
         if pillars and nodes:
             try:
-                agent = PillarAlignmentAgent()
-                data = {
+                agent: Any = PillarAlignmentAgent()
+                data: dict[str, Any] = {
                     "pillars_section": self._format_pillars(pillars),
                     "nodes_section": self._format_nodes(nodes),
                 }
