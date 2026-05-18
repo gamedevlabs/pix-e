@@ -1,6 +1,7 @@
 import logging
 from typing import Any, cast
 
+from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework.decorators import action
@@ -254,7 +255,6 @@ class LLMFeedbackView(ViewSet):
 
     @action(detail=False, methods=["POST"], url_path="evaluate-all")
     def evaluate_all(self, request: Request) -> JsonResponse:
-        import asyncio
 
         try:
             user = cast(User, self.request.user)
@@ -369,17 +369,12 @@ class LLMFeedbackView(ViewSet):
                 config=self.orchestrator.config,
             )
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                with logfire.span(
-                    "pillars.evaluate.all.agentic",
-                    feature="pillars",
-                    execution_mode="agentic",
-                ):
-                    result = loop.run_until_complete(workflow.run(llm_request))
-            finally:
-                loop.close()
+            with logfire.span(
+                "pillars.evaluate.all.agentic",
+                feature="pillars",
+                execution_mode="agentic",
+            ):
+                result = async_to_sync(workflow.run)(llm_request)
 
             save_execution_result_llm_calls(
                 user=user,
@@ -454,8 +449,6 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            import asyncio
-
             from pillars.llm.agents import ContradictionResolutionAgent
 
             agent = ContradictionResolutionAgent()
@@ -466,12 +459,7 @@ class LLMFeedbackView(ViewSet):
                 "model_preference": "auto",
             }
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(agent.run(context))
-            finally:
-                loop.close()
+            result = async_to_sync(agent.run)(context)
 
             if not result.success:
                 return JsonResponse(

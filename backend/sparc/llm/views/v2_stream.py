@@ -245,9 +245,9 @@ class SPARCV2StreamView(APIView):
 
                     # Start the evaluation workflow in a background thread that is
                     # cooperatively managed by Uvicorn's asyncio event loop.
+
                     task = asyncio.create_task(
-                        asyncio.to_thread(
-                            run_router_workflow,
+                        run_router_workflow(
                             request_data=request_data,
                             model_id=model_id,
                             evaluation=evaluation,
