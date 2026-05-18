@@ -287,14 +287,17 @@ class SPARCV2StreamView(APIView):
                                         "progress",
                                         {
                                             "stage": "aspects_progress",
-                                            "message": f"Aspect evaluation: {aspect_count}/{total_aspects}",
+                                            "message": f"Aspect evaluation: "
+                                            f"{aspect_count}/{total_aspects}",
                                             "current": aspect_count,
                                             "total": total_aspects,
                                         },
                                     )
 
-                        # Non-blocking async sleep: This releases the CPU back to the event loop,
-                        # preventing stalls and allowing Uvicorn to stream the chunks over the network.
+                        # Non-blocking async sleep: This releases
+                        # the CPU back to the event loop,
+                        # preventing stalls and allowing Uvicorn
+                        # to stream the chunks over the network.
                         await asyncio.sleep(0.1)
 
                     # Get the final result from the background task
@@ -330,7 +333,8 @@ class SPARCV2StreamView(APIView):
 
                 finally:
                     # Clean up temporary file after workflow execution completes.
-                    # Using to_thread for file I/O avoids blocking the event loop momentarily.
+                    # Using to_thread for file I/O avoids blocking the event
+                    # loop momentarily.
                     if temp_file_path and os.path.exists(temp_file_path):
                         try:
                             await asyncio.to_thread(os.unlink, temp_file_path)
