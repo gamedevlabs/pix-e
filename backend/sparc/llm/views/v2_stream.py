@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import time
-from typing import Any, Dict, Generator, List, Optional, cast, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, cast
 
 from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
@@ -142,14 +142,23 @@ class SPARCV2StreamView(APIView):
             # Stream the evaluation with progress
             concept_meta = resolve_concept_meta(request)
             response = StreamingHttpResponse(
-                self._stream_evaluation(game_text, context_text, pillar_mode,
-                                        context_strategy, model_id, evaluation,
-                                        cast(User, request.user), document_data,
-                                        temp_file_path, concept_meta,
-                                        request.data.get("project_id"), ),
-                content_type="text/event-stream", )
-            response['Cache-Control'] = 'no-cache'
-            response['X-Accel-Buffering'] = 'no'
+                self._stream_evaluation(
+                    game_text,
+                    context_text,
+                    pillar_mode,
+                    context_strategy,
+                    model_id,
+                    evaluation,
+                    cast(User, request.user),
+                    document_data,
+                    temp_file_path,
+                    concept_meta,
+                    request.data.get("project_id"),
+                ),
+                content_type="text/event-stream",
+            )
+            response["Cache-Control"] = "no-cache"
+            response["X-Accel-Buffering"] = "no"
             return response
 
         except Exception as e:
@@ -183,6 +192,7 @@ class SPARCV2StreamView(APIView):
         """Stream evaluation progress and results asynchronously."""
         import asyncio
         import os
+
         from asgiref.sync import sync_to_async
 
         logfire = get_logfire()
@@ -225,8 +235,7 @@ class SPARCV2StreamView(APIView):
                 # Send initial progress immediately to establish the SSE connection
                 yield self._format_sse(
                     "progress",
-                    {"stage": "starting",
-                     "message": "Initializing evaluation..."},
+                    {"stage": "starting", "message": "Initializing evaluation..."},
                 )
 
                 try:
@@ -305,19 +314,18 @@ class SPARCV2StreamView(APIView):
 
                     # Wrap synchronous Django ORM calls using sync_to_async
                     # to prevent SynchronousOnlyOperation errors in the async loop.
-                    await sync_to_async(update_evaluation_totals)(evaluation,
-                                                                  aggregated)
+                    await sync_to_async(update_evaluation_totals)(
+                        evaluation, aggregated
+                    )
 
                     # Auto-save game concept (also wrapped for async compatibility)
-                    await sync_to_async(save_game_concept)(user, game_text,
-                                                           evaluation)
+                    await sync_to_async(save_game_concept)(user, game_text, evaluation)
 
                     # Send final result
                     yield self._format_sse("complete", aggregated)
 
                 except Exception as e:
-                    logger.exception(
-                        f"Error in SPARC V2 streaming evaluation: {e}")
+                    logger.exception(f"Error in SPARC V2 streaming evaluation: {e}")
                     yield self._format_sse("error", {"message": str(e)})
 
                 finally:
