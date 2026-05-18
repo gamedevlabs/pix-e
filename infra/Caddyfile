@@ -1,23 +1,25 @@
 socvm2.cit.tum.de {
-    encode gzip
-
     handle /api/* {
-        reverse_proxy backend-dev:{$DJANGO_PORT_DEV}
+        reverse_proxy backend-dev:{$DJANGO_PORT_DEV} {
+            flush_interval -1
+        }
     }
 
     handle {
+        encode gzip
         reverse_proxy frontend-dev:80
     }
 }
 
 pixie.soc.cit.tum.de {
-    encode gzip
-
     handle /api/* {
-        reverse_proxy backend-prod:{$DJANGO_PORT_PROD}
+        reverse_proxy backend-prod:{$DJANGO_PORT_PROD} {
+            flush_interval -1
+        }
     }
 
     handle {
+        encode gzip
         reverse_proxy frontend-prod:80
     }
 }
