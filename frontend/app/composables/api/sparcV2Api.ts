@@ -8,7 +8,7 @@ export interface ProgressEvent {
 }
 
 export function useSparcV2Api() {
-  const { apiFetch } = useApi()
+  const { apiFetch, apiFetchStream } = useApi()
   const llm = useLLM()
 
   async function runV2EvaluateAPICall(
@@ -96,12 +96,11 @@ export function useSparcV2Api() {
         }
       }
 
-      const stream = await apiFetch<ReadableStream>('/api/sparc/v2/evaluate-stream/', {
+      const stream = await apiFetchStream('/api/sparc/v2/evaluate-stream/', {
         method: 'POST',
         headers,
         credentials: 'include',
         body,
-        responseType: 'stream',
       })
 
       if (!stream) {
