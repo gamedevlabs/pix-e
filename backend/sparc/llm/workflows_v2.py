@@ -447,7 +447,7 @@ class SPARCRouterWorkflow:
             if not project_id:
                 from projects.utils import get_current_project
 
-                project = get_current_project(user)
+                project = await sync_to_async(get_current_project)(user)
                 project_id = project.id if project else None
 
             # Fetch pillars asynchronously
