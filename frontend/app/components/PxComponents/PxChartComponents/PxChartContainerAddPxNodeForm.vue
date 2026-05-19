@@ -15,10 +15,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <UModal
-    :title="'Add PX node'"
-    description="Add PX node from list of already existing node."
-  >
+  <UModal :title="'Add PX node'" description="Add PX node from list of already existing node.">
     <template #body>
       <UForm :state="formState" class="space-y-4" @submit="onSubmit">
         <UFormField label="Node Reference" name="selectedNodeId" class="max-w-96" required>

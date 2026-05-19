@@ -12,7 +12,7 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
-import PXChartToolbar from '~/components/PxComponents/PxChartComponents/PXChartToolbar.vue'
+import PxChartToolbar from './PxChartToolbar.vue'
 const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -344,9 +344,9 @@ async function onSelectionChange(change: NodeSelectionChange) {
     :px-component-definitions="pxComponentDefinitions"
   />
 
-  <PXChartToolbar
-    @addExistingNode="handleAddContainerFromPanel(false)"
-    @addNewNode="handleAddContainerFromPanel(true)"
+  <PxChartToolbar
+    @add-existing-node="handleAddContainerFromPanel(false)"
+    @add-new-node="handleAddContainerFromPanel(true)"
   />
 
   <div v-if="pxChartError">

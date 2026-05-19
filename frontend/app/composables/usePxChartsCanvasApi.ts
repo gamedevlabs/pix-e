@@ -3,7 +3,6 @@ import { useVueFlow, MarkerType } from '@vue-flow/core'
 import merge from 'lodash.merge'
 import { PxChartContainerAddPxNodeForm } from '#components'
 
-
 export function usePxChartsCanvasApi(chartId: string) {
   const nodes = ref<Node[]>([])
   const edges = ref<Edge[]>([])
@@ -44,7 +43,6 @@ export function usePxChartsCanvasApi(chartId: string) {
 
   const overlay = useOverlay()
   const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
-
 
   // Load graph with Vue Flow properties
   async function loadGraph() {
@@ -135,34 +133,32 @@ export function usePxChartsCanvasApi(chartId: string) {
         px_chart: chartId,
       },
     })
-      return newId
+    return newId
   }
 
   async function addContainerWithExistingNode(position_x = 0, position_y = 0) {
+    const containerId = await addContainer(position_x, position_y)
+    const nodeId = await modalAddPxNode.open().result
 
-      const containerId = await addContainer(position_x, position_y)
-      const nodeId = await modalAddPxNode.open().result
+    if (!nodeId) {
+      await deleteContainer(containerId, true)
+      return
+    }
 
-      if (!nodeId) {
-          await deleteContainer(containerId, true)
-          return
-      }
-
-      await addNodeToContainer(containerId, nodeId)
+    await addNodeToContainer(containerId, nodeId)
   }
 
   async function addContainerWithNewNode(position_x = 0, position_y = 0) {
+    //change to open new pop up window
+    const containerId = await addContainer(position_x, position_y)
+    const nodeId = await modalAddPxNode.open().result
 
-      //change to open new pop up window
-      const containerId = await addContainer(position_x, position_y)
-      const nodeId = await modalAddPxNode.open().result
+    if (!nodeId) {
+      await deleteContainer(containerId, true)
+      return
+    }
 
-      if (!nodeId) {
-        await deleteContainer(containerId, true)
-        return
-      }
-
-      await addNodeToContainer(containerId, nodeId)
+    await addNodeToContainer(containerId, nodeId)
   }
 
   async function updateContainer(updatedContainer: Partial<PxChartContainer>) {
