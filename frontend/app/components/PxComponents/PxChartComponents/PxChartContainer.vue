@@ -70,7 +70,7 @@ async function emitDelete() {
   emit('delete', props.id)
 }
 
-//TODO: currently copy of this function within add container functions
+//TODO: currently copy of this code within add container functions, delete?
 async function handleAddPxNode() {
   const nodeId = await modalAddPxNode.open().result
 

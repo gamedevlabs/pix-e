@@ -1,4 +1,4 @@
-﻿import type { Connection, Edge, EdgeChange, Node, NodeChange, NodeProps } from '@vue-flow/core'
+﻿import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
 import { useVueFlow, MarkerType } from '@vue-flow/core'
 import merge from 'lodash.merge'
 import { PxChartContainerAddPxNodeForm } from '#components'
@@ -42,7 +42,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     },
   }
 
-  //TODO: added to open addNodeForm from here
   const overlay = useOverlay()
   const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
 
@@ -139,20 +138,31 @@ export function usePxChartsCanvasApi(chartId: string) {
       return newId
   }
 
-  //TODO: method used to add node to container on creation
   async function addContainerWithExistingNode(position_x = 0, position_y = 0) {
 
       const containerId = await addContainer(position_x, position_y)
       const nodeId = await modalAddPxNode.open().result
 
-      if (!nodeId) return
+      if (!nodeId) {
+          await deleteContainer(containerId, true)
+          return
+      }
 
       await addNodeToContainer(containerId, nodeId)
   }
 
   async function addContainerWithNewNode(position_x = 0, position_y = 0) {
-      const containerId = await addContainer(position_x, position_y)
 
+      //change to open new pop up window
+      const containerId = await addContainer(position_x, position_y)
+      const nodeId = await modalAddPxNode.open().result
+
+      if (!nodeId) {
+        await deleteContainer(containerId, true)
+        return
+      }
+
+      await addNodeToContainer(containerId, nodeId)
   }
 
   async function updateContainer(updatedContainer: Partial<PxChartContainer>) {

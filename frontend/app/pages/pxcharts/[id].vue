@@ -44,7 +44,7 @@ async function handleNodeAddedToContainer() {
 
 <template>
   <div class="w-full h-full">
-    <PxChartCanvas
+        <PxChartCanvas
       :chart-id="chartId"
       @container-added="handleContainerAdded"
       @edge-connected="handleEdgeConnected"

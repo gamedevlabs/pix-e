@@ -207,7 +207,6 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
-//TODO:call this function at some point when adding container automatically???
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
   emit('nodeAddedToContainer')
@@ -270,7 +269,6 @@ async function onEdgesChange(changes: EdgeChange[]) {
   applyDefaultEdgeChanges(defaultChanges)
 }
 
-//TODO: change where new container is put (relative to screen, not canvas)
 async function handleAddContainerFromPanel(newNode = false) {
   if (newNode) {
     await addContainerWithNewNode(0, 0)
@@ -281,7 +279,6 @@ async function handleAddContainerFromPanel(newNode = false) {
   }
 }
 
-//TODO: this adds container with right click,supposed to open drop down menu?
 async function onContextMenu(mouseEvent: MouseEvent) {
   // prevent the browser's default menu
   mouseEvent.preventDefault()
@@ -347,7 +344,6 @@ async function onSelectionChange(change: NodeSelectionChange) {
     :px-component-definitions="pxComponentDefinitions"
   />
 
-  <!-- TODO: Toolbar -->
   <PXChartToolbar
     @addExistingNode="handleAddContainerFromPanel(false)"
     @addNewNode="handleAddContainerFromPanel(true)"
