@@ -1,8 +1,8 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
-from llm.types import AgentResult
+import pytest
 
+from llm.types import AgentResult
 from pxnodes.llm.agents.change_propagation.agent import ChangePropagationAgent
 from pxnodes.llm.agents.change_propagation.schemas import PropagationFinding
 from pxnodes.llm.agents.change_propagation.workflow import ChangePropagationWorkflow
@@ -11,7 +11,8 @@ PATCH_EXECUTE = (
     "pxnodes.llm.agents.change_propagation.agent.ChangePropagationAgent.execute"
 )
 PATCH_ANALYZE = (
-    "pxnodes.llm.agents.change_propagation.workflow.ChangePropagationAgent.analyze_change"
+    "pxnodes.llm.agents.change_propagation.workflow"
+    ".ChangePropagationAgent.analyze_change"
 )
 
 

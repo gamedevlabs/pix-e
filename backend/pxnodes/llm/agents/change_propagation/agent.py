@@ -76,7 +76,8 @@ class ChangePropagationAgent(BaseAgent):
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         other_nodes_section = "\n".join(
-            f"- ID: {n['id']}, Name: {n['name']}\n  Description: {n.get('description', '')}"
+            f"- ID: {n['id']}, Name: {n['name']}\n"
+            f"  Description: {n.get('description', '')}"
             for n in data.get("other_nodes", [])
         )
         return self.prompt_template.format(

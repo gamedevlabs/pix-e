@@ -35,9 +35,7 @@ class ChangePropagationWorkflow:
                 "the Change Propagation Agent is entirely LLM-driven."
             )
 
-        other_nodes: List[PxNode] = list(
-            project.pxnodes.exclude(id=changed_node.id)
-        )
+        other_nodes: List[PxNode] = list(project.pxnodes.exclude(id=changed_node.id))
 
         agent = ChangePropagationAgent(
             model_manager=self._model_manager,

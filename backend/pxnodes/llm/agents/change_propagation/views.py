@@ -86,7 +86,12 @@ class ChangePropagationView(APIView):
                 project_id,
             )
             return Response(
-                {"error": "An unexpected error occurred during change propagation analysis."},
+                {
+                    "error": (
+                        "An unexpected error occurred during"
+                        " change propagation analysis."
+                    )
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
