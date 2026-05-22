@@ -42,9 +42,17 @@ const {
   clearEvaluation,
 } = useStructuralMemory()
 
+const {
+  checking: checkingConsistency,
+  report: consistencyReport,
+  checkConsistency,
+  clearReport: clearConsistencyReport,
+} = useConsistency()
+
 // Structural memory generation state
 const selectedChartIds = ref<string[]>([])
 const showMemoryPanel = ref(false)
+const showConsistencyPanel = ref(false)
 const forceRegenerate = ref(false)
 
 // Computed chart options for multi-select
@@ -173,6 +181,41 @@ function getIssueTypeColor(type: string): string {
   }
 }
 
+function toggleConsistencyPanel() {
+  showConsistencyPanel.value = !showConsistencyPanel.value
+  if (!showConsistencyPanel.value) clearConsistencyReport()
+}
+
+async function handleRunConsistencyCheck() {
+  if (!currentProject.value?.id) return
+  await checkConsistency(currentProject.value.id, 0.5)
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  pillar_misalignment: 'Pillar Misalignment',
+  node_contradiction: 'Node Contradiction',
+  terminology_inconsistency: 'Terminology Inconsistency',
+}
+
+const groupedFindings = computed(() => {
+  if (!consistencyReport.value) return []
+  const groups: Record<string, ConsistencyFinding[]> = {}
+  for (const finding of consistencyReport.value.findings) {
+    if (!groups[finding.category]) groups[finding.category] = []
+    groups[finding.category].push(finding)
+  }
+  return Object.entries(groups).map(([category, findings]) => ({
+    category,
+    label: CATEGORY_LABELS[category] ?? 'Structural',
+    findings,
+  }))
+})
+
+function getNodeName(entityId: string): string {
+  if (!entityId) return 'Project-wide'
+  return pxNodes.value.find((n) => n.id === entityId)?.name ?? entityId
+}
+
 async function handleAddComponent() {
   // px-2-3: "Add a component to your new node"
   await toggleSubstep('px-2', 'px-2-3')
@@ -185,15 +228,25 @@ async function handleAddComponent() {
       <template #header>
         <div class="flex justify-between items-center">
           <div>Nodes</div>
-          <UButton
-            :color="showMemoryPanel ? 'primary' : 'neutral'"
-            variant="soft"
-            icon="i-lucide-brain"
-            :disabled="true"
-            @click="toggleMemoryPanel"
-          >
-            Structural Memory
-          </UButton>
+          <div class="flex gap-2">
+            <UButton
+              :color="showConsistencyPanel ? 'primary' : 'neutral'"
+              variant="soft"
+              icon="i-lucide-shield-check"
+              @click="toggleConsistencyPanel"
+            >
+              Consistency Check
+            </UButton>
+            <UButton
+              :color="showMemoryPanel ? 'primary' : 'neutral'"
+              variant="soft"
+              icon="i-lucide-brain"
+              :disabled="true"
+              @click="toggleMemoryPanel"
+            >
+              Structural Memory
+            </UButton>
+          </div>
         </div>
       </template>
 
@@ -402,6 +455,71 @@ async function handleAddComponent() {
                 <!-- Error -->
                 <div v-if="nodeResult.error" class="mt-2 text-sm text-red-600 dark:text-red-400">
                   Error: {{ nodeResult.error }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </UCard>
+
+      <!-- Consistency Check Panel -->
+      <UCard v-if="showConsistencyPanel" class="mb-6">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-shield-check" class="text-primary" />
+              <span class="font-semibold">Consistency Check</span>
+            </div>
+            <UButton variant="ghost" size="xs" icon="i-lucide-x" @click="toggleConsistencyPanel" />
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <UButton
+            color="primary"
+            :loading="checkingConsistency"
+            icon="i-lucide-scan-search"
+            @click="handleRunConsistencyCheck"
+          >
+            {{ checkingConsistency ? 'Checking...' : 'Run Consistency Check' }}
+          </UButton>
+
+          <div v-if="consistencyReport">
+            <div
+              v-if="consistencyReport.findings.length === 0"
+              class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-300"
+            >
+              No consistency issues found.
+            </div>
+
+            <div v-else class="space-y-6">
+              <div v-for="group in groupedFindings" :key="group.category">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-sm font-medium uppercase tracking-wide text-neutral-500">
+                    {{ group.label }}
+                  </span>
+                  <UBadge color="neutral" variant="soft" size="xs">
+                    {{ group.findings.length }}
+                  </UBadge>
+                </div>
+                <div class="space-y-2">
+                  <div
+                    v-for="(finding, idx) in group.findings"
+                    :key="idx"
+                    class="rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-800"
+                  >
+                    <div class="mb-1 flex items-center gap-2">
+                      <UBadge
+                        :color="getSeverityColor(finding.severity)"
+                        variant="solid"
+                        size="xs"
+                      >
+                        {{ finding.severity.toUpperCase() }}
+                      </UBadge>
+                      <span class="font-medium">{{ getNodeName(finding.entity_id) }}</span>
+                    </div>
+                    <p class="text-neutral-600 dark:text-neutral-400">{{ finding.message }}</p>
+                  </div>
                 </div>
               </div>
             </div>

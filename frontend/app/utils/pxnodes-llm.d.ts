@@ -72,3 +72,18 @@ type NodeComponentInfo = {
 interface PxNodeWithFeedback extends PxNode {
   llm_feedback?: NodeValidationFeedback | null
 }
+
+// --- Types for consistency check ---
+
+type ConsistencyFindingSeverity = 'info' | 'warning' | 'error'
+
+type ConsistencyFinding = {
+  severity: ConsistencyFindingSeverity
+  category: string
+  entity_id: string
+  message: string
+}
+
+type ConsistencyReport = {
+  findings: ConsistencyFinding[]
+}

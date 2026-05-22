@@ -37,6 +37,23 @@ export function usePxNodesLLMApi() {
     })
   }
 
+  async function checkConsistencyAPICall(
+    projectId: string,
+    minConfidence: number = 0.5,
+  ): Promise<ConsistencyReport> {
+    return await apiFetch<ConsistencyReport>(`/api/llm/consistency/check/`, {
+      method: 'POST',
+      body: {
+        project_id: projectId,
+        min_confidence: minConfidence,
+      },
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
+  }
+
   async function acceptNodeFixAPICall(
     nodeId: string,
     name: string,
@@ -61,5 +78,6 @@ export function usePxNodesLLMApi() {
     validateNodeAPICall,
     fixNodeWithAIAPICall,
     acceptNodeFixAPICall,
+    checkConsistencyAPICall,
   }
 }
