@@ -207,6 +207,7 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
+//TODO: hinfällig wenn nodes nur von toolbar, bzw den pop ups geadded werden??
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
   emit('nodeAddedToContainer')

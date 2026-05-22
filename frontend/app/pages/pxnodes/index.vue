@@ -78,6 +78,7 @@ function addItem() {
   newItem.value = { name: '', description: '' }
 }
 
+//TODO: currently copy of this code in canvas api, figure out if can be deleted or not
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
   const newUuid = v4()
   // TODO: move to backend probably (and fix this newItem stuff not working)
