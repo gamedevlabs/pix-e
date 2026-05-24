@@ -22,6 +22,7 @@ const { fetchById: fetchComponentById } = usePxComponents()
 const emit = defineEmits<{
   (e: 'addForeignComponent', nodeId: string, componentId: string): void
   (e: 'addComponent'): void
+  (e: 'descriptionChanged', payload: { nodeId: string; oldDescription: string; newDescription: string }): void
 }>()
 
 onMounted(() => {
@@ -81,6 +82,7 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
     @update="handleUpdate"
+    @description-changed="$emit('descriptionChanged', $event)"
   />
 </template>
 

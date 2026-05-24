@@ -37,6 +37,29 @@ export function usePxNodesLLMApi() {
     })
   }
 
+  async function checkPropagationAPICall(payload: {
+    projectId: string
+    nodeId: string
+    oldDescription: string
+    newDescription: string
+    minConfidence?: number
+  }): Promise<PropagationReport> {
+    return await apiFetch<PropagationReport>(`/api/llm/propagation/check/`, {
+      method: 'POST',
+      body: {
+        project_id: payload.projectId,
+        node_id: payload.nodeId,
+        old_description: payload.oldDescription,
+        new_description: payload.newDescription,
+        min_confidence: payload.minConfidence ?? 0.5,
+      },
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
+  }
+
   async function checkConsistencyAPICall(
     projectId: string,
     minConfidence: number = 0.5,
@@ -79,5 +102,6 @@ export function usePxNodesLLMApi() {
     fixNodeWithAIAPICall,
     acceptNodeFixAPICall,
     checkConsistencyAPICall,
+    checkPropagationAPICall,
   }
 }

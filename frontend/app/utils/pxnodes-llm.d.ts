@@ -87,3 +87,18 @@ type ConsistencyFinding = {
 type ConsistencyReport = {
   findings: ConsistencyFinding[]
 }
+
+// --- Types for change propagation ---
+
+type PropagationFinding = {
+  affected_node_id: string
+  affected_node_name: string
+  reason: string
+  confidence: number
+  suggested_action: string
+}
+
+type PropagationReport = {
+  changed_node_id: string
+  findings: PropagationFinding[]
+}
