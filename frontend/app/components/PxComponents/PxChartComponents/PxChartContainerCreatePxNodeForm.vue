@@ -17,6 +17,7 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
   await createPxNode(payload)
   // px-2-2: "Create your first node"
   await toggleSubstep('px-2', 'px-2-2')
+  //TODO: fetch even required??
   await fetchPxNodes()
   emit('close', newUuid)
 }

@@ -147,7 +147,6 @@ export function usePxChartsCanvasApi(chartId: string) {
       await deleteContainer(containerId, true)
       return
     }
-
     await addNodeToContainer(containerId, nodeId)
   }
 

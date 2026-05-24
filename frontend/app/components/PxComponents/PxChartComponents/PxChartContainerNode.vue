@@ -2,6 +2,7 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
+import type { ContextMenuItem } from '#ui/components/ContextMenu.vue'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
@@ -28,6 +29,17 @@ const minHeightGivenContent = computed(() => {
 })
 const cardWidth = ref(0)
 const cardHeight = ref(0)
+
+const menuItems = ref<ContextMenuItem[]>([
+  {
+    label: 'Delete node',
+    onSelect() {
+      emitDelete()
+    },
+  },
+    //TODO: call editability of node here
+  { label: 'Edit node', onSelect(){} },
+])
 
 onMounted(() => {
   loadContent()
@@ -96,48 +108,54 @@ function listenToResizing() {
 </script>
 
 <template>
-  <div ref="cardRef">
-    <UCard class="hover:shadow-lg transition">
-      <template #header>
-        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.data.name }}</h2>
-        <UTextarea v-else v-model="editForm.name" :rows="1" />
-      </template>
+  <UContextMenu :items="menuItems">
+    <div ref="cardRef">
+      <UCard class="hover:shadow-lg transition">
+        <template #header>
+          <h2 v-if="!isBeingEdited" class="font-semibold text-lg" hidden="hidden">
+            {{ props.data.name }}
+          </h2>
+          <UTextarea v-else v-model="editForm.name" :rows="1" />
+        </template>
 
-      <template #default>
-        <div v-if="pxNode">
-          <PxNodeCard :node-id="pxNode.id" :visualization-style="'preview'" />
-        </div>
-      </template>
+        <template #default>
+          <div v-if="pxNode">
+            <PxNodeCard :node-id="pxNode.id" :visualization-style="'preview'" />
+          </div>
+        </template>
 
-      <template #footer>
-        <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="primary" variant="soft" @click="removePxNode()">Remove Px Node</UButton>
-          <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
-          <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
-        </div>
-        <div v-else class="flex justify-end gap-2">
-          <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
-          <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
-        </div>
-      </template>
-    </UCard>
+        <template #footer>
+          <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
+            <UButton color="primary" variant="soft" hidden="hidden" @click="removePxNode()"
+              >Remove Px Node</UButton
+            >
+            <UButton color="secondary" variant="soft" :disabled="true" @click="startEdit">Edit</UButton>
+            <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
+          </div>
+          <div v-else class="flex justify-end gap-2">
+            <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
+            <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
+          </div>
+        </template>
+      </UCard>
 
-    <NodeResizer
-      :is-visible="props.selected"
-      :min-width="minWidth"
-      :min-height="minHeightGivenContent.value"
-      @resize-end="handleResizeEnd"
-    />
+      <NodeResizer
+        :is-visible="props.selected"
+        :min-width="minWidth"
+        :min-height="minHeightGivenContent.value"
+        @resize-end="handleResizeEnd"
+      />
 
-    <Handle id="target-a" type="target" :position="Position.Top" />
-    <Handle id="target-b" type="target" :position="Position.Right" />
-    <Handle id="target-c" type="target" :position="Position.Bottom" />
-    <Handle id="target-d" type="target" :position="Position.Left" />
-    <Handle id="source-a" type="source" :position="Position.Top" />
-    <Handle id="source-b" type="source" :position="Position.Right" />
-    <Handle id="source-c" type="source" :position="Position.Bottom" />
-    <Handle id="source-d" type="source" :position="Position.Left" />
-  </div>
+      <Handle id="target-a" type="target" :position="Position.Top" />
+      <Handle id="target-b" type="target" :position="Position.Right" />
+      <Handle id="target-c" type="target" :position="Position.Bottom" />
+      <Handle id="target-d" type="target" :position="Position.Left" />
+      <Handle id="source-a" type="source" :position="Position.Top" />
+      <Handle id="source-b" type="source" :position="Position.Right" />
+      <Handle id="source-c" type="source" :position="Position.Bottom" />
+      <Handle id="source-d" type="source" :position="Position.Left" />
+    </div>
+  </UContextMenu>
 </template>
 
 <style scoped></style>

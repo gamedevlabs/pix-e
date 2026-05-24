@@ -13,6 +13,7 @@ import {
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
 import PxChartToolbar from './PxChartToolbar.vue'
+import type { ContextMenuItem } from '#ui/components/ContextMenu.vue'
 const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -85,6 +86,19 @@ const precomputeStrategyOptions = [
   { value: 'full_context', label: 'Full Context' },
 ]
 const strategiesNeedingNode = new Set(['hmem', 'combined'])
+
+const menuItems = ref<ContextMenuItem[]>([
+  {
+    label: 'Create new node',
+    icon: 'i-heroicons-plus-solid',
+    onSelect(){ handleAddContainerFromPanel(true, 0, 0) }
+  },
+  {
+    label: 'Add existing node',
+    icon: 'i-heroicons-arrow-up-on-square',
+    onSelect(){ handleAddContainerFromPanel(false, 0, 0) }
+  }
+])
 
 function handleNodeClick(event: { node: Node }) {
   const container = event.node.data as PxChartContainer
@@ -270,24 +284,26 @@ async function onEdgesChange(changes: EdgeChange[]) {
   applyDefaultEdgeChanges(defaultChanges)
 }
 
-async function handleAddContainerFromPanel(newNode = false) {
+async function handleAddContainerFromPanel(newNode = false, position_x = 0, position_y = 0) {
+
   if (newNode) {
-    await addContainerWithNewNode(0, 0)
+    await addContainerWithNewNode(position_x, position_y)
     emit('containerAdded')
   } else {
-    await addContainerWithExistingNode(0, 0)
+    await addContainerWithExistingNode(position_x, position_y)
     emit('containerAdded')
   }
 }
 
+//TODO: still needed for analysis?
 async function onContextMenu(mouseEvent: MouseEvent) {
   // prevent the browser's default menu
   mouseEvent.preventDefault()
   // for now, just create a container
   const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
-  await addContainer(pos.x, pos.y)
-  emit('containerAdded')
-  fetchPxChartContainers()
+  //await addContainer(pos.x, pos.y)
+  //emit('containerAdded')
+  //fetchPxChartContainers()
 }
 
 const pxNodeIdsInPath = computed(() => {
@@ -345,115 +361,117 @@ async function onSelectionChange(change: NodeSelectionChange) {
     :px-component-definitions="pxComponentDefinitions"
   />
 
-  <PxChartToolbar
-    @add-existing-node="handleAddContainerFromPanel(false)"
-    @add-new-node="handleAddContainerFromPanel(true)"
-  />
+  <UContextMenu :items="menuItems">
+    <PxChartToolbar
+      @add-existing-node="handleAddContainerFromPanel(false, 0, 0)"
+      @add-new-node="handleAddContainerFromPanel(true, 0, 0)"
+    />
 
-  <div v-if="pxChartError">
-    <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
-    <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
-  </div>
-  <VueFlow
-    v-else
-    v-model:nodes="nodes"
-    v-model:edges="edges"
-    :edge-types="edgeTypes"
-    :apply-default="false"
-    @node-drag-stop="onNodeDragStop"
-    @connect="onConnect"
-    @nodes-change="onNodesChange"
-    @edges-change="onEdgesChange"
-    @pane-context-menu="onContextMenu($event)"
-    @node-click="handleNodeClick"
-  >
-    <!--@nodes-initialized="fitView()"-->
+    <div v-if="pxChartError">
+      <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
+      <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
+    </div>
+    <VueFlow
+      v-else
+      v-model:nodes="nodes"
+      v-model:edges="edges"
+      :edge-types="edgeTypes"
+      :apply-default="false"
+      @node-drag-stop="onNodeDragStop"
+      @connect="onConnect"
+      @nodes-change="onNodesChange"
+      @edges-change="onEdgesChange"
+      @pane-context-menu="onContextMenu($event)"
+      @node-click="handleNodeClick"
+    >
+      <!--@nodes-initialized="fitView()"-->
 
-    <Background />
+      <Background />
 
-    <template #node-pxEmpty="customNodeProps">
-      <PxChartContainer
-        v-bind="customNodeProps"
-        @delete="handleDeletePxGraphContainer"
-        @add-px-node="
-          (containerId, nodeId) => {
-            handleAddPxNode(containerId, nodeId)
-          }
-        "
-        @edit="handleUpdatePxGraphContainer"
-      />
-    </template>
+      <template #node-pxEmpty="customNodeProps">
+        <PxChartContainer
+          v-bind="customNodeProps"
+          @delete="handleDeletePxGraphContainer"
+          @add-px-node="
+            (containerId, nodeId) => {
+              handleAddPxNode(containerId, nodeId)
+            }
+          "
+          @edit="handleUpdatePxGraphContainer"
+        />
+      </template>
 
-    <template #node-pxNode="customNodeProps">
-      <PxChartContainerNode
-        v-bind="customNodeProps"
-        @remove-px-node="handleDeletePxNode"
-        @delete="handleDeletePxGraphContainer"
-        @edit="handleUpdatePxGraphContainer"
-      />
-    </template>
+      <template #node-pxNode="customNodeProps">
+        <PxChartContainerNode
+          v-bind="customNodeProps"
+          @remove-px-node="handleDeletePxNode"
+          @delete="handleDeletePxGraphContainer"
+          @edit="handleUpdatePxGraphContainer"
+        />
+      </template>
 
-    <!-- Context Strategy Analysis Button -->
-    <Panel :position="'top-right'">
-      <div class="flex flex-col items-end gap-2">
-        <div class="flex items-center gap-2">
-          <USelect
-            v-model="precomputeScope"
-            :items="precomputeScopeOptions"
-            value-key="value"
-            label-key="label"
-            size="sm"
-            :disabled="true"
-          />
-          <USelect
-            v-model="precomputeStrategy"
-            :items="precomputeStrategyOptions"
-            value-key="value"
-            label-key="label"
-            size="sm"
-            :disabled="true"
-          />
-          <UButton
-            size="sm"
-            icon="i-heroicons-cog-6-tooth"
-            color="primary"
-            :loading="precomputeLoading"
-            :disabled="true"
-            @click="handlePrecomputeArtifacts"
+      <!-- Context Strategy Analysis Button -->
+      <Panel :position="'top-right'">
+        <div class="flex flex-col items-end gap-2">
+          <div class="flex items-center gap-2">
+            <USelect
+              v-model="precomputeScope"
+              :items="precomputeScopeOptions"
+              value-key="value"
+              label-key="label"
+              size="sm"
+              :disabled="true"
+            />
+            <USelect
+              v-model="precomputeStrategy"
+              :items="precomputeStrategyOptions"
+              value-key="value"
+              label-key="label"
+              size="sm"
+              :disabled="true"
+            />
+            <UButton
+              size="sm"
+              icon="i-heroicons-cog-6-tooth"
+              color="primary"
+              :loading="precomputeLoading"
+              :disabled="true"
+              @click="handlePrecomputeArtifacts"
+            >
+              Precompute Artifacts
+            </UButton>
+            <UButton
+              size="sm"
+              icon="i-heroicons-trash"
+              color="error"
+              variant="outline"
+              :disabled="true"
+              @click="handleResetArtifacts"
+            >
+              Reset Cache
+            </UButton>
+          </div>
+          <UTooltip
+            :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
+            :content="{ align: 'center', side: 'left' }"
           >
-            Precompute Artifacts
-          </UButton>
-          <UButton
-            size="sm"
-            icon="i-heroicons-trash"
-            color="error"
-            variant="outline"
-            :disabled="true"
-            @click="handleResetArtifacts"
-          >
-            Reset Cache
-          </UButton>
+            <UButton
+              size="lg"
+              icon="i-heroicons-cpu-chip"
+              color="warning"
+              :disabled="!selectedNodeForAnalysis || true"
+              @click="openStrategyPanel"
+            >
+              Context Analysis
+            </UButton>
+          </UTooltip>
+          <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
+            Selected: {{ selectedNodeForAnalysis.nodeName }}
+          </div>
         </div>
-        <UTooltip
-          :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
-          :content="{ align: 'center', side: 'left' }"
-        >
-          <UButton
-            size="lg"
-            icon="i-heroicons-cpu-chip"
-            color="warning"
-            :disabled="!selectedNodeForAnalysis || true"
-            @click="openStrategyPanel"
-          >
-            Context Analysis
-          </UButton>
-        </UTooltip>
-        <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
-          Selected: {{ selectedNodeForAnalysis.nodeName }}
-        </div>
-      </div>
-    </Panel>
-  </VueFlow>
+      </Panel>
+    </VueFlow>
+  </UContextMenu>
 
   <!-- Context Strategy Slideover -->
   <USlideover v-model:open="showStrategyPanel" :ui="{ width: 'max-w-lg' }">
