@@ -8,7 +8,7 @@ import {
   type EdgeChange,
   type NodeChange,
   type Node,
-  type NodeSelectionChange,
+  type NodeSelectionChange, type SnapGrid,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
@@ -87,17 +87,31 @@ const precomputeStrategyOptions = [
 ]
 const strategiesNeedingNode = new Set(['hmem', 'combined'])
 
-const menuItems = ref<ContextMenuItem[]>([
-  {
-    label: 'Create new node',
-    icon: 'i-heroicons-plus-solid',
-    onSelect(){ handleAddContainerFromPanel(true, 0, 0) }
-  },
-  {
-    label: 'Add existing node',
-    icon: 'i-heroicons-arrow-up-on-square',
-    onSelect(){ handleAddContainerFromPanel(false, 0, 0) }
-  }
+const menuSnapToGrid = ref(false)
+//same distance as background grid
+const grid = <SnapGrid> ([20, 20])
+
+const menuItems = computed<ContextMenuItem[]>(() => [
+    {
+      label: 'Create new node',
+      icon: 'i-heroicons-plus-solid',
+      onSelect(){ handleAddContainerFromPanel(true, 0, 0) }
+    },
+    {
+      label: 'Add existing node',
+      icon: 'i-heroicons-arrow-up-on-square',
+      onSelect(){ handleAddContainerFromPanel(false, 0, 0) }
+    }, {
+      type: 'separator' as const
+    },
+    {
+      label: 'Snap to grid',
+      type: 'checkbox' as const,
+      checked: menuSnapToGrid.value,
+      onUpdateChecked(checked: boolean) {
+        menuSnapToGrid.value = checked
+      }
+    }
 ])
 
 function handleNodeClick(event: { node: Node }) {
@@ -285,7 +299,6 @@ async function onEdgesChange(changes: EdgeChange[]) {
 }
 
 async function handleAddContainerFromPanel(newNode = false, position_x = 0, position_y = 0) {
-
   if (newNode) {
     await addContainerWithNewNode(position_x, position_y)
     emit('containerAdded')
@@ -293,6 +306,10 @@ async function handleAddContainerFromPanel(newNode = false, position_x = 0, posi
     await addContainerWithExistingNode(position_x, position_y)
     emit('containerAdded')
   }
+}
+
+async function handleToggleSnapToGrid() {
+  menuSnapToGrid.value = !menuSnapToGrid.value
 }
 
 //TODO: still needed for analysis?
@@ -363,8 +380,10 @@ async function onSelectionChange(change: NodeSelectionChange) {
 
   <UContextMenu :items="menuItems">
     <PxChartToolbar
+      :menuSnapToGrid="menuSnapToGrid"
       @add-existing-node="handleAddContainerFromPanel(false, 0, 0)"
       @add-new-node="handleAddContainerFromPanel(true, 0, 0)"
+      @toggle-snap-to-grid="handleToggleSnapToGrid()"
     />
 
     <div v-if="pxChartError">
@@ -377,6 +396,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
       v-model:edges="edges"
       :edge-types="edgeTypes"
       :apply-default="false"
+      :snap-to-grid="menuSnapToGrid"
+      :snap-grid="grid"
       @node-drag-stop="onNodeDragStop"
       @connect="onConnect"
       @nodes-change="onNodesChange"

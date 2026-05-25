@@ -1,13 +1,22 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-  (e: 'addNewNode' | 'addExistingNode'): void
+  (e: 'addNewNode' | 'addExistingNode' | 'toggleSnapToGrid'): void
 }>()
+
+const props = defineProps({
+  menuSnapToGrid: Boolean,
+})
+
+const toolbarSnapToGrid = computed(() => props.menuSnapToGrid)
 
 async function handleAddExistingNodeFromToolbar() {
   emit('addExistingNode')
 }
 async function handleAddNewNodeFromToolbar() {
   emit('addNewNode')
+}
+async function handleToggleSnapToGrid() {
+  emit('toggleSnapToGrid')
 }
 </script>
 
@@ -31,11 +40,12 @@ async function handleAddNewNodeFromToolbar() {
 
         <UTooltip text="Toggle snap to grid" :content="{ align: 'center', side: 'right' }">
           <USwitch
-              :disabled="true"
+            v-model="toolbarSnapToGrid"
             unchecked-icon="material-symbols:grid-3x3-off"
             checked-icon="material-symbols:grid-3x3"
             color="primary"
             size="xl"
+            @change="handleToggleSnapToGrid()"
           />
         </UTooltip>
         <USeparator orientation="vertical" class="h-10" size="sm" />
