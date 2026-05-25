@@ -45,9 +45,31 @@ const {
 const {
   checking: checkingConsistency,
   report: consistencyReport,
+  fixSuggestions,
   checkConsistency,
   clearReport: clearConsistencyReport,
+  requestFix,
+  applyFix,
+  dismissFix,
 } = useConsistency()
+
+function fixKey(finding: ConsistencyFinding): string {
+  return `${finding.entity_id}|${finding.category}|${finding.message}`
+}
+
+async function handleRequestFix(finding: ConsistencyFinding) {
+  if (!currentProject.value?.id) return
+  await requestFix(finding, currentProject.value.id)
+}
+
+async function handleApplyFix(finding: ConsistencyFinding, newDescription: string) {
+  if (!currentProject.value?.id) return
+  await applyFix(finding, newDescription, currentProject.value.id)
+  // Clear the list so Vue unmounts all PxNodeCard instances, forcing them
+  // to re-fetch their data on remount instead of showing the cached description.
+  pxNodes.value = []
+  await fetchPxNodes()
+}
 
 const {
   checking: checkingPropagation,
@@ -543,6 +565,65 @@ async function handleAddComponent() {
                       <span class="font-medium">{{ getNodeName(finding.entity_id) }}</span>
                     </div>
                     <p class="text-neutral-600 dark:text-neutral-400">{{ finding.message }}</p>
+
+                    <!-- Fix with AI -->
+                    <div v-if="finding.entity_id" class="mt-2">
+                      <!-- Loading -->
+                      <div
+                        v-if="fixSuggestions[fixKey(finding)]?.loading"
+                        class="flex items-center gap-2 text-neutral-500"
+                      >
+                        <UIcon name="i-lucide-loader-circle" class="animate-spin" />
+                        <span>Generating fix...</span>
+                      </div>
+
+                      <!-- Suggestion -->
+                      <div
+                        v-else-if="fixSuggestions[fixKey(finding)]?.suggestion"
+                        class="mt-1 space-y-2"
+                      >
+                        <div
+                          class="rounded bg-blue-50 p-2 dark:bg-blue-900/20"
+                        >
+                          <p class="mb-1 text-xs text-neutral-500">Suggested description:</p>
+                          <p class="text-neutral-700 dark:text-neutral-300">
+                            {{ fixSuggestions[fixKey(finding)].suggestion }}
+                          </p>
+                        </div>
+                        <div class="flex gap-2">
+                          <UButton
+                            size="xs"
+                            color="primary"
+                            icon="i-lucide-check"
+                            @click="
+                              handleApplyFix(finding, fixSuggestions[fixKey(finding)].suggestion!)
+                            "
+                          >
+                            Apply
+                          </UButton>
+                          <UButton
+                            size="xs"
+                            variant="ghost"
+                            icon="i-lucide-x"
+                            @click="dismissFix(finding)"
+                          >
+                            Cancel
+                          </UButton>
+                        </div>
+                      </div>
+
+                      <!-- Trigger button -->
+                      <UButton
+                        v-else
+                        size="xs"
+                        variant="soft"
+                        color="neutral"
+                        icon="i-lucide-wrench"
+                        @click="handleRequestFix(finding)"
+                      >
+                        Fix with AI
+                      </UButton>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -88,6 +88,14 @@ type ConsistencyReport = {
   findings: ConsistencyFinding[]
 }
 
+// --- Types for consistency fix ---
+
+type ConsistencyFixResponse = {
+  node_id: string
+  original_description: string
+  suggested_description: string
+}
+
 // --- Types for change propagation ---
 
 type PropagationFinding = {

@@ -2,6 +2,7 @@ import logging
 from typing import Any, List, Optional
 
 from game_concept.models import Project
+from llm.exceptions import RateLimitError
 from llm.providers.manager import ModelManager
 
 from .schemas import ConsistencyFinding, ConsistencyReport, FindingSeverity
@@ -55,6 +56,7 @@ class ConsistencyWorkflow:
                 }
                 context = {"model_manager": self._model_manager, "data": data}
                 result = agent.execute(context)
+                self._raise_if_rate_limited(result)
                 if result.success and result.data:
                     for item in result.data.get("findings", []):
                         if item.get("confidence", 1.0) < self._min_confidence:
@@ -71,6 +73,8 @@ class ConsistencyWorkflow:
                                 ),
                             )
                         )
+            except RateLimitError:
+                raise
             except Exception as e:
                 logger.exception(
                     "Semantic check '%s' failed: %s",
@@ -93,6 +97,7 @@ class ConsistencyWorkflow:
                 }
                 context = {"model_manager": self._model_manager, "data": data}
                 result = agent.execute(context)
+                self._raise_if_rate_limited(result)
                 if result.success and result.data:
                     for item in result.data.get("contradictions", []):
                         if item.get("confidence", 1.0) < self._min_confidence:
@@ -108,6 +113,8 @@ class ConsistencyWorkflow:
                                 ),
                             )
                         )
+            except RateLimitError:
+                raise
             except Exception as e:
                 logger.exception(
                     "Semantic check '%s' failed: %s",
@@ -130,6 +137,7 @@ class ConsistencyWorkflow:
                 }
                 context = {"model_manager": self._model_manager, "data": data}
                 result = agent.execute(context)
+                self._raise_if_rate_limited(result)
                 if result.success and result.data:
                     for item in result.data.get("conflicts", []):
                         if item.get("confidence", 1.0) < self._min_confidence:
@@ -147,6 +155,8 @@ class ConsistencyWorkflow:
                                 ),
                             )
                         )
+            except RateLimitError:
+                raise
             except Exception as e:
                 logger.exception(
                     "Semantic check '%s' failed: %s",
@@ -171,3 +181,10 @@ class ConsistencyWorkflow:
                 f"- ID: {n.id}, Name: {n.name}\n  Description: {n.description}"
             )
         return "\n".join(lines)
+
+    def _raise_if_rate_limited(self, result: Any) -> None:
+        if not result.success and result.error:
+            if "rate limit" in (result.error.message or "").lower():
+                raise RateLimitError(
+                    message="Rate limit reached. Please wait and try again."
+                )

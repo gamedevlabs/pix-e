@@ -60,6 +60,27 @@ export function usePxNodesLLMApi() {
     })
   }
 
+  async function fixConsistencyFindingAPICall(payload: {
+    nodeId: string
+    findingCategory: string
+    findingDescription: string
+    projectId: string
+  }): Promise<ConsistencyFixResponse> {
+    return await apiFetch<ConsistencyFixResponse>(`/api/llm/consistency/fix/`, {
+      method: 'POST',
+      body: {
+        node_id: payload.nodeId,
+        finding_category: payload.findingCategory,
+        finding_description: payload.findingDescription,
+        project_id: payload.projectId,
+      },
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
+  }
+
   async function checkConsistencyAPICall(
     projectId: string,
     minConfidence: number = 0.5,
@@ -103,5 +124,6 @@ export function usePxNodesLLMApi() {
     acceptNodeFixAPICall,
     checkConsistencyAPICall,
     checkPropagationAPICall,
+    fixConsistencyFindingAPICall,
   }
 }
