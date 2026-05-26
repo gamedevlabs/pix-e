@@ -10,12 +10,18 @@ const openNavValue = defineModel<string | undefined>('openNavValue')
 
 // Sidebar collapse state — local to this component.
 const open = ref(false)
+const sidebarCollapsed = ref(false)
+
+async function handleToggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
 </script>
 
 <template>
   <UDashboardSidebar
     id="selected_project"
     v-model:open="open"
+    v-model:collapsed="sidebarCollapsed"
     collapsible
     resizable
     class="bg-elevated/25 relative"
@@ -72,9 +78,40 @@ const open = ref(false)
           popover
         />
 
-        <!-- Footer: onboarding trigger + external links -->
+        <!-- Footer: onboarding trigger + hide sidebar + external links -->
         <div class="mt-auto w-full flex flex-col items-start">
           <OnboardingTrigger mode="sidebar" :collapsed="collapsed" />
+
+          <div v-if="!collapsed" class="mt-auto w-full flex flex-col items-start">
+            <UTooltip text="Hide sidebar">
+              <UButton
+                :block="true"
+                style="justify-content: left"
+                color="neutral"
+                variant="outline"
+                size="xl"
+                icon="heroicons:chevron-double-left-16-solid"
+                @click="handleToggleSidebar()"
+              >
+                Hide Sidebar
+              </UButton>
+            </UTooltip>
+          </div>
+          <div v-else-if="collapsed" class="mt-auto w-full flex flex-col items-start">
+            <UTooltip text="Show sidebar">
+              <UButton
+                :block="true"
+                :square="true"
+                color="neutral"
+                variant="outline"
+                size="lg"
+                icon="heroicons:chevron-double-right-16-solid"
+                @click="handleToggleSidebar()"
+              />
+            </UTooltip>
+          </div>
+
+          <USeparator class ="my-3" />
 
           <UNavigationMenu
             :collapsed="collapsed"
