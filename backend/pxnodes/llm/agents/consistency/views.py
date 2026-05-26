@@ -114,11 +114,16 @@ class ConsistencyFixView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        other_nodes = list(
+            project.pxnodes.exclude(id=node.id).values("name", "description")
+        )
+
         agent_data: dict = {
             "node_name": node.name,
             "node_description": node.description,
             "finding_category": finding_category,
             "finding_description": finding_description,
+            "other_nodes": other_nodes,
         }
 
         if finding_category == "pillar_misalignment":

@@ -16,7 +16,7 @@ Current Description: {node_description}
 
 FINDING:
 {finding_description}
-
+{other_nodes_section}
 TASK:
 Rewrite the node's description so that it clearly and concretely supports the design pillar above.
 Significant changes are expected and acceptable — do not just add a token reference to the pillar.
@@ -44,7 +44,7 @@ CONTRADICTION DETECTED:
 
 PROJECT DESIGN PILLARS (use these to decide which direction to commit to):
 {pillars_section}
-
+{other_nodes_section}
 TASK:
 Rewrite the description of this node to fully resolve the contradiction.
 
@@ -68,7 +68,7 @@ Current Description: {node_description}
 
 CONSISTENCY ISSUE ({finding_category}):
 {finding_description}
-
+{other_nodes_section}
 TASK:
 Rewrite the node's description to resolve the identified issue.
 Make only the changes necessary — do not introduce new inconsistencies.
@@ -100,8 +100,23 @@ class ConsistencyFixAgent(BaseAgent):
     name = "consistency_fix"
     response_schema = FixDescriptionResponse
 
+    def _build_other_nodes_section(self, data: Dict[str, Any]) -> str:
+        other_nodes = data.get("other_nodes", [])
+        if not other_nodes:
+            return ""
+        lines = ["OTHER NODES IN THIS PROJECT (for terminology reference only):"]
+        for n in other_nodes:
+            lines.append(f"- {n['name']}: {n['description']}")
+        lines.append(
+            "\nIMPORTANT: Use the same terminology as the other nodes above. "
+            "Do not introduce new terms for concepts that already have established "
+            "names in this project."
+        )
+        return "\n" + "\n".join(lines) + "\n"
+
     def build_prompt(self, data: Dict[str, Any]) -> str:
         category = data.get("finding_category", "")
+        other_nodes_section = self._build_other_nodes_section(data)
 
         if category == "pillar_misalignment":
             return _PILLAR_MISALIGNMENT_PROMPT.format(
@@ -112,6 +127,7 @@ class ConsistencyFixAgent(BaseAgent):
                 node_name=data["node_name"],
                 node_description=data["node_description"],
                 finding_description=data["finding_description"],
+                other_nodes_section=other_nodes_section,
             )
 
         if category == "node_contradiction":
@@ -122,6 +138,7 @@ class ConsistencyFixAgent(BaseAgent):
                 pillars_section=data.get(
                     "pillars_section", "No design pillars defined."
                 ),
+                other_nodes_section=other_nodes_section,
             )
 
         return _GENERIC_FIX_PROMPT.format(
@@ -129,4 +146,5 @@ class ConsistencyFixAgent(BaseAgent):
             node_description=data["node_description"],
             finding_category=category,
             finding_description=data["finding_description"],
+            other_nodes_section=other_nodes_section,
         )

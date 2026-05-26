@@ -15,15 +15,30 @@ GAME NODES:
 {nodes_section}
 
 TASK:
-Identify pairs of nodes that contain genuine logical contradictions — for
-example, one node describes "turn-based combat" while another describes
-"real-time combat". Do NOT report:
-- Stylistic differences (e.g. tone or art style variations)
-- Missing information (e.g. one node lacks detail the other has)
+Identify pairs of nodes where the game design logic or intended player
+experience is MUTUALLY EXCLUSIVE — i.e. both cannot be true at the same time
+in a working game. The contradiction must be about design intent or game
+mechanics, not about wording or naming.
+
+DO flag:
+- "turn-based combat" vs "real-time combat" (mutually exclusive systems)
+- "single player only" vs "co-op multiplayer" (incompatible player count)
+- "permanent death, no saves" vs "checkpoint-based respawn" (contradictory
+  death mechanics)
+
+Do NOT flag:
+- Nodes that agree on the underlying concept but use different names for it
+  (e.g. "stamina bar" vs "energy meter" for the same resource — that is a
+  TERMINOLOGY_INCONSISTENCY, not a contradiction). If the only difference
+  between two nodes is the name or label used for the same mechanic, do not
+  flag it as a contradiction.
+- Stylistic differences, tone, or art direction variations
+- Missing information (one node lacks detail the other has)
 - Thematic tension that is intentional (e.g. "hope" vs "despair" as themes)
 
-Only report contradictions where two nodes explicitly state incompatible facts.
-If no contradictions exist, return an empty contradictions list.
+Only flag contradictions where two nodes explicitly state incompatible design
+decisions. If no such contradictions exist, return an empty contradictions
+list.
 
 RESPONSE FORMAT (JSON):
 {{

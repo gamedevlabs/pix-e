@@ -74,11 +74,17 @@ async function handleApplyFix(finding: ConsistencyFinding, newDescription: strin
 const {
   checking: checkingPropagation,
   report: propagationReport,
+  propagationFixSuggestions,
   checkPropagation,
   clearReport: clearPropagationReport,
+  requestPropagationFix,
+  applyPropagationFix,
+  dismissPropagationFix,
 } = useChangePropagation()
 
 const propagationNodeId = ref<string | null>(null)
+const propagationOldDescription = ref<string>('')
+const propagationNewDescription = ref<string>('')
 
 async function handleDescriptionChanged(payload: {
   nodeId: string
@@ -87,12 +93,30 @@ async function handleDescriptionChanged(payload: {
 }) {
   if (!currentProject.value?.id) return
   propagationNodeId.value = payload.nodeId
+  propagationOldDescription.value = payload.oldDescription
+  propagationNewDescription.value = payload.newDescription
   await checkPropagation({
     projectId: currentProject.value.id,
     nodeId: payload.nodeId,
     oldDescription: payload.oldDescription,
     newDescription: payload.newDescription,
   })
+}
+
+async function handleRequestPropagationFix(affectedNodeId: string) {
+  if (!propagationReport.value) return
+  await requestPropagationFix(
+    affectedNodeId,
+    propagationReport.value.changed_node_id,
+    propagationOldDescription.value,
+    propagationNewDescription.value,
+  )
+}
+
+async function handleApplyPropagationFix(affectedNodeId: string, suggestedDescription: string) {
+  await applyPropagationFix(affectedNodeId, suggestedDescription)
+  pxNodes.value = []
+  await fetchPxNodes()
 }
 
 // Structural memory generation state
@@ -700,7 +724,7 @@ async function handleAddComponent() {
                 <p class="mb-2 text-sm text-neutral-600 dark:text-neutral-400">
                   {{ finding.reason }}
                 </p>
-                <div class="flex items-start gap-2">
+                <div class="flex items-start gap-2 mb-3">
                   <UIcon
                     name="i-lucide-lightbulb"
                     class="mt-0.5 shrink-0 text-amber-500"
@@ -709,6 +733,66 @@ async function handleAddComponent() {
                   <p class="text-sm text-amber-700 dark:text-amber-400">
                     {{ finding.suggested_action }}
                   </p>
+                </div>
+
+                <!-- Fix with AI -->
+                <div>
+                  <!-- Loading -->
+                  <div
+                    v-if="propagationFixSuggestions[finding.affected_node_id]?.loading"
+                    class="flex items-center gap-2 text-neutral-500 text-sm"
+                  >
+                    <UIcon name="i-lucide-loader-circle" class="animate-spin" />
+                    <span>Generating fix...</span>
+                  </div>
+
+                  <!-- Suggestion -->
+                  <div
+                    v-else-if="propagationFixSuggestions[finding.affected_node_id]?.suggestion"
+                    class="space-y-2"
+                  >
+                    <div class="rounded bg-blue-50 p-2 dark:bg-blue-900/20">
+                      <p class="mb-1 text-xs text-neutral-500">Suggested description:</p>
+                      <p class="text-sm text-neutral-700 dark:text-neutral-300">
+                        {{ propagationFixSuggestions[finding.affected_node_id].suggestion }}
+                      </p>
+                    </div>
+                    <div class="flex gap-2">
+                      <UButton
+                        size="xs"
+                        color="primary"
+                        icon="i-lucide-check"
+                        @click="
+                          handleApplyPropagationFix(
+                            finding.affected_node_id,
+                            propagationFixSuggestions[finding.affected_node_id].suggestion!,
+                          )
+                        "
+                      >
+                        Apply
+                      </UButton>
+                      <UButton
+                        size="xs"
+                        variant="ghost"
+                        icon="i-lucide-x"
+                        @click="dismissPropagationFix(finding.affected_node_id)"
+                      >
+                        Cancel
+                      </UButton>
+                    </div>
+                  </div>
+
+                  <!-- Trigger button -->
+                  <UButton
+                    v-else
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    icon="i-lucide-wrench"
+                    @click="handleRequestPropagationFix(finding.affected_node_id)"
+                  >
+                    Fix with AI
+                  </UButton>
                 </div>
               </div>
             </div>

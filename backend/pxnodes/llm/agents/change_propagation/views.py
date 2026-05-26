@@ -9,6 +9,7 @@ from game_concept.models import Project
 from llm.providers.manager import ModelManager
 from pxnodes.models import PxNode
 
+from .fix_agent import ChangePropagationFixAgent
 from .workflow import ChangePropagationWorkflow
 
 logger = logging.getLogger(__name__)
@@ -96,3 +97,89 @@ class ChangePropagationView(APIView):
             )
 
         return Response(report.model_dump())
+
+
+class ChangePropagationFixView(APIView):
+    """Suggest a corrected description for a node affected by a change.
+
+    POST /api/llm/propagation/fix/
+    {
+        "affected_node_id": "<uuid>",
+        "changed_node_id": "<uuid>",
+        "changed_node_old_description": "...",
+        "changed_node_new_description": "..."
+    }
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        affected_node_id = request.data.get("affected_node_id")
+        changed_node_id = request.data.get("changed_node_id")
+        changed_node_old_description = request.data.get("changed_node_old_description")
+        changed_node_new_description = request.data.get("changed_node_new_description")
+
+        missing = [
+            field
+            for field, val in [
+                ("affected_node_id", affected_node_id),
+                ("changed_node_id", changed_node_id),
+                ("changed_node_old_description", changed_node_old_description),
+                ("changed_node_new_description", changed_node_new_description),
+            ]
+            if val is None
+        ]
+        if missing:
+            return Response(
+                {"error": f"Missing required fields: {', '.join(missing)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            affected_node = PxNode.objects.get(id=affected_node_id)
+        except PxNode.DoesNotExist:
+            return Response(
+                {"error": "Affected node not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            changed_node = PxNode.objects.get(id=changed_node_id)
+        except PxNode.DoesNotExist:
+            return Response(
+                {"error": "Changed node not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        agent_data = {
+            "changed_node_name": changed_node.name,
+            "changed_node_old_description": changed_node_old_description,
+            "changed_node_new_description": changed_node_new_description,
+            "affected_node_name": affected_node.name,
+            "affected_node_current_description": affected_node.description,
+        }
+
+        try:
+            suggested = ChangePropagationFixAgent().fix(agent_data)
+        except Exception as e:
+            if "rate limit" in str(e).lower():
+                return Response(
+                    {"error": "Rate limit reached. Please wait and try again."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            logger.exception(
+                "ChangePropagationFixAgent failed for affected node '%s'",
+                affected_node_id,
+            )
+            return Response(
+                {"error": "Fix generation failed."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(
+            {
+                "node_id": str(affected_node.id),
+                "original_description": affected_node.description,
+                "suggested_description": suggested,
+            }
+        )

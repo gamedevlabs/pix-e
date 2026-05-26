@@ -96,6 +96,14 @@ type ConsistencyFixResponse = {
   suggested_description: string
 }
 
+// --- Types for propagation fix ---
+
+interface PropagationFixResponse {
+  node_id: string
+  original_description: string
+  suggested_description: string
+}
+
 // --- Types for change propagation ---
 
 type PropagationFinding = {

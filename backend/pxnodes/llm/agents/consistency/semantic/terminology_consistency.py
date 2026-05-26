@@ -8,27 +8,45 @@ from pxnodes.llm.agents.consistency.semantic.base import SemanticConsistencyAgen
 TERMINOLOGY_CONSISTENCY_PROMPT = """You are a game design terminology analyzer.
 
 You are given a list of game nodes, each with an ID, name, and description.
-Your task is to find cases where two or more nodes use different terms for
-what appears to be the same game concept.
+Your task is to find cases where two or more nodes use conflicting terms that
+represent genuinely different design decisions for the same aspect of the game —
+conflicts that would cause confusion or contradiction if both nodes were
+implemented as described.
 
 GAME NODES:
 {nodes_section}
 
 TASK:
-Identify pairs of nodes that use different terminology for what appears to be
-the same underlying game concept. For example, one node may refer to a
-"stamina bar" while another describes an "energy meter" for the same mechanic.
+Identify pairs of nodes where the SAME underlying concept, mechanic, or system
+is referred to using different names or terms across nodes — regardless of
+whether the descriptions are otherwise logically compatible. This category is
+distinct from NODE_CONTRADICTION: you are not looking for mutually exclusive
+design decisions, but for naming inconsistencies that could cause confusion
+during development or documentation.
 
-Only flag cases where the terms are genuinely interchangeable — meaning they
-refer to the same game concept and could reasonably be unified under one term.
-Do NOT flag:
-- Terms that describe genuinely different concepts (e.g. "health" vs "stamina")
-- Stylistic variations that are intentional (e.g. in-universe lore terminology)
-- Cases where context makes clear the concepts are distinct
+DO flag cases like:
+- One node calls it a "stamina bar", another calls it an "energy meter" for
+  what is clearly the same resource mechanic
+- One node says "experience points", another says "skill points" for the same
+  progression currency
+- One node uses "biome", another uses "zone" or "region" to mean the same
+  structural concept
+
+Do NOT flag synonyms or paraphrases of the same concept as terminology
+inconsistencies. Only flag terms where using them interchangeably would cause
+a genuine design contradiction or player confusion. Concretely, do NOT flag:
+- Near-synonyms that describe the same idea at different granularities (e.g.
+  "paths" vs "terrain", "zones" vs "areas", "maneuvers" vs "movement",
+  "ground-level terrain" vs "ground-level paths")
+- Stylistic or lore-specific naming that is clearly intentional
+- Related but distinct sub-concepts that coexist naturally (e.g. "health" and
+  "stamina" are different resources, not conflicting terms)
+- Cases where context makes clear the concepts are distinct and compatible
+- Mutually exclusive design decisions — those belong in NODE_CONTRADICTION
 
 The confidence score should reflect how certain you are that both terms refer
-to the same underlying concept. If no terminology conflicts exist, return an
-empty conflicts list.
+to the exact same underlying mechanic or concept. If no terminology
+inconsistencies exist, return an empty conflicts list.
 
 RESPONSE FORMAT (JSON):
 {{

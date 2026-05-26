@@ -81,6 +81,27 @@ export function usePxNodesLLMApi() {
     })
   }
 
+  async function fixPropagationNodeAPICall(
+    affectedNodeId: string,
+    changedNodeId: string,
+    changedNodeOldDescription: string,
+    changedNodeNewDescription: string,
+  ): Promise<PropagationFixResponse> {
+    return await apiFetch<PropagationFixResponse>(`/api/llm/propagation/fix/`, {
+      method: 'POST',
+      body: {
+        affected_node_id: affectedNodeId,
+        changed_node_id: changedNodeId,
+        changed_node_old_description: changedNodeOldDescription,
+        changed_node_new_description: changedNodeNewDescription,
+      },
+      credentials: 'include',
+      headers: {
+        'X-CSRFToken': useCookie('csrftoken').value,
+      } as HeadersInit,
+    })
+  }
+
   async function checkConsistencyAPICall(
     projectId: string,
     minConfidence: number = 0.5,
@@ -125,5 +146,6 @@ export function usePxNodesLLMApi() {
     checkConsistencyAPICall,
     checkPropagationAPICall,
     fixConsistencyFindingAPICall,
+    fixPropagationNodeAPICall,
   }
 }

@@ -26,11 +26,18 @@ OTHER NODES IN THE PROJECT:
 
 TASK:
 For each node that is meaningfully affected by this change, report a finding.
-A node is "affected" if any of the following apply:
-- The change introduces information that contradicts something the node states
-- A mechanic or concept referenced in another node has been renamed or removed
-- The change adds a dependency or relationship the other node should reflect
-- The other node's description needs updating to remain consistent
+When evaluating affected nodes, check TWO directions:
+
+1. ADDITIONS: Does the new description introduce new concepts, mechanics, or
+   features that other nodes should reflect? For example: a renamed mechanic,
+   a new dependency, a contradiction with what another node states.
+
+2. REMOVALS: Does the old description contain concepts, mechanics, or features
+   that are now absent from the new description? If so, check whether any
+   other nodes still reference those removed concepts — if they do, those
+   nodes need updating to remove or replace those references.
+
+Both directions can produce affected nodes. Do not ignore removals.
 
 Do NOT report:
 - Nodes that merely share a theme but are not directly impacted
