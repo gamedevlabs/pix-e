@@ -111,7 +111,7 @@ async function handleToggleSidebar() {
             </UTooltip>
           </div>
 
-          <USeparator class ="my-3" />
+          <USeparator class="my-3" />
 
           <UNavigationMenu
             :collapsed="collapsed"
