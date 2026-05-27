@@ -17,7 +17,7 @@ const requestTypeOptions = [
   { label: 'Feature Request', value: 'Feature Request' },
 ]
 
-// showing success/error pop ups
+// showing success/error pop-ups
 const toast = useToast()
 
 // session logging
