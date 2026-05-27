@@ -5,7 +5,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from llm.logfire_config import get_logfire
+# from llm.logfire_config import get_logfire
 
 
 class HelpdeskTicketView(APIView):
@@ -19,14 +19,13 @@ class HelpdeskTicketView(APIView):
         description = str(request.data.get("description", "")).strip()
         user_contact = str(request.data.get("contact", "")).strip()
         session_logs = request.data.get("logs")
-        print("HELPDESK SESSION LOGS:", bool(session_logs), type(session_logs))
 
-        logfire = get_logfire()
-        logfire.info(
-            "helpdesk.ticket_submitted",
-            ticket_type=ticket_type,
-            has_session_logs=bool(session_logs),
-        )
+        # logfire = get_logfire()
+        # logfire.info(
+            # "helpdesk.ticket_submitted",
+            # ticket_type=ticket_type,
+            # has_session_logs=bool(session_logs),
+        # )
 
         # checks request validity & helpdesk config
         if not ticket_type or not title or not description:
@@ -83,7 +82,7 @@ class HelpdeskTicketView(APIView):
             headers={
                 "Authorization": f"Bearer {settings.GITHUB_HELPDESK_TOKEN}",
                 "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
+                "X-GitHub-Api-Version": "2026-03-10",
             },
             json={
                 "title": issue_title,
