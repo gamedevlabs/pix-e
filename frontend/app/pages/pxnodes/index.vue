@@ -256,10 +256,30 @@ function toggleConsistencyPanel() {
   if (!showConsistencyPanel.value) clearConsistencyReport()
 }
 
-async function handleRunConsistencyCheck() {
+async function handleRunConsistencyCheck(layers: 'all' | 'structural' | 'semantic' = 'all') {
   if (!currentProject.value?.id) return
-  await checkConsistency(currentProject.value.id, 0.5)
+  await checkConsistency(currentProject.value.id, 0.5, layers)
 }
+
+const consistencyCheckItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Full Check',
+      icon: 'i-lucide-scan-search',
+      onSelect: () => handleRunConsistencyCheck('all'),
+    },
+    {
+      label: 'Structural Check',
+      icon: 'i-lucide-ruler',
+      onSelect: () => handleRunConsistencyCheck('structural'),
+    },
+    {
+      label: 'Semantic Check',
+      icon: 'i-lucide-brain-circuit',
+      onSelect: () => handleRunConsistencyCheck('semantic'),
+    },
+  ],
+])
 
 const CATEGORY_LABELS: Record<string, string> = {
   pillar_misalignment: 'Pillar Misalignment',
@@ -545,14 +565,16 @@ async function handleAddComponent() {
         </template>
 
         <div class="space-y-4">
-          <UButton
-            color="primary"
-            :loading="checkingConsistency"
-            icon="i-lucide-scan-search"
-            @click="handleRunConsistencyCheck"
-          >
-            {{ checkingConsistency ? 'Checking...' : 'Run Consistency Check' }}
-          </UButton>
+          <UDropdownMenu :items="consistencyCheckItems" :disabled="checkingConsistency">
+            <UButton
+              color="primary"
+              :loading="checkingConsistency"
+              icon="i-lucide-scan-search"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              {{ checkingConsistency ? 'Checking...' : 'Run Consistency Check' }}
+            </UButton>
+          </UDropdownMenu>
 
           <div v-if="consistencyReport">
             <div

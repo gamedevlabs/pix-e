@@ -105,12 +105,14 @@ export function usePxNodesLLMApi() {
   async function checkConsistencyAPICall(
     projectId: string,
     minConfidence: number = 0.5,
+    layers: 'all' | 'structural' | 'semantic' = 'all',
   ): Promise<ConsistencyReport> {
     return await apiFetch<ConsistencyReport>(`/api/llm/consistency/check/`, {
       method: 'POST',
       body: {
         project_id: projectId,
         min_confidence: minConfidence,
+        layers,
       },
       credentials: 'include',
       headers: {

@@ -23,12 +23,13 @@ export function useConsistency() {
   async function checkConsistency(
     projectId: string,
     minConfidence = 0.5,
+    layers: 'all' | 'structural' | 'semantic' = 'all',
   ): Promise<ConsistencyReport | null> {
     checking.value = true
     report.value = null
     fixSuggestions.value = {}
     try {
-      const result = await pxNodesLLMApi.checkConsistencyAPICall(projectId, minConfidence)
+      const result = await pxNodesLLMApi.checkConsistencyAPICall(projectId, minConfidence, layers)
       report.value = result
       const count = result.findings.length
       if (count === 0) {

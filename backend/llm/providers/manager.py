@@ -203,6 +203,17 @@ class ModelManager:
             if model.name == model_name:
                 return model
 
+        # Fallback: construct ModelDetails directly for GPT models when the
+        # live list_models() call doesn't include the specific versioned name.
+        if model_name.startswith("gpt-") and "openai" in self.providers:
+            openai_provider = self.providers["openai"]
+            return ModelDetails(
+                name=model_name,
+                provider="openai",
+                type="cloud",
+                capabilities=openai_provider._get_model_capabilities(model_name),
+            )
+
         # Model not found
         available_names = [m.name for m in all_models[:5]]
         available_str = ", ".join(available_names)

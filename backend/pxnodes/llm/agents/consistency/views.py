@@ -23,11 +23,18 @@ class ConsistencyCheckView(APIView):
     POST /api/llm/consistency/check/
     {
         "project_id": "<uuid>",
-        "min_confidence": 0.0  (optional, float 0.0–1.0, default 0.0)
+        "min_confidence": 0.0,  (optional, float 0.0–1.0, default 0.0)
+        "layers": "all"         (optional: "all" | "structural" | "semantic", default "all")
     }
+
+    layers="structural"  runs only Layer 1 (deterministic, no LLM)
+    layers="semantic"    runs only Layer 2 (LLM agents, no structural checks)
+    layers="all"         runs both (default)
 
     Semantic findings whose confidence is below min_confidence are omitted.
     """
+
+    _VALID_LAYERS = {"all", "structural", "semantic"}
 
     permission_classes = [IsAuthenticated]
 
@@ -36,6 +43,13 @@ class ConsistencyCheckView(APIView):
         if not project_id:
             return Response(
                 {"error": "project_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        layers = request.data.get("layers", "all")
+        if layers not in self._VALID_LAYERS:
+            return Response(
+                {"error": f"layers must be one of: {', '.join(sorted(self._VALID_LAYERS))}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -49,8 +63,10 @@ class ConsistencyCheckView(APIView):
 
         min_confidence = float(request.data.get("min_confidence", 0.0))
         workflow = ConsistencyWorkflow(
-            model_manager=ModelManager(),
+            model_manager=ModelManager() if layers != "structural" else None,
             min_confidence=min_confidence,
+            run_structural=layers != "semantic",
+            model_id="gpt-5.4-mini-2026-03-17",
         )
         try:
             report = workflow.check_project(project)

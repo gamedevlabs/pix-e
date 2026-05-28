@@ -21,6 +21,9 @@ class StructuralChecker:
         findings.extend(self._check_edge_within_same_chart(project))
         findings.extend(self._check_component_value_type_match(project))
         findings.extend(self._check_duplicate_node_names(project))
+        findings.extend(self._check_empty_names(project))
+        findings.extend(self._check_empty_descriptions(project))
+        findings.extend(self._check_orphaned_nodes(project))
         return findings
 
     def _check_component_project_match(
@@ -174,4 +177,55 @@ class StructuralChecker:
                     message=msg,
                 )
             )
+        return findings
+
+    def _check_empty_names(self, project: Project) -> List[ConsistencyFinding]:
+        """Warn when a PxNode has an empty or whitespace-only name."""
+        findings = []
+        for node in PxNode.objects.filter(project=project):
+            if not node.name or not node.name.strip():
+                findings.append(
+                    ConsistencyFinding(
+                        severity=FindingSeverity.WARNING,
+                        category="empty_name",
+                        entity_id=str(node.id),
+                        message=f"Node (id={node.id}) has no name.",
+                    )
+                )
+        return findings
+
+    def _check_empty_descriptions(self, project: Project) -> List[ConsistencyFinding]:
+        """Warn when a PxNode has an empty or whitespace-only description."""
+        findings = []
+        for node in PxNode.objects.filter(project=project):
+            if not node.description or not node.description.strip():
+                findings.append(
+                    ConsistencyFinding(
+                        severity=FindingSeverity.WARNING,
+                        category="empty_description",
+                        entity_id=str(node.id),
+                        message=f"Node '{node.name}' has no description.",
+                    )
+                )
+        return findings
+
+    def _check_orphaned_nodes(self, project: Project) -> List[ConsistencyFinding]:
+        """Warn when a PxNode is not placed in any chart within the project."""
+        referenced_ids = set(
+            PxChartContainer.objects.filter(
+                px_chart__project=project,
+                content__isnull=False,
+            ).values_list("content_id", flat=True)
+        )
+        findings = []
+        for node in PxNode.objects.filter(project=project):
+            if node.id not in referenced_ids:
+                findings.append(
+                    ConsistencyFinding(
+                        severity=FindingSeverity.WARNING,
+                        category="orphaned_node",
+                        entity_id=str(node.id),
+                        message=f"Node '{node.name}' is not placed in any chart.",
+                    )
+                )
         return findings
