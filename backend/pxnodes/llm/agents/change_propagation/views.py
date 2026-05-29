@@ -70,6 +70,8 @@ class ChangePropagationView(APIView):
             )
 
         min_confidence = float(request.data.get("min_confidence", 0.5))
+        use_graph_context = bool(request.data.get("use_graph_context", False))
+        max_depth = int(request.data.get("max_depth", 3))
 
         try:
             workflow = ChangePropagationWorkflow(model_manager=ModelManager())
@@ -79,6 +81,8 @@ class ChangePropagationView(APIView):
                 old_description=old_description,
                 new_description=new_description,
                 min_confidence=min_confidence,
+                use_graph_context=use_graph_context,
+                max_depth=max_depth,
             )
         except Exception:
             logger.exception(

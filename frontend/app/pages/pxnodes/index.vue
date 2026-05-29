@@ -85,6 +85,8 @@ const {
 const propagationNodeId = ref<string | null>(null)
 const propagationOldDescription = ref<string>('')
 const propagationNewDescription = ref<string>('')
+const useGraphContext = ref(false)
+const maxDepth = ref(3)
 
 async function handleDescriptionChanged(payload: {
   nodeId: string
@@ -100,6 +102,8 @@ async function handleDescriptionChanged(payload: {
     nodeId: payload.nodeId,
     oldDescription: payload.oldDescription,
     newDescription: payload.newDescription,
+    useGraphContext: useGraphContext.value,
+    maxDepth: maxDepth.value,
   })
 }
 
@@ -318,7 +322,22 @@ async function handleAddComponent() {
       <template #header>
         <div class="flex justify-between items-center">
           <div>Nodes</div>
-          <div class="flex gap-2">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <USwitch v-model="useGraphContext" size="sm" />
+              <span class="text-xs text-neutral-500 select-none">Graph-aware propagation</span>
+            </div>
+            <div v-if="useGraphContext" class="flex items-center gap-1.5">
+              <span class="text-xs text-neutral-500 select-none">Depth:</span>
+              <UInput
+                v-model="maxDepth"
+                type="number"
+                :min="1"
+                :max="10"
+                size="sm"
+                class="w-16"
+              />
+            </div>
             <UButton
               :color="showConsistencyPanel ? 'primary' : 'neutral'"
               variant="soft"

@@ -21,6 +21,8 @@ export function useChangePropagation() {
     nodeId: string
     oldDescription: string
     newDescription: string
+    useGraphContext?: boolean
+    maxDepth?: number
   }): Promise<PropagationReport | null> {
     checking.value = true
     report.value = null

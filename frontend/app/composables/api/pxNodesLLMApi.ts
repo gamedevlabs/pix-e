@@ -43,6 +43,8 @@ export function usePxNodesLLMApi() {
     oldDescription: string
     newDescription: string
     minConfidence?: number
+    useGraphContext?: boolean
+    maxDepth?: number
   }): Promise<PropagationReport> {
     return await apiFetch<PropagationReport>(`/api/llm/propagation/check/`, {
       method: 'POST',
@@ -51,7 +53,9 @@ export function usePxNodesLLMApi() {
         node_id: payload.nodeId,
         old_description: payload.oldDescription,
         new_description: payload.newDescription,
-        min_confidence: payload.minConfidence ?? 0.5,
+        min_confidence: payload.minConfidence ?? 0.0,
+        use_graph_context: payload.useGraphContext ?? false,
+        max_depth: payload.maxDepth ?? 3,
       },
       credentials: 'include',
       headers: {
