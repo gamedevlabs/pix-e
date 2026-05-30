@@ -7,7 +7,7 @@ export function usePxNodesLLM() {
 
   async function validateNode(nodeId: string): Promise<NodeValidationFeedback | null> {
     addLog('info', 'px_node_validation_started', { nodeId })
-    
+
     try {
       const result = await pxNodesLLMApi.validateNodeAPICall(nodeId)
       addLog('info', 'px_node_validation_succeeded', {

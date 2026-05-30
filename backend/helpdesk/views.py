@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 MAX_SESSION_LOG_CHARS = 20000
 
+
 class HelpdeskTicketView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -91,12 +92,6 @@ class HelpdeskTicketView(APIView):
             },
             timeout=10,
         )
-
-        if github_response.status_code != 201:
-            print("GitHub issue creation failed:", github_response.status_code)
-            print(github_response.text)
-
-            return Response({"error": "Could not create helpdesk ticket"}, status=502,)
 
         if github_response.status_code != 201:
             return Response(
