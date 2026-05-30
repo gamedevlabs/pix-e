@@ -7,6 +7,8 @@ jobs:
       backend: ${{ steps.changes.outputs.backend }}
       frontend: ${{ steps.changes.outputs.frontend }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - uses: dorny/paths-filter@v4
         id: changes
         with:
