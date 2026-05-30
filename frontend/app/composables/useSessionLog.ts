@@ -49,7 +49,7 @@ export function useSessionLog() {
     logs.push(entry)
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs.slice(-MAX_LOGS)))
 
-    // logs to console
+    // logs information to console as well
     if (level === 'error') {
       console.error('[session-log]', event, data)
     } else if (level === 'warn') {
