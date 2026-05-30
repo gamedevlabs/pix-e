@@ -18,7 +18,7 @@ export const useApi = () => {
       addLog('error', 'api_error', {
         request: String(request),
         status: response.status,
-        response: response._data,
+        hasResponseData: Boolean(response._data),
       })
     },
     headers: headers as HeadersInit,

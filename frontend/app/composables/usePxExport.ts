@@ -5,8 +5,11 @@ export function usePxExport() {
   const loading = ref<boolean>(false)
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
+  const { addLog } = useSessionLog()
 
   async function exportPxData(): Promise<object> {
+    addLog('info', 'px_export_started')
+
     loading.value = true
     let data
     try {
@@ -16,7 +19,11 @@ export function usePxExport() {
           'X-CSRFToken': useCookie('csrftoken').value,
         } as HeadersInit,
       })
+      addLog('info', 'px_export_succeeded')
     } catch (err) {
+      addLog('error', 'px_export_failed', {
+        message: err instanceof Error ? err.message : String(err),
+      })
       error.value = err
       errorToast(err)
     } finally {
@@ -27,6 +34,7 @@ export function usePxExport() {
   }
 
   async function importPxData(payload: object) {
+    addLog('info', 'px_import_started')
     try {
       await apiFetch<object>('/api/pximport/', {
         method: 'POST',
@@ -37,7 +45,9 @@ export function usePxExport() {
         } as HeadersInit,
       })
       success('JSON imported successfully!')
+      addLog('info', 'px_import_succeeded')
     } catch (err) {
+      addLog('error', 'px_import_failed')
       error.value = err
       errorToast(err)
     }

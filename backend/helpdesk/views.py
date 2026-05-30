@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+MAX_SESSION_LOG_CHARS = 20000
 
 class HelpdeskTicketView(APIView):
     authentication_classes = []
@@ -54,11 +55,19 @@ class HelpdeskTicketView(APIView):
 
 """
         if session_logs:
+            session_logs_json = json.dumps(session_logs, indent=2)
+
+            if len(session_logs_json) > MAX_SESSION_LOG_CHARS:
+                session_logs_json = (
+                    session_logs_json[:MAX_SESSION_LOG_CHARS]
+                    + "\n... session logs truncated ..."
+                )
+
             issue_body += f"""
 ## Session Logs
 
 ```json
-{json.dumps(session_logs, indent=2)}
+{session_logs_json}
 ```
 """
 
@@ -82,6 +91,12 @@ class HelpdeskTicketView(APIView):
             },
             timeout=10,
         )
+
+        if github_response.status_code != 201:
+            print("GitHub issue creation failed:", github_response.status_code)
+            print(github_response.text)
+
+            return Response({"error": "Could not create helpdesk ticket"}, status=502,)
 
         if github_response.status_code != 201:
             return Response(
