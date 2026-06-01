@@ -37,8 +37,13 @@ const menuItems = ref<ContextMenuItem[]>([
       emitDelete()
     },
   },
-    //TODO: call editability of node here
-  { label: 'Edit node', onSelect(){} },
+  //TODO: call editability of node here
+  {
+    label: 'Edit node',
+    onSelect() {
+      isBeingEdited.value = true
+    },
+  },
 ])
 
 onMounted(() => {
@@ -71,9 +76,16 @@ async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: Re
   })
 }
 
+function startNodeEdit() {
+  nodeIsBeingEdited.value = true
+}
+
+/*
 function startEdit() {
   isBeingEdited.value = true
 }
+
+ */
 
 async function confirmEdit() {
   isBeingEdited.value = false
@@ -111,28 +123,31 @@ function listenToResizing() {
   <UContextMenu :items="menuItems">
     <div ref="cardRef">
       <UCard class="hover:shadow-lg transition">
-        <template #header>
-          <h2 v-if="!isBeingEdited" class="font-semibold text-lg" hidden="hidden">
-            {{ props.data.name }}
-          </h2>
-          <UTextarea v-else v-model="editForm.name" :rows="1" />
-        </template>
-
         <template #default>
           <div v-if="pxNode">
-            <PxNodeCard :node-id="pxNode.id" :visualization-style="'preview'" />
+            <PxNodeCard
+              :node-id="pxNode.id"
+              :visualization-style="'preview'"
+              :is-being-edited="nodeIsBeingEdited"
+              style="margin: -25px"
+            />
           </div>
         </template>
 
         <template #footer>
-          <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
+          <div
+            v-if="!nodeIsBeingEdited"
+            class="flex flex-wrap justify-end gap-2" style="margin: -10px"
+          >
             <UButton color="primary" variant="soft" hidden="hidden" @click="removePxNode()"
               >Remove Px Node</UButton
             >
-            <UButton color="secondary" variant="soft" :disabled="true" @click="startEdit">Edit</UButton>
+            <UButton color="secondary" variant="soft" :disabled="true" @click="startNodeEdit()"
+              >Edit</UButton
+            >
             <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
           </div>
-          <div v-else class="flex justify-end gap-2">
+          <div v-else class="flex justify-end gap-2" style="margin: -10px">
             <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
             <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
           </div>
