@@ -2,7 +2,6 @@
 Shared helpers for SPARC v2 views.
 """
 
-import asyncio
 import tempfile
 from typing import Any, Dict, Optional
 
@@ -103,7 +102,7 @@ def update_evaluation_totals(
     evaluation.save()
 
 
-def run_router_workflow(
+async def run_router_workflow(
     *,
     request_data: Dict[str, Any],
     model_id: str,
@@ -133,14 +132,7 @@ def run_router_workflow(
         mode="agentic",
     )
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(
-            workflow.run(request, mode=mode, target_aspects=target_aspects)
-        )
-    finally:
-        loop.close()
+    return await workflow.run(request, mode=mode, target_aspects=target_aspects)
 
 
 def save_uploaded_document(uploaded_file) -> tuple[Dict[str, Any], str]:

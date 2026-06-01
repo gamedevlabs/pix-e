@@ -8,6 +8,7 @@ import logging
 import os
 from typing import Optional, cast
 
+from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import permissions, status
@@ -183,7 +184,7 @@ class SPARCV2EvaluateView(APIView):
                         context_strategy=context_strategy,
                         document_data=document_data,
                     )
-                    result = run_router_workflow(
+                    result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
                         model_id=model_id,
                         evaluation=evaluation,
@@ -343,7 +344,8 @@ class SPARCV2AspectView(APIView):
                         project_id=request.data.get("project_id"),
                         context_strategy=context_strategy,
                     )
-                    result = run_router_workflow(
+
+                    result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
                         model_id=model_id,
                         evaluation=evaluation,

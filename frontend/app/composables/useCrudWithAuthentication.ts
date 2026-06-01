@@ -1,17 +1,17 @@
 import { useProject } from '@/composables/useProject'
+import { useApi } from '~/composables/useApi'
 export function useCrudWithAuthentication<T>(apiUrl: string) {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const items = ref<T[]>([])
   const loading = ref(false)
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = config.public.apiBase + '/' + apiUrl
   const projectStore = useProject()
 
   async function fetchAll(): Promise<T[]> {
     loading.value = true
     try {
-      const data = await $fetch<T[]>(API_URL, {
+      const data = await apiFetch<T[]>(apiUrl, {
         credentials: 'include',
         headers: {
           'X-CSRFToken': useCookie('csrftoken').value,
@@ -31,7 +31,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   async function fetchById(id: number | string) {
     loading.value = true
     try {
-      return await $fetch<T>(`${API_URL}${id}`, {
+      return await apiFetch<T>(`${apiUrl}${id}`, {
         credentials: 'include',
         headers: {
           'X-CSRFToken': useCookie('csrftoken').value,
@@ -48,7 +48,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
 
   async function createItem(payload: Partial<T>): Promise<T> {
     try {
-      const data = await $fetch<T>(API_URL, {
+      const data = await apiFetch<T>(apiUrl, {
         method: 'POST',
         body: payload,
         credentials: 'include',
@@ -68,7 +68,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
 
   async function updateItem(id: number | string, payload: Partial<T>) {
     try {
-      const data = await $fetch<T>(`${API_URL}${id}/`, {
+      const data = await apiFetch<T>(`${apiUrl}${id}/`, {
         method: 'PATCH',
         body: payload,
         credentials: 'include',
@@ -88,7 +88,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
 
   async function deleteItem(id: number | string) {
     try {
-      await $fetch<null>(`${API_URL}${id}/`, {
+      await apiFetch<null>(`${apiUrl}${id}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

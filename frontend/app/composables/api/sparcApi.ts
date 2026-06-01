@@ -1,9 +1,11 @@
+import { useApi } from '~/composables/useApi'
+
 export function useSparcApi() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const llm = useLLM()
 
   async function runQuickScanAPICall(gameText: string, context: string = '') {
-    return await $fetch<SPARCQuickScanResponse>(`${config.public.apiBase}/api/sparc/quick-scan/`, {
+    return await apiFetch<SPARCQuickScanResponse>(`/api/sparc/quick-scan/`, {
       method: 'POST',
       body: {
         game_text: gameText,
@@ -18,7 +20,7 @@ export function useSparcApi() {
   }
 
   async function runMonolithicAPICall(gameText: string, context: string = '') {
-    return await $fetch<SPARCMonolithicResponse>(`${config.public.apiBase}/api/sparc/monolithic/`, {
+    return await apiFetch<SPARCMonolithicResponse>(`/api/sparc/monolithic/`, {
       method: 'POST',
       body: {
         game_text: gameText,
@@ -33,7 +35,7 @@ export function useSparcApi() {
   }
 
   async function getCurrentGameConceptAPICall() {
-    return await $fetch<GameConcept>(`${config.public.apiBase}/api/game-concept/current/`, {
+    return await apiFetch<GameConcept>(`/api/game-concept/current/`, {
       method: 'GET',
       credentials: 'include',
       headers: useRequestHeaders(['cookie']),
@@ -41,7 +43,7 @@ export function useSparcApi() {
   }
 
   async function updateGameConceptAPICall(content: string) {
-    return await $fetch<GameConcept>(`${config.public.apiBase}/api/game-concept/update_current/`, {
+    return await apiFetch<GameConcept>(`/api/game-concept/update_current/`, {
       method: 'POST',
       body: {
         content: content,
@@ -54,7 +56,7 @@ export function useSparcApi() {
   }
 
   async function getEvaluationsAPICall() {
-    return await $fetch<SPARCEvaluation[]>(`${config.public.apiBase}/api/sparc/evaluations/`, {
+    return await apiFetch<SPARCEvaluation[]>(`/api/sparc/evaluations/`, {
       method: 'GET',
       credentials: 'include',
       headers: useRequestHeaders(['cookie']),
