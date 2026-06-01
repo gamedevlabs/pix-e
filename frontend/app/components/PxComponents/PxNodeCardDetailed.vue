@@ -258,15 +258,17 @@ async function handleAddKey() {
     <template #footer>
       <div v-if="!isBeingEdited" class="flex justify-between">
         <UButton color="warning" variant="soft" :loading="isValidating" @click="handleValidation">
-          Check
+          Check with AI
         </UButton>
         <div class="flex gap-2">
-          <UButton color="primary" variant="soft" @click="handleAddComponent">
-            Add Component
+          <UButton icon="i-lucide-plus" color="primary" variant="soft" @click="handleAddComponent">
+            Component
           </UButton>
-          <UButton color="primary" variant="soft" @click="handleAddKey">Add Key</UButton>
-          <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
-          <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
+          <UButton icon="i-lucide-plus" color="primary" variant="soft" @click="handleAddKey">
+            Key
+          </UButton>
+          <UButton icon="i-lucide-square-pen" color="secondary" variant="soft" @click="startEdit" />
+          <UButton icon="i-lucide-trash" color="error" variant="soft" @click="emitDelete" />
         </div>
       </div>
       <div v-else class="flex gap-2">
