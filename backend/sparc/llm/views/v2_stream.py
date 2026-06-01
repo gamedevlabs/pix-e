@@ -4,12 +4,11 @@ SPARC V2 Streaming API views.
 Provides real-time progress updates via Server-Sent Events (SSE).
 """
 
-import asyncio
 import json
 import logging
 import os
 import time
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, cast
 
 from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
@@ -142,7 +141,7 @@ class SPARCV2StreamView(APIView):
 
             # Stream the evaluation with progress
             concept_meta = resolve_concept_meta(request)
-            return StreamingHttpResponse(
+            response = StreamingHttpResponse(
                 self._stream_evaluation(
                     game_text,
                     context_text,
@@ -158,6 +157,9 @@ class SPARCV2StreamView(APIView):
                 ),
                 content_type="text/event-stream",
             )
+            response["Cache-Control"] = "no-cache"
+            response["X-Accel-Buffering"] = "no"
+            return response
 
         except Exception as e:
             logger.error(f"Evaluation failed: {e}", exc_info=True)
@@ -173,7 +175,7 @@ class SPARCV2StreamView(APIView):
                 status=500,
             )
 
-    def _stream_evaluation(
+    async def _stream_evaluation(
         self,
         game_text: str,
         context_text: str,
@@ -186,8 +188,13 @@ class SPARCV2StreamView(APIView):
         temp_file_path: Optional[str] = None,
         concept_meta: Optional[Dict[str, str]] = None,
         project_id: Optional[int] = None,
-    ) -> Generator[str, None, None]:
-        """Stream evaluation progress and results."""
+    ) -> AsyncGenerator[str, None]:
+        """Stream evaluation progress and results asynchronously."""
+        import asyncio
+        import os
+
+        from asgiref.sync import sync_to_async
+
         logfire = get_logfire()
 
         # Create top-level span for the entire evaluation
@@ -212,6 +219,7 @@ class SPARCV2StreamView(APIView):
                     context_strategy=context_strategy,
                     document_data=document_data,
                 )
+
                 if document_data:
                     logger.info(
                         "Document upload detected: %s (%s)",
@@ -221,29 +229,25 @@ class SPARCV2StreamView(APIView):
                 else:
                     logger.info("No document uploaded for this evaluation")
 
-                # Debug: Log document file status
                 doc_status = "WITH DOCUMENT" if document_data else "NO DOCUMENT"
                 logger.info(f"[SPARC V2] Starting evaluation {doc_status}")
 
-                # Send initial progress
+                # Send initial progress immediately to establish the SSE connection
                 yield self._format_sse(
                     "progress",
                     {"stage": "starting", "message": "Initializing evaluation..."},
                 )
-
-                # Run the workflow asynchronously and stream progress
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
 
                 try:
                     # Track progress
                     aspect_count = 0
                     total_aspects = 10
 
-                    # Start the evaluation
-                    task = loop.create_task(
-                        asyncio.to_thread(
-                            run_router_workflow,
+                    # Start the evaluation workflow in a background thread that is
+                    # cooperatively managed by Uvicorn's asyncio event loop.
+
+                    task = asyncio.create_task(
+                        run_router_workflow(
                             request_data=request_data,
                             model_id=model_id,
                             evaluation=evaluation,
@@ -253,7 +257,7 @@ class SPARCV2StreamView(APIView):
                         )
                     )
 
-                    # Poll for progress updates
+                    # Poll for progress updates asynchronously
                     while not task.done():
                         # Check for new progress events
                         events = event_collector.get_progress_events()
@@ -283,17 +287,21 @@ class SPARCV2StreamView(APIView):
                                         "progress",
                                         {
                                             "stage": "aspects_progress",
-                                            "message": f"Aspect evaluation: {aspect_count}/{total_aspects}",  # noqa: E501
+                                            "message": f"Aspect evaluation: "
+                                            f"{aspect_count}/{total_aspects}",
                                             "current": aspect_count,
                                             "total": total_aspects,
                                         },
                                     )
 
-                        # Small delay to avoid busy waiting
-                        loop.run_until_complete(asyncio.sleep(0.1))
+                        # Non-blocking async sleep: This releases
+                        # the CPU back to the event loop,
+                        # preventing stalls and allowing Uvicorn
+                        # to stream the chunks over the network.
+                        await asyncio.sleep(0.1)
 
-                    # Get the result
-                    result = task.result()
+                    # Get the final result from the background task
+                    result = await task
 
                     if not result.success:
                         yield self._format_sse(
@@ -306,10 +314,15 @@ class SPARCV2StreamView(APIView):
                         return
 
                     aggregated = result.aggregated_data
-                    update_evaluation_totals(evaluation, aggregated)
 
-                    # Auto-save game concept
-                    save_game_concept(user, game_text, evaluation)
+                    # Wrap synchronous Django ORM calls using sync_to_async
+                    # to prevent SynchronousOnlyOperation errors in the async loop.
+                    await sync_to_async(update_evaluation_totals)(
+                        evaluation, aggregated
+                    )
+
+                    # Auto-save game concept (also wrapped for async compatibility)
+                    await sync_to_async(save_game_concept)(user, game_text, evaluation)
 
                     # Send final result
                     yield self._format_sse("complete", aggregated)
@@ -319,15 +332,16 @@ class SPARCV2StreamView(APIView):
                     yield self._format_sse("error", {"message": str(e)})
 
                 finally:
-                    # Clean up temporary file after workflow execution completes
+                    # Clean up temporary file after workflow execution completes.
+                    # Using to_thread for file I/O avoids blocking the event
+                    # loop momentarily.
                     if temp_file_path and os.path.exists(temp_file_path):
                         try:
-                            os.unlink(temp_file_path)
+                            await asyncio.to_thread(os.unlink, temp_file_path)
                         except Exception as cleanup_error:
                             logger.warning(
                                 f"Failed to clean up temp file: {cleanup_error}"
                             )
-                    loop.close()
 
     def _format_sse(self, event_type: str, data: Dict[str, Any]) -> str:
         """Format data as Server-Sent Event."""
