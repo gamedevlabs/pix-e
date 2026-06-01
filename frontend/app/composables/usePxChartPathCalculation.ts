@@ -24,6 +24,8 @@ export function usePxChartPathCalculation(
     softLocked: [],
   })
 
+  const previousInventory = ref<PxKeySet[]>([{}])
+
   const { updateNodeStyling, updateEdgeStyling } = usePxChartPathStyling(
     nodes,
     edges,
@@ -301,7 +303,12 @@ export function usePxChartPathCalculation(
     fullPath.push(selected[0]!)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const nextSeq = await dijkstraInChart(selected[i]!, selected[i + 1]!, useLocks)
+      const nextSeq = await dijkstraInChart(
+        selected[i]!,
+        selected[i + 1]!,
+        useLocks,
+        previousInventory.value,
+      )
       if (!nextSeq.length) {
         return []
       }
@@ -345,6 +352,7 @@ export function usePxChartPathCalculation(
       softLocked: [],
     }
     selectedNodes.value = []
+    previousInventory.value = [{}]
   }
 
   return {
