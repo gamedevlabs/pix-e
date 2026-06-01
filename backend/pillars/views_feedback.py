@@ -1,15 +1,19 @@
 import logging
-from typing import Any, cast
+from typing import cast
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.http import JsonResponse
+from rest_framework import permissions
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
-from llm import LLMOrchestrator
+from llm.agent_registry import get_workflow
+from llm.exceptions import OrchestratorError, ProviderError
 from llm.logfire_config import get_logfire
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
 from pillars.llm import handlers, workflows  # noqa: F401
@@ -23,24 +27,41 @@ from pillars.utils import (
 from projects.utils import get_current_project
 
 from .view_utils import (
+    RATE_LIMIT_PATTERNS,
+    _guess_provider_from_error,
     build_context_payload,
     build_context_payload_from_text,
     get_project_concept,
     get_project_pillars,
+    handle_orchestrator_error,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class LLMFeedbackView(ViewSet):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__()
-        self.orchestrator = LLMOrchestrator()
+def _format_agent_error(error: Exception, model: str | None = None) -> str:
+    """Format an agent error into a user-friendly message."""
+    provider = _guess_provider_from_error(str(error))
+    model_suffix = f" ({model})" if model else ""
+    error_text = str(error).lower()
+
+    if any(patt in error_text for patt in RATE_LIMIT_PATTERNS):
+        return (
+            f"{provider.title()}{model_suffix} rate limited — "
+            "try switching to a different model or provider"
+        )
+    if isinstance(error, ProviderError):
+        return f"{provider.title()}{model_suffix} error — check your API key"
+    return str(error)[:200]
+
+
+class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=["POST"], url_path="overall")
     def overall_feedback(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             game_concept = get_project_concept(user)
             pillars = list(get_project_pillars(user))
 
@@ -49,6 +70,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             logfire = get_logfire()
             pillars_text, context_text = build_context_payload(pillars, game_concept)
 
@@ -79,9 +101,9 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            completeness_response = self.orchestrator.execute(completeness_request)
-            contradictions_response = self.orchestrator.execute(contradictions_request)
-            additions_response = self.orchestrator.execute(additions_request)
+            completeness_response = orchestrator.execute(completeness_request)
+            contradictions_response = orchestrator.execute(contradictions_request)
+            additions_response = orchestrator.execute(additions_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -107,6 +129,10 @@ class LLMFeedbackView(ViewSet):
 
             return JsonResponse(combined_result, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in overall_feedback: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -114,7 +140,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="completeness")
     def completeness(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             pillars = list(get_project_pillars(user))
             game_concept = get_project_concept(user)
 
@@ -123,6 +149,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             pillars_text, context_text = build_context_payload(pillars, game_concept)
 
             llm_request = LLMRequest(
@@ -132,7 +159,7 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = orchestrator.execute(llm_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -142,6 +169,10 @@ class LLMFeedbackView(ViewSet):
 
             return JsonResponse(response.results, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in completeness: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -149,7 +180,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="contradictions")
     def contradictions(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             pillars = list(get_project_pillars(user))
             game_concept = get_project_concept(user)
 
@@ -158,6 +189,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             pillars_text, context_text = build_context_payload(pillars, game_concept)
 
             llm_request = LLMRequest(
@@ -167,7 +199,7 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = orchestrator.execute(llm_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -177,6 +209,10 @@ class LLMFeedbackView(ViewSet):
 
             return JsonResponse(response.results, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in contradictions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -184,7 +220,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="additions")
     def additions(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             pillars = list(get_project_pillars(user))
             game_concept = get_project_concept(user)
 
@@ -193,6 +229,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             pillars_text, context_text = build_context_payload(pillars, game_concept)
 
             llm_request = LLMRequest(
@@ -202,7 +239,7 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = orchestrator.execute(llm_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -212,6 +249,10 @@ class LLMFeedbackView(ViewSet):
 
             return JsonResponse(response.results, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in additions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -219,7 +260,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="context")
     def context(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             pillars = list(get_project_pillars(user))
             context_text = request.data.get("context", "")
 
@@ -228,6 +269,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             pillars_text, context_text = build_context_payload_from_text(
                 pillars, context_text
             )
@@ -239,7 +281,7 @@ class LLMFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = orchestrator.execute(llm_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -249,15 +291,18 @@ class LLMFeedbackView(ViewSet):
 
             return JsonResponse(response.results, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in context: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["POST"], url_path="evaluate-all")
     def evaluate_all(self, request: Request) -> JsonResponse:
-
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             game_concept = get_project_concept(user)
             pillars = list(get_project_pillars(user))
 
@@ -269,6 +314,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             pillars_text, context_text = build_context_payload(pillars, game_concept)
             execution_mode = request.data.get("execution_mode", "agentic")
 
@@ -295,7 +341,7 @@ class LLMFeedbackView(ViewSet):
                     feature="pillars",
                     execution_mode="monolithic",
                 ):
-                    response = self.orchestrator.execute(llm_request)
+                    response = orchestrator.execute(llm_request)
 
                 save_pillar_llm_call(
                     user=user,
@@ -353,8 +399,7 @@ class LLMFeedbackView(ViewSet):
 
                 return JsonResponse(response_data, status=200)
 
-            from llm.agent_registry import get_workflow
-
+            # Agentic mode
             llm_request = LLMRequest(
                 feature="pillars",
                 operation="evaluate_all",
@@ -365,8 +410,8 @@ class LLMFeedbackView(ViewSet):
 
             workflow_class = get_workflow("pillars.evaluate_all")
             workflow = workflow_class(
-                model_manager=self.orchestrator.model_manager,
-                config=self.orchestrator.config,
+                model_manager=orchestrator.model_manager,
+                config=orchestrator.config,
             )
 
             with logfire.span(
@@ -403,11 +448,25 @@ class LLMFeedbackView(ViewSet):
                     "execution_time_ms": result.total_execution_time_ms,
                     "agents_run": [r.agent_name for r in result.agent_results],
                     "all_succeeded": result.success,
+                    "agent_errors": [
+                        {
+                            "agent": r.agent_name,
+                            "error": _format_agent_error(
+                                r.error, model=llm_request.model_id
+                            ),
+                        }
+                        for r in result.agent_results
+                        if hasattr(r, "error") and r.error
+                    ],
                 },
             }
 
             return JsonResponse(response_data, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in evaluate_all: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -415,7 +474,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="resolve-contradictions")
     def resolve_contradictions(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             game_concept = get_project_concept(user)
             pillars = list(get_project_pillars(user))
 
@@ -436,6 +495,7 @@ class LLMFeedbackView(ViewSet):
 
             model = request.data.get("model", "gemini")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
             pillars_text, context_text = build_context_payload(pillars, game_concept)
 
             llm_request = LLMRequest(
@@ -453,7 +513,7 @@ class LLMFeedbackView(ViewSet):
 
             agent = ContradictionResolutionAgent()
             context = {
-                "model_manager": self.orchestrator.model_manager,
+                "model_manager": orchestrator.model_manager,
                 "data": llm_request.data,
                 "model_id": model_id,
                 "model_preference": "auto",
@@ -481,6 +541,10 @@ class LLMFeedbackView(ViewSet):
 
             return JsonResponse(result.data, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             logger.exception("Error in resolve_contradictions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -488,7 +552,7 @@ class LLMFeedbackView(ViewSet):
     @action(detail=False, methods=["POST"], url_path="accept-addition")
     def accept_addition(self, request: Request) -> JsonResponse:
         try:
-            user = cast(User, self.request.user)
+            user = cast(User, request.user)
             name = request.data.get("name")
             description = request.data.get("description")
 
@@ -510,6 +574,8 @@ class LLMFeedbackView(ViewSet):
             data = PillarSerializer(pillar).data
             return JsonResponse(data, status=201)
 
+        except APIException:
+            raise
         except Exception as e:
             logger.exception("Error in accept_addition: %s", e)
             return JsonResponse({"error": str(e)}, status=500)

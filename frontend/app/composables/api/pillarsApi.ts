@@ -22,13 +22,17 @@ export function usePillarsApi() {
     }
   }
 
+  function modelBody(): { model: string | undefined; api_key_id: string | null } {
+    return { model: llm.activeModelName || undefined, api_key_id: llm.activeKeyId }
+  }
+
   async function validatePillarAPICall(pillar: Pillar) {
     pillar.llm_feedback = await apiFetch<PillarFeedback>(
       `/api/llm/pillars/${pillar.id}/validate/`,
       {
         method: 'POST',
         body: {
-          model: llm.active_llm,
+          ...modelBody(),
         },
         credentials: 'include',
         headers: {
@@ -42,7 +46,7 @@ export function usePillarsApi() {
     return await apiFetch<FixPillarAPIResponse>(`/api/llm/pillars/${pillar.id}/fix/`, {
       method: 'POST',
       body: {
-        model: llm.active_llm,
+        ...modelBody(),
         validation_issues: validationIssues.map((issue) => ({
           title: issue.title,
           description: issue.description,
@@ -73,7 +77,7 @@ export function usePillarsApi() {
     return await apiFetch<ContextInPillarsFeedback>(`/api/llm/feedback/context/`, {
       method: 'POST',
       body: {
-        model: llm.active_llm,
+        ...modelBody(),
         context: context,
       },
       credentials: 'include',
@@ -89,7 +93,7 @@ export function usePillarsApi() {
     return await apiFetch<EvaluateAllResponse>(`/api/llm/feedback/evaluate-all/`, {
       method: 'POST',
       body: {
-        model: llm.active_llm,
+        ...modelBody(),
         execution_mode: executionMode,
       },
       credentials: 'include',
@@ -105,7 +109,7 @@ export function usePillarsApi() {
       {
         method: 'POST',
         body: {
-          model: llm.active_llm,
+          ...modelBody(),
           contradictions: contradictions,
         },
         credentials: 'include',

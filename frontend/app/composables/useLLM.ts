@@ -72,7 +72,9 @@ export const useLLM = defineStore('llm', () => {
         activeModel.value = ''
       }
       if (!activeModel.value && result.length > 0) {
-        activeModel.value = result[0]!.value
+        // Prefer an OpenAI model when available (supports both chat + embeddings)
+        const openAiModel = result.find((m) => m.provider === 'openai')
+        activeModel.value = openAiModel ? openAiModel.value : result[0]!.value
       }
 
       initialized.value = true

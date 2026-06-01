@@ -10,7 +10,8 @@ export function useSparcApi() {
       body: {
         game_text: gameText,
         context: context,
-        model: llm.active_llm,
+        model: llm.activeModelName,
+        api_key_id: llm.activeKeyId,
       },
       credentials: 'include',
       headers: {
@@ -25,7 +26,8 @@ export function useSparcApi() {
       body: {
         game_text: gameText,
         context: context,
-        model: llm.active_llm,
+        model: llm.activeModelName,
+        api_key_id: llm.activeKeyId,
       },
       credentials: 'include',
       headers: {

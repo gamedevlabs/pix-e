@@ -4,13 +4,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from game_concept.models import Project
-from llm.providers.manager import ModelManager
+from llm.mixins import UserLLMOrchestratorMixin
 
 from .workflow import ConsistencyWorkflow
 
 
-class ConsistencyCheckView(APIView):
+class ConsistencyCheckView(UserLLMOrchestratorMixin, APIView):
     """Run consistency checks on a project and return the findings.
+
+    Uses per-user API keys via UserLLMOrchestratorMixin.
 
     POST /api/llm/consistency/check/
     {
@@ -40,8 +42,9 @@ class ConsistencyCheckView(APIView):
             )
 
         min_confidence = float(request.data.get("min_confidence", 0.0))
+        orchestrator = self.get_llm_orchestrator(request)
         workflow = ConsistencyWorkflow(
-            model_manager=ModelManager(),
+            model_manager=orchestrator.model_manager,
             min_confidence=min_confidence,
         )
         report = workflow.check_project(project)

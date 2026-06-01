@@ -16,6 +16,7 @@ import { getSessionKey } from '~/composables/useSessionKey'
 import { useApiKeysApi } from '~/composables/api/apiKeysApi'
 
 const open = defineModel<boolean>('open', { default: false })
+const props = withDefaults(defineProps<{ presetProvider?: string }>(), { presetProvider: '' })
 const llmStore = useLLM()
 
 const { fetchKeys, createKey, updateKey, deleteKey, testKey } = useApiKeysApi()
@@ -62,6 +63,14 @@ watch(open, async (val) => {
       await llmStore.refreshModels()
     } catch {
       getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+    }
+
+    // If presetProvider was given, jump directly to the add-form with provider pre-selected
+    if (props.presetProvider) {
+      showAddForm.value = true
+      formStep.value = 'details'
+      formProvider.value = props.presetProvider
+      formLabel.value = `${props.presetProvider.charAt(0).toUpperCase() + props.presetProvider.slice(1)} Key`
     }
   }
 })

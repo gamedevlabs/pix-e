@@ -4,6 +4,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from llm.mixins import UserLLMOrchestratorMixin
 from moviescriptevaluator.forms import MovieScriptForm
 from moviescriptevaluator.llm_connector import MovieScriptLLMConnector
 from moviescriptevaluator.models import (
@@ -20,17 +21,8 @@ from moviescriptevaluator.serializers import (
 )
 from pxcharts.permissions import IsOwner
 
-_movie_script_llm_connector: MovieScriptLLMConnector | None = None
 
-
-def get_llm_connector() -> MovieScriptLLMConnector:
-    global _movie_script_llm_connector
-    if _movie_script_llm_connector is None:
-        _movie_script_llm_connector = MovieScriptLLMConnector()
-    return _movie_script_llm_connector
-
-
-class MovieProjectView(viewsets.ModelViewSet):
+class MovieProjectView(UserLLMOrchestratorMixin, viewsets.ModelViewSet):
     serializer_class = MovieProjectSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
@@ -63,8 +55,10 @@ class MovieProjectView(viewsets.ModelViewSet):
             )
 
         assets = AssetMetaData.objects.filter(project=pk)
+        orchestrator = self.get_llm_orchestrator(request)
+        connector = MovieScriptLLMConnector(orchestrator=orchestrator)
 
-        response = get_llm_connector().analyze_movie_script(script, list(assets))
+        response = connector.analyze_movie_script(script, list(assets))
         return Response(response, status=status.HTTP_200_OK)
 
 

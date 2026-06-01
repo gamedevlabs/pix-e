@@ -7,6 +7,7 @@ import { useApi } from '~/composables/useApi'
 
 export function useMovieScriptEvaluatorApi() {
   const { apiFetch } = useApi()
+  const llm = useLLM()
 
   async function uploadFile(projectId: string, movieScriptFile: MovieScript) {
     try {
@@ -34,8 +35,15 @@ export function useMovieScriptEvaluatorApi() {
     script_id: number,
   ): Promise<MovieScriptAnalysisResponse> {
     try {
+      const params = new URLSearchParams({
+        script_id: String(script_id),
+      })
+      if (llm.activeKeyId) {
+        params.set('api_key_id', llm.activeKeyId)
+      }
+
       return await apiFetch(
-        `/api/movie-script-evaluator/projects/${projectId}/analyze?script_id=${script_id}`,
+        `/api/movie-script-evaluator/projects/${projectId}/analyze?${params.toString()}`,
         {
           method: 'GET',
           credentials: 'include',

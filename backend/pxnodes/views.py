@@ -1,14 +1,16 @@
 import logging
 import uuid
+from typing import Optional
 
 import logfire
 from rest_framework import status, viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from game_concept.utils import get_current_game_concept
+from llm.mixins import UserLLMOrchestratorMixin
 from pillars.models import Pillar
 from projects.utils import get_current_project
 from pxcharts.models import PxChart
@@ -94,10 +96,12 @@ class PxComponentViewSet(viewsets.ModelViewSet):
         serializer.save(id=uuid.uuid4(), owner=self.request.user)
 
 
-class StructuralMemoryGenerateView(APIView):
+class StructuralMemoryGenerateView(UserLLMOrchestratorMixin, APIView):
     """
     Generate structural memory (knowledge triples, atomic facts, embeddings)
     for nodes in selected charts.
+
+    Uses per-user API keys via UserLLMOrchestratorMixin.
 
     POST /structural-memory/generate/
     {
@@ -155,13 +159,55 @@ class StructuralMemoryGenerateView(APIView):
 
             try:
                 # Import here to avoid circular imports
+                from accounts.encryption import (
+                    decrypt_api_key,
+                    get_encryption_key_from_session,
+                )
+                from accounts.models import UserApiKey
                 from pxnodes.llm.context.generator import StructuralMemoryGenerator
+
+                orchestrator = self.get_llm_orchestrator(request)
+
+                # Derive an OpenAI API key for embedding generation
+                enc_key = get_encryption_key_from_session(request.session)
+                openai_api_key: Optional[str] = None
+                if enc_key:
+                    try:
+                        openai_key_record = UserApiKey.objects.filter(
+                            user=request.user,
+                            provider="openai",
+                            is_active=True,
+                        ).first()
+                        if openai_key_record:
+                            openai_api_key = decrypt_api_key(
+                                openai_key_record.encrypted_key, enc_key
+                            )
+                    except Exception:
+                        logger.warning(
+                            "Could not decrypt OpenAI key for embeddings",
+                            exc_info=True,
+                        )
+
+                if not openai_api_key and not skip_embeddings:
+                    return Response(
+                        {
+                            "error": "openai_key_required",
+                            "detail": (
+                                "Structural memory generation requires an OpenAI API key "  # noqa: E501
+                                "for embeddings. Add one in Settings or enable "
+                                "'skip_embeddings'."
+                            ),
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
                 generator = StructuralMemoryGenerator(
                     llm_model=llm_model,
                     embedding_model=embedding_model,
                     skip_embeddings=skip_embeddings,
                     force_regenerate=force_regenerate,
+                    model_manager=orchestrator.model_manager,
+                    api_key=openai_api_key,
                 )
 
                 results = generator.generate_for_charts(list(charts))
@@ -198,6 +244,8 @@ class StructuralMemoryGenerateView(APIView):
                     }
                 )
 
+            except APIException:
+                raise
             except Exception as e:
                 logger.exception("Structural memory generation failed")
                 logfire.error(
@@ -524,7 +572,7 @@ class ContextArtifactsResetView(APIView):
         return Response({"success": True, "chart_id": str(chart.id), "scope": scope})
 
 
-class CoherenceEvaluateView(APIView):
+class CoherenceEvaluateView(UserLLMOrchestratorMixin, APIView):
     """
     Evaluate node coherence using structural memory retrieval.
 
@@ -585,19 +633,59 @@ class CoherenceEvaluateView(APIView):
 
             try:
                 # Import here to avoid circular imports
+                from accounts.encryption import (
+                    decrypt_api_key,
+                    get_encryption_key_from_session,
+                )
+                from accounts.models import UserApiKey
                 from pxnodes.llm.context.evaluator import NodeCoherenceEvaluator
                 from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
 
-                # Create LLM provider
+                # Get user's OpenAI key for embeddings
+                enc_key = get_encryption_key_from_session(request.session)
+                openai_api_key: Optional[str] = None
+                if enc_key:
+                    try:
+                        openai_key_record = UserApiKey.objects.filter(
+                            user=request.user,
+                            provider="openai",
+                            is_active=True,
+                        ).first()
+                        if openai_key_record:
+                            openai_api_key = decrypt_api_key(
+                                openai_key_record.encrypted_key, enc_key
+                            )
+                    except Exception:
+                        logger.warning(
+                            "Could not decrypt OpenAI key for embeddings",
+                            exc_info=True,
+                        )
+
+                if not openai_api_key:
+                    return Response(
+                        {
+                            "error": "openai_key_required",
+                            "detail": (
+                                "Coherence evaluation requires an OpenAI API key "
+                                "for embedding-based retrieval. Add one in Settings."
+                            ),
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # Create LLM provider with per-user model manager
+                orchestrator = self.get_llm_orchestrator(request)
                 llm_provider = LLMProviderAdapter(
+                    model_manager=orchestrator.model_manager,
                     model_name=llm_model,
                     temperature=0,
                 )
 
-                # Create evaluator
+                # Create evaluator with user's OpenAI key
                 evaluator = NodeCoherenceEvaluator(
                     llm_provider=llm_provider,
                     retrieval_iterations=iterations,
+                    api_key=openai_api_key,
                 )
 
                 # Evaluate chart
@@ -620,6 +708,8 @@ class CoherenceEvaluateView(APIView):
                     }
                 )
 
+            except APIException:
+                raise
             except Exception as e:
                 logger.exception("Coherence evaluation failed")
                 logfire.error(
@@ -692,7 +782,10 @@ class ContextStrategiesView(APIView):
         return Response({"strategies": strategies})
 
 
-class StrategyEvaluateView(APIView):
+EMBEDDING_REQUIRING_STRATEGIES = {"structural_memory", "hmem", "combined"}
+
+
+class StrategyEvaluateView(UserLLMOrchestratorMixin, APIView):
     """
     Evaluate node coherence using a specific context strategy.
 
@@ -812,13 +905,55 @@ class StrategyEvaluateView(APIView):
             )
 
             try:
+                from accounts.encryption import (
+                    decrypt_api_key,
+                    get_encryption_key_from_session,
+                )
+                from accounts.models import UserApiKey
                 from pxnodes.llm.context.base import StrategyType
                 from pxnodes.llm.context.shared import create_llm_provider
 
-                # Create LLM provider
+                # Check for OpenAI key if the strategy needs embeddings
+                if strategy in EMBEDDING_REQUIRING_STRATEGIES:
+                    enc_key = get_encryption_key_from_session(request.session)
+                    openai_api_key: Optional[str] = None
+                    if enc_key:
+                        try:
+                            openai_key_record = UserApiKey.objects.filter(
+                                user=request.user,
+                                provider="openai",
+                                is_active=True,
+                            ).first()
+                            if openai_key_record:
+                                openai_api_key = decrypt_api_key(
+                                    openai_key_record.encrypted_key, enc_key
+                                )
+                        except Exception:
+                            logger.warning(
+                                "Could not decrypt OpenAI key for embeddings",
+                                exc_info=True,
+                            )
+
+                    if not openai_api_key:
+                        return Response(
+                            {
+                                "error": "openai_key_required",
+                                "detail": (
+                                    f"The '{strategy}' strategy requires an OpenAI API key "  # noqa: E501
+                                    "for embedding-based retrieval. Add one in Settings."  # noqa: E501
+                                ),
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                # Create per-user orchestrator and model manager
+                orchestrator = self.get_llm_orchestrator(request)
+
+                # Create LLM provider with per-user model manager
                 llm_provider = create_llm_provider(
                     model_name=llm_model,
                     temperature=0,
+                    model_manager=orchestrator.model_manager,
                 )
 
                 strategy_type = StrategyType(strategy)
@@ -826,13 +961,12 @@ class StrategyEvaluateView(APIView):
                 # Import shared dependencies
                 import asyncio
 
-                from llm.providers.manager import ModelManager
                 from pxnodes.llm.workflows import (
                     PxNodesCoherenceMonolithicWorkflow,
                     PxNodesCoherenceWorkflow,
                 )
 
-                model_manager = ModelManager()
+                model_manager = orchestrator.model_manager
 
                 if execution_mode == "agentic":
                     # Use agentic workflow with 4 parallel dimension agents
@@ -892,6 +1026,8 @@ class StrategyEvaluateView(APIView):
                     }
                 )
 
+            except APIException:
+                raise
             except Exception as e:
                 logger.exception("Strategy evaluation failed")
                 logfire.error(
@@ -904,7 +1040,7 @@ class StrategyEvaluateView(APIView):
                 )
 
 
-class StrategyCompareView(APIView):
+class StrategyCompareView(UserLLMOrchestratorMixin, APIView):
     """
     Compare all context strategies for a single node.
 
@@ -992,14 +1128,65 @@ class StrategyCompareView(APIView):
             )
 
             try:
+                from accounts.encryption import (
+                    decrypt_api_key,
+                    get_encryption_key_from_session,
+                )
+                from accounts.models import UserApiKey
                 from pxnodes.llm.context.base import StrategyType
                 from pxnodes.llm.context.shared import create_llm_provider
                 from pxnodes.llm.context.strategy_evaluator import StrategyEvaluator
 
-                # Create LLM provider
+                # Check for OpenAI key if comparing embedding-requiring strategies
+                resolved_strategies = strategies_list or [
+                    "structural_memory",
+                    "simple_sm",
+                    "hierarchical_graph",
+                    "hmem",
+                    "combined",
+                    "full_context",
+                ]
+                if any(
+                    s in EMBEDDING_REQUIRING_STRATEGIES for s in resolved_strategies
+                ):
+                    enc_key = get_encryption_key_from_session(request.session)
+                    openai_api_key: Optional[str] = None
+                    if enc_key:
+                        try:
+                            openai_key_record = UserApiKey.objects.filter(
+                                user=request.user,
+                                provider="openai",
+                                is_active=True,
+                            ).first()
+                            if openai_key_record:
+                                openai_api_key = decrypt_api_key(
+                                    openai_key_record.encrypted_key, enc_key
+                                )
+                        except Exception:
+                            logger.warning(
+                                "Could not decrypt OpenAI key for embeddings",
+                                exc_info=True,
+                            )
+                    if not openai_api_key:
+                        return Response(
+                            {
+                                "error": "openai_key_required",
+                                "detail": (
+                                    "Strategy comparison requires an OpenAI API key "
+                                    "for embedding-based retrieval. Add one in Settings."  # noqa: E501
+                                ),
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+                # Create per-user orchestrator and model manager
+                orchestrator = self.get_llm_orchestrator(request)
+
+                # Create LLM provider with per-user model manager
                 llm_provider = create_llm_provider(
                     model_name=llm_model,
                     temperature=0,
+                    model_manager=orchestrator.model_manager,
                 )
 
                 # Parse strategies
@@ -1031,6 +1218,8 @@ class StrategyCompareView(APIView):
                     }
                 )
 
+            except APIException:
+                raise
             except Exception as e:
                 logger.exception("Strategy comparison failed")
                 logfire.error(
@@ -1177,6 +1366,8 @@ class ContextBuildView(APIView):
                     }
                 )
 
+            except APIException:
+                raise
             except Exception as e:
                 logger.exception("Context building failed")
                 return Response(

@@ -40,7 +40,11 @@ const {
   getStats: getMemoryStats,
   evaluate: evaluateCoherence,
   clearEvaluation,
+  needsOpenAiKey,
+  clearNeedsOpenAiKey,
 } = useStructuralMemory()
+
+const showSettingsWithOpenAI = ref(false)
 
 // Structural memory generation state
 const selectedChartIds = ref<string[]>([])
@@ -131,6 +135,11 @@ watch(selectedChartIds, async (newIds) => {
   // Clear evaluation when charts change
   clearEvaluation()
 })
+
+function handleAddOpenAiKey() {
+  showSettingsWithOpenAI.value = true
+  clearNeedsOpenAiKey()
+}
 
 // Evaluation function - only works with single chart selection
 async function handleEvaluateCoherence() {
@@ -431,5 +440,28 @@ async function handleAddComponent() {
         </div>
       </SimpleCardSection>
     </SimpleContentWrapper>
+
+    <!-- OpenAI key required modal -->
+    <UModal
+      v-model:open="needsOpenAiKey"
+      title="OpenAI Key Required"
+      :dismissible="true"
+      class="max-w-md w-full"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <p class="text-sm text-dimmed">
+            This feature uses OpenAI embeddings to store and retrieve vector representations of your
+            nodes. You need to add an OpenAI API key in Settings.
+          </p>
+          <div class="flex justify-end gap-3">
+            <UButton variant="outline" @click="clearNeedsOpenAiKey()"> Close </UButton>
+            <UButton @click="handleAddOpenAiKey"> Add OpenAI Key </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <SettingsOverlay v-model:open="showSettingsWithOpenAI" preset-provider="openai" />
   </div>
 </template>

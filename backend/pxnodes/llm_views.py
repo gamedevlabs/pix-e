@@ -1,5 +1,7 @@
 """
 LLM Views for PxNodes.
+
+Uses UserLLMOrchestratorMixin for per-user API key resolution.
 """
 
 import logging
@@ -9,11 +11,13 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
-from llm import LLMOrchestrator
+from llm.exceptions import OrchestratorError
 from llm.logfire_config import get_logfire
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
@@ -42,14 +46,10 @@ def format_node_components(node: PxNode) -> list[dict[str, Any]]:
     return components
 
 
-class NodeFeedbackView(ViewSet):
-    """ViewSet for node LLM feedback operations."""
+class NodeFeedbackView(UserLLMOrchestratorMixin, ViewSet):
+    """ViewSet for node LLM feedback operations using per-user API keys."""
 
     permission_classes = [permissions.IsAuthenticated]
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.orchestrator = LLMOrchestrator()
 
     @action(detail=True, methods=["POST"], url_path="validate")
     def validate_node(self, request: Request, pk: Optional[str] = None) -> JsonResponse:
@@ -78,6 +78,7 @@ class NodeFeedbackView(ViewSet):
 
                 model = request.data.get("model", "gemini")
                 components = format_node_components(node)
+                orchestrator = self.get_llm_orchestrator(request)
 
                 llm_request = LLMRequest(
                     feature="nodes",
@@ -90,7 +91,7 @@ class NodeFeedbackView(ViewSet):
                     model_id=get_model_id(model),
                 )
 
-                response = self.orchestrator.execute(llm_request)
+                response = orchestrator.execute(llm_request)
 
                 logfire.info(
                     "nodes.validate.completed",
@@ -102,6 +103,11 @@ class NodeFeedbackView(ViewSet):
 
                 return JsonResponse(response.results, status=200)
 
+            except APIException:
+                raise
+            except OrchestratorError as e:
+                logger.warning("Provider error for user=%s: %s", request.user.id, e)
+                return JsonResponse({"error": str(e)}, status=502)
             except Exception as e:
                 logger.exception(f"Error in validate_node: {e}")
                 logfire.error("nodes.validate.error", error=str(e), node_id=pk)
@@ -136,6 +142,7 @@ class NodeFeedbackView(ViewSet):
                 model_id = get_model_id(model)
                 validation_issues = request.data.get("validation_issues", [])
                 components = format_node_components(node)
+                orchestrator = self.get_llm_orchestrator(request)
 
                 llm_request = LLMRequest(
                     feature="nodes",
@@ -149,7 +156,7 @@ class NodeFeedbackView(ViewSet):
                     model_id=model_id,
                 )
 
-                response = self.orchestrator.execute(llm_request)
+                response = orchestrator.execute(llm_request)
 
                 logfire.info(
                     "nodes.fix.completed",
@@ -181,6 +188,11 @@ class NodeFeedbackView(ViewSet):
                     status=200,
                 )
 
+            except APIException:
+                raise
+            except OrchestratorError as e:
+                logger.warning("Provider error for user=%s: %s", request.user.id, e)
+                return JsonResponse({"error": str(e)}, status=502)
             except Exception as e:
                 logger.exception(f"Error in fix_node: {e}")
                 logfire.error("nodes.fix.error", error=str(e), node_id=pk)
@@ -250,6 +262,8 @@ class NodeFeedbackView(ViewSet):
                 data = PxNodeSerializer(node).data
                 return JsonResponse(data, status=200)
 
+            except APIException:
+                raise
             except Exception as e:
                 logger.exception(f"Error in accept_fix: {e}")
                 logfire.error("nodes.accept_fix.error", error=str(e), node_id=pk)

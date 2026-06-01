@@ -122,6 +122,7 @@ class LLMProviderAdapter:
 def create_llm_provider(
     model_name: Optional[str] = None,
     temperature: float = 0,
+    model_manager: Optional[ModelManager] = None,
 ) -> LLMProviderAdapter:
     """
     Create an LLM provider adapter.
@@ -129,11 +130,13 @@ def create_llm_provider(
     Args:
         model_name: Specific model to use (auto-selects if None)
         temperature: Sampling temperature
+        model_manager: Per-user ModelManager (creates global one if not provided)
 
     Returns:
         LLMProviderAdapter instance
     """
     return LLMProviderAdapter(
+        model_manager=model_manager,
         model_name=model_name,
         temperature=0,
     )

@@ -15,8 +15,10 @@ from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from accounts.encryption import get_encryption_key_from_session
 from game_concept.models import Project
 from llm.logfire_config import get_logfire
+from llm.providers.manager import ModelManager
 from projects.utils import get_current_project
 
 # Import to trigger workflow registration
@@ -67,12 +69,14 @@ class SPARCV2EvaluateView(APIView):
     """
     V2 full evaluation using router-based agentic execution.
 
+    Uses per-user API keys via session encryption key.
+
     Runs: Router → 10 parallel aspect agents → Synthesis
 
     POST /api/sparc/v2/evaluate/
     Body: {
         "game_text": "...",
-        "model": "gemini" | "openai" (optional, defaults to "openai")
+        "model": "gemini" | "openai" (optional)
     }
 
     Response: {
@@ -97,7 +101,7 @@ class SPARCV2EvaluateView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> JsonResponse:
         """Execute full V2 evaluation."""
@@ -184,12 +188,18 @@ class SPARCV2EvaluateView(APIView):
                         context_strategy=context_strategy,
                         document_data=document_data,
                     )
+                    enc_key = get_encryption_key_from_session(request.session)
+                    model_manager: Optional[ModelManager] = None
+                    if request.user.is_authenticated and enc_key:
+                        model_manager = ModelManager.for_user(request.user, enc_key)
+
                     result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
                         model_id=model_id,
                         evaluation=evaluation,
                         user=request.user if request.user.is_authenticated else None,
                         mode="full",
+                        model_manager=model_manager,
                     )
 
                     if not result.success:
@@ -232,6 +242,8 @@ class SPARCV2AspectView(APIView):
     """
     V2 single or multiple aspect evaluation.
 
+    Uses per-user API keys via session encryption key.
+
     Runs: Router (focused) → Selected aspect agent(s)
 
     POST /api/sparc/v2/evaluate/aspect/
@@ -251,7 +263,7 @@ class SPARCV2AspectView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> JsonResponse:
         """Execute single or multiple aspect evaluation."""
@@ -345,6 +357,11 @@ class SPARCV2AspectView(APIView):
                         context_strategy=context_strategy,
                     )
 
+                    enc_key = get_encryption_key_from_session(request.session)
+                    model_manager: Optional[ModelManager] = None
+                    if request.user.is_authenticated and enc_key:
+                        model_manager = ModelManager.for_user(request.user, enc_key)
+
                     result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
                         model_id=model_id,
@@ -352,6 +369,7 @@ class SPARCV2AspectView(APIView):
                         user=request.user if request.user.is_authenticated else None,
                         mode=mode,
                         target_aspects=target_aspects,
+                        model_manager=model_manager,
                     )
 
                     if not result.success:

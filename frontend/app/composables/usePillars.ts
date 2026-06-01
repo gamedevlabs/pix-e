@@ -115,12 +115,30 @@ export function usePillars() {
     await pillarsApi.updateDesignIdeaAPICall(designIdea.value)
   }
 
+  function extractErrorDetail(err: unknown): string {
+    const data = (err as Record<string, unknown>)?.data as Record<string, unknown> | undefined
+    if (data?.detail && typeof data.detail === 'string') return data.detail
+    if (data?.error && typeof data.error === 'string') return data.error
+    if (err instanceof Error) return err.message
+    return 'An unexpected error occurred'
+  }
+
   async function validatePillar(pillar: Pillar) {
-    return await pillarsApi.validatePillarAPICall(pillar)
+    try {
+      return await pillarsApi.validatePillarAPICall(pillar)
+    } catch (err) {
+      errorToast(extractErrorDetail(err))
+      return undefined
+    }
   }
 
   async function fixPillarWithAI(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
-    return await pillarsApi.fixPillarWithAIAPICall(pillar, validationIssues)
+    try {
+      return await pillarsApi.fixPillarWithAIAPICall(pillar, validationIssues)
+    } catch (err) {
+      errorToast(extractErrorDetail(err))
+      return undefined
+    }
   }
 
   async function acceptPillarFix(pillarId: number, name: string, description: string) {
@@ -128,7 +146,13 @@ export function usePillars() {
   }
 
   async function getContextInPillarsFeedback() {
-    featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(additionalFeature.value)
+    const context = additionalFeature.value?.trim()
+    if (!context) return
+    try {
+      featureFeedback.value = await pillarsApi.getContextInPillarsAPICall(context)
+    } catch (err) {
+      errorToast(extractErrorDetail(err))
+    }
   }
 
   // --- Evaluation methods (supports monolithic and agentic modes) ---
@@ -138,10 +162,25 @@ export function usePillars() {
     evaluationError.value = null
     const modeToUse = mode ?? executionMode.value
     try {
-      evaluationResult.value = await pillarsApi.evaluateAllAPICall(modeToUse)
+      const result = await pillarsApi.evaluateAllAPICall(modeToUse)
+      evaluationResult.value = result
+
+      // Surface agent errors when some agents failed
+      const agentErrors = (result as Record<string, unknown>)?.metadata?.agent_errors as
+        | Array<{ agent: string; error: string }>
+        | undefined
+      if (agentErrors && agentErrors.length > 0) {
+        const messages = agentErrors
+          .map((e) => {
+            const truncated = e.error.length > 120 ? e.error.slice(0, 120) + '...' : e.error
+            return `${e.agent}: ${truncated}`
+          })
+          .join('; ')
+        errorToast(`Some agents failed: ${messages}`)
+      }
     } catch (err) {
-      console.error('Error evaluating pillars:', err)
-      evaluationError.value = 'Failed to evaluate pillars. Please try again.'
+      evaluationError.value = extractErrorDetail(err)
+      errorToast(evaluationError.value)
     } finally {
       isEvaluating.value = false
     }
@@ -152,7 +191,12 @@ export function usePillars() {
   }
 
   async function resolveContradictions(contradictions: ContradictionsResponse) {
-    return await pillarsApi.resolveContradictionsAPICall(contradictions)
+    try {
+      return await pillarsApi.resolveContradictionsAPICall(contradictions)
+    } catch (err) {
+      errorToast(extractErrorDetail(err))
+      return undefined
+    }
   }
 
   watch(

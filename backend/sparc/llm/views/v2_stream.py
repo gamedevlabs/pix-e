@@ -16,8 +16,10 @@ from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from accounts.encryption import get_encryption_key_from_session
 from llm.events import EventCollector
 from llm.logfire_config import get_logfire
+from llm.providers.manager import ModelManager
 from llm.types import AgentOutputEvent, AgentStartedEvent
 from sparc.llm.views.v2 import save_game_concept
 from sparc.llm.views.v2_utils import (
@@ -79,7 +81,7 @@ class SPARCV2StreamView(APIView):
     Returns Server-Sent Events stream with progress updates.
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> StreamingHttpResponse:
         """Execute V2 evaluation with streaming progress."""
@@ -141,6 +143,11 @@ class SPARCV2StreamView(APIView):
 
             # Stream the evaluation with progress
             concept_meta = resolve_concept_meta(request)
+            enc_key = get_encryption_key_from_session(request.session)
+            model_manager: Optional[ModelManager] = None
+            if request.user.is_authenticated and enc_key:
+                model_manager = ModelManager.for_user(cast(User, request.user), enc_key)
+
             response = StreamingHttpResponse(
                 self._stream_evaluation(
                     game_text,
@@ -154,6 +161,7 @@ class SPARCV2StreamView(APIView):
                     temp_file_path,
                     concept_meta,
                     request.data.get("project_id"),
+                    model_manager,
                 ),
                 content_type="text/event-stream",
             )
@@ -188,6 +196,7 @@ class SPARCV2StreamView(APIView):
         temp_file_path: Optional[str] = None,
         concept_meta: Optional[Dict[str, str]] = None,
         project_id: Optional[int] = None,
+        model_manager: Optional[ModelManager] = None,
     ) -> AsyncGenerator[str, None]:
         """Stream evaluation progress and results asynchronously."""
         import asyncio
@@ -254,6 +263,7 @@ class SPARCV2StreamView(APIView):
                             user=user if user.is_authenticated else None,
                             mode="full",
                             event_collector=event_collector,
+                            model_manager=model_manager,
                         )
                     )
 

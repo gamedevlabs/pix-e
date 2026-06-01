@@ -310,7 +310,11 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
             # Strip "models/" prefix from model names (Google SDK returns
             # "models/gemini-2.5-flash" format) before picking a fallback
             first_model = next(
-                (m.name.split("/")[-1] for m in gemini_models if m.name and m.name.startswith("models/gemini")),
+                (
+                    m.name.split("/")[-1]
+                    for m in gemini_models
+                    if m.name and m.name.startswith("models/gemini")
+                ),
                 "gemini-2.5-flash",
             )
             gemini_client.models.generate_content(

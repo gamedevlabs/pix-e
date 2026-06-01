@@ -111,9 +111,10 @@ async def run_router_workflow(
     mode: str,
     target_aspects: Optional[list[str]] = None,
     event_collector: Optional[EventCollector] = None,
+    model_manager: Optional[ModelManager] = None,
 ):
     config = get_config()
-    model_manager = ModelManager(config)
+    model_manager = model_manager or ModelManager(config)
     event_collector = event_collector or EventCollector()
 
     workflow = SPARCRouterWorkflow(

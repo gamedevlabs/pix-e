@@ -86,6 +86,7 @@ class HMEMRetriever:
         self,
         embedding_model: str = "text-embedding-3-small",
         embedding_dim: int = 1536,
+        api_key: Optional[str] = None,
     ):
         """
         Initialize the H-MEM retriever.
@@ -93,8 +94,12 @@ class HMEMRetriever:
         Args:
             embedding_model: OpenAI embedding model name
             embedding_dim: Dimension of embeddings
+            api_key: OpenAI API key (uses env var if not provided)
         """
-        self.embedding_generator = OpenAIEmbeddingGenerator(model=embedding_model)
+        self.embedding_generator = OpenAIEmbeddingGenerator(
+            model=embedding_model,
+            api_key=api_key,
+        )
         self.embedding_model = embedding_model
         self.embedding_dim = embedding_dim
 

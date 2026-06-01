@@ -167,6 +167,7 @@ class NodeCoherenceEvaluator:
         embedding_model: str = "text-embedding-3-small",
         retrieval_iterations: int = 3,
         top_k_per_node: int = 10,
+        api_key: Optional[str] = None,
     ):
         """
         Initialize the evaluator.
@@ -176,11 +177,13 @@ class NodeCoherenceEvaluator:
             embedding_model: Model for query embedding
             retrieval_iterations: Number of retrieval refinement iterations
             top_k_per_node: Max memories to retrieve per node
+            api_key: OpenAI API key for embedding generation
         """
         self.llm_provider = llm_provider
         self.retriever = IterativeRetriever(
             llm_provider=llm_provider,
             embedding_model=embedding_model,
+            api_key=api_key,
         )
         self.retrieval_iterations = retrieval_iterations
         self.top_k_per_node = top_k_per_node

@@ -17,6 +17,7 @@ from typing import Optional
 
 import logfire
 
+from llm.providers import ModelManager
 from pxcharts.models import PxChart
 from pxnodes.llm.context.change_detection import (
     get_changed_nodes,
@@ -114,6 +115,8 @@ class StructuralMemoryGenerator:
         embedding_model: str = "text-embedding-3-small",
         skip_embeddings: bool = False,
         force_regenerate: bool = False,
+        model_manager: Optional[ModelManager] = None,
+        api_key: Optional[str] = None,
     ):
         """
         Initialize the generator.
@@ -123,14 +126,20 @@ class StructuralMemoryGenerator:
             embedding_model: OpenAI embedding model
             skip_embeddings: If True, skip embedding generation
             force_regenerate: If True, process all nodes regardless of changes
+            model_manager: Per-user ModelManager (creates global one if not provided)
+            api_key: User's OpenAI API key for embeddings (uses env var if not provided)
         """
         self.llm_provider = LLMProviderAdapter(
+            model_manager=model_manager,
             model_name=llm_model,
             temperature=0,
         )
         self.embedding_generator: Optional[OpenAIEmbeddingGenerator] = None
         if not skip_embeddings:
-            self.embedding_generator = OpenAIEmbeddingGenerator(model=embedding_model)
+            self.embedding_generator = OpenAIEmbeddingGenerator(
+                model=embedding_model,
+                api_key=api_key,
+            )
 
         self.skip_embeddings = skip_embeddings
         self.force_regenerate = force_regenerate
