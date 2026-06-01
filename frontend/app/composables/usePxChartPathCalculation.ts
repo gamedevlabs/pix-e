@@ -327,9 +327,6 @@ export function usePxChartPathCalculation(
     let newPath: string[]
     if (selected.length == 2 && selected[0] && selected[1]) {
       newPath = await dijkstraInChart(selected[0], selected[1], settings.value.use_locks)
-      if (!newPath.length) {
-        newPath = await dijkstraInChart(selected[1], selected[0], settings.value.use_locks)
-      }
     } else {
       newPath = await dijkstraInChartMultiple(selected, settings.value.use_locks)
     }
