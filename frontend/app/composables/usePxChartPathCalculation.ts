@@ -257,6 +257,7 @@ export function usePxChartPathCalculation(
           console.log(`Found target node!`)
           found = true
           targetQId = outNodeQId
+          previousInventory.value = q.find(entry => entry.id === outNodeId)!.keys
           break
         }
       }
