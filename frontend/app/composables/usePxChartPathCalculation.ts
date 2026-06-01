@@ -37,33 +37,74 @@ export function usePxChartPathCalculation(
   const { canUnlock, removeConsumed, pxKeyDefinitionsById, getKeysInNode } =
     usePxChartPathCalculationUnlock(nodes, settings, pxLockDefinitions, pxKeyDefinitions)
 
+  // to prevent infinite loops during pathfinding, each node can be visited at most this many times
+  const CYCLE_LIMIT = 5
+
+  function findNodeById(id: string) {
+    return nodes.value.find((node) => node.id === id)
+  }
+
   interface QueueNode {
+    qId: number
     id: string
     prio: number
     keys: PxKeySet[]
+    name: string
   }
 
-  async function dijkstraInChart(sourceId: string, targetId: string, useLocks: boolean = true) {
+  async function dijkstraInChart(
+    sourceId: string,
+    targetId: string,
+    useLocks: boolean = true,
+    initialInventory: PxKeySet[] = [{}],
+  ) {
     // initialize
     if (useLocks) {
       await fetchPxLockDefinitions()
       await fetchPxKeyDefinitions()
     }
 
+    const qNodeIdsToNodeIds: Record<number, string> = {}
+    // const qNodeIdsToContainerNames: Record<number, string> = {}
+
+    let qNodeCount = 1
+    const firstNodeKeys = getKeySetFromKeyAssignment(getKeysInNode(sourceId))
+    const firstNodeInventory = initialInventory.map((keyset) =>
+      mergePxKeySets(keyset, firstNodeKeys),
+    )
     const q: QueueNode[] = [
-      { id: sourceId, prio: 0, keys: [getKeySetFromKeyAssignment(getKeysInNode(sourceId))] },
+      {
+        qId: qNodeCount,
+        id: sourceId,
+        prio: 0,
+        keys: firstNodeInventory,
+        name: findNodeById(sourceId)?.data.name,
+      },
     ]
-    const dist = new Map<string, number>()
-    dist.set(sourceId, 0)
-    const prev = new Map<string, string>()
-    const prevEdges = new Map<string, Edge>()
+    // qNodeIdsToContainerNames[qNodeCount] = findNodeById(sourceId)?.data.name
+    qNodeIdsToNodeIds[qNodeCount++] = sourceId
+    const dist = new Map<number, number>()
+    dist.set(1, 0)
+    const prev = new Map<number, number>()
+    const prevEdges = new Map<number, Edge>()
 
     for (const node of nodes.value) {
       if (node.id != sourceId) {
-        dist.set(node.id, Infinity)
-        q.push({ id: node.id, prio: Infinity, keys: [getKeySetFromKeyAssignment(node.data.keys)] })
+        dist.set(qNodeCount, Infinity)
+        q.push({
+          qId: qNodeCount,
+          id: node.id,
+          prio: Infinity,
+          keys: [getKeySetFromKeyAssignment(node.data.keys)],
+          name: node.data.name,
+        })
+        // qNodeIdsToContainerNames[qNodeCount] = node.data.name
+        qNodeIdsToNodeIds[qNodeCount++] = node.id
       }
     }
+
+    //console.log(`qNodeCount after initialization: ${qNodeCount}`)
+    //console.log(`qNodeIdsToNodeIds: ${JSON.stringify(qNodeIdsToNodeIds, null, 2)}`)
 
     // sort (descending so we can use pop)
     q.sort((n1, n2) => n2.prio - n1.prio)
@@ -72,20 +113,37 @@ export function usePxChartPathCalculation(
     let found = false
     let inventory: PxKeySet[] = []
     let allLockedEdges: string[] = []
+
+    // with backtracking, nodes are considered to exist in different realities where different keysets may be available
+    // this Record tracks which nodes have been visited with which inventories (a.k.a. in which realities)
+    const nodesVisitedWithKeys: Record<string, PxKeySet[][]> = {}
+    const previouslyUnlockedEdges: Set<string> = new Set()
+
+    let targetQId: number | undefined = 0
+
     while (q.length && !found) {
       const node = q.pop()
       if (!node) {
         break
       }
 
+      // console.log(`Processing node: ${JSON.stringify(node, null, 2)}`)
+
+      if (!nodesVisitedWithKeys[node.id]) {
+        nodesVisitedWithKeys[node.id] = [node.keys]
+      } else {
+        nodesVisitedWithKeys[node.id]?.push(node.keys)
+      }
+
       let outEdges = getConnectedEdges(node.id, edges.value).filter(
-        (edge) => edge.source === node.id,
+        (edge) => edge.source === node.id || edge.data.bidirectional,
       )
 
       if (useLocks) {
         // check for locked transitions
         const [unlockedOutEdges, lockedOutEdges] = outEdges.reduce(
           (acc, edge) =>
+            previouslyUnlockedEdges.has(edge.id) ||
             node.keys.some((keys) => canUnlock(keys, edge.data.locks))
               ? (acc[0].push(edge), acc)
               : (acc[1].push(edge), acc),
@@ -105,14 +163,53 @@ export function usePxChartPathCalculation(
         )
       }
 
+      // console.log(`Found ${outEdges.length} outgoing Edges!`)
+
+      // check each outgoing edge
       for (const outEdge of outEdges) {
-        const outNodeId = outEdge.target
-        const alt = dist.get(node.id)! + 1
-        if (alt < dist.get(outNodeId)!) {
-          prev.set(outNodeId, node.id)
-          prevEdges.set(outNodeId, outEdge)
-          dist.set(outNodeId, alt)
-          const idx = findIndex(q, ['id', outNodeId])
+        // console.log(`Checking outgoing edge: ${outEdge.id} to ${findNodeById(outEdge.target !== node.id ? outEdge.target : outEdge.source)?.data.name}`)
+        previouslyUnlockedEdges.add(outEdge.id)
+        const outNodeId =
+          !outEdge.data.bidirectional || outEdge.source === node.id
+            ? outEdge.target
+            : outEdge.source
+        const alt = dist.get(node.qId)! + 1
+
+        // to enable re-visiting of nodes:
+        //      if successor node is not in queue (i.e. will not be processed again by regular iteration),
+        //      and the target node has neither been visited LIMIT times not visited with the current inventory available,
+        //      add it to queue
+        let outNodeQId = q.find((qNode) => qNode.id === outNodeId)?.qId
+        if (
+          !outNodeQId &&
+          (!nodesVisitedWithKeys[outNodeId] ||
+            (nodesVisitedWithKeys[outNodeId].length < CYCLE_LIMIT &&
+              !nodesVisitedWithKeys[outNodeId]?.every((inv) =>
+                pxKeyInventoriesAreEqual(inventory, inv),
+              )))
+        ) {
+          //console.log(`Adding for re-visit: ${findNodeById(outNodeId)?.data.name} with prio ${alt}`)
+          dist.set(qNodeCount, Infinity)
+          q.push({
+            qId: qNodeCount,
+            id: outNodeId,
+            prio: alt,
+            keys: [{}],
+            name: findNodeById(outNodeId)?.data.name,
+          })
+          outNodeQId = qNodeCount
+          // qNodeIdsToContainerNames[qNodeCount] = findNodeById(outNodeId)?.data.name
+          qNodeIdsToNodeIds[qNodeCount++] = outNodeId
+        }
+
+        // nodes may be reachable with shorter paths, but going the shorter path may miss keys that need to be collected
+        // thus, we loosen the condition here to include all reachable nodes
+        // potential improvement: make condition more robust by calculating combined score of dist, keys collected, ...
+        if (outNodeQId && alt < Infinity) {
+          prev.set(outNodeQId, node.qId)
+          prevEdges.set(outNodeQId, outEdge)
+          dist.set(outNodeQId, alt)
+          const idx = findIndex(q, ['qId', outNodeQId])
           q[idx]!.prio = alt
 
           // update key inventory in successor node
@@ -124,38 +221,63 @@ export function usePxChartPathCalculation(
             // a potential softlock occurs when unlock is possible with some, but not all keysets in inventory
             // this must be checked before removing fully consumed keysets
             if (inventoryAfterConsumption.length !== inventory.length)
-              //softLocked.value.push(outNodeId)
               result.value.softLocked.push(outNodeId)
             inventoryAfterConsumption = inventoryAfterConsumption.filter(
               (keyset) => Object.entries(keyset).length > 0,
             )
             if (!inventoryAfterConsumption.length) inventoryAfterConsumption = [{}]
 
-            // unprocessed nodes only have one keyset, so we can just index into the array
-            q[idx]!.keys = inventoryAfterConsumption.map((keyset) =>
-              mergePxKeySets(keyset, q[idx]!.keys[0]!),
-            )
+            // nodes may be reached in multiple ways
+            // so we leave the original keyset in the node at index 0
+            // and append inventories from preceding paths after the original keyset
+            const keysetsToAdd = inventoryAfterConsumption
+              .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
+              .filter((keyset) =>
+                q[idx]!.keys.every(
+                  (inventoryKeyset) => !pxKeySetsAreEqual(keyset, inventoryKeyset),
+                ),
+              )
+            q[idx]!.keys.push(...keysetsToAdd)
           } else if (useLocks && settings.value.ignore_consumable_keys) {
-            q[idx]!.keys = inventory.map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
+            const keysetsToAdd = inventory
+              .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
+              .filter((keyset) =>
+                q[idx]!.keys.every(
+                  (inventoryKeyset) => !pxKeySetsAreEqual(keyset, inventoryKeyset),
+                ),
+              )
+            q[idx]!.keys.push(...keysetsToAdd)
           }
 
           q.sort((n1, n2) => n2.prio - n1.prio)
         }
-        if (outNodeId == targetId) {
+        if (outNodeId === targetId) {
+          console.log(`Found target node!`)
           found = true
+          targetQId = outNodeQId
           break
         }
       }
     }
 
-    const seq = []
+    /*
+    console.log(`prev after calculation:`)
+    for (const [key, value] of prev) {
+        console.log(key, value);
+    }
+
+    console.log(`qNodeIdsToNodeIds after calculation: ${JSON.stringify(qNodeIdsToNodeIds, null, 2)}`)
+    console.log(`qNodeIdsToNodeNames after calculation: ${JSON.stringify(qNodeIdsToContainerNames, null, 2)}`)
+    */
+
+    const seq: string[] = []
     const seqEdges = []
-    if (found) {
+    if (found && targetQId) {
       // construct sequence
-      let current = targetId
-      if (prev.has(current) || current == sourceId) {
+      let current = targetQId
+      if (prev.has(current) || qNodeIdsToNodeIds[current] === sourceId) {
         while (current) {
-          seq.push(current)
+          seq.push(qNodeIdsToNodeIds[current]!)
           if (prevEdges.has(current)) {
             seqEdges.push(prevEdges.get(current)!)
           }

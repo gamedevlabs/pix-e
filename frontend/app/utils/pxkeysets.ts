@@ -31,15 +31,20 @@ export function pxKeySetDifference(
   consumed: PxKeySet,
   consumableKeyDefs: string[],
 ): PxKeySet {
-  const res = { ...inventory }
+  const diff = { ...inventory }
   for (const [def, count] of Object.entries(consumed)) {
-    if (!res[def] || res[def] < 1) {
+    if (!diff[def] || diff[def] < 1) {
       return {}
     } else if (consumableKeyDefs.includes(def)) {
-      res[def] -= count
+      diff[def] -= count
     }
   }
-  return res
+  const filteredDiff: PxKeySet = {}
+  for (const [def, count] of Object.entries(diff)) {
+    if (count) filteredDiff[def] = count
+  }
+
+  return filteredDiff
 }
 
 export function mergePxKeySets(keyset1: PxKeySet, keyset2: PxKeySet) {
@@ -52,4 +57,22 @@ export function mergePxKeySets(keyset1: PxKeySet, keyset2: PxKeySet) {
     }
   }
   return res
+}
+
+export function pxKeySetsAreEqual(keyset1: PxKeySet, keyset2: PxKeySet) {
+  for (const [def, count] of Object.entries(keyset1)) {
+    if (!keyset2[def] || keyset2[def] != count) {
+      return false
+    }
+  }
+  return true
+}
+
+export function pxKeyInventoriesAreEqual(inv1: PxKeySet[], inv2: PxKeySet[]) {
+  for (const keyset of inv1) {
+    if (inv2.some((keyset2) => !pxKeySetsAreEqual(keyset, keyset2))) {
+      return false
+    }
+  }
+  return true
 }

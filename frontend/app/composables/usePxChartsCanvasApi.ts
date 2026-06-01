@@ -98,7 +98,11 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: e.targetHandle,
       markerEnd: e.bidirectional ? undefined : edgeDefaultValues.markerEnd,
       type: edgeDefaultValues.type,
-      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id), bidirectional: e.bidirectional },
+      data: {
+        px_chart: chartId,
+        locks: pxLocks.value.filter((lock) => lock.edge === e.id),
+        bidirectional: e.bidirectional,
+      },
     }))
   }
 
