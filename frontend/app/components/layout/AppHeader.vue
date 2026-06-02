@@ -57,7 +57,7 @@ const dropdownItems = computed(() => [
           :items="llmStore.models"
           value-key="value"
           :icon="llmStore.activeModelIcon"
-          class="w-48"
+          class="w-96"
         />
         <UDropdownMenu :items="dropdownItems">
           <!-- Wrap so the whole avatar surface is clickable -->

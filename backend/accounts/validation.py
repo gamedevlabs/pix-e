@@ -11,7 +11,7 @@ from typing import Tuple
 # Compiled regex patterns for provider-specific key format validation.
 # OpenAI keys: start with "sk-" followed by 20+ alphanumeric chars.
 # Gemini keys: start with "AIza" followed by 10+ alphanumeric/dash/underscore chars.
-OPENAI_KEY_PATTERN = re.compile(r"^sk-[A-Za-z0-9]{20,}$")
+OPENAI_KEY_PATTERN = re.compile(r"^sk-[A-Za-z0-9_-]{20,}$")
 GEMINI_KEY_PATTERN = re.compile(r"^AIza[A-Za-z0-9_-]{10,}$")
 
 
