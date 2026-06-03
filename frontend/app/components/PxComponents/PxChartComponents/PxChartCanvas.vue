@@ -2,7 +2,6 @@
 import {
   type NodeDragEvent,
   VueFlow,
-  useVueFlow,
   Panel,
   type Connection,
   type EdgeChange,
@@ -14,7 +13,6 @@ import {
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
 import PxChartToolbar from './PxChartToolbar.vue'
-import { nextTick } from 'vue'
 const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -41,7 +39,6 @@ const {
   error,
   pxChartError,
   loadGraph,
-  addContainer,
   addContainerWithExistingNode,
   addContainerWithNewNode,
   updateContainer,
@@ -88,12 +85,14 @@ const strategiesNeedingNode = new Set(['hmem', 'combined'])
 
 const menuSnapToGrid = ref(false)
 //same distance as background grid
-const grid = <SnapGrid>[20, 20]
+const grid = [20, 20] as SnapGrid
 
 const contextMenuOpen = ref(false)
-const contextMenuVirtualElement = ref({ getBoundingClientRect: () => new DOMRect(0,0,0,0) })
+const contextMenuVirtualElement = ref({
+  getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
+})
 
-const menuItems = ref([
+const menuItems = computed(() => [
   {
     label: 'Create new node',
     icon: 'i-heroicons-plus-solid',
@@ -106,6 +105,17 @@ const menuItems = ref([
     icon: 'i-heroicons-arrow-up-on-square',
     onSelect() {
       handleAddContainerFromPanel(false, 0, 0)
+    },
+  },
+  {
+    type: 'separator' as const,
+  },
+  {
+    label: 'Snap to grid',
+    type: 'checkbox' as const,
+    checked: menuSnapToGrid.value,
+    onUpdateChecked(checked: boolean) {
+      menuSnapToGrid.value = checked
     },
   },
 ])
@@ -317,9 +327,6 @@ async function onContextMenu(mouseEvent: MouseEvent) {
     getBoundingClientRect: () => new DOMRect(mouseEvent.clientX, mouseEvent.clientY, 0, 0),
   }
 
-  contextMenuOpen.value = false
-  await nextTick()
-
   contextMenuOpen.value = true
 }
 
@@ -386,7 +393,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
   />
 
   <PxChartToolbar
-    :menuSnapToGrid="menuSnapToGrid"
+    :menu-snap-to-grid="menuSnapToGrid"
     @add-existing-node="handleAddContainerFromPanel(false, 0, 0)"
     @add-new-node="handleAddContainerFromPanel(true, 0, 0)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
