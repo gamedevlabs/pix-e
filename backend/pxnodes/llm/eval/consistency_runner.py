@@ -120,6 +120,7 @@ def run_consistency_eval(
     min_confidence: float = 0.0,
     runs: int = 3,
     inter_run_sleep: float = 0.0,
+    terminology_mode: str = "llm",
 ) -> ConsistencyEvalReport:
     if layer not in _LAYER_CONFIG:
         raise ValueError(f"layer must be one of {sorted(_LAYER_CONFIG)}")
@@ -143,6 +144,7 @@ def run_consistency_eval(
                 min_confidence=min_confidence,
                 run_structural=run_structural,
                 model_id=model_id,
+                terminology_mode=terminology_mode,
             )
 
             start = time.perf_counter()

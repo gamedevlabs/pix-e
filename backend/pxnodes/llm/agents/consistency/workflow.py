@@ -5,7 +5,12 @@ from game_concept.models import Project
 from llm.exceptions import RateLimitError
 from llm.providers.manager import ModelManager
 
-from .schemas import ConsistencyFinding, ConsistencyMeta, ConsistencyReport, FindingSeverity
+from .schemas import (
+    ConsistencyFinding,
+    ConsistencyMeta,
+    ConsistencyReport,
+    FindingSeverity,
+)
 from .structural import StructuralChecker
 
 logger = logging.getLogger(__name__)
@@ -25,12 +30,16 @@ class ConsistencyWorkflow:
         min_confidence: float = 0.0,
         run_structural: bool = True,
         model_id: Optional[str] = None,
+        terminology_mode: str = "llm",
     ) -> None:
         self._structural = StructuralChecker()
         self._model_manager = model_manager
         self._min_confidence = min_confidence
         self._run_structural = run_structural
         self._model_id = model_id
+        # "llm" = pure-LLM TerminologyConsistencyAgent (baseline);
+        # "neurosymbolic" = LLM extraction + deterministic grouping.
+        self._terminology_mode = terminology_mode
 
     def check_project(self, project: Project) -> ConsistencyReport:
         findings: List[ConsistencyFinding] = []
@@ -90,7 +99,11 @@ class ConsistencyWorkflow:
                     "pillars_section": self._format_pillars(pillars),
                     "nodes_section": self._format_nodes(nodes),
                 }
-                context = {"model_manager": self._model_manager, "data": data, "model_id": self._model_id}
+                context = {
+                    "model_manager": self._model_manager,
+                    "data": data,
+                    "model_id": self._model_id,
+                }
                 result = agent.execute(context)
                 self._raise_if_rate_limited(result)
                 if result.success and result.data:
@@ -112,7 +125,9 @@ class ConsistencyWorkflow:
                         )
                 else:
                     agents_skipped["pillar_alignment"] = (
-                        result.error.message if result.error else "agent returned no data"
+                        result.error.message
+                        if result.error
+                        else "agent returned no data"
                     )
             except RateLimitError:
                 raise
@@ -142,7 +157,11 @@ class ConsistencyWorkflow:
                         for n in nodes
                     ],
                 }
-                context = {"model_manager": self._model_manager, "data": data, "model_id": self._model_id}
+                context = {
+                    "model_manager": self._model_manager,
+                    "data": data,
+                    "model_id": self._model_id,
+                }
                 result = agent.execute(context)
                 self._raise_if_rate_limited(result)
                 if result.success and result.data:
@@ -163,7 +182,9 @@ class ConsistencyWorkflow:
                         )
                 else:
                     agents_skipped["node_coherence"] = (
-                        result.error.message if result.error else "agent returned no data"
+                        result.error.message
+                        if result.error
+                        else "agent returned no data"
                     )
             except RateLimitError:
                 raise
@@ -177,7 +198,11 @@ class ConsistencyWorkflow:
         else:
             agents_skipped["node_coherence"] = f"requires ≥2 nodes (nodes={len(nodes)})"
 
-        if len(nodes) >= 2:
+        if len(nodes) >= 2 and self._terminology_mode == "neurosymbolic":
+            self._run_terminology_neurosymbolic(
+                nodes, findings, agents_run, agents_skipped
+            )
+        elif len(nodes) >= 2:
             try:
                 agent = TerminologyConsistencyAgent()
                 data = {
@@ -190,7 +215,11 @@ class ConsistencyWorkflow:
                         for n in nodes
                     ],
                 }
-                context = {"model_manager": self._model_manager, "data": data, "model_id": self._model_id}
+                context = {
+                    "model_manager": self._model_manager,
+                    "data": data,
+                    "model_id": self._model_id,
+                }
                 result = agent.execute(context)
                 self._raise_if_rate_limited(result)
                 if result.success and result.data:
@@ -213,7 +242,9 @@ class ConsistencyWorkflow:
                         )
                 else:
                     agents_skipped["terminology_consistency"] = (
-                        result.error.message if result.error else "agent returned no data"
+                        result.error.message
+                        if result.error
+                        else "agent returned no data"
                     )
             except RateLimitError:
                 raise
@@ -230,6 +261,51 @@ class ConsistencyWorkflow:
             )
 
         return findings, agents_run, agents_skipped
+
+    def _run_terminology_neurosymbolic(
+        self,
+        nodes: list,
+        findings: List[ConsistencyFinding],
+        agents_run: List[str],
+        agents_skipped: dict,
+    ) -> None:
+        """Stage 1 (LLM extraction) + Stage 2 (symbolic grouping) terminology check."""
+        from .semantic.terminology_neurosymbolic import (
+            TerminologyExtractionAgent,
+            group_into_findings,
+        )
+
+        try:
+            agent = TerminologyExtractionAgent()
+            data = {
+                "nodes": [
+                    {"id": str(n.id), "name": n.name, "description": n.description}
+                    for n in nodes
+                ],
+            }
+            context = {
+                "model_manager": self._model_manager,
+                "data": data,
+                "model_id": self._model_id,
+            }
+            result = agent.execute(context)
+            self._raise_if_rate_limited(result)
+            if result.success and result.data:
+                agents_run.append("terminology_neurosymbolic")
+                findings.extend(group_into_findings(result.data.get("mentions", [])))
+            else:
+                agents_skipped["terminology_neurosymbolic"] = (
+                    result.error.message if result.error else "agent returned no data"
+                )
+        except RateLimitError:
+            raise
+        except Exception as e:
+            agents_skipped["terminology_neurosymbolic"] = str(e)
+            logger.exception(
+                "Semantic check '%s' failed: %s",
+                "TerminologyExtractionAgent",
+                e,
+            )
 
     def _format_pillars(self, pillars: list) -> str:
         lines = []

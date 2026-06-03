@@ -1,0 +1,116 @@
+{
+  "dataset": "Anno 1404 Mission I",
+  "criterion": "A node N is AFFECTED by an edit E if N's text (a) directly contradicts the post-edit state, OR (b) references a specific fact (quantity, entity, mechanism, goal) that E changes or removes, making N's content wrong/stale. Pure thematic or character association does NOT count.",
+  "notes": "Ground truth derived from the actual node texts (not from the chart graph) to avoid circularity: the original 'Change Propagation Evaluation Graph' edges nearly equalled the old ground truth, which leaked the answer to the graph-aware agent. Scenario A's affected nodes are almost all NOT graph-neighbours of the changed node, so catching them requires semantic reasoning. Matching is by node_id. Needs a second annotator (Julian) sign-off.",
+  "scenarios": [
+    {
+      "id": "A",
+      "title": "Central goal changes: Imperial cathedral -> military fortress",
+      "changed_node_id": "cc19aef9-0c9f-40b3-a165-7d7e0c8b8364",
+      "changed_node_name": "Mission Objectives Overview",
+      "old_description": "Mission I has two intertwined objectives: building up the player's settlement on Falconstone, and assisting Lord Northburgh in the construction of the Emperor's Basilica in Cathedral City. The Emperor's Basilica serves as the spiritual centerpiece of the mission narrative and its completion is tied directly to the Profession of Faith quest chain.",
+      "new_description": "Mission I has two intertwined objectives: building up the player's settlement on Falconstone, and assisting Lord Northburgh in the construction of a military Fortress in Cathedral City to defend the coast against pirate raids. The Fortress serves as the strategic centerpiece of the mission narrative and its completion is tied directly to the Profession of Faith quest chain.",
+      "graph_note": "Changed node has only 1 incoming edge (Profession of Faith); 8/9 affected nodes are NOT graph-neighbours -> tests semantic propagation.",
+      "expected_affected": [
+        {
+          "node_id": "88095bbc-ec16-4761-bd5c-31f5198bd8e3",
+          "node_name": "Profession of Faith",
+          "type": "contradiction",
+          "strength": "strong",
+          "reason": "Victory condition is to build a cathedral; a fortress goal contradicts it."
+        },
+        {
+          "node_id": "4d7060f5-f4f7-4600-9824-613c507ea7e9",
+          "node_name": "Cathedral Construction Progress",
+          "type": "contradiction",
+          "strength": "strong",
+          "reason": "Entirely describes the Imperial cathedral being built in stages."
+        },
+        {
+          "node_id": "0bdf3df2-ad6a-44aa-8863-31f5fbb2a370",
+          "node_name": "Victory Condition Progress",
+          "type": "contradiction",
+          "strength": "strong",
+          "reason": "Requires constructing a church building - contradicts a military fortress."
+        },
+        {
+          "node_id": "876e078d-8d4f-45d7-aa3d-8c0df4636384",
+          "node_name": "Wood for the Imperial cathedral",
+          "type": "stale_reference",
+          "strength": "strong",
+          "reason": "Requests 10t wood specifically for building the Imperial cathedral."
+        },
+        {
+          "node_id": "3561d373-11eb-440e-be72-54028e5c4cd6",
+          "node_name": "Fish on the table",
+          "type": "stale_reference",
+          "strength": "strong",
+          "reason": "Fish feeds workers producing building materials for the Imperial cathedral."
+        },
+        {
+          "node_id": "b2df8080-7137-4949-a3d3-cffdb0e3c987",
+          "node_name": "Mission I — A Declaration Of Faith",
+          "type": "stale_reference",
+          "strength": "moderate",
+          "reason": "Intro narrative: Northburgh is building an Emperor's Cathedral as the central goal."
+        },
+        {
+          "node_id": "447d108e-5a1f-4caf-9202-eef491cf823b",
+          "node_name": "Where is the Master builder?",
+          "type": "stale_reference",
+          "strength": "moderate",
+          "reason": "Master builder is for the cathedral construction site."
+        },
+        {
+          "node_id": "8f836493-9c56-4e7c-9f6c-efbfe73e697f",
+          "node_name": "Optional Quest Rewards Overview",
+          "type": "stale_reference",
+          "strength": "moderate",
+          "reason": "Rewards tied to 'wood delivery to the cathedral construction site'."
+        },
+        {
+          "node_id": "63ce754f-2d12-4b53-8e97-3df576ae1f28",
+          "node_name": "Where is the Master builder? Not Started",
+          "type": "stale_reference",
+          "strength": "debatable",
+          "reason": "Sub-state node referencing the Imperial Cathedral construction site."
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "title": "Fish delivery quantity 10t -> 30t",
+      "changed_node_id": "3561d373-11eb-440e-be72-54028e5c4cd6",
+      "changed_node_name": "Fish on the table",
+      "old_description": "Lord Richard Northburgh has a second island nearby where his people produce building materials for the Imperial cathedral. It seems like they are hungry and the player is tasked with delivering 10t of fish to that island.",
+      "new_description": "Lord Richard Northburgh has a second island nearby where his people produce building materials for the Imperial cathedral. It seems like they are hungry and the player is tasked with delivering 30t of fish to that island.",
+      "graph_note": "Graph-neighbours = {Fish Delivery Requirements, Check the Storage, To Work!}; 'Check the Storage' is a neighbour but NOT affected -> precision trap.",
+      "expected_affected": [
+        {
+          "node_id": "d3daf63b-dbb4-4d5e-9e1e-15511aa645db",
+          "node_name": "To Work!",
+          "type": "stale_reference",
+          "strength": "strong",
+          "reason": "Explicitly tasks transferring 10t of fish - the exact quantity being changed."
+        },
+        {
+          "node_id": "00e65f45-7504-4032-ab1d-092c370b7b0c",
+          "node_name": "Fish Delivery Requirements",
+          "type": "contradiction",
+          "strength": "strong",
+          "reason": "States 15t required; conflicts with the new 30t."
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "title": "Lord Northburgh's satisfaction mechanic removed (negative control)",
+      "changed_node_id": "3a41154c-e039-43dd-b9b4-620296c01112",
+      "changed_node_name": "Lord Northburgh's Satisfaction",
+      "old_description": "Lord Northburgh's satisfaction level reflects the player's reliability as an ally. If the player fails to deliver requested resources within five in-game days, the lord becomes hostile and withdraws all assistance — including ships, rewards, and quest guidance — until the player completes three additional penalty tasks to restore the relationship.",
+      "new_description": "Lord Northburgh is always friendly and supportive regardless of the player's actions or delivery speed. The satisfaction mechanic has been removed. He will never withdraw assistance, ships, rewards, or quest guidance under any circumstances.",
+      "graph_note": "Graph-neighbours = {Wood, Fish, A floating gift, missing Cargo, Mission I}; NONE are affected -> pure restraint/precision test.",
+      "expected_affected": []
+    }
+  ]
+}

@@ -49,6 +49,13 @@ class Command(BaseCommand):
             help="Seconds to wait between runs (helps avoid API rate limits).",
         )
         parser.add_argument("--min-confidence", type=float, default=0.0)
+        parser.add_argument(
+            "--terminology-mode",
+            type=str,
+            choices=["llm", "neurosymbolic"],
+            default="llm",
+            help="Terminology check: 'llm' (baseline) or 'neurosymbolic'.",
+        )
         parser.add_argument("--out-dir", type=str, default=str(_DEFAULT_OUT))
         parser.add_argument(
             "--keep",
@@ -85,7 +92,8 @@ class Command(BaseCommand):
 
                 self.stdout.write(
                     f"\n=== Layer '{layer}' — {len(traps)} traps, "
-                    f"{runs} run(s), model={options['model']} ==="
+                    f"{runs} run(s), model={options['model']}, "
+                    f"terminology={options['terminology_mode']} ==="
                 )
                 report = run_consistency_eval(
                     project,
@@ -95,6 +103,7 @@ class Command(BaseCommand):
                     min_confidence=options["min_confidence"],
                     runs=runs,
                     inter_run_sleep=options["sleep"],
+                    terminology_mode=options["terminology_mode"],
                 )
                 if report.metrics is None:
                     self.stdout.write(
