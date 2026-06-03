@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import Any, Dict, List, Optional, Set
 
 from game_concept.models import Project
@@ -9,6 +10,16 @@ from .agent import ChangePropagationAgent
 from .schemas import PropagationFinding, PropagationReport
 
 logger = logging.getLogger(__name__)
+
+
+def _cosine(a: List[float], b: List[float]) -> float:
+    """Cosine similarity between two equal-length vectors."""
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = math.sqrt(sum(x * x for x in a))
+    norm_b = math.sqrt(sum(y * y for y in b))
+    if not norm_a or not norm_b:
+        return 0.0
+    return dot / (norm_a * norm_b)
 
 
 class ChangePropagationWorkflow:
@@ -31,6 +42,7 @@ class ChangePropagationWorkflow:
         use_graph_context: bool = False,
         max_depth: int = 3,
         model_id: Optional[str] = None,
+        semantic_top_k: Optional[int] = None,
     ) -> PropagationReport:
         if self._model_manager is None:
             raise ValueError(
@@ -51,7 +63,15 @@ class ChangePropagationWorkflow:
                     model_id=model_id,
                 )
             else:
-                other_nodes = list(project.pxnodes.exclude(id=changed_node.id))
+                if semantic_top_k:
+                    other_nodes = self._semantic_topk_nodes(
+                        project=project,
+                        changed_node=changed_node,
+                        query_text=new_description,
+                        k=semantic_top_k,
+                    )
+                else:
+                    other_nodes = list(project.pxnodes.exclude(id=changed_node.id))
                 agent = ChangePropagationAgent(
                     model_manager=self._model_manager,
                     min_confidence=min_confidence,
@@ -71,6 +91,36 @@ class ChangePropagationWorkflow:
             changed_node_id=str(changed_node.id),
             findings=findings,
         )
+
+    def _semantic_topk_nodes(
+        self,
+        project: Project,
+        changed_node: PxNode,
+        query_text: str,
+        k: int,
+    ) -> List[PxNode]:
+        """Embedding-based retrieval: return the ``k`` PxNodes whose text is most
+        cosine-similar to the changed node's new description. This is the
+        'semantic-RAG' retrieval arm (vs. flat=all nodes, graph=BFS neighbours)."""
+        others = list(project.pxnodes.exclude(id=changed_node.id))
+        if not others or k <= 0:
+            return others
+
+        # Lazy import: keeps the embedding/OpenAI dependency off the module path
+        # for callers that never use the semantic arm.
+        from pxnodes.llm.context.shared.embeddings import OpenAIEmbeddingGenerator
+
+        generator = OpenAIEmbeddingGenerator()
+        query_vec = generator.generate_embedding(f"{changed_node.name}\n{query_text}")
+        node_texts = [f"{n.name}\n{n.description or ''}" for n in others]
+        node_vecs = generator.generate_embeddings_batch(node_texts)
+
+        ranked = sorted(
+            zip(others, node_vecs),
+            key=lambda pair: _cosine(query_vec, pair[1]),
+            reverse=True,
+        )
+        return [node for node, _ in ranked[:k]]
 
     def _get_1hop_neighbors(
         self, node_id: Any

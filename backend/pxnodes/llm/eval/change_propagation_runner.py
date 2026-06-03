@@ -32,7 +32,7 @@ from .metrics import AggregateMetrics, Finding, RunResult, Trap, aggregate, matc
 
 logger = logging.getLogger(__name__)
 
-MODES = ("flat", "graph", "neighbors")
+MODES = ("flat", "graph", "semantic", "neighbors")
 _AFFECTED = "affected"
 
 
@@ -97,6 +97,7 @@ def _flagged_ids_for_run(
     model_id: Optional[str],
     min_confidence: float,
     max_depth: int,
+    semantic_top_k: Optional[int] = None,
 ) -> List[str]:
     if mode == "neighbors":
         return _k_hop_neighbor_ids(scenario["changed_node_id"], max_depth)
@@ -111,6 +112,7 @@ def _flagged_ids_for_run(
         use_graph_context=(mode == "graph"),
         max_depth=max_depth,
         model_id=model_id,
+        semantic_top_k=semantic_top_k if mode == "semantic" else None,
     )
     return [f.affected_node_id for f in report.findings]
 
@@ -124,6 +126,7 @@ def run_cp_eval(
     min_confidence: float = 0.5,
     runs: int = 3,
     max_depth: int = 3,
+    semantic_top_k: int = 10,
     inter_run_sleep: float = 0.0,
 ) -> CpEvalReport:
     if mode not in MODES:
@@ -156,6 +159,7 @@ def run_cp_eval(
                     model_id,
                     min_confidence,
                     max_depth,
+                    semantic_top_k,
                 )
                 sr.durations_s.append(time.perf_counter() - start)
                 sr.flagged_ids.append(flagged)

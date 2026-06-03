@@ -44,6 +44,12 @@ class Command(BaseCommand):
         parser.add_argument("--sleep", type=float, default=0.0)
         parser.add_argument("--min-confidence", type=float, default=0.5)
         parser.add_argument("--max-depth", type=int, default=3)
+        parser.add_argument(
+            "--rag-top-k",
+            type=int,
+            default=10,
+            help="Number of nodes retrieved by the 'semantic' (embedding-RAG) mode.",
+        )
         parser.add_argument("--out-dir", type=str, default=str(_DEFAULT_OUT))
         parser.add_argument("--keep", action="store_true")
 
@@ -68,11 +74,14 @@ class Command(BaseCommand):
 
             for mode in modes:
                 runs = 1 if mode == "neighbors" else options["runs"]
+                model_note = options["model"] if mode != "neighbors" else "none"
+                topk_note = (
+                    f", top_k={options['rag_top_k']}" if mode == "semantic" else ""
+                )
                 self.stdout.write(
                     f"\n========== MODE '{mode}' "
-                    f"(runs={runs}, model="
-                    f"{options['model'] if mode != 'neighbors' else 'none'}, "
-                    f"max_depth={options['max_depth']}) =========="
+                    f"(runs={runs}, model={model_note}, "
+                    f"max_depth={options['max_depth']}{topk_note}) =========="
                 )
                 report = run_cp_eval(
                     project,
@@ -82,6 +91,7 @@ class Command(BaseCommand):
                     min_confidence=options["min_confidence"],
                     runs=runs,
                     max_depth=options["max_depth"],
+                    semantic_top_k=options["rag_top_k"],
                     inter_run_sleep=options["sleep"],
                 )
                 self._print_mode(report)
@@ -100,6 +110,7 @@ class Command(BaseCommand):
                     "model": options["model"],
                     "max_depth": options["max_depth"],
                     "min_confidence": options["min_confidence"],
+                    "rag_top_k": options["rag_top_k"],
                     "modes": payload,
                 },
                 indent=2,
