@@ -36,6 +36,25 @@ MODES = ("flat", "graph", "semantic", "neighbors")
 _AFFECTED = "affected"
 
 
+class _CountingModelManager(ModelManager):
+    """ModelManager wrapper that tallies LLM calls and token usage so the eval can
+    report feasibility (cost / throughput) alongside quality. Note: embedding calls
+    in the 'semantic' mode bypass this and are counted separately/documented."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.n_calls = 0
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+
+    def generate_structured_with_model(self, *args: Any, **kwargs: Any) -> Any:
+        result = super().generate_structured_with_model(*args, **kwargs)
+        self.n_calls += 1
+        self.prompt_tokens += getattr(result, "prompt_tokens", 0) or 0
+        self.completion_tokens += getattr(result, "completion_tokens", 0) or 0
+        return result
+
+
 def load_cp_scenarios(path: str | Path) -> List[Dict[str, Any]]:
     return json.loads(Path(path).read_text())["scenarios"]
 
@@ -78,6 +97,10 @@ class ScenarioReport:
     run_results: List[RunResult] = field(default_factory=list)
     flagged_ids: List[List[str]] = field(default_factory=list)
     durations_s: List[float] = field(default_factory=list)
+    # Feasibility (cost / throughput) — per run; empty for the no-LLM 'neighbors' mode.
+    n_calls: List[int] = field(default_factory=list)
+    prompt_tokens: List[int] = field(default_factory=list)
+    completion_tokens: List[int] = field(default_factory=list)
     metrics: Optional[AggregateMetrics] = None
 
 
@@ -149,13 +172,14 @@ def run_cp_eval(
 
         for i in range(effective_runs):
             try:
+                model_manager = _CountingModelManager() if needs_model else None
                 start = time.perf_counter()
                 flagged = _flagged_ids_for_run(
                     scenario,
                     project,
                     changed_node,
                     mode,
-                    ModelManager() if needs_model else None,
+                    model_manager,
                     model_id,
                     min_confidence,
                     max_depth,
@@ -163,6 +187,10 @@ def run_cp_eval(
                 )
                 sr.durations_s.append(time.perf_counter() - start)
                 sr.flagged_ids.append(flagged)
+                if model_manager is not None:
+                    sr.n_calls.append(model_manager.n_calls)
+                    sr.prompt_tokens.append(model_manager.prompt_tokens)
+                    sr.completion_tokens.append(model_manager.completion_tokens)
                 findings = [
                     Finding(category=_AFFECTED, entity_id=fid, resolved_name=fid)
                     for fid in flagged

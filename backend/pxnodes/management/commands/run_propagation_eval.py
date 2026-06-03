@@ -153,6 +153,28 @@ class Command(BaseCommand):
                 )
             )
 
+        # Feasibility (cost / throughput) averaged per check (= per scenario-run).
+        durs = [d for sr in report.scenarios for d in sr.durations_s]
+        calls = [c for sr in report.scenarios for c in sr.n_calls]
+        ptok = [p for sr in report.scenarios for p in sr.prompt_tokens]
+        ctok = [c for sr in report.scenarios for c in sr.completion_tokens]
+        if durs:
+            avg_lat = sum(durs) / len(durs)
+            if calls:
+                avg_calls = sum(calls) / len(calls)
+                avg_p = sum(ptok) / len(ptok)
+                avg_c = sum(ctok) / len(ctok)
+                self.stdout.write(
+                    f"  ⏱ feasibility/check: {avg_calls:.1f} LLM calls, "
+                    f"{avg_p + avg_c:.0f} tokens (prompt {avg_p:.0f} + compl "
+                    f"{avg_c:.0f}), {avg_lat:.1f}s"
+                )
+            else:
+                self.stdout.write(
+                    f"  ⏱ feasibility/check: no LLM (0 calls / 0 tokens), "
+                    f"{avg_lat:.1f}s"
+                )
+
     def _serialize(self, report) -> dict:
         scen = {}
         for sr in report.scenarios:
@@ -161,6 +183,9 @@ class Command(BaseCommand):
                 "n_expected": sr.n_expected,
                 "flagged_ids": sr.flagged_ids,
                 "durations_s": sr.durations_s,
+                "n_calls": sr.n_calls,
+                "prompt_tokens": sr.prompt_tokens,
+                "completion_tokens": sr.completion_tokens,
             }
             if sr.metrics is not None:
                 m = sr.metrics
