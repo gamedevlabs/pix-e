@@ -26,6 +26,7 @@ async function handleToggleSidebar() {
     resizable
     class="bg-elevated/25 relative"
     :ui="{ footer: 'lg:border-t lg:border-default' }"
+    @contextmenu="$event.preventDefault()"
   >
     <template #header="{ collapsed }">
       <!-- Minimal header to avoid overlap with body padding/scroll area -->

@@ -18,8 +18,6 @@ export function usePxChartsCanvasApi(chartId: string) {
   } = usePxChartContainers(chartId)
   const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
 
-  const { fetchAll: fetchPxNodes } = usePxCharts()
-
   const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
 
   const containerDefaultValues = {
@@ -159,8 +157,6 @@ export function usePxChartsCanvasApi(chartId: string) {
       return
     }
 
-    //TODO: delete fetch all import
-    await fetchPxNodes()
     await addNodeToContainer(containerId, nodeId)
   }
 

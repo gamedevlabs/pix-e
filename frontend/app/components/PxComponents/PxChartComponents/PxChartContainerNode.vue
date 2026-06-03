@@ -76,16 +76,9 @@ async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: Re
   })
 }
 
-function startNodeEdit() {
-  nodeIsBeingEdited.value = true
-}
-
-/*
 function startEdit() {
   isBeingEdited.value = true
 }
-
- */
 
 async function confirmEdit() {
   isBeingEdited.value = false
@@ -128,21 +121,18 @@ function listenToResizing() {
             <PxNodeCard
               :node-id="pxNode.id"
               :visualization-style="'preview'"
-              :is-being-edited="nodeIsBeingEdited"
+              :is-being-edited="isBeingEdited"
               style="margin: -25px"
             />
           </div>
         </template>
 
         <template #footer>
-          <div
-            v-if="!nodeIsBeingEdited"
-            class="flex flex-wrap justify-end gap-2" style="margin: -10px"
-          >
+          <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2" style="margin: -10px">
             <UButton color="primary" variant="soft" hidden="hidden" @click="removePxNode()"
               >Remove Px Node</UButton
             >
-            <UButton color="secondary" variant="soft" :disabled="true" @click="startNodeEdit()"
+            <UButton color="secondary" variant="soft" :disabled="true" @click="startEdit()"
               >Edit</UButton
             >
             <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>

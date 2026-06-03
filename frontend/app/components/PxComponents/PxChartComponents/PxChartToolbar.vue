@@ -69,6 +69,8 @@ async function handleToggleSnapToGrid() {
       </div>
     </left>
 
+    <!-- Temporary Buttons -->
+
     <right>
       <div class="flex items-center gap-3">
         <!-- Analysis buttons/menus, less frequently used -->

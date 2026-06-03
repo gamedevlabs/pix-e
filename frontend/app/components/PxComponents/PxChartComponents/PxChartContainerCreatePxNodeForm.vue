@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { NamedEntityCard } from '#components'
-import { v4 } from 'uuid'
 
-const { createItem: createPxNode, fetchAll: fetchPxNodes } = usePxNodes()
+const { createItem: createPxNode } = usePxNodes()
 //needed to make sure create node on nodes pages looks correctly??
 const { toggleSubstep } = useProjectWorkflow()
 
@@ -11,15 +10,12 @@ const emit = defineEmits<{ close: [string] }>()
 const newItem = ref<NamedEntity>({ name: '', description: '' })
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  const newUuid = v4()
-  // TODO: move to backend probably (and fix this newItem stuff not working)
-  const payload = { id: newUuid, ...newEntityDraft }
-  await createPxNode(payload)
+  const nodeId = await createPxNode(newEntityDraft)
+
   // px-2-2: "Create your first node"
   await toggleSubstep('px-2', 'px-2-2')
-  //TODO: fetch even required??
-  await fetchPxNodes()
-  emit('close', newUuid)
+
+  emit('close', nodeId)
 }
 
 async function onClose() {
