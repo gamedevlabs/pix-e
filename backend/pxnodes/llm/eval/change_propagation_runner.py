@@ -110,6 +110,7 @@ def _flagged_ids_for_run(
         min_confidence=min_confidence,
         use_graph_context=(mode == "graph"),
         max_depth=max_depth,
+        model_id=model_id,
     )
     return [f.affected_node_id for f in report.findings]
 

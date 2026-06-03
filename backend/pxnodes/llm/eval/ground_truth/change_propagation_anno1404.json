@@ -1,7 +1,7 @@
 {
   "dataset": "Anno 1404 Mission I",
   "criterion": "A node N is AFFECTED by an edit E if N's text (a) directly contradicts the post-edit state, OR (b) references a specific fact (quantity, entity, mechanism, goal) that E changes or removes, making N's content wrong/stale. Pure thematic or character association does NOT count.",
-  "notes": "Ground truth derived from the actual node texts (not from the chart graph) to avoid circularity: the original 'Change Propagation Evaluation Graph' edges nearly equalled the old ground truth, which leaked the answer to the graph-aware agent. Scenario A's affected nodes are almost all NOT graph-neighbours of the changed node, so catching them requires semantic reasoning. Matching is by node_id. Needs a second annotator (Julian) sign-off.",
+  "notes": "Ground truth derived from the actual node texts (not from the chart graph) to avoid circularity: the original 'Change Propagation Evaluation Graph' edges nearly equalled the old ground truth, which leaked the answer to the graph-aware agent. Scenario A's affected nodes are almost all NOT graph-neighbours of the changed node, so catching them requires semantic reasoning. Matching is by node_id. Needs a second annotator (Julian) sign-off. Scenarios are regime-balanced so macro-F1 is not dominated by a single case: graph-HURTS / semantic-distance = {A (cathedral), D (ships)}; graph-HELPS / neighbour-precision = {B (fish qty), E (population threshold)}; negative-control / restraint = {C}. D and E reuse EXISTING chart edges (E) or deliberately exploit edge-absence (D), so no chart edges were added (adding edges to match GT would reintroduce the circularity above). D and E intentionally omit the per-node 'strength' field used in A/B/C.",
   "scenarios": [
     {
       "id": "A",
@@ -111,6 +111,70 @@
       "new_description": "Lord Northburgh is always friendly and supportive regardless of the player's actions or delivery speed. The satisfaction mechanic has been removed. He will never withdraw assistance, ships, rewards, or quest guidance under any circumstances.",
       "graph_note": "Graph-neighbours = {Wood, Fish, A floating gift, missing Cargo, Mission I}; NONE are affected -> pure restraint/precision test.",
       "expected_affected": []
+    },
+    {
+      "id": "D",
+      "title": "Starting fleet downgraded: two trade vessels -> a single rowing boat",
+      "changed_node_id": "b002263d-b675-419d-b2fc-6d2c99cf8830",
+      "changed_node_name": "Player's Ship State",
+      "old_description": "The player begins Mission I already in possession of two trade vessels: a small cargo ship inherited from a previous expedition and a scouting vessel assigned by the Emperor's fleet. These ships are available from the very start of the mission and allow immediate sea travel between islands.",
+      "new_description": "The player begins Mission I with only a single small rowing boat - too small to carry cargo or to scout reefs. No trade or scouting vessel is available at the start; the player must first earn a proper ship from Lord Northburgh before any cargo transport or sea exploration is possible.",
+      "graph_note": "Changed node has 0 outgoing edges (only 1 incoming, from A floating gift); ALL 5 affected nodes are NON-neighbours -> graph-aware BFS is blind here. Replicates Scenario A's semantic-distance regime in the ship/trade domain (different content area than A's cathedral theme).",
+      "expected_affected": [
+        {
+          "node_id": "55262c5e-7ec3-4fb1-aff7-a65d2586431c",
+          "node_name": "Map Exploration State",
+          "type": "contradiction",
+          "reason": "States the player 'uses their merchant vessel to explore the surrounding sea' and that navigating it is required for the Sextant chain; no scouting/merchant vessel at start contradicts this."
+        },
+        {
+          "node_id": "8451c606-93ca-4fa2-a622-26535f33b07d",
+          "node_name": "Averting danger",
+          "type": "contradiction",
+          "reason": "Requires that 'when the ship is close to a reef, it will start to scout the reef and produce a map'; a rowing boat too small to scout reefs makes this impossible."
+        },
+        {
+          "node_id": "d3daf63b-dbb4-4d5e-9e1e-15511aa645db",
+          "node_name": "To Work!",
+          "type": "stale_reference",
+          "reason": "Tasks 'transferring 10t of fish from the island's warehouse to their ship'; a rowing boat cannot carry cargo."
+        },
+        {
+          "node_id": "d888947c-e53f-4324-8e71-8a6be2ca1049",
+          "node_name": "The missing Cargo",
+          "type": "stale_reference",
+          "reason": "Player sails around the map and delivers recovered cargo to the city; requires a cargo-capable vessel the player no longer starts with."
+        },
+        {
+          "node_id": "99a5f8f7-2466-406d-b6d0-d704b04f1ce1",
+          "node_name": "Resource Trade Route",
+          "type": "stale_reference",
+          "reason": "Describes establishing a trade route to purchase and transport wood, fish, and tools; requires a trade vessel that is no longer available at the start."
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "title": "Victory population threshold raised: 200 -> 500 peasants",
+      "changed_node_id": "88095bbc-ec16-4761-bd5c-31f5198bd8e3",
+      "changed_node_name": "Profession of Faith",
+      "old_description": "This is the victory condition of the mission. The player has to build a full cathedral - not just a chapel - and must house at least 200 peasants within its influence radius before the mission concludes.",
+      "new_description": "This is the victory condition of the mission. The player has to build a full cathedral - not just a chapel - and must house at least 500 peasants within its influence radius before the mission concludes.",
+      "graph_note": "Changed node has 4 outgoing neighbours {Victory Condition Progress, Peasant Housing Requirements, More Peasant houses, Mission Objectives Overview}; 2 are affected and 2 are distractors -> neighbour-precision regime (parallels Scenario B). 'More Peasant houses' (cites 90 peasants, not 200) and 'Mission Objectives Overview' (cathedral goal, not the count) are graph-neighbours but NOT affected -> precision traps.",
+      "expected_affected": [
+        {
+          "node_id": "49f62bac-cfc8-49d7-829c-512b0e712baa",
+          "node_name": "Peasant Housing Requirements",
+          "type": "stale_reference",
+          "reason": "Explicitly cites 'the 200 peasants required to fulfill the Profession of Faith victory condition'; the new threshold of 500 makes this stale."
+        },
+        {
+          "node_id": "0bdf3df2-ad6a-44aa-8863-31f5fbb2a370",
+          "node_name": "Victory Condition Progress",
+          "type": "stale_reference",
+          "reason": "Describes the victory population threshold (and the 'eight peasant dwellings' sized for it); raising the requirement to 500 makes the stated threshold and dwelling count stale."
+        }
+      ]
     }
   ]
 }

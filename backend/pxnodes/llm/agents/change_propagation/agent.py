@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -174,9 +174,11 @@ class ChangePropagationAgent(BaseAgent):
         self,
         model_manager: ModelManager,
         min_confidence: float = 0.5,
+        model_id: Optional[str] = None,
     ) -> None:
         self._model_manager = model_manager
         self._min_confidence = min_confidence
+        self._model_id = model_id
         super().__init__()
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
@@ -239,7 +241,11 @@ class ChangePropagationAgent(BaseAgent):
             "use_graph_context": use_graph_context,
             "other_nodes": formatted,
         }
-        context = {"model_manager": self._model_manager, "data": data}
+        context = {
+            "model_manager": self._model_manager,
+            "data": data,
+            "model_id": self._model_id,
+        }
         result = self.execute(context)
 
         if not result.success or not result.data:
@@ -298,7 +304,11 @@ class ChangePropagationAgent(BaseAgent):
         )
 
         data: Dict[str, Any] = {"_raw_prompt": prompt}
-        context = {"model_manager": self._model_manager, "data": data}
+        context = {
+            "model_manager": self._model_manager,
+            "data": data,
+            "model_id": self._model_id,
+        }
         result = self.execute(context)
 
         if not result.success or not result.data:

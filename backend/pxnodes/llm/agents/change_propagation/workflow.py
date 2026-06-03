@@ -30,6 +30,7 @@ class ChangePropagationWorkflow:
         min_confidence: float = 0.5,
         use_graph_context: bool = False,
         max_depth: int = 3,
+        model_id: Optional[str] = None,
     ) -> PropagationReport:
         if self._model_manager is None:
             raise ValueError(
@@ -47,12 +48,14 @@ class ChangePropagationWorkflow:
                     new_description=new_description,
                     min_confidence=min_confidence,
                     max_depth=max_depth,
+                    model_id=model_id,
                 )
             else:
                 other_nodes = list(project.pxnodes.exclude(id=changed_node.id))
                 agent = ChangePropagationAgent(
                     model_manager=self._model_manager,
                     min_confidence=min_confidence,
+                    model_id=model_id,
                 )
                 findings = agent.analyze_change(
                     changed_node=changed_node,
@@ -130,10 +133,12 @@ class ChangePropagationWorkflow:
         new_description: str,
         min_confidence: float,
         max_depth: int,
+        model_id: Optional[str] = None,
     ) -> List[PropagationFinding]:
         agent = ChangePropagationAgent(
             model_manager=self._model_manager,
             min_confidence=min_confidence,
+            model_id=model_id,
         )
 
         all_findings: Dict[str, PropagationFinding] = {}
