@@ -1,6 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from llm.agent_runtime import BaseAgent
 from llm.providers.manager import ModelManager
@@ -16,24 +16,46 @@ NEW DESCRIPTION: {changed_node_new_description}
 AFFECTED NODE: {affected_node_name}
 CURRENT DESCRIPTION: {affected_node_current_description}
 
-TASK: Rewrite the description of '{affected_node_name}' so that it is consistent with the updated '{changed_node_name}'. Keep the core purpose and scope of '{affected_node_name}' intact — only adjust what is necessary to reflect the change. Do not introduce new mechanics or features.
+TASK: Rewrite the DESCRIPTION of '{affected_node_name}' so that it is consistent with the updated '{changed_node_name}'. Keep the core purpose and scope of '{affected_node_name}' intact — only adjust what is necessary to reflect the change. Do not introduce new mechanics or features. Do NOT change the node name.
 
 RESPONSE FORMAT (JSON):
 {{
-  "suggested_description": "The rewritten description"
+  "improved_description": "<the rewritten description>",
+  "changes": [
+    {{
+      "field": "description",
+      "after": "<the rewritten description>",
+      "reasoning": "<one or two sentences: what you changed and why it stays consistent with the changed node>",
+      "issues_addressed": ["<short label, e.g. 'Stale reference to {changed_node_name}'>"]
+    }}
+  ],
+  "overall_summary": "<one sentence summarizing the fix>",
+  "issues_fixed": ["<short label of the inconsistency resolved>"]
 }}
 """
 
 
-class PropagationFixResponse(BaseModel):
-    suggested_description: str
+class FieldChange(BaseModel):
+    field: Literal["description"]
+    after: str
+    reasoning: str
+    issues_addressed: List[str] = Field(default_factory=list)
+
+
+class PropagationFixResult(BaseModel):
+    improved_description: str
+    changes: List[FieldChange] = Field(default_factory=list)
+    overall_summary: str = ""
+    issues_fixed: List[str] = Field(default_factory=list)
 
 
 class ChangePropagationFixAgent(BaseAgent):
-    """Suggests a corrected description for a node affected by a change to another node."""
+    """Suggests a corrected description for a node affected by a change to another
+    node, with a structured explanation (per-field change + reasoning + summary)
+    so the UI can render an explainable before/after."""
 
     name = "change_propagation_fix"
-    response_schema = PropagationFixResponse
+    response_schema = PropagationFixResult
 
     def build_prompt(self, data: Dict[str, Any]) -> str:
         return _PROPAGATION_FIX_PROMPT.format(
@@ -44,8 +66,13 @@ class ChangePropagationFixAgent(BaseAgent):
             affected_node_current_description=data["affected_node_current_description"],
         )
 
-    def fix(self, data: dict) -> str:
-        context = {"model_manager": ModelManager(), "data": data}
+    def fix(self, data: dict) -> Dict[str, Any]:
+        context = {
+            "model_manager": ModelManager(),
+            # Pin to the evaluated model, matching the consistency + propagation views.
+            "model_id": "gpt-5.4-mini-2026-03-17",
+            "data": data,
+        }
         result = self.execute(context)
         if not result.success and result.error:
             if "rate limit" in (result.error.message or "").lower():
@@ -53,4 +80,4 @@ class ChangePropagationFixAgent(BaseAgent):
         if not result.success or not result.data:
             msg = result.error.message if result.error else "Fix generation failed"
             raise Exception(msg)
-        return result.data["suggested_description"]
+        return result.data

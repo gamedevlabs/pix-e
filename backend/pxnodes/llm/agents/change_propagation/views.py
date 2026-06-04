@@ -72,6 +72,10 @@ class ChangePropagationView(APIView):
         min_confidence = float(request.data.get("min_confidence", 0.5))
         use_graph_context = bool(request.data.get("use_graph_context", False))
         max_depth = int(request.data.get("max_depth", 3))
+        # Mirror the consistency view: pin the agent to gpt-5.4-mini so the
+        # production endpoint matches the evaluated model. Without this the
+        # workflow falls back to the orchestrator's "auto" default (gpt-3.5-turbo).
+        model_id = "gpt-5.4-mini-2026-03-17"
 
         try:
             workflow = ChangePropagationWorkflow(model_manager=ModelManager())
@@ -83,6 +87,7 @@ class ChangePropagationView(APIView):
                 min_confidence=min_confidence,
                 use_graph_context=use_graph_context,
                 max_depth=max_depth,
+                model_id=model_id,
             )
         except Exception:
             logger.exception(
@@ -164,7 +169,7 @@ class ChangePropagationFixView(APIView):
         }
 
         try:
-            suggested = ChangePropagationFixAgent().fix(agent_data)
+            result = ChangePropagationFixAgent().fix(agent_data)
         except Exception as e:
             if "rate limit" in str(e).lower():
                 return Response(
@@ -183,7 +188,17 @@ class ChangePropagationFixView(APIView):
         return Response(
             {
                 "node_id": str(affected_node.id),
-                "original_description": affected_node.description,
-                "suggested_description": suggested,
+                "original": {
+                    "name": affected_node.name,
+                    "description": affected_node.description,
+                },
+                "improved": {
+                    # Change propagation never renames the affected node.
+                    "name": affected_node.name,
+                    "description": result["improved_description"],
+                    "changes": result.get("changes", []),
+                    "overall_summary": result.get("overall_summary", ""),
+                    "issues_fixed": result.get("issues_fixed", []),
+                },
             }
         )

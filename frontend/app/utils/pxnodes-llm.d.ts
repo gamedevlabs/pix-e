@@ -90,18 +90,43 @@ type ConsistencyReport = {
 
 // --- Types for consistency fix ---
 
+type ConsistencyFixChange = {
+  field: 'name' | 'description'
+  after: string
+  reasoning: string
+  issues_addressed: string[]
+}
+
 type ConsistencyFixResponse = {
   node_id: string
-  original_description: string
-  suggested_description: string
+  original: {
+    name: string
+    description: string
+  }
+  improved: {
+    name: string
+    description: string
+    changes: ConsistencyFixChange[]
+    overall_summary: string
+    issues_fixed: string[]
+  }
 }
 
 // --- Types for propagation fix ---
 
-interface PropagationFixResponse {
+type PropagationFixResponse = {
   node_id: string
-  original_description: string
-  suggested_description: string
+  original: {
+    name: string
+    description: string
+  }
+  improved: {
+    name: string
+    description: string
+    changes: ConsistencyFixChange[]
+    overall_summary: string
+    issues_fixed: string[]
+  }
 }
 
 // --- Types for change propagation ---

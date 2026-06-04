@@ -114,6 +114,20 @@ class ConsistencyFixView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # orphaned_node is a structural placement issue — the node must be added
+        # to a chart by the user. An LLM text rewrite cannot resolve it, so we
+        # never run the agent for it (the UI also hides the button).
+        if finding_category == "orphaned_node":
+            return Response(
+                {
+                    "error": (
+                        "This is a placement issue, not a text issue. "
+                        "Add the node to a chart to resolve it."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             project = Project.objects.get(id=project_id)
         except Project.DoesNotExist:
@@ -155,6 +169,8 @@ class ConsistencyFixView(APIView):
             agent = ConsistencyFixAgent()
             context = {
                 "model_manager": ModelManager(),
+                # Pin to the evaluated model, matching the consistency check view.
+                "model_id": "gpt-5.4-mini-2026-03-17",
                 "data": agent_data,
             }
             result = agent.execute(context)
@@ -199,8 +215,17 @@ class ConsistencyFixView(APIView):
         return Response(
             {
                 "node_id": str(node.id),
-                "original_description": node.description,
-                "suggested_description": result.data["suggested_description"],
+                "original": {
+                    "name": node.name,
+                    "description": node.description,
+                },
+                "improved": {
+                    "name": result.data["improved_name"],
+                    "description": result.data["improved_description"],
+                    "changes": result.data.get("changes", []),
+                    "overall_summary": result.data.get("overall_summary", ""),
+                    "issues_fixed": result.data.get("issues_fixed", []),
+                },
             }
         )
 
