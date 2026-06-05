@@ -204,6 +204,36 @@ export function usePxChartsCanvasApi(chartId: string) {
     applyNodeChanges(moveChanges)
   }
 
+  async function switchNodeInContainer(pxGraphContainerId: string) {
+    const newNodeId = await modalAddPxNode.open().result
+
+    if (!newNodeId) {
+      console.log('Canceled')
+      return
+    }
+    await removeNodeFromContainer(pxGraphContainerId)
+    await addNodeToContainer(pxGraphContainerId, newNodeId)
+
+    //TODO: following code should work, but doesn't, figure out why to make make transition between node switches cleaner
+    /*
+    const updatedPxGraphContainerContent = {
+      type: 'pxNode' as PxContainerContentType,
+      id: pxGraphContainerId,
+      content: newNodeId,
+    }
+    console.log('new node added')
+      try {
+        await updateContainer(updatedPxGraphContainerContent)
+          console.log('container updated')
+      } catch (err) {
+        alert('Failed to add node to container: ' + err.message)
+        error.value = 'Failed to add node to container'
+          console.log('error')
+      }
+
+     */
+  }
+
   async function addNodeToContainer(pxGraphContainerId: string, pxNodeId: string) {
     const updatedPxGraphContainerContent = {
       type: 'pxNode' as PxContainerContentType,
@@ -327,9 +357,9 @@ export function usePxChartsCanvasApi(chartId: string) {
     path,
     pxChartError,
     loadGraph,
-    addContainer,
     addContainerWithExistingNode,
     addContainerWithNewNode,
+    switchNodeInContainer,
     updateContainer,
     applyDefaultNodeChanges,
     addNodeToContainer,

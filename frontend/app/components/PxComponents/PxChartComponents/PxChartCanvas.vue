@@ -11,11 +11,10 @@ import {
   type SnapGrid,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
+import PxChartToolbar from './PxChartToolbar.vue'
 import { PxChartEdge } from '#components'
 import { useApi } from '~/composables/useApi'
 const { apiFetch } = useApi()
-import PxChartToolbar from './PxChartToolbar.vue'
-const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
@@ -43,9 +42,9 @@ const {
   addContainerWithExistingNode,
   addContainerWithNewNode,
   updateContainer,
+  switchNodeInContainer,
   applyDefaultNodeChanges,
   addNodeToContainer,
-  removeNodeFromContainer,
   deleteContainer,
   addEdge,
   applyDefaultEdgeChanges,
@@ -84,7 +83,7 @@ const precomputeStrategyOptions = [
 ]
 const strategiesNeedingNode = new Set(['hmem', 'combined'])
 
-const menuSnapToGrid = ref(false)
+const menuSnapToGrid = ref(true)
 //same distance as background grid
 const grid = [20, 20] as SnapGrid
 
@@ -92,20 +91,21 @@ const contextMenuOpen = ref(false)
 const contextMenuVirtualElement = ref({
   getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
 })
+const mousePos = ref({ x: 0, y: 0 })
 
 const menuItems = computed(() => [
   {
     label: 'Create new node',
     icon: 'i-heroicons-plus-solid',
     onSelect() {
-      handleAddContainerFromPanel(true, 0, 0)
+      handleAddContainerFromPanel(true, true)
     },
   },
   {
     label: 'Add existing node',
     icon: 'i-heroicons-arrow-up-on-square',
     onSelect() {
-      handleAddContainerFromPanel(false, 0, 0)
+      handleAddContainerFromPanel(false, true)
     },
   },
   {
@@ -242,7 +242,7 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
-//TODO: hinfällig wenn nodes nur von toolbar, bzw den pop ups geadded werden??
+//TODO: unnecessary, delete if/once overall empty container are deleted
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
   emit('nodeAddedToContainer')
@@ -250,8 +250,8 @@ async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   fetchPxChartContainers()
 }
 
-async function handleDeletePxNode(pxGraphContainerId: string) {
-  await removeNodeFromContainer(pxGraphContainerId)
+async function handleSwitchPxNode(pxGraphContainerId: string) {
+  await switchNodeInContainer(pxGraphContainerId)
   fetchPxNodes()
   fetchPxChartContainers()
 }
@@ -305,13 +305,25 @@ async function onEdgesChange(changes: EdgeChange[]) {
   applyDefaultEdgeChanges(defaultChanges)
 }
 
-async function handleAddContainerFromPanel(newNode = false, position_x = 0, position_y = 0) {
-  if (newNode) {
-    await addContainerWithNewNode(position_x, position_y)
-    emit('containerAdded')
+async function handleAddContainerFromPanel(newNode = false, onMousePosition = false) {
+  if (onMousePosition) {
+    if (newNode) {
+      await addContainerWithNewNode(mousePos.value.x, mousePos.value.y)
+      emit('containerAdded')
+    } else {
+      await addContainerWithExistingNode(mousePos.value.x, mousePos.value.y)
+      emit('containerAdded')
+    }
   } else {
-    await addContainerWithExistingNode(position_x, position_y)
-    emit('containerAdded')
+    const pos = { x: 0, y: 0 }
+
+    if (newNode) {
+      await addContainerWithNewNode(pos.x, pos.y)
+      emit('containerAdded')
+    } else {
+      await addContainerWithExistingNode(pos.x, pos.y)
+      emit('containerAdded')
+    }
   }
 }
 
@@ -322,6 +334,10 @@ async function handleToggleSnapToGrid() {
 async function onContextMenu(mouseEvent: MouseEvent) {
   // prevent the browser's default menu
   mouseEvent.preventDefault()
+
+  //set mouse position in case the context menu action is an add node action
+  mousePos.value.x = mouseEvent.clientX
+  mousePos.value.y = mouseEvent.clientY
 
   //set Virtual Element where menu is centered on at mouse position
   contextMenuVirtualElement.value = {
@@ -395,8 +411,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
 
   <PxChartToolbar
     :menu-snap-to-grid="menuSnapToGrid"
-    @add-existing-node="handleAddContainerFromPanel(false, 0, 0)"
-    @add-new-node="handleAddContainerFromPanel(true, 0, 0)"
+    @add-existing-node="handleAddContainerFromPanel(false, false)"
+    @add-new-node="handleAddContainerFromPanel(true, false)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
     @contextmenu="onContextMenuDisabled($event)"
   />
@@ -453,9 +469,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
     <template #node-pxNode="customNodeProps">
       <PxChartContainerNode
         v-bind="customNodeProps"
-        @remove-px-node="handleDeletePxNode"
+        @switch-px-node="handleSwitchPxNode"
         @delete="handleDeletePxGraphContainer"
-        @edit="handleUpdatePxGraphContainer"
       />
     </template>
 

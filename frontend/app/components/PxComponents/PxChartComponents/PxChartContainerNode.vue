@@ -6,17 +6,11 @@ import type { ContextMenuItem } from '#ui/components/ContextMenu.vue'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
-  (e: 'edit', updatedNode: Partial<PxChartContainer>): void
-  (e: 'delete' | 'removePxNode', id: string): void
+  (e: 'delete' | 'switchPxNode', id: string): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
 const { fetchById: getPxNode } = usePxNodes()
-
-const isBeingEdited = ref(false)
-const editForm = ref({
-  name: props.data.name,
-})
 
 const pxNode = ref<PxNode | null>(null)
 
@@ -37,11 +31,10 @@ const menuItems = ref<ContextMenuItem[]>([
       emitDelete()
     },
   },
-  //TODO: call editability of node here
   {
-    label: 'Edit node',
+    label: 'Switch node',
     onSelect() {
-      isBeingEdited.value = true
+      emit('switchPxNode', props.id)
     },
   },
 ])
@@ -76,26 +69,12 @@ async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: Re
   })
 }
 
-function startEdit() {
-  isBeingEdited.value = true
-}
-
-async function confirmEdit() {
-  isBeingEdited.value = false
-  emit('edit', { id: props.id, name: editForm.value.name })
-}
-
-function cancelEdit() {
-  isBeingEdited.value = false
-  editForm.value.name = props.data.name
-}
-
 async function emitDelete() {
   emit('delete', props.id)
 }
 
-async function removePxNode() {
-  emit('removePxNode', props.id)
+async function switchPxNode() {
+  emit('switchPxNode', props.id)
 }
 
 function listenToResizing() {
@@ -121,25 +100,15 @@ function listenToResizing() {
             <PxNodeCard
               :node-id="pxNode.id"
               :visualization-style="'preview'"
-              :is-being-edited="isBeingEdited"
               style="margin: -25px"
             />
           </div>
         </template>
 
         <template #footer>
-          <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2" style="margin: -10px">
-            <UButton color="primary" variant="soft" hidden="hidden" @click="removePxNode()"
-              >Remove Px Node</UButton
-            >
-            <UButton color="secondary" variant="soft" :disabled="true" @click="startEdit()"
-              >Edit</UButton
-            >
+          <div class="flex flex-wrap justify-end gap-2" style="margin: -10px">
+            <UButton color="secondary" variant="soft" @click="switchPxNode()">Switch node</UButton>
             <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
-          </div>
-          <div v-else class="flex justify-end gap-2" style="margin: -10px">
-            <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
-            <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
           </div>
         </template>
       </UCard>
