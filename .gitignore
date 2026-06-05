@@ -11,9 +11,9 @@ logs
 .idea
 
 # Local env files
-.env
-.env.*
-!.env.example
+infra/.env
+infra/.env.*
+!infra/.env.example
 
 # Build output, for some reason JetBrains only accepts the ignore here
 .nuxt
@@ -25,6 +25,5 @@ backend/docs/experiments/*
 .gitignore
 .cursor/rules/*
 backend/db_backup_20260104_125924.sql
-.gitignore
 backend/vectors.db
 backend/artifacts/*

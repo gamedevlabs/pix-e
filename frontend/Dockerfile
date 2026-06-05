@@ -1,20 +1,27 @@
-FROM node:22-alpine AS builder
-
-LABEL authors="richterw"
-
-# Stage 1: build the Nuxt static site
+FROM node:22-alpine AS base
 
 WORKDIR /app
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN npm install
-RUN npm ci
-COPY frontend/ .
+
+################################################################################################
+#                     Stage: Development (For local hot-reload support)                        #
+################################################################################################
+FROM base AS development
+CMD ["npm", "run", "dev"]
+
+################################################################################################
+#                           Stage: Builder (For production stage)                              #
+################################################################################################
+FROM base AS builder
+COPY . .
 # CRITICAL: We use generate, NOT build, to produce a truly static dist/
-RUN npm run generate  # Outputs static files to .output/public
+RUN npm run generate
 
-
-# Stage 2: Serve with Caddy
-FROM caddy:2-alpine
-COPY --from=builder /app/.output/public /usr/share/caddy/html
-COPY ./Caddyfile /etc/caddy/Caddyfile
-EXPOSE 80 443
+################################################################################################
+#                          Stage: Production (Caddy Web Server)                                #
+################################################################################################
+FROM caddy:2-alpine AS production
+COPY --from=builder /app/.output/public /www
+COPY Caddyfile /etc/caddy/Caddyfile
+EXPOSE 80

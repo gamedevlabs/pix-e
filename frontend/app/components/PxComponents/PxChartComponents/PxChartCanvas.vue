@@ -12,6 +12,8 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { PxChartEdge } from '#components'
+import { useApi } from '~/composables/useApi'
+const { apiFetch } = useApi()
 import PxChartToolbar from './PxChartToolbar.vue'
 const config = useRuntimeConfig()
 const props = defineProps({ chartId: { type: String, default: -1 } })
@@ -21,7 +23,6 @@ const emit = defineEmits<{
 }>()
 
 const chartId = props.chartId
-const BASE_URL = config.public.apiBase + '/api'
 const { success: successToast, error: errorToast } = usePixeToast()
 
 const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
@@ -163,7 +164,7 @@ async function handlePrecomputeArtifacts() {
       payload.node_id = selectedNodeForAnalysis.value.nodeId
     }
 
-    await $fetch(`${BASE_URL}/context/precompute/`, {
+    await apiFetch(`/api/context/precompute/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -185,7 +186,7 @@ async function handleResetArtifacts() {
   if (!confirmed) return
 
   try {
-    await $fetch(`${BASE_URL}/context/precompute/reset/`, {
+    await apiFetch(`/api/context/precompute/reset/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -417,7 +418,6 @@ async function onSelectionChange(change: NodeSelectionChange) {
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
   </div>
-
   <VueFlow
     v-else
     v-model:nodes="nodes"
