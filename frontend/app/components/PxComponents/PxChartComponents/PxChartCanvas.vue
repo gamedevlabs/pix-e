@@ -9,6 +9,7 @@ import {
   type Node,
   type NodeSelectionChange,
   type SnapGrid,
+  useVueFlow,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import PxChartToolbar from './PxChartToolbar.vue'
@@ -92,6 +93,7 @@ const contextMenuVirtualElement = ref({
   getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
 })
 const mousePos = ref({ x: 0, y: 0 })
+const { screenToFlowCoordinate, vueFlowRef } = useVueFlow()
 
 const menuItems = computed(() => [
   {
@@ -306,6 +308,7 @@ async function onEdgesChange(changes: EdgeChange[]) {
 }
 
 async function handleAddContainerFromPanel(newNode = false, onMousePosition = false) {
+  //If add via context menu: add at mouse position
   if (onMousePosition) {
     if (newNode) {
       await addContainerWithNewNode(mousePos.value.x, mousePos.value.y)
@@ -315,7 +318,15 @@ async function handleAddContainerFromPanel(newNode = false, onMousePosition = fa
       emit('containerAdded')
     }
   } else {
-    const pos = { x: 0, y: 0 }
+    //If add via button: add at center of canvas
+    let pos = { x: 0, y: 0 }
+    if (vueFlowRef.value) {
+      const canvas = vueFlowRef.value.getBoundingClientRect()
+      pos = screenToFlowCoordinate({
+        x: (canvas.left + canvas.width) / 2,
+        y: (canvas.top + canvas.height) / 2,
+      })
+    }
 
     if (newNode) {
       await addContainerWithNewNode(pos.x, pos.y)
@@ -336,8 +347,7 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   mouseEvent.preventDefault()
 
   //set mouse position in case the context menu action is an add node action
-  mousePos.value.x = mouseEvent.clientX
-  mousePos.value.y = mouseEvent.clientY
+  mousePos.value = screenToFlowCoordinate({ x: mouseEvent.clientX, y: mouseEvent.clientY })
 
   //set Virtual Element where menu is centered on at mouse position
   contextMenuVirtualElement.value = {
