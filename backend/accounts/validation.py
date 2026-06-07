@@ -9,9 +9,11 @@ import re
 from typing import Tuple
 
 # Compiled regex patterns for provider-specific key format validation.
-# OpenAI keys: start with "sk-" followed by 20+ alphanumeric chars.
+# OpenAI keys: start with "sk-" followed by 20+ alphanumeric, underscore, or hyphen chars.
+#   Covers legacy keys (sk-...), project keys (sk-proj-...), service account keys
+#   (sk-svcacct-...), and admin keys (sk-admin-...).
 # Gemini keys: start with "AIza" followed by 10+ alphanumeric/dash/underscore chars.
-OPENAI_KEY_PATTERN = re.compile(r"^sk-[A-Za-z0-9]{20,}$")
+OPENAI_KEY_PATTERN = re.compile(r"^sk-[A-Za-z0-9_-]{20,}$")
 GEMINI_KEY_PATTERN = re.compile(r"^AIza[A-Za-z0-9_-]{10,}$")
 
 
@@ -39,7 +41,7 @@ def validate_key_format(provider: str, key: str) -> Tuple[bool, str]:
         if not OPENAI_KEY_PATTERN.match(key):
             return False, (
                 f"{provider.title()} keys typically start with 'sk-' "
-                "followed by at least 20 alphanumeric characters"
+                "followed by at least 20 characters (letters, digits, underscores, hyphens)"
             )
 
     elif provider == "gemini":
