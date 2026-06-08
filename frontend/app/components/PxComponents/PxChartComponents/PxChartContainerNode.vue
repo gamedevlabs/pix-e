@@ -2,7 +2,6 @@
 import { Handle, type NodeProps, Position } from '@vue-flow/core'
 import { NodeResizer, type ResizeDragEvent, type ResizeParams } from '@vue-flow/node-resizer'
 import '@vue-flow/node-resizer/dist/style.css'
-import type { ContextMenuItem } from '#ui/components/ContextMenu.vue'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
@@ -23,21 +22,6 @@ const minHeightGivenContent = computed(() => {
 })
 const cardWidth = ref(0)
 const cardHeight = ref(0)
-
-const menuItems = ref<ContextMenuItem[]>([
-  {
-    label: 'Delete node',
-    onSelect() {
-      emitDelete()
-    },
-  },
-  {
-    label: 'Switch node',
-    onSelect() {
-      emit('switchPxNode', props.id)
-    },
-  },
-])
 
 onMounted(() => {
   loadContent()
@@ -69,11 +53,11 @@ async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: Re
   })
 }
 
-async function emitDelete() {
+async function handleDelete() {
   emit('delete', props.id)
 }
 
-async function switchPxNode() {
+async function handleSwitchPxNode() {
   emit('switchPxNode', props.id)
 }
 
@@ -92,23 +76,16 @@ function listenToResizing() {
 </script>
 
 <template>
-  <UContextMenu :items="menuItems">
     <div ref="cardRef">
       <UCard class="hover:shadow-lg transition">
         <template #default>
           <div v-if="pxNode">
             <PxNodeCard
               :node-id="pxNode.id"
-              :visualization-style="'preview'"
-              style="margin: -25px"
+              :visualization-style="'collapsible'"
+              @delete-container="handleDelete()"
+              @switch-node="handleSwitchPxNode()"
             />
-          </div>
-        </template>
-
-        <template #footer>
-          <div class="flex flex-wrap justify-end gap-2" style="margin: -10px">
-            <UButton color="secondary" variant="soft" @click="switchPxNode()">Switch node</UButton>
-            <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
           </div>
         </template>
       </UCard>
@@ -129,7 +106,6 @@ function listenToResizing() {
       <Handle id="source-c" type="source" :position="Position.Bottom" />
       <Handle id="source-d" type="source" :position="Position.Left" />
     </div>
-  </UContextMenu>
 </template>
 
 <style scoped></style>

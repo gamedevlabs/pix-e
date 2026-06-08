@@ -357,12 +357,6 @@ async function onContextMenu(mouseEvent: MouseEvent) {
   contextMenuOpen.value = true
 }
 
-//For areas/items with no context menu
-async function onContextMenuDisabled(mouseEvent: MouseEvent) {
-  // prevent the browser's default menu
-  mouseEvent.preventDefault()
-}
-
 const pxNodeIdsInPath = computed(() => {
   const nodes: Array<string | null> = []
   path.value.forEach((containerId) => {
@@ -416,7 +410,6 @@ async function onSelectionChange(change: NodeSelectionChange) {
     :px-nodes="pxNodesInChart"
     :px-components="pxComponents"
     :px-component-definitions="pxComponentDefinitions"
-    @contextmenu="onContextMenuDisabled($event)"
   />
 
   <PxChartToolbar
@@ -424,7 +417,6 @@ async function onSelectionChange(change: NodeSelectionChange) {
     @add-existing-node="handleAddContainerFromPanel(false, false)"
     @add-new-node="handleAddContainerFromPanel(true, false)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
-    @contextmenu="onContextMenuDisabled($event)"
   />
 
   <UDropdownMenu

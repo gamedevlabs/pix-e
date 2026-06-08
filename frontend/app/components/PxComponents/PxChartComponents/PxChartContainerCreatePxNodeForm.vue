@@ -10,8 +10,9 @@ const emit = defineEmits<{ close: [string] }>()
 const newItem = ref<NamedEntity>({ name: '', description: '' })
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  if (!newItem.value.description) {
+  if (!newEntityDraft.description) {
     error('Description is required!')
+    return
   } else {
     const nodeId = await createPxNode(newEntityDraft)
     // px-2-2: "Create your first node"
