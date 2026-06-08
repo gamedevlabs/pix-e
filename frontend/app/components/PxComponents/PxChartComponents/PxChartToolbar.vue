@@ -52,14 +52,14 @@ async function handleToggleSnapToGrid() {
 
         <!-- Most frequently used buttons -->
         <UTooltip text="Create new Node" :content="{ align: 'center', side: 'right' }">
-          <UButton size="sm" color="primary" @click="handleAddNewNodeFromToolbar()">
+          <UButton size="xs" color="primary" @click="handleAddNewNodeFromToolbar()">
             <Icon name="i-heroicons-plus-solid" size="2em" />
             Create <br />
             new node
           </UButton>
         </UTooltip>
         <UTooltip text="Add existing Node" :content="{ align: 'center', side: 'right' }">
-          <UButton size="sm" color="primary" @click="handleAddExistingNodeFromToolbar()">
+          <UButton size="xs" color="primary" @click="handleAddExistingNodeFromToolbar()">
             <Icon name="i-heroicons-arrow-up-on-square" size="2em" />
             Add <br />
             existing node

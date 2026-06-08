@@ -83,22 +83,22 @@ async function handleToggleSidebar() {
         <div class="mt-auto w-full flex flex-col items-start">
           <OnboardingTrigger mode="sidebar" :collapsed="collapsed" />
 
-          <div v-if="!collapsed" class="mt-auto w-full flex flex-col items-start">
+          <div v-if="!collapsed" class="mt-auto w-full min-w-0 flex flex-col items-start">
             <UTooltip text="Hide sidebar">
               <UButton
                 :block="true"
                 style="justify-content: left"
                 color="neutral"
                 variant="outline"
-                size="xl"
+                size="md"
                 icon="heroicons:chevron-double-left-16-solid"
                 @click="handleToggleSidebar()"
               >
-                Hide Sidebar
+                <span class="truncate"> Hide Sidebar </span>
               </UButton>
             </UTooltip>
           </div>
-          <div v-else-if="collapsed" class="mt-auto w-full flex flex-col items-start">
+          <div v-else-if="collapsed" class="mt-auto w-full flex flex-col items-start text-truncate">
             <UTooltip text="Show sidebar">
               <UButton
                 :block="true"
