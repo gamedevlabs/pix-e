@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import PxNodeCardCollapsible from '~/components/PxComponents/PxNodeCardCollapsible.vue'
-
 const props = defineProps({
   nodeId: {
     type: String as PropType<string>,
     required: true,
   },
   visualizationStyle: {
-    type: String as PropType<'preview' | 'detailed' | 'collapsible'>,
+    type: String as PropType<'preview' | 'detailed'>,
     default: 'detailed',
   },
 })
@@ -80,13 +78,7 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
   <PxNodeCardDetailed
     v-else-if="fetchedNode?.components && visualizationStyle === 'detailed'"
     :node="fetchedNode"
-    @delete-component="handleDeleteComponent"
-    @add-component="handleAddComponent"
-    @update="handleUpdate"
-  />
-  <PxNodeCardCollapsible
-    v-else-if="fetchedNode?.components && visualizationStyle === 'collapsible'"
-    :node="fetchedNode"
+    :is-collapsible="false"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
     @update="handleUpdate"

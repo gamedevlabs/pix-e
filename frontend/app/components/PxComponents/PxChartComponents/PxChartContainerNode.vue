@@ -82,7 +82,8 @@ function listenToResizing() {
         <div v-if="pxNode">
           <PxNodeCard
             :node-id="pxNode.id"
-            :visualization-style="'collapsible'"
+            :visualization-style="'detailed'"
+            :is-collapsible="true"
             @delete-container="handleDelete()"
             @switch-node="handleSwitchPxNode()"
           />
