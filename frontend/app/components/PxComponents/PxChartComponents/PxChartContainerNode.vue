@@ -76,36 +76,36 @@ function listenToResizing() {
 </script>
 
 <template>
-    <div ref="cardRef">
-      <UCard class="hover:shadow-lg transition">
-        <template #default>
-          <div v-if="pxNode">
-            <PxNodeCard
-              :node-id="pxNode.id"
-              :visualization-style="'collapsible'"
-              @delete-container="handleDelete()"
-              @switch-node="handleSwitchPxNode()"
-            />
-          </div>
-        </template>
-      </UCard>
+  <div ref="cardRef">
+    <UCard class="hover:shadow-lg transition">
+      <template #default>
+        <div v-if="pxNode">
+          <PxNodeCard
+            :node-id="pxNode.id"
+            :visualization-style="'collapsible'"
+            @delete-container="handleDelete()"
+            @switch-node="handleSwitchPxNode()"
+          />
+        </div>
+      </template>
+    </UCard>
 
-      <NodeResizer
-        :is-visible="props.selected"
-        :min-width="minWidth"
-        :min-height="minHeightGivenContent.value"
-        @resize-end="handleResizeEnd"
-      />
+    <NodeResizer
+      :is-visible="props.selected"
+      :min-width="minWidth"
+      :min-height="minHeightGivenContent.value"
+      @resize-end="handleResizeEnd"
+    />
 
-      <Handle id="target-a" type="target" :position="Position.Top" />
-      <Handle id="target-b" type="target" :position="Position.Right" />
-      <Handle id="target-c" type="target" :position="Position.Bottom" />
-      <Handle id="target-d" type="target" :position="Position.Left" />
-      <Handle id="source-a" type="source" :position="Position.Top" />
-      <Handle id="source-b" type="source" :position="Position.Right" />
-      <Handle id="source-c" type="source" :position="Position.Bottom" />
-      <Handle id="source-d" type="source" :position="Position.Left" />
-    </div>
+    <Handle id="target-a" type="target" :position="Position.Top" />
+    <Handle id="target-b" type="target" :position="Position.Right" />
+    <Handle id="target-c" type="target" :position="Position.Bottom" />
+    <Handle id="target-d" type="target" :position="Position.Left" />
+    <Handle id="source-a" type="source" :position="Position.Top" />
+    <Handle id="source-b" type="source" :position="Position.Right" />
+    <Handle id="source-c" type="source" :position="Position.Bottom" />
+    <Handle id="source-d" type="source" :position="Position.Left" />
+  </div>
 </template>
 
 <style scoped></style>

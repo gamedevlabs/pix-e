@@ -97,7 +97,7 @@ async function handleToggleSidebar() {
               </UButton>
             </UTooltip>
           </div>
-          <div v-else-if="collapsed" class="mt-auto w-full flex flex-col items-start text-truncate">
+          <div v-else class="mt-auto w-full flex flex-col items-start text-truncate">
             <UTooltip text="Show sidebar">
               <UButton
                 :block="true"

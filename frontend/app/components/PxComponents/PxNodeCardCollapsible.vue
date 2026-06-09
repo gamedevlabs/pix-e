@@ -60,6 +60,13 @@ async function toggleCollapsed() {
   isCollapsed.value = !isCollapsed.value
 }
 
+function onDbClick(mouseEvent: MouseEvent) {
+  mouseEvent.preventDefault()
+  if (!isBeingEdited.value && !llmFeedback.value) {
+    startEdit()
+  }
+}
+
 function startEdit() {
   editForm.value = { ...props.node }
   isBeingEdited.value = true
@@ -156,7 +163,7 @@ async function openFixModal() {
 
 <template>
   <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback)">
-    <UCard class="hover:shadow-lg transition" style="margin: -25px">
+    <UCard class="hover:shadow-lg transition" style="margin: -25px" @dblclick="onDbClick($event)">
       <template #header>
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
           <NuxtLink :to="{ name: 'pxnodes-id', params: { id: props.node.id } }">
@@ -288,7 +295,11 @@ async function openFixModal() {
               >
             </div>
           </div>
-          <div class="flex justify-center" style="padding-top: 15px; cursor: default" @click="toggleCollapsed()">
+          <div
+            class="flex justify-center"
+            style="padding-top: 15px; cursor: default"
+            @click="toggleCollapsed()"
+          >
             <Icon name="heroicons:chevron-up-20-solid" class="size-5" />
           </div>
         </div>

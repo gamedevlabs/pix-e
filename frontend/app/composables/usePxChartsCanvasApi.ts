@@ -101,7 +101,7 @@ export function usePxChartsCanvasApi(chartId: string) {
 
   async function addContainer(position_x = 0, position_y = 0) {
     const newContainerPayload = {
-      name: containerDefaultValues.name,
+      name: 'Empty Container',
       content: containerDefaultValues.content,
       layout: {
         position_x: position_x,
@@ -138,26 +138,22 @@ export function usePxChartsCanvasApi(chartId: string) {
   }
 
   async function addContainerWithExistingNode(position_x = 0, position_y = 0) {
-    const containerId = await addContainer(position_x, position_y)
     const nodeId = await modalAddPxNode.open().result
-
-    if (!nodeId) {
-      await deleteContainer(containerId, true)
-      return
-    }
-    await addNodeToContainer(containerId, nodeId)
+    await createContainerAndAddNode(position_x, position_y, nodeId)
   }
 
   async function addContainerWithNewNode(position_x = 0, position_y = 0) {
-    const containerId = await addContainer(position_x, position_y)
     const nodeId = await modalCreatePxNode.open().result
+    await createContainerAndAddNode(position_x, position_y, nodeId)
+  }
 
+  async function createContainerAndAddNode(position_x = 0, position_y = 0, nodeId: string) {
     if (!nodeId) {
-      await deleteContainer(containerId, true)
       return
+    } else {
+      const containerId = await addContainer(position_x, position_y)
+      await addNodeToContainer(containerId, nodeId)
     }
-
-    await addNodeToContainer(containerId, nodeId)
   }
 
   async function updateContainer(updatedContainer: Partial<PxChartContainer>) {
@@ -363,7 +359,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     updateContainer,
     applyDefaultNodeChanges,
     addNodeToContainer,
-    removeNodeFromContainer,
     deleteContainer,
     addEdge,
     applyDefaultEdgeChanges,

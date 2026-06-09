@@ -308,18 +308,13 @@ async function onEdgesChange(changes: EdgeChange[]) {
 }
 
 async function handleAddContainerFromPanel(newNode = false, onMousePosition = false) {
-  //If add via context menu: add at mouse position
+  let pos = { x: 0, y: 0 }
   if (onMousePosition) {
-    if (newNode) {
-      await addContainerWithNewNode(mousePos.value.x, mousePos.value.y)
-      emit('containerAdded')
-    } else {
-      await addContainerWithExistingNode(mousePos.value.x, mousePos.value.y)
-      emit('containerAdded')
-    }
+    //If add via context menu: add at mouse position
+    pos.x = mousePos.value.x
+    pos.y = mousePos.value.y
   } else {
     //If add via button: add at center of canvas
-    let pos = { x: 0, y: 0 }
     if (vueFlowRef.value) {
       const canvas = vueFlowRef.value.getBoundingClientRect()
       pos = screenToFlowCoordinate({
@@ -327,14 +322,13 @@ async function handleAddContainerFromPanel(newNode = false, onMousePosition = fa
         y: (canvas.top + canvas.height) / 2,
       })
     }
-
-    if (newNode) {
-      await addContainerWithNewNode(pos.x, pos.y)
-      emit('containerAdded')
-    } else {
-      await addContainerWithExistingNode(pos.x, pos.y)
-      emit('containerAdded')
-    }
+  }
+  if (newNode) {
+    await addContainerWithNewNode(pos.x, pos.y)
+    emit('containerAdded')
+  } else {
+    await addContainerWithExistingNode(pos.x, pos.y)
+    emit('containerAdded')
   }
 }
 
@@ -422,6 +416,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
   <UDropdownMenu
     v-model:open="contextMenuOpen"
     :items="menuItems"
+    :modal="false"
     :content="{
       reference: contextMenuVirtualElement,
       side: 'right',
