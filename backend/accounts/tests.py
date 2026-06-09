@@ -293,8 +293,6 @@ class ValidationTests(TestCase):
         self.assertTrue(valid)
         self.assertEqual(msg, "")
 
-
-
     def test_openai_valid_project_key(self):
         key = "sk-proj-" + "a" * 20 + "_" + "b" * 10 + "-" + "c" * 10
         valid, msg = validate_key_format("openai", key)
@@ -324,7 +322,7 @@ class ValidationTests(TestCase):
             "openai",
             "sk-proj-A7SLbGy9Js3JNmI4mbj9AHuEDdYg_sQyRenUKCLZIOFfxmA2DDZyDOpK"
             "hPLycchF6GOzMfv64HT3BlbkFJ1AvStDGCsjLO4Rcwy9vPSMtW6gC97eQwc"
-            "--2aMNQ6xHtsjzwUE09igU5gmkrEepA-VLZBSGPcA"
+            "--2aMNQ6xHtsjzwUE09igU5gmkrEepA-VLZBSGPcA",
         )
         self.assertTrue(valid, f"Expected valid project key, got: {msg}")
         self.assertEqual(msg, "")
@@ -332,6 +330,7 @@ class ValidationTests(TestCase):
     def test_openai_too_short_project_key(self):
         valid, msg = validate_key_format("openai", "sk-proj-" + "a" * 5)
         self.assertFalse(valid)
+
     def test_whitespace_trimming_rejection(self):
         valid, msg = validate_key_format("openai", " sk-" + "a" * 20)
         self.assertFalse(valid)
