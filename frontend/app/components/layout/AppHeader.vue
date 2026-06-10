@@ -4,6 +4,7 @@ import HelpdeskFormModal from '~/components/helpdesk/HelpdeskFormModal.vue'
 const authentication = useAuthentication()
 const llmStore = useLLM()
 const router = useRouter()
+const apiKeysOpen = ref(false)
 
 const dropdownItems = computed(() => [
   [
@@ -47,6 +48,13 @@ const dropdownItems = computed(() => [
         @click="router.push('login')"
       />
       <div v-else class="flex items-center gap-2">
+        <UButton
+          icon="i-lucide-key-round"
+          color="neutral"
+          variant="ghost"
+          title="API Keys"
+          @click="apiKeysOpen = true"
+        />
         <USelect
           v-model="llmStore.active_llm"
           :items="llmStore.llm_models"
@@ -63,4 +71,6 @@ const dropdownItems = computed(() => [
       </div>
     </template>
   </UHeader>
+
+  <SettingsOverlay v-model:open="apiKeysOpen" />
 </template>
