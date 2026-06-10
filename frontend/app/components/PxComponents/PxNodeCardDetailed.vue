@@ -62,9 +62,12 @@ async function toggleCollapsed() {
   isCollapsed.value = !isCollapsed.value
 }
 
+//TODO: fix, only prevents default zoom on edges of node
 function onDbClick(mouseEvent: MouseEvent) {
   mouseEvent.preventDefault()
+  console.log('Double Click')
   if (!isBeingEdited.value && !llmFeedback.value) {
+    console.log('editing')
     startEdit()
   }
 }
@@ -293,7 +296,7 @@ async function openFixModal() {
           </div>
           <!-- not collapsed-->
           <div v-else class="flex-col justify-between">
-            <div class="flex justify-between gap-2">
+            <div class="flex flex-wrap justify-start gap-2">
               <UButton
                 color="warning"
                 variant="soft"
@@ -302,25 +305,23 @@ async function openFixModal() {
               >
                 Check
               </UButton>
-              <div class="flex gap-2">
-                <UButton color="primary" variant="soft" @click="handleAddComponent">
-                  Add Component
-                </UButton>
-                <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
-                <UButton
-                  v-if="isCollapsible"
-                  color="secondary"
-                  variant="soft"
-                  @click="handleSwitchNode()"
-                  >Switch Node</UButton
-                >
-                <UButton v-if="!isCollapsible" color="error" variant="soft" @click="emitDelete"
-                  >Delete</UButton
-                >
-                <UButton v-else color="error" variant="soft" @click="handleDeleteContainer()"
-                  >Delete</UButton
-                >
-              </div>
+              <UButton color="primary" variant="soft" @click="handleAddComponent">
+                Add Component
+              </UButton>
+              <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
+              <UButton
+                v-if="isCollapsible"
+                color="secondary"
+                variant="soft"
+                @click="handleSwitchNode()"
+                >Switch Node</UButton
+              >
+              <UButton v-if="!isCollapsible" color="error" variant="soft" @click="emitDelete"
+                >Delete</UButton
+              >
+              <UButton v-else color="error" variant="soft" @click="handleDeleteContainer()"
+                >Delete</UButton
+              >
             </div>
             <div
               v-if="isCollapsible"
