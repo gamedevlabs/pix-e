@@ -2,15 +2,17 @@
 import {
   type NodeDragEvent,
   VueFlow,
-  useVueFlow,
   Panel,
   type Connection,
   type EdgeChange,
   type NodeChange,
   type Node,
   type NodeSelectionChange,
+  type SnapGrid,
+  useVueFlow,
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
+import PxChartToolbar from './PxChartToolbar.vue'
 import { PxChartEdge } from '#components'
 import { useApi } from '~/composables/useApi'
 const { apiFetch } = useApi()
@@ -19,8 +21,6 @@ const props = defineProps({ chartId: { type: String, default: -1 } })
 const emit = defineEmits<{
   (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
 }>()
-
-const { screenToFlowCoordinate } = useVueFlow()
 
 const chartId = props.chartId
 const { success: successToast, error: errorToast } = usePixeToast()
@@ -40,11 +40,12 @@ const {
   error,
   pxChartError,
   loadGraph,
-  addContainer,
+  addContainerWithExistingNode,
+  addContainerWithNewNode,
   updateContainer,
+  switchNodeInContainer,
   applyDefaultNodeChanges,
   addNodeToContainer,
-  removeNodeFromContainer,
   deleteContainer,
   addEdge,
   applyDefaultEdgeChanges,
@@ -82,6 +83,45 @@ const precomputeStrategyOptions = [
   { value: 'full_context', label: 'Full Context' },
 ]
 const strategiesNeedingNode = new Set(['hmem', 'combined'])
+
+const menuSnapToGrid = ref(true)
+//same distance as background grid
+const grid = [20, 20] as SnapGrid
+
+const contextMenuOpen = ref(false)
+const contextMenuVirtualElement = ref({
+  getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
+})
+const mousePos = ref({ x: 0, y: 0 })
+const { screenToFlowCoordinate, vueFlowRef } = useVueFlow()
+
+const menuItems = computed(() => [
+  {
+    label: 'Create new node',
+    icon: 'i-heroicons-plus-solid',
+    onSelect() {
+      handleAddContainerFromPanel(true, true)
+    },
+  },
+  {
+    label: 'Add existing node',
+    icon: 'i-heroicons-arrow-up-on-square',
+    onSelect() {
+      handleAddContainerFromPanel(false, true)
+    },
+  },
+  {
+    type: 'separator' as const,
+  },
+  {
+    label: 'Snap to grid',
+    type: 'checkbox' as const,
+    checked: menuSnapToGrid.value,
+    onUpdateChecked(checked: boolean) {
+      menuSnapToGrid.value = checked
+    },
+  },
+])
 
 function handleNodeClick(event: { node: Node }) {
   const container = event.node.data as PxChartContainer
@@ -204,6 +244,7 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
+//TODO: unnecessary, delete if/once overall empty container are deleted
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
   emit('nodeAddedToContainer')
@@ -211,8 +252,8 @@ async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   fetchPxChartContainers()
 }
 
-async function handleDeletePxNode(pxGraphContainerId: string) {
-  await removeNodeFromContainer(pxGraphContainerId)
+async function handleSwitchPxNode(pxGraphContainerId: string) {
+  await switchNodeInContainer(pxGraphContainerId)
   fetchPxNodes()
   fetchPxChartContainers()
 }
@@ -266,19 +307,48 @@ async function onEdgesChange(changes: EdgeChange[]) {
   applyDefaultEdgeChanges(defaultChanges)
 }
 
+async function handleAddContainerFromPanel(newNode = false, onMousePosition = false) {
+  let pos = { x: 0, y: 0 }
+  if (onMousePosition) {
+    //If add via context menu: add at mouse position
+    pos.x = mousePos.value.x
+    pos.y = mousePos.value.y
+  } else {
+    //If add via button: add at center of canvas
+    if (vueFlowRef.value) {
+      const canvas = vueFlowRef.value.getBoundingClientRect()
+      pos = screenToFlowCoordinate({
+        x: (canvas.left + canvas.width) / 2,
+        y: (canvas.top + canvas.height) / 2,
+      })
+    }
+  }
+  if (newNode) {
+    await addContainerWithNewNode(pos.x, pos.y)
+    emit('containerAdded')
+  } else {
+    await addContainerWithExistingNode(pos.x, pos.y)
+    emit('containerAdded')
+  }
+}
+
+async function handleToggleSnapToGrid() {
+  menuSnapToGrid.value = !menuSnapToGrid.value
+}
+
 async function onContextMenu(mouseEvent: MouseEvent) {
   // prevent the browser's default menu
   mouseEvent.preventDefault()
-  // for now, just create a container
-  const pos = screenToFlowCoordinate({ x: mouseEvent.x, y: mouseEvent.y })
-  await addContainer(pos.x, pos.y)
-  emit('containerAdded')
-  fetchPxChartContainers()
-}
 
-async function handleAddContainerFromPanel() {
-  await addContainer(0, 0)
-  emit('containerAdded')
+  //set mouse position in case the context menu action is an add node action
+  mousePos.value = screenToFlowCoordinate({ x: mouseEvent.clientX, y: mouseEvent.clientY })
+
+  //set Virtual Element where menu is centered on at mouse position
+  contextMenuVirtualElement.value = {
+    getBoundingClientRect: () => new DOMRect(mouseEvent.clientX, mouseEvent.clientY, 0, 0),
+  }
+
+  contextMenuOpen.value = true
 }
 
 const pxNodeIdsInPath = computed(() => {
@@ -335,6 +405,28 @@ async function onSelectionChange(change: NodeSelectionChange) {
     :px-components="pxComponents"
     :px-component-definitions="pxComponentDefinitions"
   />
+
+  <PxChartToolbar
+    :menu-snap-to-grid="menuSnapToGrid"
+    @add-existing-node="handleAddContainerFromPanel(false, false)"
+    @add-new-node="handleAddContainerFromPanel(true, false)"
+    @toggle-snap-to-grid="handleToggleSnapToGrid()"
+  />
+
+  <UDropdownMenu
+    v-model:open="contextMenuOpen"
+    :items="menuItems"
+    :modal="false"
+    :content="{
+      reference: contextMenuVirtualElement,
+      side: 'right',
+      align: 'start',
+    }"
+  >
+    <!-- invisible item the dropdown menu is initially centered on -->
+    <div class="hidden pointer-events-none" />
+  </UDropdownMenu>
+
   <div v-if="pxChartError">
     <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
     <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
@@ -345,6 +437,8 @@ async function onSelectionChange(change: NodeSelectionChange) {
     v-model:edges="edges"
     :edge-types="edgeTypes"
     :apply-default="false"
+    :snap-to-grid="menuSnapToGrid"
+    :snap-grid="grid"
     @node-drag-stop="onNodeDragStop"
     @connect="onConnect"
     @nodes-change="onNodesChange"
@@ -372,22 +466,10 @@ async function onSelectionChange(change: NodeSelectionChange) {
     <template #node-pxNode="customNodeProps">
       <PxChartContainerNode
         v-bind="customNodeProps"
-        @remove-px-node="handleDeletePxNode"
+        @switch-px-node="handleSwitchPxNode"
         @delete="handleDeletePxGraphContainer"
-        @edit="handleUpdatePxGraphContainer"
       />
     </template>
-
-    <Panel :position="'bottom-left'">
-      <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-        <UButton
-          size="xl"
-          icon="i-lucide-plus"
-          color="primary"
-          @click="handleAddContainerFromPanel"
-        />
-      </UTooltip>
-    </Panel>
 
     <!-- Context Strategy Analysis Button -->
     <Panel :position="'top-right'">
