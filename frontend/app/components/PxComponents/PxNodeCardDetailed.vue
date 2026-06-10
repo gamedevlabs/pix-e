@@ -62,12 +62,8 @@ async function toggleCollapsed() {
   isCollapsed.value = !isCollapsed.value
 }
 
-//TODO: fix, only prevents default zoom on edges of node
-function onDbClick(mouseEvent: MouseEvent) {
-  mouseEvent.preventDefault()
-  console.log('Double Click')
+function onDbClick() {
   if (!isBeingEdited.value && !llmFeedback.value) {
-    console.log('editing')
     startEdit()
   }
 }
@@ -172,7 +168,7 @@ async function openFixModal() {
 
 <template>
   <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback || !isCollapsible)">
-    <UCard class="hover:shadow-lg transition" @dblclick="onDbClick($event)">
+    <UCard class="hover:shadow-lg transition" @dblclick.stop="onDbClick()">
       <template #header>
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
           <NuxtLink :to="{ name: 'pxnodes-id', params: { id: props.node.id } }">
