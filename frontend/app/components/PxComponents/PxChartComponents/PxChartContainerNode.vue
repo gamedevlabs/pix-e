@@ -77,19 +77,15 @@ function listenToResizing() {
 
 <template>
   <div ref="cardRef">
-    <UCard class="hover:shadow-lg transition">
-      <template #default>
-        <div v-if="pxNode">
-          <PxNodeCard
-            :node-id="pxNode.id"
-            :visualization-style="'detailed'"
-            :is-collapsible="true"
-            @delete-container="handleDelete()"
-            @switch-node="handleSwitchPxNode()"
-          />
-        </div>
-      </template>
-    </UCard>
+    <div v-if="pxNode">
+      <PxNodeCard
+        :node-id="pxNode.id"
+        :visualization-style="'detailed'"
+        :is-collapsible="true"
+        @delete-container="handleDelete()"
+        @switch-node="handleSwitchPxNode()"
+      />
+    </div>
 
     <NodeResizer
       :is-visible="props.selected"
