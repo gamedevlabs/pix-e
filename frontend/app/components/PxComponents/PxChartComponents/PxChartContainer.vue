@@ -108,7 +108,7 @@ function listenToResizing() {
 
       <template #footer>
         <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
+          <UButton color="secondary" variant="soft" hidden @click="startEdit">Edit Name</UButton>
           <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
         </div>
         <div v-else class="flex justify-end gap-2">

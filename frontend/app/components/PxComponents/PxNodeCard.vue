@@ -78,6 +78,7 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
   <PxNodeCardDetailed
     v-else-if="fetchedNode?.components && visualizationStyle === 'detailed'"
     :node="fetchedNode"
+    :is-collapsible="false"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
     @update="handleUpdate"

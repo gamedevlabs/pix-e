@@ -21,13 +21,27 @@ export function useSparcV2() {
   const { gameConcept, context } = useSparc()
   const toast = usePixeToast()
   const toastDirect = useToast()
+  const { addLog } = useSessionLog()
 
   async function runV2Evaluation() {
+    addLog('info', 'sparc_v2_evaluation_started', {
+      evaluationMode: evaluationMode.value,
+      pillarMode: pillarMode.value,
+      contextStrategy: contextStrategy.value,
+      hasUploadedDocument: Boolean(uploadedDocument.value),
+      conceptLength: gameConcept.value.length,
+      contextLength: context.value.length,
+    })
+
     if (!gameConcept.value?.trim()) {
       toastDirect.add({
         title: 'Warning',
         description: 'Please enter a game concept first',
         color: 'warning',
+      })
+      addLog('warn', 'sparc_evaluation_blocked', {
+        reason: 'missing_game_concept',
+        evaluationMode: evaluationMode.value,
       })
       return
     }
@@ -72,7 +86,14 @@ export function useSparcV2() {
         },
         uploadedDocument.value, // Pass the uploaded document
       )
+      addLog('info', 'sparc_v2_evaluation_succeeded', {
+        evaluationMode: evaluationMode.value,
+      })
     } catch (error) {
+      addLog('error', 'sparc_v2_evaluation_failed', {
+        evaluationMode: evaluationMode.value,
+        message: error instanceof Error ? error.message : String(error),
+      })
       evaluationError.value = error instanceof Error ? error.message : 'Evaluation failed'
       toast.error('Evaluation failed: ' + evaluationError.value)
     } finally {
@@ -81,6 +102,11 @@ export function useSparcV2() {
   }
 
   async function runMonolithicEvaluation() {
+    addLog('info', 'sparc_monolithic_evaluation_started', {
+      conceptLength: gameConcept.value.length,
+      contextLength: context.value.length,
+    })
+
     isEvaluating.value = true
     evaluationError.value = null
     progressMessage.value = 'Running monolithic evaluation...'
@@ -92,7 +118,12 @@ export function useSparcV2() {
       monolithicResult.value = result
       progressMessage.value = 'Evaluation complete!'
       toast.success('Monolithic evaluation complete!')
+
+      addLog('info', 'sparc_monolithic_evaluation_succeeded')
     } catch (error) {
+      addLog('error', 'sparc_monolithic_evaluation_failed', {
+        message: error instanceof Error ? error.message : String(error),
+      })
       evaluationError.value = error instanceof Error ? error.message : 'Evaluation failed'
       toast.error('Evaluation failed: ' + evaluationError.value)
     } finally {
@@ -101,11 +132,20 @@ export function useSparcV2() {
   }
 
   async function runAspectEvaluation(aspect: SPARCV2AspectName) {
+    addLog('info', 'sparc_aspect_evaluation_started', {
+      aspect,
+      contextStrategy: contextStrategy.value,
+    })
+
     if (!gameConcept.value?.trim()) {
       toastDirect.add({
         title: 'Warning',
         description: 'Please enter a game concept first',
         color: 'warning',
+      })
+      addLog('warn', 'sparc_evaluation_blocked', {
+        reason: 'missing_game_concept',
+        evaluationMode: evaluationMode.value,
       })
       return
     }
@@ -133,8 +173,15 @@ export function useSparcV2() {
         v2Result.value = result
       }
 
+      addLog('info', 'sparc_aspect_evaluation_succeeded', {
+        aspect,
+      })
       toast.success(`${formatAspectName(aspect)} re-evaluated!`)
     } catch (error) {
+      addLog('error', 'sparc_aspect_evaluation_failed', {
+        aspect,
+        message: error instanceof Error ? error.message : String(error),
+      })
       const msg = error instanceof Error ? error.message : 'Re-evaluation failed'
       toast.error(msg)
     } finally {
