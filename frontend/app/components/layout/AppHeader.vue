@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import HelpdeskFormModal from '~/components/helpdesk/HelpdeskFormModal.vue'
+
 const authentication = useAuthentication()
 const llmStore = useLLM()
 const router = useRouter()
@@ -34,6 +36,7 @@ const dropdownItems = computed(() => [
     </template>
 
     <template #right>
+      <HelpdeskFormModal />
       <UColorModeSwitch />
 
       <UButton
