@@ -29,10 +29,13 @@ const editForm = ref({
 
 const menuItems = ref<ContextMenuItem[]>([
   {
-    label: 'Delete node',
+    label: 'Add component',
     onSelect() {
-      handleDeleteContainer()
+      handleAddComponent()
     },
+  },
+  {
+    type: 'separator' as const,
   },
   {
     label: 'Switch node',
@@ -47,9 +50,12 @@ const menuItems = ref<ContextMenuItem[]>([
     },
   },
   {
-    label: 'Add component',
+    type: 'separator' as const,
+  },
+  {
+    label: 'Delete node',
     onSelect() {
-      handleAddComponent()
+      handleDeleteContainer()
     },
   },
 ])
@@ -63,6 +69,7 @@ async function toggleCollapsed() {
 }
 
 function onDbClick() {
+  console.log('DB Click')
   if (!isBeingEdited.value && !llmFeedback.value) {
     startEdit()
   }
@@ -186,7 +193,11 @@ async function openFixModal() {
           <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
           <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
           <section class="grid grid-cols-1 gap-6">
-            <div v-for="component in node.components" :key="component.id">
+            <div
+              v-for="component in node.components"
+              :key="component.id"
+              @dblclick="$event.stopPropagation()"
+            >
               <PxComponentCard
                 visualization-style="preview"
                 :component="component"
@@ -195,16 +206,18 @@ async function openFixModal() {
             </div>
           </section>
           <br />
-          <h2 v-if="node.charts.length === 0" class="italic">
-            This node is not associated to any charts.
-          </h2>
-          <div v-else>
-            <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
-            <section class="grid grid-cols-1 gap-6">
-              <div v-for="chart in node.charts" :key="chart.id">
-                <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
-              </div>
-            </section>
+          <div v-if="!isCollapsible">
+            <h2 v-if="node.charts.length === 0" class="italic">
+              This node is not associated to any charts.
+            </h2>
+            <div v-else>
+              <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
+              <section class="grid grid-cols-1 gap-6">
+                <div v-for="chart in node.charts" :key="chart.id">
+                  <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
+                </div>
+              </section>
+            </div>
           </div>
 
           <!-- LLM Feedback Section -->
@@ -280,7 +293,7 @@ async function openFixModal() {
       </template>
 
       <template #footer>
-        <div v-if="!isBeingEdited">
+        <div v-if="!isBeingEdited" @dblclick="$event.stopPropagation()">
           <!--collapsed-->
           <div
             v-if="isCollapsed && isCollapsible"
