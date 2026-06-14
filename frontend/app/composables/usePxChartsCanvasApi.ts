@@ -1,6 +1,7 @@
 ﻿import type { Connection, Edge, EdgeChange, Node, NodeChange } from '@vue-flow/core'
 import { useVueFlow, MarkerType } from '@vue-flow/core'
 import merge from 'lodash.merge'
+import { PxChartContainerAddPxNodeForm, PxChartContainerCreatePxNodeForm } from '#components'
 
 export function usePxChartsCanvasApi(chartId: string) {
   const nodes = ref<Node[]>([])
@@ -42,6 +43,10 @@ export function usePxChartsCanvasApi(chartId: string) {
       height: 20,
     },
   }
+
+  const overlay = useOverlay()
+  const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
+  const modalCreatePxNode = overlay.create(PxChartContainerCreatePxNodeForm)
 
   // Load graph with Vue Flow properties
   async function loadGraph() {
@@ -137,7 +142,7 @@ export function usePxChartsCanvasApi(chartId: string) {
 
   async function addContainer(position_x = 0, position_y = 0) {
     const newContainerPayload = {
-      name: containerDefaultValues.name,
+      name: 'Empty Container',
       content: containerDefaultValues.content,
       layout: {
         position_x: position_x,
@@ -171,6 +176,26 @@ export function usePxChartsCanvasApi(chartId: string) {
         keys: [],
       },
     })
+    return newId
+  }
+
+  async function addContainerWithExistingNode(position_x = 0, position_y = 0) {
+    const nodeId = await modalAddPxNode.open().result
+    await createContainerAndAddNode(position_x, position_y, nodeId)
+  }
+
+  async function addContainerWithNewNode(position_x = 0, position_y = 0) {
+    const nodeId = await modalCreatePxNode.open().result
+    await createContainerAndAddNode(position_x, position_y, nodeId)
+  }
+
+  async function createContainerAndAddNode(position_x = 0, position_y = 0, nodeId: string) {
+    if (!nodeId) {
+      return
+    } else {
+      const containerId = await addContainer(position_x, position_y)
+      await addNodeToContainer(containerId, nodeId)
+    }
   }
 
   async function updateContainer(updatedContainer: Partial<PxChartContainer>) {
@@ -217,6 +242,36 @@ export function usePxChartsCanvasApi(chartId: string) {
 
   function applyDefaultNodeChanges(moveChanges: NodeChange[]) {
     applyNodeChanges(moveChanges)
+  }
+
+  async function switchNodeInContainer(pxGraphContainerId: string) {
+    const newNodeId = await modalAddPxNode.open().result
+
+    if (!newNodeId) {
+      console.log('Canceled')
+      return
+    }
+    await removeNodeFromContainer(pxGraphContainerId)
+    await addNodeToContainer(pxGraphContainerId, newNodeId)
+
+    //TODO: following code should work, but doesn't, figure out why to make make transition between node switches cleaner
+    /*
+    const updatedPxGraphContainerContent = {
+      type: 'pxNode' as PxContainerContentType,
+      id: pxGraphContainerId,
+      content: newNodeId,
+    }
+    console.log('new node added')
+      try {
+        await updateContainer(updatedPxGraphContainerContent)
+          console.log('container updated')
+      } catch (err) {
+        alert('Failed to add node to container: ' + err.message)
+        error.value = 'Failed to add node to container'
+          console.log('error')
+      }
+
+     */
   }
 
   async function addNodeToContainer(pxGraphContainerId: string, pxNodeId: string) {
@@ -353,11 +408,12 @@ export function usePxChartsCanvasApi(chartId: string) {
     path,
     pxChartError,
     loadGraph,
-    addContainer,
+    addContainerWithExistingNode,
+    addContainerWithNewNode,
+    switchNodeInContainer,
     updateContainer,
     applyDefaultNodeChanges,
     addNodeToContainer,
-    removeNodeFromContainer,
     deleteContainer,
     addEdge,
     applyDefaultEdgeChanges,

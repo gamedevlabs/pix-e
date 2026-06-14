@@ -1,4 +1,5 @@
 import { useProject } from '@/composables/useProject'
+import { useApi } from '~/composables/useApi'
 
 // Shared state - singleton pattern for cross-component reactivity
 const designIdea = ref<string>('')
@@ -8,19 +9,17 @@ const isLoadingHistory = ref(false)
 const isRestoringConcept = ref(false)
 
 export function useGameConcept() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const { success, error: errorToast } = usePixeToast()
   const projectStore = useProject()
+  const { addLog } = useSessionLog()
 
   async function fetchGameConcept() {
     try {
-      const data = await $fetch<{ content: string }>(
-        `${config.public.apiBase}/api/game-concept/current/`,
-        {
-          credentials: 'include',
-          headers: useRequestHeaders(['cookie']),
-        },
-      )
+      const data = await apiFetch<{ content: string }>(`/api/game-concept/current/`, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
       designIdea.value = data?.content ?? ''
     } catch {
       // No current concept exists, that's ok
@@ -29,11 +28,13 @@ export function useGameConcept() {
   }
 
   async function saveGameConcept() {
+    addLog('info', 'game_concept_save_started')
+
     if (!designIdea.value.trim()) return
 
     isSavingConcept.value = true
     try {
-      await $fetch(`${config.public.apiBase}/api/game-concept/update_current/`, {
+      await apiFetch(`/api/game-concept/update_current/`, {
         method: 'POST',
         body: { content: designIdea.value },
         credentials: 'include',
@@ -42,9 +43,16 @@ export function useGameConcept() {
         } as HeadersInit,
       })
       success('Game concept saved!')
+      addLog('info', 'game_concept_save_succeeded', {
+        conceptLength: designIdea.value.length,
+      })
       // Refresh history after save
       await fetchConceptHistory()
     } catch (err) {
+      addLog('error', 'game_concept_save_failed', {
+        conceptLength: designIdea.value.length,
+        message: err instanceof Error ? err.message : String(err),
+      })
       errorToast(err)
     } finally {
       isSavingConcept.value = false
@@ -54,13 +62,10 @@ export function useGameConcept() {
   async function fetchConceptHistory() {
     isLoadingHistory.value = true
     try {
-      const data = await $fetch<GameConcept[]>(
-        `${config.public.apiBase}/api/game-concept/history/`,
-        {
-          credentials: 'include',
-          headers: useRequestHeaders(['cookie']),
-        },
-      )
+      const data = await apiFetch<GameConcept[]>(`/api/game-concept/history/`, {
+        credentials: 'include',
+        headers: useRequestHeaders(['cookie']),
+      })
       conceptHistory.value = data || []
     } catch (err) {
       errorToast(err)
@@ -70,23 +75,26 @@ export function useGameConcept() {
   }
 
   async function restoreConcept(conceptId: number) {
+    addLog('info', 'game_concept_restore_started')
+
     isRestoringConcept.value = true
     try {
-      const data = await $fetch<GameConcept>(
-        `${config.public.apiBase}/api/game-concept/${conceptId}/restore/`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-        },
-      )
+      const data = await apiFetch<GameConcept>(`/api/game-concept/${conceptId}/restore/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
       designIdea.value = data.content
       success('Game concept restored!')
+      addLog('info', 'game_concept_restore_succeeded')
       // Refresh history
       await fetchConceptHistory()
     } catch (err) {
+      addLog('error', 'game_concept_restore_failed', {
+        message: err instanceof Error ? err.message : String(err),
+      })
       errorToast(err)
     } finally {
       isRestoringConcept.value = false

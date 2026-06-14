@@ -3,9 +3,10 @@ import type {
   MovieScriptAnalysisResponse,
   ScriptSceneAnalysis,
 } from '~/utils/movie-script-evaluator'
+import { useApi } from '~/composables/useApi'
 
 export function useMovieScriptEvaluatorApi() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
 
   async function uploadFile(projectId: string, movieScriptFile: MovieScript) {
     try {
@@ -14,17 +15,14 @@ export function useMovieScriptEvaluatorApi() {
       formData.append('project', projectId)
       formData.append('file', movieScriptFile.file)
 
-      return await $fetch(
-        config.public.apiBase + `/api/movie-script-evaluator/projects/${projectId}/script/`,
-        {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          headers: {
-            'X-CSRFToken': useCookie('csrftoken').value,
-          } as HeadersInit,
-        },
-      )
+      return await apiFetch(`/api/movie-script-evaluator/projects/${projectId}/script/`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
     } catch (error) {
       console.error('Error fetching: ', error)
       throw error
@@ -36,9 +34,8 @@ export function useMovieScriptEvaluatorApi() {
     script_id: number,
   ): Promise<MovieScriptAnalysisResponse> {
     try {
-      return await $fetch(
-        config.public.apiBase +
-          `/api/movie-script-evaluator/projects/${projectId}/analyze?script_id=${script_id}`,
+      return await apiFetch(
+        `/api/movie-script-evaluator/projects/${projectId}/analyze?script_id=${script_id}`,
         {
           method: 'GET',
           credentials: 'include',
@@ -57,9 +54,8 @@ export function useMovieScriptEvaluatorApi() {
     items: ScriptSceneAnalysis[],
   ): Promise<ScriptSceneAnalysis[]> {
     try {
-      return await $fetch(
-        config.public.apiBase +
-          `/api/movie-script-evaluator/projects/${projectId}/script-scene-analysis/`,
+      return await apiFetch(
+        `/api/movie-script-evaluator/projects/${projectId}/script-scene-analysis/`,
         {
           method: 'POST',
           body: items,

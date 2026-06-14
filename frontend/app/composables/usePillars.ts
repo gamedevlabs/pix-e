@@ -1,5 +1,6 @@
 import { usePillarsApi } from '@/composables/api/pillarsApi'
 import { useProject } from '@/composables/useProject'
+import { useApi } from '~/composables/useApi'
 
 // Shared state - singleton pattern for cross-component reactivity
 const items = ref<Pillar[]>([])
@@ -20,11 +21,11 @@ const evaluationError = ref<string | null>(null)
 const executionMode = ref<ExecutionMode>('agentic')
 
 export function usePillars() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const pillarsApi = usePillarsApi()
   const { success, error: errorToast } = usePixeToast()
-  const API_URL = `${config.public.apiBase}/api/llm/pillars/`
   const projectStore = useProject()
+  const { addLog } = useSessionLog()
 
   // Use shared game concept state
   const {
@@ -43,7 +44,7 @@ export function usePillars() {
   async function fetchAll() {
     loading.value = true
     try {
-      const data = await $fetch<Pillar[]>(API_URL, {
+      const data = await apiFetch<Pillar[]>('/api/llm/pillars/', {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
@@ -57,8 +58,9 @@ export function usePillars() {
   }
 
   async function createItem(payload: Partial<Pillar>) {
+    addLog('info', 'pillar_create_started')
     try {
-      const result = await $fetch<Pillar>(API_URL, {
+      const result = await apiFetch<Pillar>('/api/llm/pillars/', {
         method: 'POST',
         body: payload,
         credentials: 'include',
@@ -67,9 +69,13 @@ export function usePillars() {
         } as HeadersInit,
       })
       success('Item created successfully!')
+      addLog('info', 'pillar_create_succeeded', { pillarId: result.id })
       await fetchAll()
       return result
     } catch (err) {
+      addLog('error', 'pillar_create_failed', {
+        message: err instanceof Error ? err.message : String(err),
+      })
       error.value = err
       errorToast(err)
       return null
@@ -77,8 +83,9 @@ export function usePillars() {
   }
 
   async function updateItem(id: number | string, payload: Partial<Pillar>) {
+    addLog('info', 'pillar_update_started', { pillarId: id })
     try {
-      await $fetch<Pillar>(`${API_URL}${id}/`, {
+      await apiFetch<Pillar>(`/api/llm/pillars/${id}/`, {
         method: 'PATCH',
         body: payload,
         credentials: 'include',
@@ -87,16 +94,21 @@ export function usePillars() {
         } as HeadersInit,
       })
       success('Item updated successfully!')
+      addLog('info', 'pillar_update_succeeded', { pillarId: id })
       await fetchAll()
     } catch (err) {
+      addLog('error', 'pillar_update_failed', {
+        message: err instanceof Error ? err.message : String(err),
+      })
       error.value = err
       errorToast(err)
     }
   }
 
   async function deleteItem(id: number | string) {
+    addLog('info', 'pillar_delete_started', { pillarId: id })
     try {
-      await $fetch<null>(`${API_URL}${id}/`, {
+      await apiFetch<null>(`/api/llm/pillars/${id}/`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -104,8 +116,13 @@ export function usePillars() {
         } as HeadersInit,
       })
       success('Item deleted successfully!')
+      addLog('info', 'pillar_delete_succeeded', { pillarId: id })
       await fetchAll()
     } catch (err) {
+      addLog('error', 'pillar_delete_failed', {
+        pillarId: id,
+        message: err instanceof Error ? err.message : String(err),
+      })
       error.value = err
       errorToast(err)
     }
@@ -116,14 +133,20 @@ export function usePillars() {
   }
 
   async function validatePillar(pillar: Pillar) {
+    addLog('info', 'pillar_validation_triggered')
     return await pillarsApi.validatePillarAPICall(pillar)
   }
 
   async function fixPillarWithAI(pillar: Pillar, validationIssues: StructuralIssue[] = []) {
+    addLog('info', 'pillar_ai_fix_triggered', {
+      pillarId: pillar.id,
+      issueCount: validationIssues.length,
+    })
     return await pillarsApi.fixPillarWithAIAPICall(pillar, validationIssues)
   }
 
   async function acceptPillarFix(pillarId: number, name: string, description: string) {
+    addLog('info', 'pillar_ai_fix_accept_triggered', { pillarId })
     return await pillarsApi.acceptPillarFixAPICall(pillarId, name, description)
   }
 
@@ -137,9 +160,16 @@ export function usePillars() {
     isEvaluating.value = true
     evaluationError.value = null
     const modeToUse = mode ?? executionMode.value
+
+    addLog('info', 'pillars_evaluation_started', { mode: modeToUse })
     try {
       evaluationResult.value = await pillarsApi.evaluateAllAPICall(modeToUse)
+      addLog('info', 'pillars_evaluation_succeeded', { mode: modeToUse })
     } catch (err) {
+      addLog('error', 'pillars_evaluation_failed', {
+        mode: modeToUse,
+        message: err instanceof Error ? err.message : String(err),
+      })
       console.error('Error evaluating pillars:', err)
       evaluationError.value = 'Failed to evaluate pillars. Please try again.'
     } finally {
