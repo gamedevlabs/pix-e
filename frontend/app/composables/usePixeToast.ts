@@ -1,5 +1,6 @@
 export function usePixeToast() {
   const toast = useToast()
+  const nuxtApp = useNuxtApp()
 
   function success(description?: string, title = 'Success') {
     const show = () => {
@@ -9,8 +10,6 @@ export function usePixeToast() {
         color: 'success',
       })
     }
-
-    const nuxtApp = useNuxtApp()
 
     if (nuxtApp.isHydrating) {
       onNuxtReady(show)
@@ -46,8 +45,6 @@ export function usePixeToast() {
       })
     }
 
-    const nuxtApp = useNuxtApp()
-
     if (nuxtApp.isHydrating) {
       onNuxtReady(show)
     } else {
@@ -55,5 +52,13 @@ export function usePixeToast() {
     }
   }
 
-  return { success, error }
+  function info(description?: string, title = 'Info') {
+    toast.add({
+      title,
+      description,
+      color: 'info',
+    })
+  }
+
+  return { success, error, info }
 }
