@@ -37,6 +37,7 @@ interface PxNode extends NamedEntity {
   name: string
   description: string
   components: PxComponent[]
+  keys: PxKey[]
   charts: PxChart[]
   created_at: string
   updated_at: string
@@ -83,6 +84,18 @@ interface PxChartEdge {
   sourceHandle: string
   target: string
   targetHandle: string
+  locks: PxLock[]
+  created_at: string
+  updated_at: string
+  owner: number | null
+}
+
+interface PxChartSettings {
+  id: string
+  px_chart: string
+  use_locks: boolean
+  ignore_consumable_keys: boolean
+  show_soft_locks: boolean
   created_at: string
   updated_at: string
   owner: number | null

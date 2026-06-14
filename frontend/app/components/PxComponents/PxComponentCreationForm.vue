@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import type { FormError } from '@nuxt/ui'
+
 const props = defineProps<{ selectedNodeId: string }>()
 
 const {
@@ -19,6 +21,14 @@ const emit = defineEmits<{
   close: (payload: { nodeId: string; componentId: string }) => void
 }>()
 
+interface PxComponentState {
+  nodeRef: string
+  definitionRef: string | undefined
+  stringValue: string | undefined
+  numberValue: number | undefined
+  booleanValue: false
+}
+
 const state = ref({
   nodeRef: props.selectedNodeId,
   definitionRef: undefined,
@@ -26,6 +36,21 @@ const state = ref({
   numberValue: undefined,
   booleanValue: false,
 })
+
+function validate(state: Partial<PxComponentState>): FormError[] {
+  const errors = []
+  if (!state.nodeRef) errors.push({ name: 'nodeRef', message: 'Required' })
+  if (!state.definitionRef) errors.push({ name: 'definitionRef', message: 'Required' })
+  if (selectedDefinition.value && selectedDefinition.value?.type === 'string' && !state.stringValue)
+    errors.push({ name: 'value-string', message: 'Required' })
+  if (
+    selectedDefinition.value &&
+    selectedDefinition.value?.type === 'number' &&
+    typeof state.numberValue !== 'number'
+  )
+    errors.push({ name: 'value-number', message: 'Required' })
+  return errors
+}
 
 const availableDefinitionsForSelectedNode = computed(() => {
   return pxDefinitions.value.filter(
@@ -79,9 +104,9 @@ async function onSubmit() {
 <template>
   <UModal :title="'Add new Component'">
     <template #body>
-      <UForm :state="state" class="space-y-4" @submit="onSubmit">
-        <UFormField label="Node Reference" name="nodeRef" class="max-w-96" required>
-          <USelect
+      <UForm :state="state" class="space-y-4" :validate="validate" @submit="onSubmit">
+        <UFormField label="Node Reference" name="nodeRef" required>
+          <USelectMenu
             v-model="state.nodeRef"
             value-key="id"
             label-key="name"
@@ -91,7 +116,7 @@ async function onSubmit() {
           />
         </UFormField>
 
-        <UFormField label="Definition Reference" name="definitionRef" class="max-w-96" required>
+        <UFormField label="Definition Reference" name="definitionRef" required>
           <div v-if="availableDefinitionsForSelectedNode.length === 0">
             The selected node already has a component for each definition available.
           </div>
@@ -106,6 +131,40 @@ async function onSubmit() {
           />
         </UFormField>
 
+        <UFormField
+          v-if="selectedDefinition && selectedDefinition.type === 'string'"
+          label="Value"
+          name="value-string"
+          required
+        >
+          <UInput v-model="state.stringValue" placeholder="Enter String Value" class="w-full" />
+        </UFormField>
+        <UFormField
+          v-else-if="selectedDefinition && selectedDefinition.type === 'number'"
+          label="Value"
+          name="value-number"
+          required
+        >
+          <UInputNumber
+            v-model="state.numberValue"
+            placeholder="Enter Numeric Value"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          v-else-if="selectedDefinition && selectedDefinition.type === 'boolean'"
+          label="Value"
+          name="value-boolean"
+          required
+        >
+          <UCheckbox
+            v-model="state.booleanValue"
+            placeholder="Enter Boolean Value"
+            class="w-full"
+          />
+        </UFormField>
+
+        <!--
         <UFormField label="Value" name="value" class="max-w-96" required>
           <div
             v-if="
@@ -139,8 +198,9 @@ async function onSubmit() {
             />
           </div>
         </UFormField>
+    -->
 
-        <UButton type="submit"> Submit </UButton>
+        <UButton type="submit" class="mt-4"> Submit </UButton>
       </UForm>
     </template>
   </UModal>

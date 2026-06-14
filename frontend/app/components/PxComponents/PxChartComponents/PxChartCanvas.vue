@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import {
   type NodeDragEvent,
   VueFlow,
@@ -13,14 +13,17 @@ import {
 } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import PxChartToolbar from './PxChartToolbar.vue'
-import { PxChartEdge } from '#components'
+import { PxChartEdge, PxChartSettingsForm, PxLockEditForm } from '#components'
 import { useApi } from '~/composables/useApi'
+
 const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
   (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
 }>()
+
+const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
 
 const chartId = props.chartId
 const { success: successToast, error: errorToast } = usePixeToast()
@@ -30,9 +33,13 @@ const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
 
+const { items: pxChartEdges, fetchAll: fetchPxChartEdges } = usePxChartEdges(props.chartId)
+
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
 )
+
+const { loadChartSettingsForUser, settings } = usePxChartSettings(props.chartId)
 
 const {
   nodes,
@@ -50,10 +57,20 @@ const {
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
+  updateLocksOnEdge,
 } = usePxChartsCanvasApi(chartId)
 
-const { path, calculatePathFromSelection, resetPathValue, updatePathHighlight } =
-  usePxChartPathCalculation(nodes, edges)
+const {
+  result,
+  calculatePathFromSelection,
+  resetPathCalculation,
+  updateNodeStyling,
+  updateEdgeStyling,
+} = usePxChartPathCalculation(nodes, edges, settings)
+
+const overlay = useOverlay()
+const lockModal = overlay.create(PxLockEditForm)
+const settingsModal = overlay.create(PxChartSettingsForm)
 
 const edgeTypes = {
   pxGraph: markRaw(PxChartEdge),
@@ -93,7 +110,7 @@ const contextMenuVirtualElement = ref({
   getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
 })
 const mousePos = ref({ x: 0, y: 0 })
-const { screenToFlowCoordinate, vueFlowRef } = useVueFlow()
+const { vueFlowRef } = useVueFlow()
 
 const menuItems = computed(() => [
   {
@@ -211,6 +228,8 @@ onMounted(() => {
   fetchPxComponents()
   fetchPxComponentDefinitions()
   fetchPxChartContainers()
+  fetchPxChartEdges()
+  loadChartSettingsForUser()
 })
 
 async function onNodeDragStop(event: NodeDragEvent) {
@@ -230,6 +249,7 @@ async function onNodeDragStop(event: NodeDragEvent) {
 async function onConnect(connection: Connection) {
   await addEdge(connection)
   emit('edgeConnected')
+  fetchPxChartEdges()
   updatePath()
 }
 
@@ -280,7 +300,7 @@ async function onNodesChange(changes: NodeChange[]) {
         break
       case 'select':
         defaultChanges.push(change)
-        await onSelectionChange(change)
+        await onNodeSelectionChange(change)
         break
     }
   }
@@ -353,7 +373,7 @@ async function onContextMenu(mouseEvent: MouseEvent) {
 
 const pxNodeIdsInPath = computed(() => {
   const nodes: Array<string | null> = []
-  path.value.forEach((containerId) => {
+  result.value.pathNodes.forEach((containerId) => {
     const container = pxChartContainers.value.find((container) => container.id === containerId)
     if (container) {
       nodes.push(container.content)
@@ -370,7 +390,8 @@ const pxNodesInChart = computed(() => {
 async function updatePath() {
   if (selectedNodesInOrder.value.length >= 2) {
     await calculatePathFromSelection(selectedNodesInOrder.value)
-    await updatePathHighlight()
+    await updateNodeStyling()
+    await updateEdgeStyling()
   }
 }
 
@@ -380,7 +401,7 @@ async function removeFromSelected(idToRemove: string) {
   selectedNodesInOrder.value = selectedNodesInOrder.value.filter((id) => id != idToRemove)
 }
 
-async function onSelectionChange(change: NodeSelectionChange) {
+async function onNodeSelectionChange(change: NodeSelectionChange) {
   // update record of selected nodes
   if (change.selected) {
     selectedNodesInOrder.value.push(change.id)
@@ -392,9 +413,27 @@ async function onSelectionChange(change: NodeSelectionChange) {
   if (selectedNodesInOrder.value.length >= 2) {
     await calculatePathFromSelection(selectedNodesInOrder.value)
   } else {
-    await resetPathValue()
+    await resetPathCalculation()
   }
-  await updatePathHighlight()
+  await updateNodeStyling()
+  await updateEdgeStyling()
+}
+
+async function handleEditLocks() {
+  if (!getSelectedEdges.value.length) return
+
+  const selectedEdge = getSelectedEdges.value[0]!
+  const pxChartEdge = pxChartEdges.value.find((pxEdge) => pxEdge.id === selectedEdge.id)!
+
+  await lockModal
+    .open({ selectedEdge: pxChartEdge, chartId: chartId })
+    .result.then(async (edgeId) => await updateLocksOnEdge(edgeId))
+}
+
+async function handleEditSettings() {
+  await settingsModal
+    .open({ chartId: chartId, settings: settings.value })
+    .result.then(async () => await loadChartSettingsForUser())
 }
 </script>
 
@@ -411,68 +450,10 @@ async function onSelectionChange(change: NodeSelectionChange) {
     @add-existing-node="handleAddContainerFromPanel(false, false)"
     @add-new-node="handleAddContainerFromPanel(true, false)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
-  />
-
-  <UDropdownMenu
-    v-model:open="contextMenuOpen"
-    :items="menuItems"
-    :modal="false"
-    :content="{
-      reference: contextMenuVirtualElement,
-      side: 'right',
-      align: 'start',
-    }"
+    @edit-settings="handleEditSettings()"
   >
-    <!-- invisible item the dropdown menu is initially centered on -->
-    <div class="hidden pointer-events-none" />
-  </UDropdownMenu>
-
-  <div v-if="pxChartError">
-    <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
-    <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
-  </div>
-  <VueFlow
-    v-else
-    v-model:nodes="nodes"
-    v-model:edges="edges"
-    :edge-types="edgeTypes"
-    :apply-default="false"
-    :snap-to-grid="menuSnapToGrid"
-    :snap-grid="grid"
-    @node-drag-stop="onNodeDragStop"
-    @connect="onConnect"
-    @nodes-change="onNodesChange"
-    @edges-change="onEdgesChange"
-    @pane-context-menu="onContextMenu($event)"
-    @node-click="handleNodeClick"
-  >
-    <!--@nodes-initialized="fitView()"-->
-
-    <Background />
-
-    <template #node-pxEmpty="customNodeProps">
-      <PxChartContainer
-        v-bind="customNodeProps"
-        @delete="handleDeletePxGraphContainer"
-        @add-px-node="
-          (containerId, nodeId) => {
-            handleAddPxNode(containerId, nodeId)
-          }
-        "
-        @edit="handleUpdatePxGraphContainer"
-      />
-    </template>
-
-    <template #node-pxNode="customNodeProps">
-      <PxChartContainerNode
-        v-bind="customNodeProps"
-        @switch-px-node="handleSwitchPxNode"
-        @delete="handleDeletePxGraphContainer"
-      />
-    </template>
-
-    <!-- Context Strategy Analysis Button -->
-    <Panel :position="'top-right'">
+    <template #right>
+      <!-- Context Strategy Analysis Button -->
       <div class="flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
           <USelect
@@ -511,25 +492,101 @@ async function onSelectionChange(change: NodeSelectionChange) {
           >
             Reset Cache
           </UButton>
-        </div>
-        <UTooltip
-          :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
-          :content="{ align: 'center', side: 'left' }"
-        >
-          <UButton
-            size="lg"
-            icon="i-heroicons-cpu-chip"
-            color="warning"
-            :disabled="!selectedNodeForAnalysis || true"
-            @click="openStrategyPanel"
-          >
-            Context Analysis
-          </UButton>
-        </UTooltip>
-        <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
-          Selected: {{ selectedNodeForAnalysis.nodeName }}
+          <div>
+            <UTooltip
+              :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
+              :content="{ align: 'center', side: 'left' }"
+            >
+              <UButton
+                size="lg"
+                icon="i-heroicons-cpu-chip"
+                color="warning"
+                :disabled="!selectedNodeForAnalysis || true"
+                @click="openStrategyPanel"
+              >
+                Context Analysis
+              </UButton>
+            </UTooltip>
+            <!--
+            <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
+              Selected: {{ selectedNodeForAnalysis.nodeName }}
+            </div>
+            -->
+          </div>
         </div>
       </div>
+    </template>
+  </PxChartToolbar>
+
+  <UDropdownMenu
+    v-model:open="contextMenuOpen"
+    :items="menuItems"
+    :modal="false"
+    :content="{
+      reference: contextMenuVirtualElement,
+      side: 'right',
+      align: 'start',
+    }"
+  >
+    <!-- invisible item the dropdown menu is initially centered on -->
+    <div class="hidden pointer-events-none" />
+  </UDropdownMenu>
+
+  <div v-if="pxChartError">
+    <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
+    <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
+  </div>
+  <VueFlow
+    v-else
+    v-model:nodes="nodes"
+    v-model:edges="edges"
+    class="max-h-full"
+    :edge-types="edgeTypes"
+    :apply-default="false"
+    :snap-to-grid="menuSnapToGrid"
+    :snap-grid="grid"
+    :min-zoom="0.1"
+    :max-zoom="4"
+    @node-drag-stop="onNodeDragStop"
+    @connect="onConnect"
+    @nodes-change="onNodesChange"
+    @edges-change="onEdgesChange"
+    @pane-context-menu="onContextMenu($event)"
+    @node-click="handleNodeClick"
+  >
+    <!--@nodes-initialized="fitView()"-->
+    <Background />
+
+    <template #node-pxEmpty="customNodeProps">
+      <PxChartContainer
+        v-bind="customNodeProps"
+        @delete="handleDeletePxGraphContainer"
+        @add-px-node="
+          (containerId, nodeId) => {
+            handleAddPxNode(containerId, nodeId)
+          }
+        "
+        @edit="handleUpdatePxGraphContainer"
+      />
+    </template>
+
+    <template #node-pxNode="customNodeProps">
+      <PxChartContainerNode
+        v-bind="customNodeProps"
+        @switch-px-node="handleSwitchPxNode"
+        @delete="handleDeletePxGraphContainer"
+      />
+    </template>
+
+    <Panel :position="'top-left'">
+      <!-- Edge-specific Action, only available when edge is selected -->
+      <UTooltip
+        v-if="getSelectedEdges.length === 1"
+        text="Add or Edit Locks"
+        :content="{ align: 'center', side: 'right' }"
+      >
+        <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
+      </UTooltip>
     </Panel>
   </VueFlow>
 
@@ -552,7 +609,7 @@ async function onSelectionChange(change: NodeSelectionChange) {
     </template>
 
     <template #footer>
-      <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close </UButton>
+      <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close</UButton>
     </template>
   </USlideover>
 

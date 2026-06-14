@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PxComponentCreationForm, PxNodeFixModal } from '#components'
+import PxKeyCreationForm from './PxLockKeyComponents/PxKeyCreationForm.vue'
 import type { ContextMenuItem } from '#ui/components/ContextMenu.vue'
 
 const props = defineProps<{
@@ -10,7 +11,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update', updatedNode: PxNode): void
   (e: 'delete', nodeId: string): void
-  (e: 'deleteComponent' | 'addComponent', nodeId: string, componentId: string): void
+  (
+    e: 'deleteComponent' | 'addComponent' | 'deleteKey' | 'addKey',
+    nodeId: string,
+    componentId: string,
+  ): void
   (e: 'deleteContainer' | 'switchNode'): void
 }>()
 
@@ -21,6 +26,7 @@ const pxNodesLLM = usePxNodesLLM()
 
 const overlay = useOverlay()
 const modal = overlay.create(PxComponentCreationForm)
+const keyModal = overlay.create(PxKeyCreationForm)
 
 const editForm = ref({
   name: props.node.name,
@@ -164,6 +170,16 @@ async function openFixModal() {
   })
   fixModal.open()
 }
+
+function handleDeleteKey(keyId: string) {
+  emit('deleteKey', props.node.id, keyId)
+}
+
+async function handleAddKey() {
+  const { nodeId, keyId } = await keyModal.open({ selectedNodeId: props.node.id }).result
+
+  emit('addKey', nodeId, keyId)
+}
 </script>
 
 <template>
@@ -182,10 +198,11 @@ async function openFixModal() {
         <div v-if="!isBeingEdited">
           <h2 class="font-semibold text-lg mb-2">Description</h2>
           <p>{{ props.node.description }}</p>
+          <USeparator class="mt-6" />
           <br />
           <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
           <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
-          <section class="grid grid-cols-1 gap-6">
+          <section class="flex flex-wrap gap-4">
             <div v-for="component in node.components" :key="component.id">
               <PxComponentCard
                 visualization-style="preview"
@@ -194,6 +211,16 @@ async function openFixModal() {
               />
             </div>
           </section>
+          <USeparator class="mt-6" />
+          <br />
+          <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
+          <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
+          <section class="flex flex-wrap gap-4">
+            <div v-for="pxKey in node.keys" :key="pxKey.id">
+              <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
+            </div>
+          </section>
+          <USeparator class="mt-6" />
           <br />
           <h2 v-if="node.charts.length === 0" class="italic">
             This node is not associated to any charts.
@@ -291,38 +318,89 @@ async function openFixModal() {
             <Icon name="heroicons:chevron-down-20-solid" class="size-5" />
           </div>
           <!-- not collapsed-->
-          <div v-else class="flex-col justify-between">
-            <div class="flex flex-wrap justify-start gap-2">
-              <UButton
-                color="warning"
-                variant="soft"
-                :loading="isValidating"
-                @click="handleValidation"
-              >
-                Check
-              </UButton>
-              <UButton color="primary" variant="soft" @click="handleAddComponent">
-                Add Component
-              </UButton>
-              <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
-              <UButton
-                v-if="isCollapsible"
-                color="secondary"
-                variant="soft"
-                @click="handleSwitchNode()"
-                >Switch Node</UButton
-              >
-              <UButton v-if="!isCollapsible" color="error" variant="soft" @click="emitDelete"
-                >Delete</UButton
-              >
-              <UButton v-else color="error" variant="soft" @click="handleDeleteContainer()"
-                >Delete</UButton
-              >
+          <div v-else class="flex flex-col w-full">
+            <!-- First row -->
+            <div class="grid grid-cols-3 items-center w-full">
+              <!-- Left aligned -->
+              <div class="justify-self-start">
+                <UTooltip text="Check with AI">
+                  <UButton
+                    icon="i-lucide-sparkles"
+                    color="warning"
+                    variant="soft"
+                    :loading="isValidating"
+                    @click="handleValidation"
+                  />
+                </UTooltip>
+              </div>
+
+              <!-- Center aligned -->
+              <div class="flex justify-center gap-2">
+                <UTooltip text="Add Component">
+                  <UButton
+                    icon="i-lucide-component"
+                    color="primary"
+                    variant="soft"
+                    @click="handleAddComponent"
+                  />
+                </UTooltip>
+                <UTooltip text="Add Key">
+                  <UButton
+                    icon="i-lucide-key-round"
+                    color="primary"
+                    variant="soft"
+                    @click="handleAddKey"
+                  />
+                </UTooltip>
+              </div>
+
+              <!-- Right aligned -->
+              <div class="flex justify-self-end gap-2">
+                <UTooltip text="Edit">
+                  <UButton
+                    icon="i-lucide-square-pen"
+                    color="secondary"
+                    variant="soft"
+                    @click="startEdit"
+                  />
+                </UTooltip>
+                <UTooltip text="Switch Node">
+                  <!-- TODO: nodes should not know about switching nodes. this can be handled with a vue slot
+                   vue slots allow us to inject buttons from the parent -->
+                  <UButton
+                    v-if="isCollapsible"
+                    icon="i-lucide-arrow-right-left"
+                    color="secondary"
+                    variant="soft"
+                    @click="handleSwitchNode()"
+                  />
+                </UTooltip>
+
+                <UTooltip text="Delete">
+                  <UButton
+                    v-if="!isCollapsible"
+                    icon="i-lucide-trash"
+                    color="error"
+                    variant="soft"
+                    @click="emitDelete"
+                  />
+                  <!-- TODO: nodes should not know about containers. this can be handle with emitDelete,
+                  as the user of this component should decide what emitDelete() does -->
+                  <UButton
+                    v-else
+                    icon="i-lucide-trash"
+                    color="error"
+                    variant="soft"
+                    @click="handleDeleteContainer()"
+                  />
+                </UTooltip>
+              </div>
             </div>
+
+            <!-- Second row -->
             <div
               v-if="isCollapsible"
-              class="flex justify-center"
-              style="padding-top: 15px; cursor: default"
+              class="flex justify-center pt-4 cursor-default"
               @click="toggleCollapsed()"
             >
               <Icon name="heroicons:chevron-up-20-solid" class="size-5" />
