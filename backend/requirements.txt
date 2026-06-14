@@ -1,6 +1,6 @@
 asgiref==3.10.0
 cryptography==44.0.3
-Django==5.2.7
+Django>=5.2.14
 django-cors-headers==4.9.0
 djangorestframework==3.16.1
 drf-nested-routers==0.94.2
