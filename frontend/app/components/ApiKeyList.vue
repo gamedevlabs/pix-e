@@ -5,11 +5,13 @@ import { useApiKeysApi } from '~/composables/api/apiKeysApi'
 
 const props = defineProps<{
   keys: UserApiKey[]
+  testingId: string | null
 }>()
 
 const emit = defineEmits<{
   updated: [key: UserApiKey]
   deleted: [id: string]
+  test: [id: string]
 }>()
 
 const { updateKey, deleteKey } = useApiKeysApi()
@@ -77,6 +79,20 @@ async function handleDelete(id: string) {
     deletingId.value = null
   }
 }
+
+// Sync editing state when keys are refreshed (e.g. after test re-fetch)
+watch(
+  () => props.keys,
+  (newKeys) => {
+    if (editingId.value) {
+      const updated = newKeys.find((k) => k.id === editingId.value)
+      if (updated) {
+        editIsActive.value = updated.is_active
+      }
+    }
+  },
+  { deep: false },
+)
 </script>
 
 <template>
@@ -132,6 +148,14 @@ async function handleDelete(id: string) {
             icon="i-lucide-pencil"
             size="xs"
             @click="startEdit(apiKey)"
+          />
+          <UButton
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-plug"
+            size="sm"
+            :loading="testingId === apiKey.id"
+            @click="$emit('test', apiKey.id)"
           />
           <UButton
             variant="ghost"
@@ -203,6 +227,14 @@ async function handleDelete(id: string) {
           </span>
         </div>
         <div class="flex justify-end gap-2">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-plug"
+            size="sm"
+            :loading="testingId === editingId"
+            @click="editingId && $emit('test', editingId)"
+          />
           <UButton variant="ghost" size="sm" @click="cancelEdit">Cancel</UButton>
           <UButton size="sm" :loading="isEditing" @click="handleEditSubmit">Save</UButton>
         </div>
