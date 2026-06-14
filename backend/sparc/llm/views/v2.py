@@ -16,10 +16,9 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from game_concept.models import Project
+from helpdesk.session_logging import buffer_backend_session_log
 from llm.logfire_config import get_logfire
 from projects.utils import get_current_project
-
-from helpdesk.session_logging import buffer_backend_session_log
 
 # Import to trigger workflow registration
 from sparc.llm import workflows, workflows_v2  # noqa: F401

@@ -10,12 +10,11 @@ from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
+from helpdesk.session_logging import buffer_backend_session_log
 from llm import LLMOrchestrator
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
-
-from helpdesk.session_logging import buffer_backend_session_log
 
 from .models import Pillar
 from .serializers import PillarSerializer

@@ -16,6 +16,7 @@ from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from helpdesk.session_logging import buffer_backend_session_log
 from llm.events import EventCollector
 from llm.logfire_config import get_logfire
 from llm.types import AgentOutputEvent, AgentStartedEvent
@@ -31,8 +32,6 @@ from sparc.llm.views.v2_utils import (
     update_evaluation_totals,
 )
 from sparc.models import SPARCEvaluation
-
-from helpdesk.session_logging import buffer_backend_session_log
 
 logger = logging.getLogger(__name__)
 

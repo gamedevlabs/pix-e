@@ -15,13 +15,12 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from game_concept.models import Project
+from helpdesk.session_logging import buffer_backend_session_log
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest, LLMResponse
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
-
-from helpdesk.session_logging import buffer_backend_session_log
 
 # Import handlers and workflows to trigger auto-registration
 from sparc.llm import handlers, workflows  # noqa: F401

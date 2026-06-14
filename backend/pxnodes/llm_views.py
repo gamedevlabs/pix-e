@@ -12,13 +12,12 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
+from helpdesk.session_logging import buffer_backend_session_log
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
-
-from helpdesk.session_logging import buffer_backend_session_log
 
 # Import handlers to trigger auto-registration
 from pxnodes.llm import handlers  # noqa: F401
