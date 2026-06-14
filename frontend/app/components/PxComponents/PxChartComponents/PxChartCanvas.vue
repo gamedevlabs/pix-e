@@ -15,6 +15,7 @@ import { Background } from '@vue-flow/background'
 import PxChartToolbar from './PxChartToolbar.vue'
 import { PxChartEdge, PxChartSettingsForm, PxLockEditForm } from '#components'
 import { useApi } from '~/composables/useApi'
+
 const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
@@ -449,92 +450,9 @@ async function handleEditSettings() {
     @add-existing-node="handleAddContainerFromPanel(false, false)"
     @add-new-node="handleAddContainerFromPanel(true, false)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
-  />
-
-  <UDropdownMenu
-    v-model:open="contextMenuOpen"
-    :items="menuItems"
-    :modal="false"
-    :content="{
-      reference: contextMenuVirtualElement,
-      side: 'right',
-      align: 'start',
-    }"
+    @edit-settings="handleEditSettings()"
   >
-    <!-- invisible item the dropdown menu is initially centered on -->
-    <div class="hidden pointer-events-none" />
-  </UDropdownMenu>
-
-  <div v-if="pxChartError">
-    <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
-    <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
-  </div>
-  <VueFlow
-    v-else
-    v-model:nodes="nodes"
-    v-model:edges="edges"
-    class="max-h-full"
-    :edge-types="edgeTypes"
-    :apply-default="false"
-    :snap-to-grid="menuSnapToGrid"
-    :snap-grid="grid"
-    @node-drag-stop="onNodeDragStop"
-    @connect="onConnect"
-    @nodes-change="onNodesChange"
-    @edges-change="onEdgesChange"
-    @pane-context-menu="onContextMenu($event)"
-    @node-click="handleNodeClick"
-  >
-    <!--@nodes-initialized="fitView()"-->
-
-    <Background />
-
-    <template #node-pxEmpty="customNodeProps">
-      <PxChartContainer
-        v-bind="customNodeProps"
-        @delete="handleDeletePxGraphContainer"
-        @add-px-node="
-          (containerId, nodeId) => {
-            handleAddPxNode(containerId, nodeId)
-          }
-        "
-        @edit="handleUpdatePxGraphContainer"
-      />
-    </template>
-
-    <template #node-pxNode="customNodeProps">
-      <PxChartContainerNode
-        v-bind="customNodeProps"
-        @switch-px-node="handleSwitchPxNode"
-        @delete="handleDeletePxGraphContainer"
-      />
-    </template>
-
-    <Panel :position="'top-left'">
-      <UTooltip text="Edit Settings" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="handleEditSettings" />
-      </UTooltip>
-      <UTooltip text="Create Node" :content="{ align: 'center', side: 'right' }">
-        <UButton
-          size="xl"
-          icon="i-lucide-plus"
-          color="primary"
-          @click="handleAddContainerFromPanel"
-        />
-      </UTooltip>
-
-      <!-- Edge-specific Action, only available when edge is selected -->
-      <UTooltip
-        v-if="getSelectedEdges.length === 1"
-        text="Add or Edit Locks"
-        :content="{ align: 'center', side: 'right' }"
-      >
-        <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
-      </UTooltip>
-    </Panel>
-
-    <!-- Context Strategy Analysis Button -->
-    <Panel :position="'top-right'">
+    <template v-slot:right>
       <div class="flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
           <USelect
@@ -573,26 +491,105 @@ async function handleEditSettings() {
           >
             Reset Cache
           </UButton>
-        </div>
-        <UTooltip
-          :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
-          :content="{ align: 'center', side: 'left' }"
-        >
-          <UButton
-            size="lg"
-            icon="i-heroicons-cpu-chip"
-            color="warning"
-            :disabled="!selectedNodeForAnalysis || true"
-            @click="openStrategyPanel"
-          >
-            Context Analysis
-          </UButton>
-        </UTooltip>
-        <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
-          Selected: {{ selectedNodeForAnalysis.nodeName }}
+          <div>
+            <UTooltip
+              :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
+              :content="{ align: 'center', side: 'left' }"
+            >
+              <UButton
+                size="lg"
+                icon="i-heroicons-cpu-chip"
+                color="warning"
+                :disabled="!selectedNodeForAnalysis || true"
+                @click="openStrategyPanel"
+              >
+                Context Analysis
+              </UButton>
+            </UTooltip>
+            <!--
+            <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
+              Selected: {{ selectedNodeForAnalysis.nodeName }}
+            </div>
+            -->
+          </div>
         </div>
       </div>
+    </template>
+  </PxChartToolbar>
+
+  <UDropdownMenu
+    v-model:open="contextMenuOpen"
+    :items="menuItems"
+    :modal="false"
+    :content="{
+      reference: contextMenuVirtualElement,
+      side: 'right',
+      align: 'start',
+    }"
+  >
+    <!-- invisible item the dropdown menu is initially centered on -->
+    <div class="hidden pointer-events-none" />
+  </UDropdownMenu>
+
+  <div v-if="pxChartError">
+    <div v-if="pxChartError.response?.status === 403">You do not have access to this graph.</div>
+    <div v-if="pxChartError.response?.status === 404">This graph does not exist.</div>
+  </div>
+  <VueFlow
+    v-else
+    v-model:nodes="nodes"
+    v-model:edges="edges"
+    class="max-h-full"
+    :edge-types="edgeTypes"
+    :apply-default="false"
+    :snap-to-grid="menuSnapToGrid"
+    :snap-grid="grid"
+    :min-zoom="0.1"
+    :max-zoom="4"
+    @node-drag-stop="onNodeDragStop"
+    @connect="onConnect"
+    @nodes-change="onNodesChange"
+    @edges-change="onEdgesChange"
+    @pane-context-menu="onContextMenu($event)"
+    @node-click="handleNodeClick"
+  >
+    <!--@nodes-initialized="fitView()"-->
+    <Background />
+
+    <template #node-pxEmpty="customNodeProps">
+      <PxChartContainer
+        v-bind="customNodeProps"
+        @delete="handleDeletePxGraphContainer"
+        @add-px-node="
+          (containerId, nodeId) => {
+            handleAddPxNode(containerId, nodeId)
+          }
+        "
+        @edit="handleUpdatePxGraphContainer"
+      />
+    </template>
+
+    <template #node-pxNode="customNodeProps">
+      <PxChartContainerNode
+        v-bind="customNodeProps"
+        @switch-px-node="handleSwitchPxNode"
+        @delete="handleDeletePxGraphContainer"
+      />
+    </template>
+
+    <Panel :position="'top-left'">
+      <!-- Edge-specific Action, only available when edge is selected -->
+      <UTooltip
+        v-if="getSelectedEdges.length === 1"
+        text="Add or Edit Locks"
+        :content="{ align: 'center', side: 'right' }"
+      >
+        <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
+      </UTooltip>
     </Panel>
+
+    <!-- Context Strategy Analysis Button -->
+    <Panel :position="'top-right'"></Panel>
   </VueFlow>
 
   <!-- Context Strategy Slideover -->
@@ -614,7 +611,7 @@ async function handleEditSettings() {
     </template>
 
     <template #footer>
-      <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close </UButton>
+      <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close</UButton>
     </template>
   </USlideover>
 
