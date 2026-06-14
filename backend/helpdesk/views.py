@@ -2,6 +2,7 @@ import json
 
 import requests
 from django.conf import settings
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -131,19 +132,33 @@ Backend logs can be found in Django admin by searching this session ID.
                 status=502,
             )
 
+        # creates/appends backend logs in database
         if is_bug_report and session_id:
-            entries = pop_backend_session_logs(session_id)
+            # fetches existing session entries if session was logged before
+            new_entries = pop_backend_session_logs(session_id)
 
-            BackendSessionLog.objects.update_or_create(
-                session_id=session_id,
-                defaults={
-                    "entries": entries,
-                    "event_count": len(entries),
-                    "highest_level": get_highest_level(entries),
-                    "first_entry_at": entries[0].get("time") if entries else None,
-                    "last_entry_at": entries[-1].get("time") if entries else None,
-                },
-            )
+            with transaction.atomic():
+                session_log, created = (
+                    BackendSessionLog.objects.select_for_update().get_or_create(
+                        session_id=session_id
+                    )
+                )
+
+                existing_entries = session_log.entries or []
+                combined_entries = existing_entries + new_entries
+
+                session_log.entries = combined_entries
+                session_log.event_count = len(combined_entries)
+                session_log.highest_level = get_highest_level(combined_entries)
+
+                if combined_entries:
+                    session_log.first_entry_at = combined_entries[0].get("time")
+                    session_log.last_entry_at = combined_entries[-1].get("time")
+                else:
+                    session_log.first_entry_at = None
+                    session_log.last_entry_at = None
+
+                session_log.save()
 
         issue = github_response.json()
 

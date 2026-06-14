@@ -21,6 +21,8 @@ from llm.types import LLMRequest, LLMResponse
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
 
+from helpdesk.session_logging import buffer_backend_session_log
+
 # Import handlers and workflows to trigger auto-registration
 from sparc.llm import handlers, workflows  # noqa: F401
 from sparc.llm.views.v2_utils import resolve_concept_meta
@@ -269,6 +271,20 @@ def _run_sparc_evaluation(
 
             except Exception as e:
                 logfire.exception(error_event, error=str(e))
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="sparc_views.evaluation.error",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "model": request.data.get("model"),
+                        "game_text_length": len(request.data.get("game_text", "")),
+                        "context_strategy": request.data.get("context_strategy"),
+                        "pillar_mode": request.data.get("pillar_mode"),
+                        "has_document": bool(request.FILES.get("document")),
+                    },
+                )
                 logger.exception("Error in SPARC evaluation: %s", e)
                 return JsonResponse(
                     {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR

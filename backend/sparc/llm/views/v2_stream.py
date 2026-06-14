@@ -32,6 +32,8 @@ from sparc.llm.views.v2_utils import (
 )
 from sparc.models import SPARCEvaluation
 
+from helpdesk.session_logging import buffer_backend_session_log
+
 logger = logging.getLogger(__name__)
 
 
@@ -125,6 +127,20 @@ class SPARCV2StreamView(APIView):
                     )
                 except Exception as e:
                     logger.error("File upload failed: %s", e, exc_info=True)
+                    buffer_backend_session_log(
+                        session_id=getattr(request, "pixe_session_id", ""),
+                        level="error",
+                        event="sparc_v2_stream.file_upload.fail",
+                        message=str(e),
+                        request=request,
+                        metadata={
+                            "model": request.data.get("model"),
+                            "game_text_length": len(request.data.get("game_text", "")),
+                            "context_strategy": request.data.get("context_strategy"),
+                            "pillar_mode": request.data.get("pillar_mode"),
+                            "has_document": bool(request.FILES.get("document")),
+                        },
+                    )
                     return StreamingHttpResponse(
                         self._error_stream(f"File upload failed: {str(e)}"),
                         content_type="text/event-stream",
@@ -163,6 +179,20 @@ class SPARCV2StreamView(APIView):
 
         except Exception as e:
             logger.error(f"Evaluation failed: {e}", exc_info=True)
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="sparc_v2_stream.evaluation.error",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "game_text_length": len(request.data.get("game_text", "")),
+                    "context_strategy": request.data.get("context_strategy"),
+                    "pillar_mode": request.data.get("pillar_mode"),
+                    "has_document": bool(request.FILES.get("document")),
+                },
+            )
             # Clean up temp file on error
             if temp_file_path and os.path.exists(temp_file_path):
                 try:
@@ -329,6 +359,13 @@ class SPARCV2StreamView(APIView):
 
                 except Exception as e:
                     logger.exception(f"Error in SPARC V2 streaming evaluation: {e}")
+                    buffer_backend_session_log(
+                        session_id=getattr("pixe_session_id", ""),
+                        level="error",
+                        event="sparc_v2_stream.stream_evaluation.error",
+                        message=str(e),
+                        metadata={},
+                    )
                     yield self._format_sse("error", {"message": str(e)})
 
                 finally:
