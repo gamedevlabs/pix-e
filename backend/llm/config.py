@@ -75,7 +75,8 @@ class Config:
         default_factory=lambda: {
             "gemini": "gemini-3.1-flash-lite-preview",
             "openai": "gemini-3.1-flash-lite-preview",
-            # !!! Changed openai to route to gemini as a hack to have llm functions working !!!
+            # !!! Changed openai to route to gemini as a hack
+            # to have llm functions working !!!
         }
     )
 
@@ -230,8 +231,12 @@ class Config:
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             model_aliases=get_setting(
                 "model_aliases",
-                {"gemini": "gemini-3.1-flash-lite-preview", "openai": "gemini-3.1-flash-lite-preview"},
-                # !!! Changed openai to route to gemini as a hack to have llm functions working !!!
+                {
+                    "gemini": "gemini-3.1-flash-lite-preview",
+                    "openai": "gemini-3.1-flash-lite-preview",
+                },
+                # !!! Changed openai to route to gemini as a hack
+                # to have llm functions working !!!
                 dict,
             ),
             # Storage
