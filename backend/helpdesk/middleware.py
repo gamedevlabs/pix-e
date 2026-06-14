@@ -53,8 +53,7 @@ class PixeSessionLoggingMiddleware:
                     level=level,
                     event="backend.request",
                     message=(
-                        f"{request.method} {request.path} -> "
-                        f"{response.status_code}"
+                        f"{request.method} {request.path} -> " f"{response.status_code}"
                     ),
                     request=request,
                     status_code=response.status_code,
