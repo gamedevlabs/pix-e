@@ -1,6 +1,6 @@
 on:
-  push: {}
-  workflow_dispatch: {}
+  push: { }
+  workflow_dispatch: { }
 
 jobs:
   detect-changes:
@@ -21,7 +21,7 @@ jobs:
               - 'frontend/**'
 
   frontend:
-    needs: [detect-changes]
+    needs: [ detect-changes ]
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
@@ -45,7 +45,7 @@ jobs:
         run: npm run build
 
   backend:
-    needs: [detect-changes]
+    needs: [ detect-changes ]
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     defaults:
@@ -86,8 +86,8 @@ jobs:
         run: python -m pytest llm/tests/ pillars/tests/ -v
 
   deploy:
-    needs: [detect-changes, frontend, backend]
-    if: always() && needs.detect-changes.result == 'success'
+    needs: [ detect-changes, frontend, backend ]
+    if: always() && needs.detect-changes.result == 'success' && (needs.frontend.result == 'success' || needs.backend.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -103,7 +103,7 @@ jobs:
         if: needs[matrix.component].result == 'success'
         uses: docker/login-action@v4
         with:
-          registry: https://ghcr.io
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker Meta
@@ -121,15 +121,5 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./${{ matrix.component }}
-          push: true
+          push: ${{ github.ref_name == 'main' || github.ref_name == 'release' }}
           tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            CADDY_CONFIG=${{ github.ref_name == 'release' && 'prod.Caddyfile' || 'dev.Caddyfile' }}
-      #- name: Deploy to Dev
-      #  if: github.ref_name == 'main'
-      #  run: |
-      #    echo "Deploying to Dev"
-      #- name: Deploy to Release
-      #  if: github.ref_name == 'release'
-      #  run: |
-      #    echo "Deploying to Release"
