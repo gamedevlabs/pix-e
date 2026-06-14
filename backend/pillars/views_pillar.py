@@ -87,7 +87,7 @@ class PillarFeedbackView(ViewSet):
                     "pillar_id": pk,
                     "model": request.data.get("model"),
                     "operation": "validate",
-                }
+                },
             )
 
             logger.exception("Error in validate_pillar: %s", e)
@@ -160,7 +160,7 @@ class PillarFeedbackView(ViewSet):
                     "pillar_id": pk,
                     "model": request.data.get("model"),
                     "operation": "fix",
-                }
+                },
             )
             logger.exception("Error in fix_pillar: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -203,7 +203,7 @@ class PillarFeedbackView(ViewSet):
                     "pillar_id": pk,
                     "model": request.data.get("model"),
                     "operation": "accept_fix",
-                }
+                },
             )
             logger.exception("Error in accept_fix: %s", e)
             return JsonResponse({"error": str(e)}, status=500)

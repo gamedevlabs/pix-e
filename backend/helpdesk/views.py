@@ -23,6 +23,7 @@ def get_highest_level(entries):
         key=lambda level: priority.get(level, 0),
     )
 
+
 class HelpdeskTicketView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -138,10 +139,11 @@ Backend logs can be found in Django admin by searching this session ID.
             new_entries = pop_backend_session_logs(session_id)
 
             with transaction.atomic():
-                session_log, created = (
-                    BackendSessionLog.objects.select_for_update().get_or_create(
-                        session_id=session_id
-                    )
+                (
+                    session_log,
+                    created,
+                ) = BackendSessionLog.objects.select_for_update().get_or_create(
+                    session_id=session_id
                 )
 
                 existing_entries = session_log.entries or []

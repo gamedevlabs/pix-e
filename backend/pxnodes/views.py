@@ -652,7 +652,9 @@ class CoherenceEvaluateView(APIView):
                     request=request,
                     metadata={
                         "chart_id": str(chart_id),
-                        "node_ids": [str(node_id) for node_id in node_ids] if node_ids else None,
+                        "node_ids": (
+                            [str(node_id) for node_id in node_ids] if node_ids else None
+                        ),
                         "iterations": iterations,
                         "llm_model": llm_model,
                     },

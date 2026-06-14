@@ -42,9 +42,9 @@ class PixeSessionLoggingMiddleware:
 
         if session_id and request.path.startswith("/api/"):
             level = "info"
-            if(response.status_code >= 500):
+            if response.status_code >= 500:
                 level = "error"
-            elif(response.status_code >= 400):
+            elif response.status_code >= 400:
                 level = "warning"
 
             # level = "error" if response.status_code >= 500 else "warning" if response.status_code >= 400 else "info"

@@ -173,8 +173,12 @@ class SPARCV2EvaluateView(APIView):
                                 request=request,
                                 metadata={
                                     "model": request.data.get("model"),
-                                    "game_text_length": len(request.data.get("game_text", "")),
-                                    "context_strategy": request.data.get("context_strategy"),
+                                    "game_text_length": len(
+                                        request.data.get("game_text", "")
+                                    ),
+                                    "context_strategy": request.data.get(
+                                        "context_strategy"
+                                    ),
                                     "pillar_mode": request.data.get("pillar_mode"),
                                     "has_document": bool(request.FILES.get("document")),
                                 },

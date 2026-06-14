@@ -114,7 +114,9 @@ class NodeFeedbackView(ViewSet):
                     metadata={
                         "node_id": pk,
                         "model": request.data.get("model"),
-                        "validation_issue_count": len(request.data.get("validation_issues", [])),
+                        "validation_issue_count": len(
+                            request.data.get("validation_issues", [])
+                        ),
                     },
                 )
                 logger.exception(f"Error in validate_node: {e}")
@@ -205,7 +207,9 @@ class NodeFeedbackView(ViewSet):
                     metadata={
                         "node_id": pk,
                         "model": request.data.get("model"),
-                        "validation_issue_count": len(request.data.get("validation_issues", [])),
+                        "validation_issue_count": len(
+                            request.data.get("validation_issues", [])
+                        ),
                     },
                 )
                 logger.exception(f"Error in fix_node: {e}")
@@ -286,7 +290,9 @@ class NodeFeedbackView(ViewSet):
                     metadata={
                         "node_id": pk,
                         "model": request.data.get("model"),
-                        "validation_issue_count": len(request.data.get("validation_issues", [])),
+                        "validation_issue_count": len(
+                            request.data.get("validation_issues", [])
+                        ),
                     },
                 )
                 logger.exception(f"Error in accept_fix: {e}")

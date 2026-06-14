@@ -119,7 +119,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in overall_feedback: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -165,7 +165,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in completeness: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -211,7 +211,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in contradictions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -257,7 +257,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in additions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -305,7 +305,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in context: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -475,7 +475,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in evaluate_all: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
@@ -559,7 +559,7 @@ class LLMFeedbackView(ViewSet):
                 metadata={
                     "model": request.data.get("model"),
                     "execution_mode": request.data.get("execution_mode"),
-                }
+                },
             )
             logger.exception("Error in resolve_contradictions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)

@@ -9,9 +9,9 @@ except ImportError:
 from django.core.cache import cache
 from django.utils import timezone
 
-
 BACKEND_LOG_TTL_SECONDS = 60 * 60 * 2
 MAX_BACKEND_LOG_ENTRIES = 100
+
 
 def get_trace_ids():
     span_context = trace.get_current_span().get_span_context()
@@ -21,19 +21,20 @@ def get_trace_ids():
 
     return f"{span_context.trace_id:032x}", f"{span_context.span_id:016x}"
 
+
 def backend_log_cache_key(session_id):
     return f"helpdesk:backend-session-logs:{session_id}"
 
 
 def buffer_backend_session_log(
-        *,
-        session_id,
-        level,
-        event,
-        message="",
-        request=None,
-        status_code=None,
-        metadata=None,
+    *,
+    session_id,
+    level,
+    event,
+    message="",
+    request=None,
+    status_code=None,
+    metadata=None,
 ):
     if not session_id:
         return
