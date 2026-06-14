@@ -195,7 +195,7 @@ export function usePxChartPathCalculation(
     console.log(`Found ${nodes.value.length} nodes.`)
     console.log(`Input (length ${selected.length}): ${selected.toString()}`)
     selectedNodes.value = selected
-    let newPath: string[] = []
+    let newPath: string[]
     if (selected.length == 2 && selected[0] && selected[1]) {
       newPath = await dijkstraInChart(selected[0], selected[1], settings.value.use_locks)
       if (!newPath.length) {
