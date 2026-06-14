@@ -5,17 +5,11 @@ import '@vue-flow/node-resizer/dist/style.css'
 
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
-  (e: 'edit', updatedNode: Partial<PxChartContainer>): void
-  (e: 'delete' | 'removePxNode', id: string): void
+  (e: 'delete' | 'switchPxNode', id: string): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
 const { fetchById: getPxNode } = usePxNodes()
-
-const isBeingEdited = ref(false)
-const editForm = ref({
-  name: props.data.name,
-})
 
 const pxNode = ref<PxNode | null>(null)
 
@@ -59,26 +53,12 @@ async function handleResizeEnd(eventParams: { event: ResizeDragEvent; params: Re
   })
 }
 
-function startEdit() {
-  isBeingEdited.value = true
-}
-
-async function confirmEdit() {
-  isBeingEdited.value = false
-  emit('edit', { id: props.id, name: editForm.value.name })
-}
-
-function cancelEdit() {
-  isBeingEdited.value = false
-  editForm.value.name = props.data.name
-}
-
-async function emitDelete() {
+async function handleDelete() {
   emit('delete', props.id)
 }
 
-async function removePxNode() {
-  emit('removePxNode', props.id)
+async function handleSwitchPxNode() {
+  emit('switchPxNode', props.id)
 }
 
 function listenToResizing() {
@@ -97,30 +77,15 @@ function listenToResizing() {
 
 <template>
   <div ref="cardRef">
-    <UCard class="hover:shadow-lg transition">
-      <template #header>
-        <h2 v-if="!isBeingEdited" class="font-semibold text-lg">{{ props.data.name }}</h2>
-        <UTextarea v-else v-model="editForm.name" :rows="1" />
-      </template>
-
-      <template #default>
-        <div v-if="pxNode">
-          <PxNodeCard :node-id="pxNode.id" :visualization-style="'preview'" />
-        </div>
-      </template>
-
-      <template #footer>
-        <div v-if="!isBeingEdited" class="flex flex-wrap justify-end gap-2">
-          <UButton color="primary" variant="soft" @click="removePxNode()">Remove Px Node</UButton>
-          <UButton color="secondary" variant="soft" @click="startEdit">Edit Name</UButton>
-          <UButton color="error" variant="soft" @click="emitDelete">Delete</UButton>
-        </div>
-        <div v-else class="flex justify-end gap-2">
-          <UButton color="secondary" variant="soft" @click="confirmEdit">Confirm</UButton>
-          <UButton color="error" variant="soft" @click="cancelEdit">Cancel</UButton>
-        </div>
-      </template>
-    </UCard>
+    <div v-if="pxNode">
+      <PxNodeCard
+        :node-id="pxNode.id"
+        :visualization-style="'detailed'"
+        :is-collapsible="true"
+        @delete-container="handleDelete()"
+        @switch-node="handleSwitchPxNode()"
+      />
+    </div>
 
     <NodeResizer
       :is-visible="props.selected"

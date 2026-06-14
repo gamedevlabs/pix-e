@@ -294,6 +294,44 @@ class ValidationTests(TestCase):
         self.assertTrue(valid)
         self.assertEqual(msg, "")
 
+    def test_openai_valid_project_key(self):
+        key = "sk-proj-" + "a" * 20 + "_" + "b" * 10 + "-" + "c" * 10
+        valid, msg = validate_key_format("openai", key)
+        self.assertTrue(valid, f"Expected valid, got: {msg}")
+        self.assertEqual(msg, "")
+
+    def test_openai_valid_key_with_underscores(self):
+        key = "sk-" + "a" * 10 + "_" + "b" * 10
+        valid, msg = validate_key_format("openai", key)
+        self.assertTrue(valid, f"Expected valid, got: {msg}")
+        self.assertEqual(msg, "")
+
+    def test_openai_valid_key_with_hyphens(self):
+        key = "sk-" + "a" * 10 + "-" + "b" * 10
+        valid, msg = validate_key_format("openai", key)
+        self.assertTrue(valid, f"Expected valid, got: {msg}")
+        self.assertEqual(msg, "")
+
+    def test_morpheus_valid_project_key(self):
+        key = "sk-proj-" + "x" * 25 + "_" + "y" * 10
+        valid, msg = validate_key_format("morpheus", key)
+        self.assertTrue(valid, f"Expected valid, got: {msg}")
+        self.assertEqual(msg, "")
+
+    def test_openai_realistic_project_key(self):
+        valid, msg = validate_key_format(
+            "openai",
+            "sk-proj-A7SLbGy9Js3JNmI4mbj9AHuEDdYg_sQyRenUKCLZIOFfxmA2DDZyDOpK"
+            "hPLycchF6GOzMfv64HT3BlbkFJ1AvStDGCsjLO4Rcwy9vPSMtW6gC97eQwc"
+            "--2aMNQ6xHtsjzwUE09igU5gmkrEepA-VLZBSGPcA",
+        )
+        self.assertTrue(valid, f"Expected valid project key, got: {msg}")
+        self.assertEqual(msg, "")
+
+    def test_openai_too_short_project_key(self):
+        valid, msg = validate_key_format("openai", "sk-proj-" + "a" * 5)
+        self.assertFalse(valid)
+
     def test_whitespace_trimming_rejection(self):
         valid, msg = validate_key_format("openai", " sk-" + "a" * 20)
         self.assertFalse(valid)

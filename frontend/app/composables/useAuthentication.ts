@@ -4,8 +4,11 @@ export function useAuthentication() {
   const isLoggedIn = computed(() => user.value !== null)
   const checkedLogin = useState<boolean>('checkedLogin', () => false)
   const router = useRouter()
+  const { addLog } = useSessionLog()
 
   async function register(username: string, password: string): Promise<boolean> {
+    // log registration start
+    addLog('info', 'registration_started')
     try {
       await $fetch(config.public.apiBase + '/api/accounts/register/', {
         method: 'POST',
@@ -14,11 +17,15 @@ export function useAuthentication() {
       })
       return await login(username, password)
     } catch {
+      // log registration fail
+      addLog('error', 'registration_failed')
       return false
     }
   }
 
   async function login(username: string, password: string): Promise<boolean> {
+    // log login start
+    addLog('info', 'login_started')
     try {
       await $fetch(config.public.apiBase + '/api/accounts/login/', {
         method: 'POST',
@@ -28,6 +35,10 @@ export function useAuthentication() {
       })
       const success = await checkAuthentication()
       if (!success) {
+        // log login fail
+        addLog('info', 'login_failed', {
+          message: 'Authentication failed.',
+        })
         return false
       }
       const llmStore = useLLM()
@@ -35,8 +46,14 @@ export function useAuthentication() {
       const route = useRoute()
       const redirectTo = (route.query.redirect as string) || '/'
       await router.push(redirectTo)
+      // log login success
+      addLog('info', 'login_succeeded')
       return true
     } catch {
+      // log login fail
+      addLog('error', 'login_failed', {
+        message: 'An error occurred.',
+      })
       return false
     }
   }
@@ -64,6 +81,8 @@ export function useAuthentication() {
   }
 
   async function logout(): Promise<boolean> {
+    // log logout start
+    addLog('info', 'logout_started')
     try {
       await $fetch(config.public.apiBase + '/api/accounts/logout/', {
         method: 'POST',
@@ -74,8 +93,14 @@ export function useAuthentication() {
       })
       user.value = null
       await router.push('/')
+      // log logout start
+      addLog('info', 'logout_succeeded')
       return true
     } catch {
+      // log logout start
+      addLog('error', 'logout_failed', {
+        message: 'An error occurred.',
+      })
       return false
     }
   }

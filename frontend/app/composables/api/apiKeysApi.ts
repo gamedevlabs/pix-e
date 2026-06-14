@@ -2,9 +2,7 @@ import type { UserApiKey, CreateApiKeyPayload, UpdateApiKeyPayload } from '~/typ
 import { sessionFetch } from '~/utils/sessionFetch'
 
 export function useApiKeysApi() {
-  const config = useRuntimeConfig()
-  const baseUrl = config.public.apiBase
-  const csrfToken = useCookie('csrftoken')
+  const { apiFetch } = useApi()
 
   function apiUrl(path: string) {
     return `${baseUrl}${path}`
@@ -22,34 +20,26 @@ export function useApiKeysApi() {
   }
 
   async function fetchKeys(): Promise<UserApiKey[]> {
-    return await $fetch<UserApiKey[]>(`${baseUrl}/api/accounts/api-keys/`, {
-      credentials: 'include',
-    })
+    return await apiFetch<UserApiKey[]>('/api/accounts/api-keys/')
   }
 
   async function createKey(payload: CreateApiKeyPayload): Promise<UserApiKey> {
-    return await $fetch<UserApiKey>(`${baseUrl}/api/accounts/api-keys/`, {
+    return await apiFetch<UserApiKey>('/api/accounts/api-keys/', {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
       body: payload,
     })
   }
 
   async function updateKey(id: string, payload: UpdateApiKeyPayload): Promise<UserApiKey> {
-    return await $fetch<UserApiKey>(`${baseUrl}/api/accounts/api-keys/${id}/`, {
+    return await apiFetch<UserApiKey>(`/api/accounts/api-keys/${id}/`, {
       method: 'PATCH',
-      credentials: 'include',
-      headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
       body: payload,
     })
   }
 
   async function deleteKey(id: string): Promise<void> {
-    await $fetch(`${baseUrl}/api/accounts/api-keys/${id}/`, {
+    await apiFetch(`/api/accounts/api-keys/${id}/`, {
       method: 'DELETE',
-      credentials: 'include',
-      headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
     })
   }
 
