@@ -109,7 +109,7 @@ const contextMenuVirtualElement = ref({
   getBoundingClientRect: () => new DOMRect(0, 0, 0, 0),
 })
 const mousePos = ref({ x: 0, y: 0 })
-const { screenToFlowCoordinate, vueFlowRef } = useVueFlow()
+const { vueFlowRef } = useVueFlow()
 
 const menuItems = computed(() => [
   {

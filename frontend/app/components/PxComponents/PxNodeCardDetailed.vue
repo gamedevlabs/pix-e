@@ -194,40 +194,15 @@ async function handleAddKey() {
         <UTextarea v-else v-model="editForm.name" />
       </template>
 
-    <template #default>
-      <div v-if="!isBeingEdited">
-        <h2 class="font-semibold text-lg mb-2">Description</h2>
-        <p>{{ props.node.description }}</p>
-        <USeparator class="mt-6" />
-        <br />
-        <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
-        <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
-        <section class="flex flex-wrap gap-4">
-          <div v-for="component in node.components" :key="component.id">
-            <PxComponentCard
-              visualization-style="preview"
-              :component="component"
-              @delete="handleDeleteComponent"
-            />
-          </div>
-        </section>
-        <USeparator class="mt-6" />
-        <br />
-        <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
-        <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
-        <section class="flex flex-wrap gap-4">
-          <div v-for="pxKey in node.keys" :key="pxKey.id">
-            <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
-          </div>
-        </section>
-        <USeparator class="mt-6" />
-        <br />
-        <h2 v-if="node.charts.length === 0" class="italic">
-          This node is not associated to any charts.
-        </h2>
-        <div v-else>
-          <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
-          <section class="grid grid-cols-1 gap-6">
+      <template #default>
+        <div v-if="!isBeingEdited">
+          <h2 class="font-semibold text-lg mb-2">Description</h2>
+          <p>{{ props.node.description }}</p>
+          <USeparator class="mt-6" />
+          <br />
+          <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
+          <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
+          <section class="flex flex-wrap gap-4">
             <div v-for="component in node.components" :key="component.id">
               <PxComponentCard
                 visualization-style="preview"
@@ -236,6 +211,16 @@ async function handleAddKey() {
               />
             </div>
           </section>
+          <USeparator class="mt-6" />
+          <br />
+          <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
+          <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
+          <section class="flex flex-wrap gap-4">
+            <div v-for="pxKey in node.keys" :key="pxKey.id">
+              <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
+            </div>
+          </section>
+          <USeparator class="mt-6" />
           <br />
           <h2 v-if="node.charts.length === 0" class="italic">
             This node is not associated to any charts.
@@ -243,79 +228,95 @@ async function handleAddKey() {
           <div v-else>
             <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
             <section class="grid grid-cols-1 gap-6">
-              <div v-for="chart in node.charts" :key="chart.id">
-                <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
+              <div v-for="component in node.components" :key="component.id">
+                <PxComponentCard
+                  visualization-style="preview"
+                  :component="component"
+                  @delete="handleDeleteComponent"
+                />
               </div>
             </section>
-          </div>
-
-          <!-- LLM Feedback Section -->
-          <div v-if="llmFeedback" class="mt-6 pt-4 border-t">
-            <!-- Coherence Score -->
-            <div class="mb-3">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-sm text-gray-600 dark:text-gray-400">Coherence Score:</span>
-                <UBadge
-                  :color="
-                    llmFeedback.overall_coherence_score >= 7
-                      ? 'success'
-                      : llmFeedback.overall_coherence_score >= 4
-                        ? 'warning'
-                        : 'error'
-                  "
-                  variant="solid"
-                >
-                  {{ llmFeedback.overall_coherence_score }}/10
-                </UBadge>
-              </div>
-              <p class="text-sm text-gray-600 dark:text-gray-300">{{ llmFeedback.summary }}</p>
+            <br />
+            <h2 v-if="node.charts.length === 0" class="italic">
+              This node is not associated to any charts.
+            </h2>
+            <div v-else>
+              <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
+              <section class="grid grid-cols-1 gap-6">
+                <div v-for="chart in node.charts" :key="chart.id">
+                  <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
+                </div>
+              </section>
             </div>
 
-            <!-- Show issues list -->
-            <div v-for="(issue, index) in llmFeedback?.issues" :key="index">
-              <UAlert
-                class="mb-2"
-                variant="subtle"
-                :color="issue.severity >= 3 ? 'error' : 'warning'"
-                :title="issue.title"
-                :description="`${issue.description} (Severity: ${issue.severity})`"
-                :actions="[
-                  {
-                    label: 'Dismiss',
-                    color: 'warning',
-                    variant: 'subtle',
-                    class: 'ml-auto',
-                    onClick: () => dismissIssue(index),
-                  },
-                ]"
-              />
-              <!-- Related components -->
-              <div
-                v-if="issue.related_components.length > 0"
-                class="ml-4 mb-2 flex flex-wrap gap-1"
-              >
-                <span class="text-xs text-gray-500">Related components:</span>
-                <UBadge
-                  v-for="comp in issue.related_components"
-                  :key="comp"
-                  color="neutral"
+            <!-- LLM Feedback Section -->
+            <div v-if="llmFeedback" class="mt-6 pt-4 border-t">
+              <!-- Coherence Score -->
+              <div class="mb-3">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Coherence Score:</span>
+                  <UBadge
+                    :color="
+                      llmFeedback.overall_coherence_score >= 7
+                        ? 'success'
+                        : llmFeedback.overall_coherence_score >= 4
+                          ? 'warning'
+                          : 'error'
+                    "
+                    variant="solid"
+                  >
+                    {{ llmFeedback.overall_coherence_score }}/10
+                  </UBadge>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-300">{{ llmFeedback.summary }}</p>
+              </div>
+
+              <!-- Show issues list -->
+              <div v-for="(issue, index) in llmFeedback?.issues" :key="index">
+                <UAlert
+                  class="mb-2"
                   variant="subtle"
-                  size="xs"
+                  :color="issue.severity >= 3 ? 'error' : 'warning'"
+                  :title="issue.title"
+                  :description="`${issue.description} (Severity: ${issue.severity})`"
+                  :actions="[
+                    {
+                      label: 'Dismiss',
+                      color: 'warning',
+                      variant: 'subtle',
+                      class: 'ml-auto',
+                      onClick: () => dismissIssue(index),
+                    },
+                  ]"
+                />
+                <!-- Related components -->
+                <div
+                  v-if="issue.related_components.length > 0"
+                  class="ml-4 mb-2 flex flex-wrap gap-1"
                 >
-                  {{ comp }}
-                </UBadge>
+                  <span class="text-xs text-gray-500">Related components:</span>
+                  <UBadge
+                    v-for="comp in issue.related_components"
+                    :key="comp"
+                    color="neutral"
+                    variant="subtle"
+                    size="xs"
+                  >
+                    {{ comp }}
+                  </UBadge>
+                </div>
               </div>
-            </div>
 
-            <!-- Single "Fix All Issues" button (only show if there are issues) -->
-            <UButton
-              v-if="(llmFeedback?.issues?.length ?? 0) > 0"
-              class="mt-3 w-full"
-              color="primary"
-              icon="i-heroicons-sparkles"
-              label="Fix All Issues with AI"
-              @click="openFixModal"
-            />
+              <!-- Single "Fix All Issues" button (only show if there are issues) -->
+              <UButton
+                v-if="(llmFeedback?.issues?.length ?? 0) > 0"
+                class="mt-3 w-full"
+                color="primary"
+                icon="i-heroicons-sparkles"
+                label="Fix All Issues with AI"
+                @click="openFixModal"
+              />
+            </div>
           </div>
         </div>
         <UTextarea v-else v-model="editForm.description" />
@@ -352,14 +353,14 @@ async function handleAddKey() {
                 color="secondary"
                 variant="soft"
                 @click="handleSwitchNode()"
-                >Switch Node</UButton
-              >
+                >Switch Node
+              </UButton>
               <UButton v-if="!isCollapsible" color="error" variant="soft" @click="emitDelete"
-                >Delete</UButton
-              >
+                >Delete
+              </UButton>
               <UButton v-else color="error" variant="soft" @click="handleDeleteContainer()"
-                >Delete</UButton
-              >
+                >Delete
+              </UButton>
             </div>
             <div
               v-if="isCollapsible"
