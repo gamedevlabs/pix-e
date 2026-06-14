@@ -1,6 +1,6 @@
 export function usePxChartSettings(chartId: string) {
   const { items, loading, error, fetchAll, fetchById, createItem, updateItem, deleteItem } =
-    useCrudForPxWithAuthentication<PxChartSettings>(`api/pxcharts/${chartId}/settings/`)
+    useCrudForPxWithAuthentication<PxChartSettings>(`/api/pxcharts/${chartId}/settings/`)
 
   const { user } = useAuthentication()
 
