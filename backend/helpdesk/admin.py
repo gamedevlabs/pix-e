@@ -42,6 +42,9 @@ class BackendSessionLogAdmin(admin.ModelAdmin):
     @admin.display(description="Entries")
     def formatted_entries(self, obj):
         return format_html(
-            '<pre style="white-space: pre-wrap; font-size: 12px; line-height: 1.4;">{}</pre>',
+            (
+                '<pre style="white-space: pre-wrap; font-size: 12px; '
+                'line-height: 1.4;">{}</pre>'
+            ),
             json.dumps(obj.entries, indent=2, ensure_ascii=False),
         )

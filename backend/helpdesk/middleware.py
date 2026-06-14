@@ -47,14 +47,15 @@ class PixeSessionLoggingMiddleware:
             elif response.status_code >= 400:
                 level = "warning"
 
-            # level = "error" if response.status_code >= 500 else "warning" if response.status_code >= 400 else "info"
-
             if level != "info":
                 buffer_backend_session_log(
                     session_id=session_id,
                     level=level,
                     event="backend.request",
-                    message=f"{request.method} {request.path} -> {response.status_code}",
+                    message=(
+                        f"{request.method} {request.path} -> "
+                        f"{response.status_code}"
+                    ),
                     request=request,
                     status_code=response.status_code,
                     metadata={"duration_ms": duration_ms},
