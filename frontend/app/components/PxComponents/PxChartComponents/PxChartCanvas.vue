@@ -452,7 +452,8 @@ async function handleEditSettings() {
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
     @edit-settings="handleEditSettings()"
   >
-    <template v-slot:right>
+    <template #right>
+      <!-- Context Strategy Analysis Button -->
       <div class="flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
           <USelect
@@ -587,9 +588,6 @@ async function handleEditSettings() {
         <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
       </UTooltip>
     </Panel>
-
-    <!-- Context Strategy Analysis Button -->
-    <Panel :position="'top-right'"></Panel>
   </VueFlow>
 
   <!-- Context Strategy Slideover -->

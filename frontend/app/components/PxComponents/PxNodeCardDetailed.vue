@@ -399,9 +399,9 @@ async function handleAddKey() {
 
             <!-- Second row -->
             <div
-                v-if="isCollapsible"
-                class="flex justify-center pt-4 cursor-default"
-                @click="toggleCollapsed()"
+              v-if="isCollapsible"
+              class="flex justify-center pt-4 cursor-default"
+              @click="toggleCollapsed()"
             >
               <Icon name="heroicons:chevron-up-20-solid" class="size-5" />
             </div>
