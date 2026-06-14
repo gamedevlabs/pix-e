@@ -228,95 +228,79 @@ async function handleAddKey() {
           <div v-else>
             <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
             <section class="grid grid-cols-1 gap-6">
-              <div v-for="component in node.components" :key="component.id">
-                <PxComponentCard
-                  visualization-style="preview"
-                  :component="component"
-                  @delete="handleDeleteComponent"
-                />
+              <div v-for="chart in node.charts" :key="chart.id">
+                <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
               </div>
             </section>
-            <br />
-            <h2 v-if="node.charts.length === 0" class="italic">
-              This node is not associated to any charts.
-            </h2>
-            <div v-else>
-              <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
-              <section class="grid grid-cols-1 gap-6">
-                <div v-for="chart in node.charts" :key="chart.id">
-                  <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
-                </div>
-              </section>
-            </div>
+          </div>
 
-            <!-- LLM Feedback Section -->
-            <div v-if="llmFeedback" class="mt-6 pt-4 border-t">
-              <!-- Coherence Score -->
-              <div class="mb-3">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-sm text-gray-600 dark:text-gray-400">Coherence Score:</span>
-                  <UBadge
-                    :color="
-                      llmFeedback.overall_coherence_score >= 7
-                        ? 'success'
-                        : llmFeedback.overall_coherence_score >= 4
-                          ? 'warning'
-                          : 'error'
-                    "
-                    variant="solid"
-                  >
-                    {{ llmFeedback.overall_coherence_score }}/10
-                  </UBadge>
-                </div>
-                <p class="text-sm text-gray-600 dark:text-gray-300">{{ llmFeedback.summary }}</p>
-              </div>
-
-              <!-- Show issues list -->
-              <div v-for="(issue, index) in llmFeedback?.issues" :key="index">
-                <UAlert
-                  class="mb-2"
-                  variant="subtle"
-                  :color="issue.severity >= 3 ? 'error' : 'warning'"
-                  :title="issue.title"
-                  :description="`${issue.description} (Severity: ${issue.severity})`"
-                  :actions="[
-                    {
-                      label: 'Dismiss',
-                      color: 'warning',
-                      variant: 'subtle',
-                      class: 'ml-auto',
-                      onClick: () => dismissIssue(index),
-                    },
-                  ]"
-                />
-                <!-- Related components -->
-                <div
-                  v-if="issue.related_components.length > 0"
-                  class="ml-4 mb-2 flex flex-wrap gap-1"
+          <!-- LLM Feedback Section -->
+          <div v-if="llmFeedback" class="mt-6 pt-4 border-t">
+            <!-- Coherence Score -->
+            <div class="mb-3">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-sm text-gray-600 dark:text-gray-400">Coherence Score:</span>
+                <UBadge
+                  :color="
+                    llmFeedback.overall_coherence_score >= 7
+                      ? 'success'
+                      : llmFeedback.overall_coherence_score >= 4
+                        ? 'warning'
+                        : 'error'
+                  "
+                  variant="solid"
                 >
-                  <span class="text-xs text-gray-500">Related components:</span>
-                  <UBadge
-                    v-for="comp in issue.related_components"
-                    :key="comp"
-                    color="neutral"
-                    variant="subtle"
-                    size="xs"
-                  >
-                    {{ comp }}
-                  </UBadge>
-                </div>
+                  {{ llmFeedback.overall_coherence_score }}/10
+                </UBadge>
               </div>
-
-              <!-- Single "Fix All Issues" button (only show if there are issues) -->
-              <UButton
-                v-if="(llmFeedback?.issues?.length ?? 0) > 0"
-                class="mt-3 w-full"
-                color="primary"
-                icon="i-heroicons-sparkles"
-                label="Fix All Issues with AI"
-                @click="openFixModal"
-              />
+              <p class="text-sm text-gray-600 dark:text-gray-300">{{ llmFeedback.summary }}</p>
             </div>
+
+            <!-- Show issues list -->
+            <div v-for="(issue, index) in llmFeedback?.issues" :key="index">
+              <UAlert
+                class="mb-2"
+                variant="subtle"
+                :color="issue.severity >= 3 ? 'error' : 'warning'"
+                :title="issue.title"
+                :description="`${issue.description} (Severity: ${issue.severity})`"
+                :actions="[
+                  {
+                    label: 'Dismiss',
+                    color: 'warning',
+                    variant: 'subtle',
+                    class: 'ml-auto',
+                    onClick: () => dismissIssue(index),
+                  },
+                ]"
+              />
+              <!-- Related components -->
+              <div
+                v-if="issue.related_components.length > 0"
+                class="ml-4 mb-2 flex flex-wrap gap-1"
+              >
+                <span class="text-xs text-gray-500">Related components:</span>
+                <UBadge
+                  v-for="comp in issue.related_components"
+                  :key="comp"
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
+                >
+                  {{ comp }}
+                </UBadge>
+              </div>
+            </div>
+
+            <!-- Single "Fix All Issues" button (only show if there are issues) -->
+            <UButton
+              v-if="(llmFeedback?.issues?.length ?? 0) > 0"
+              class="mt-3 w-full"
+              color="primary"
+              icon="i-heroicons-sparkles"
+              label="Fix All Issues with AI"
+              @click="openFixModal"
+            />
           </div>
         </div>
         <UTextarea v-else v-model="editForm.description" />
@@ -334,39 +318,90 @@ async function handleAddKey() {
             <Icon name="heroicons:chevron-down-20-solid" class="size-5" />
           </div>
           <!-- not collapsed-->
-          <div v-else class="flex-col justify-between">
-            <div class="flex flex-wrap justify-start gap-2">
-              <UButton
-                color="warning"
-                variant="soft"
-                :loading="isValidating"
-                @click="handleValidation"
-              >
-                Check
-              </UButton>
-              <UButton color="primary" variant="soft" @click="handleAddComponent">
-                Add Component
-              </UButton>
-              <UButton color="secondary" variant="soft" @click="startEdit">Edit</UButton>
-              <UButton
-                v-if="isCollapsible"
-                color="secondary"
-                variant="soft"
-                @click="handleSwitchNode()"
-                >Switch Node
-              </UButton>
-              <UButton v-if="!isCollapsible" color="error" variant="soft" @click="emitDelete"
-                >Delete
-              </UButton>
-              <UButton v-else color="error" variant="soft" @click="handleDeleteContainer()"
-                >Delete
-              </UButton>
+          <div v-else class="flex flex-col w-full">
+            <!-- First row -->
+            <div class="grid grid-cols-3 items-center w-full">
+              <!-- Left aligned -->
+              <div class="justify-self-start">
+                <UTooltip text="Check with AI">
+                  <UButton
+                    icon="i-lucide-sparkles"
+                    color="warning"
+                    variant="soft"
+                    :loading="isValidating"
+                    @click="handleValidation"
+                  />
+                </UTooltip>
+              </div>
+
+              <!-- Center aligned -->
+              <div class="flex justify-center gap-2">
+                <UTooltip text="Add Component">
+                  <UButton
+                    icon="i-lucide-component"
+                    color="primary"
+                    variant="soft"
+                    @click="handleAddComponent"
+                  />
+                </UTooltip>
+                <UTooltip text="Add Key">
+                  <UButton
+                    icon="i-lucide-key-round"
+                    color="primary"
+                    variant="soft"
+                    @click="handleAddKey"
+                  />
+                </UTooltip>
+              </div>
+
+              <!-- Right aligned -->
+              <div class="flex justify-self-end gap-2">
+                <UTooltip text="Edit">
+                  <UButton
+                    icon="i-lucide-square-pen"
+                    color="secondary"
+                    variant="soft"
+                    @click="startEdit"
+                  />
+                </UTooltip>
+                <UTooltip text="Switch Node">
+                  <!-- TODO: nodes should not know about switching nodes. this can be handled with a vue slot
+                   vue slots allow us to inject buttons from the parent -->
+                  <UButton
+                    v-if="isCollapsible"
+                    icon="i-lucide-arrow-right-left"
+                    color="secondary"
+                    variant="soft"
+                    @click="handleSwitchNode()"
+                  />
+                </UTooltip>
+
+                <UTooltip text="Delete">
+                  <UButton
+                    v-if="!isCollapsible"
+                    icon="i-lucide-trash"
+                    color="error"
+                    variant="soft"
+                    @click="emitDelete"
+                  />
+                  <!-- TODO: nodes should not know about containers. this can be handle with emitDelete,
+                  as the user of this component should decide what emitDelete() does -->
+                  <UButton
+                    v-else
+                    icon="i-lucide-trash"
+                    color="error"
+                    variant="soft"
+                    @click="handleDeleteContainer()"
+                  />
+                </UTooltip>
+              </div>
             </div>
+
+            <!-- Second row -->
             <div
-              v-if="isCollapsible"
-              class="flex justify-center"
-              style="padding-top: 15px; cursor: default"
-              @click="toggleCollapsed()"
+                v-if="isCollapsible"
+                class="flex justify-center pt-4 cursor-default"
+                @click="toggleCollapsed()"
             >
               <Icon name="heroicons:chevron-up-20-solid" class="size-5" />
             </div>
