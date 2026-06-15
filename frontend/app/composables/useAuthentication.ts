@@ -1,5 +1,5 @@
 export function useAuthentication() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const user = useState<User | null>('auth-user', () => null)
   const isLoggedIn = computed(() => user.value !== null)
   const checkedLogin = useState<boolean>('checkedLogin', () => false)
@@ -12,10 +12,9 @@ export function useAuthentication() {
     // log registration start
     addLog('info', 'registration_started')
     try {
-      await $fetch(config.public.apiBase + '/api/accounts/register/', {
+      await apiFetch('/api/accounts/register/', {
         method: 'POST',
         body: { username: username, password: password },
-        credentials: 'include',
       })
       return await login(username, password)
     } catch {
@@ -29,11 +28,9 @@ export function useAuthentication() {
     // log login start
     addLog('info', 'login_started')
     try {
-      await $fetch(config.public.apiBase + '/api/accounts/login/', {
+      await apiFetch('/api/accounts/login/', {
         method: 'POST',
         body: { username: username, password: password },
-        credentials: 'include',
-        headers: useRequestHeaders(['cookie']),
       })
       const success = await checkAuthentication()
       if (!success) {
@@ -63,11 +60,7 @@ export function useAuthentication() {
   async function checkAuthentication(): Promise<boolean> {
     try {
       checkedLogin.value = true
-      user.value = await $fetch<User>(config.public.apiBase + '/api/accounts/me/', {
-        method: 'GET',
-        credentials: 'include',
-        headers: useRequestHeaders(['cookie']),
-      })
+      user.value = await apiFetch<User>('/api/accounts/me/')
       await llmStore.refreshModels()
       return true
     } catch {
@@ -83,12 +76,8 @@ export function useAuthentication() {
     // log logout start
     addLog('info', 'logout_started')
     try {
-      await $fetch(config.public.apiBase + '/api/accounts/logout/', {
+      await apiFetch('/api/accounts/logout/', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
       })
       user.value = null
       await router.push('/')

@@ -2,14 +2,7 @@ import type { UserApiKey, CreateApiKeyPayload, UpdateApiKeyPayload } from '~/typ
 import { sessionFetch } from '~/utils/sessionFetch'
 
 export function useApiKeysApi() {
-  const config = useRuntimeConfig()
-  const baseUrl = config.public.apiBase
-  const csrfToken = useCookie('csrftoken')
-  const { apiFetch } = useApi()
-
-  function apiUrl(path: string) {
-    return `${baseUrl}${path}`
-  }
+  const { apiFetch, apiUrl, csrfToken } = useApi()
 
   async function testKey(id: string): Promise<{ status: string; detail: string }> {
     return await sessionFetch<{ status: string; detail: string }>(
