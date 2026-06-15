@@ -83,7 +83,7 @@ jobs:
           python manage.py makemigrations --check --dry-run
           python manage.py migrate --noinput
       - name: Run test suite
-        run: python -m pytest llm/tests/ pillars/tests/ -v
+        run: python -m pytest llm/tests/ pillars/tests/ accounts/tests.py -v
 
   build-and-publish-images:
     needs: [ detect-changes, frontend, backend ]
