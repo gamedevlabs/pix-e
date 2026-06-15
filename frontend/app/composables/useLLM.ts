@@ -25,8 +25,7 @@ interface KeyModelsResponse {
 }
 
 export const useLLM = defineStore('llm', () => {
-  const config = useRuntimeConfig()
-  const apiBase = config.public.apiBase
+  const { apiUrl } = useApi()
   const models = ref<LLMOption[]>([])
   const activeModel = ref<string>('')
   const initialized = ref(false)
@@ -45,12 +44,7 @@ export const useLLM = defineStore('llm', () => {
   async function refreshModels() {
     loading.value = true
     try {
-      const data = await sessionFetch<KeyModelsResponse>(
-        `${apiBase}/api/accounts/api-keys/models/`,
-        {
-          credentials: 'include',
-        },
-      )
+      const data = await sessionFetch<KeyModelsResponse>(apiUrl('/api/accounts/api-keys/models/'))
 
       const result: LLMOption[] = []
 

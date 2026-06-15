@@ -15,7 +15,7 @@
  *   }
  */
 export function useSessionKey() {
-  const config = useRuntimeConfig()
+  const { apiFetch } = useApi()
   const sessionExpired = ref(false)
   const showPasswordModal = ref(false)
   const toast = useToast()
@@ -27,18 +27,13 @@ export function useSessionKey() {
   ): Promise<{ ok: boolean; error?: string; openSettings?: boolean }> {
     // First, do a GET to refresh the CSRF cookie (might be stale from key expiry)
     try {
-      await $fetch(`${config.public.apiBase}/api/accounts/me/`, {
-        credentials: 'include',
-      })
+      await apiFetch('/api/accounts/me/')
     } catch {
       // OK if this fails — we just needed the CSRF cookie refresh
     }
-    const csrfToken = useCookie('csrftoken')
     try {
-      await $fetch(`${config.public.apiBase}/api/accounts/reestablish-key/`, {
+      await apiFetch('/api/accounts/reestablish-key/', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRFToken': csrfToken.value } as HeadersInit,
         body: { password },
       })
       // Key re-established — retry the original request
