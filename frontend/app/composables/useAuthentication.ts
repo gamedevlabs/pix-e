@@ -5,6 +5,8 @@ export function useAuthentication() {
   const checkedLogin = useState<boolean>('checkedLogin', () => false)
   const router = useRouter()
   const { addLog } = useSessionLog()
+  const llmStore = useLLM()
+  const route = useRoute()
 
   async function register(username: string, password: string): Promise<boolean> {
     // log registration start
@@ -41,9 +43,7 @@ export function useAuthentication() {
         })
         return false
       }
-      const llmStore = useLLM()
-      llmStore.refreshModels()
-      const route = useRoute()
+      await llmStore.refreshModels()
       const redirectTo = (route.query.redirect as string) || '/'
       await router.push(redirectTo)
       // log login success
@@ -68,8 +68,7 @@ export function useAuthentication() {
         credentials: 'include',
         headers: useRequestHeaders(['cookie']),
       })
-      const llmStore = useLLM()
-      llmStore.refreshModels()
+      await llmStore.refreshModels()
       return true
     } catch {
       user.value = null

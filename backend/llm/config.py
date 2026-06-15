@@ -74,7 +74,9 @@ class Config:
     model_aliases: dict = field(
         default_factory=lambda: {
             "gemini": "gemini-3.1-flash-lite-preview",
-            "openai": "gpt-4o-mini",
+            "openai": "gemini-3.1-flash-lite-preview",
+            # !!! Changed openai to route to gemini as a hack
+            # to have llm functions working !!!
         }
     )
 
@@ -229,7 +231,12 @@ class Config:
             default_execution_mode=get_setting("default_execution_mode", "monolithic"),
             model_aliases=get_setting(
                 "model_aliases",
-                {"gemini": "gemini-3.1-flash-lite-preview", "openai": "gpt-4o-mini"},
+                {
+                    "gemini": "gemini-3.1-flash-lite-preview",
+                    "openai": "gemini-3.1-flash-lite-preview",
+                },
+                # !!! Changed openai to route to gemini as a hack
+                # to have llm functions working !!!
                 dict,
             ),
             # Storage
