@@ -98,8 +98,7 @@ def init_database() -> bool:
     cursor = conn.cursor()
 
     # Create table for memory embeddings (metadata storage)
-    cursor.execute(
-        """
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS memory_embeddings (
             id TEXT PRIMARY KEY,
             node_id TEXT NOT NULL,
@@ -110,38 +109,31 @@ def init_database() -> bool:
             embedding BLOB,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    """
-    )
+    """)
 
     # Create index for faster lookups
-    cursor.execute(
-        """
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_memory_node_id
         ON memory_embeddings(node_id)
-    """
-    )
+    """)
 
-    cursor.execute(
-        """
+    cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_memory_type
         ON memory_embeddings(memory_type)
-    """
-    )
+    """)
 
     # Create vec0 virtual table for vector similarity search if sqlite-vec available
     if VEC_AVAILABLE:
         try:
             # vec0 syntax: embedding float[dimension]
             # +column for auxiliary columns that can be filtered
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS vec_memory USING vec0(
                     embedding float[1536],
                     +node_id TEXT,
                     +memory_type TEXT
                 )
-            """
-            )
+            """)
             logger.info("Vector database initialized with sqlite-vec support")
         except Exception as e:
             logger.warning(f"Failed to create vec0 table: {e}")

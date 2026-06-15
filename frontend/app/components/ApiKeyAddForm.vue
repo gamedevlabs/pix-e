@@ -127,14 +127,7 @@ async function handleSubmit() {
           type="password"
           size="sm"
           class="flex-1"
-          :placeholder="
-            {
-              openai: 'sk-...',
-              gemini: 'AIza...',
-              morpheus: 'sk-...',
-              custom: 'Enter API key',
-            }[formProvider ?? 'openai']
-          "
+          placeholder="Paste your API key"
         />
         <UButton
           v-if="formProvider === 'morpheus'"
