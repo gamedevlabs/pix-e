@@ -146,7 +146,7 @@ class UserApiKeyModelTests(TestCase):
             key_fingerprint=_make_fingerprint("sk-" + "b" * 48),
             masked_key=_masked("sk-" + "b" * 48),
         )
-        qs = UserApiKey.objects.filter(user=self.user)
+        qs = UserApiKey.objects.filter(user=self.user).order_by("-created_at", "-pk")
         self.assertEqual(qs[0], key2)
         self.assertEqual(qs[1], key1)
 
@@ -251,71 +251,44 @@ class EncryptionTests(TestCase):
 
 
 class ValidationTests(TestCase):
-    def test_openai_valid_key(self):
-        valid, msg = validate_key_format("openai", "sk-" + "a" * 20)
-        self.assertTrue(valid)
-        self.assertEqual(msg, "")
+    def test_key_any_provider_valid_min_length(self):
+        for provider in ("openai", "gemini", "morpheus", "custom"):
+            valid, msg = validate_key_format(provider, "a" * 8)
+            self.assertTrue(valid)
+            self.assertEqual(msg, "")
 
-    def test_openai_invalid_prefix(self):
-        valid, msg = validate_key_format("openai", "ak-" + "a" * 20)
-        self.assertFalse(valid)
-        self.assertIn("sk-", msg)
+    def test_key_any_provider_too_short(self):
+        for provider in ("openai", "gemini", "morpheus", "custom"):
+            valid, msg = validate_key_format(provider, "a" * 7)
+            self.assertFalse(valid)
+            self.assertIn("at least 8", msg)
 
-    def test_openai_too_short(self):
-        valid, msg = validate_key_format("openai", "sk-" + "a" * 19)
-        self.assertFalse(valid)
-
-    def test_gemini_valid_key(self):
-        valid, msg = validate_key_format("gemini", "AIza" + "a" * 10)
-        self.assertTrue(valid)
-        self.assertEqual(msg, "")
-
-    def test_gemini_invalid_prefix(self):
-        valid, msg = validate_key_format("gemini", "BIza" + "a" * 10)
-        self.assertFalse(valid)
-        self.assertIn("AIza", msg)
-
-    def test_gemini_too_short(self):
-        valid, msg = validate_key_format("gemini", "AIza" + "a" * 9)
-        self.assertFalse(valid)
-
-    def test_custom_valid_key(self):
-        valid, msg = validate_key_format("custom", "a" * 8)
-        self.assertTrue(valid)
-        self.assertEqual(msg, "")
-
-    def test_custom_too_short(self):
-        valid, msg = validate_key_format("custom", "a" * 7)
-        self.assertFalse(valid)
-        self.assertIn("at least 8", msg)
-
-    def test_morpheus_valid_key(self):
-        valid, msg = validate_key_format("morpheus", "sk-" + "b" * 25)
-        self.assertTrue(valid)
-        self.assertEqual(msg, "")
-
-    def test_whitespace_trimming_rejection(self):
-        valid, msg = validate_key_format("openai", " sk-" + "a" * 20)
-        self.assertFalse(valid)
-        self.assertIn("whitespace", msg)
-
-    def test_trailing_whitespace_rejection(self):
-        valid, msg = validate_key_format("openai", "sk-" + "a" * 20 + " ")
-        self.assertFalse(valid)
-        self.assertIn("whitespace", msg)
-
-    def test_empty_key_rejection(self):
+    def test_key_required(self):
         valid, msg = validate_key_format("openai", "")
         self.assertFalse(valid)
         self.assertIn("required", msg)
 
-    def test_blank_key_rejection(self):
-        valid, msg = validate_key_format("openai", "   ")
+    def test_key_whitespace(self):
+        valid, msg = validate_key_format("openai", "  sk-test123  ")
         self.assertFalse(valid)
-        self.assertIn("required", msg)
+        self.assertIn("whitespace", msg)
 
-    def test_unknown_provider_passes_any_key(self):
-        valid, msg = validate_key_format("unknown_provider", "tiny")
+    def test_key_no_format_restrictions(self):
+        """Any format >=8 chars passes — no prefix regex anymore."""
+        valid, msg = validate_key_format("gemini", "AQ.Ab8RN6KXT...")
+        self.assertTrue(valid)
+        self.assertEqual(msg, "")
+
+    def test_gemini_new_format_accepted(self):
+        """New Gemini keys starting with AQ. should work."""
+        valid, msg = validate_key_format("gemini", "AQ.Ab8RN6KXTabcdef123456")
+        self.assertTrue(valid)
+        self.assertEqual(msg, "")
+
+    def test_long_key_accepted(self):
+        valid, msg = validate_key_format(
+            "openai", "sk-proj-A7SLbGy9Js3JNmI4mbj9AHuEDdYg_sQyRenUKCLZIOFfxmA2DDZyDOpK"
+        )
         self.assertTrue(valid)
         self.assertEqual(msg, "")
 
@@ -333,6 +306,11 @@ class UserApiKeyAPITests(TestCase):
         self.encrypted = _encrypt_for_user(self.raw_key)
         self.fingerprint = _make_fingerprint(self.raw_key)
         self.masked = _masked(self.raw_key)
+        # Prevent API calls during create — mock the provider connection test
+        patcher = patch("accounts.serializers.test_provider_connection")
+        self.mock_provider_conn = patcher.start()
+        self.mock_provider_conn.return_value = (True, "Connected successfully.")
+        self.addCleanup(patcher.stop)
 
     def _create_key_in_db(self, **overrides) -> UserApiKey:
         defaults = dict(
@@ -432,11 +410,11 @@ class UserApiKeyAPITests(TestCase):
         payload = {
             "provider": ProviderType.OPENAI,
             "label": "Bad Key",
-            "key": "not-a-valid-key",
+            "key": "short",
         }
         resp = self.client.post(self.list_url, payload, format="json")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("sk-", str(resp.data))
+        self.assertIn("at least 8", str(resp.data))
 
     def test_create_requires_session_encryption_key(self):
         self.client.force_login(self.user)
@@ -543,19 +521,19 @@ class UserApiKeyAPITests(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_key_endpoint_validates_key_format(self):
-        bad_key_cipher = _encrypt_for_user("invalid_format")
+        bad_key_cipher = _encrypt_for_user("abc")
         key = UserApiKey.objects.create(
             user=self.user,
             provider=ProviderType.OPENAI,
             label="Bad Format Key",
             encrypted_key=bad_key_cipher,
-            key_fingerprint=_make_fingerprint("invalid_format"),
-            masked_key=_masked("invalid_format"),
+            key_fingerprint=_make_fingerprint("abc"),
+            masked_key=_masked("abc"),
         )
         _login_and_store_key(self.client, self.user)
         resp = self.client.post(self._test_url(key))
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("sk-", str(resp.data))
+        self.assertIn("at least 8", str(resp.data))
 
     # --- Models endpoint ----------------------------------------------------
 

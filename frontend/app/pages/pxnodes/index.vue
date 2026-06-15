@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { v4 } from 'uuid'
-
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -82,14 +80,16 @@ function addItem() {
   newItem.value = { name: '', description: '' }
 }
 
+async function updatePxNode(newEntityDraft: Partial<NamedEntity>) {
+  await createItem(newEntityDraft)
+  newItem.value = null
+}
+
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
-  const newUuid = v4()
-  // TODO: move to backend probably (and fix this newItem stuff not working)
-  const payload = { id: newUuid, ...newEntityDraft }
-  await createPxNode(payload)
+  await createPxNode(newEntityDraft)
+
   // px-2-2: "Create your first node"
   await toggleSubstep('px-2', 'px-2-2')
-  newItem.value = null
 }
 
 // Not particularly efficient, but works for now.
@@ -434,7 +434,7 @@ async function handleAddComponent() {
             :named-entity="newItem"
             :is-being-edited="true"
             @edit="newItem = null"
-            @update="createItem"
+            @update="updatePxNode"
             @delete="newItem = null"
           />
         </div>

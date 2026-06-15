@@ -1,3 +1,5 @@
+import { useSessionLog } from '~/composables/useSessionLog'
+
 export const useApi = () => {
   const config = useRuntimeConfig()
   const csrfToken = useCookie('csrftoken')
@@ -6,10 +8,18 @@ export const useApi = () => {
     ? config.apiUrl || 'http://backend-dev:8000'
     : config.public.apiBase
 
+  const { addLog } = useSessionLog()
+
   const apiFetch = $fetch.create({
     baseURL: baseURL as string,
-    onResponseError({ response }) {
+    onResponseError({ request, response }) {
       console.error('API Error (call: ' + baseURL + '):', response.status, response._data)
+
+      addLog('error', 'api_error', {
+        request: String(request),
+        status: response.status,
+        hasResponseData: Boolean(response._data),
+      })
     },
     headers: headers as HeadersInit,
 
@@ -54,9 +64,15 @@ export const useApi = () => {
     return response.body
   }
 
+  function apiUrl(path: string) {
+    return `${baseURL}${path}`
+  }
+
   return {
     apiFetch,
     apiFetchStream,
     baseURL,
+    csrfToken,
+    apiUrl,
   }
 }

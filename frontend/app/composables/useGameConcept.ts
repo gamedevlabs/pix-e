@@ -12,6 +12,7 @@ export function useGameConcept() {
   const { apiFetch } = useApi()
   const { success, error: errorToast } = usePixeToast()
   const projectStore = useProject()
+  const { addLog } = useSessionLog()
 
   async function fetchGameConcept() {
     try {
@@ -27,6 +28,8 @@ export function useGameConcept() {
   }
 
   async function saveGameConcept() {
+    addLog('info', 'game_concept_save_started')
+
     if (!designIdea.value.trim()) return
 
     isSavingConcept.value = true
@@ -40,9 +43,16 @@ export function useGameConcept() {
         } as HeadersInit,
       })
       success('Game concept saved!')
+      addLog('info', 'game_concept_save_succeeded', {
+        conceptLength: designIdea.value.length,
+      })
       // Refresh history after save
       await fetchConceptHistory()
     } catch (err) {
+      addLog('error', 'game_concept_save_failed', {
+        conceptLength: designIdea.value.length,
+        message: err instanceof Error ? err.message : String(err),
+      })
       errorToast(err)
     } finally {
       isSavingConcept.value = false
@@ -65,6 +75,8 @@ export function useGameConcept() {
   }
 
   async function restoreConcept(conceptId: number) {
+    addLog('info', 'game_concept_restore_started')
+
     isRestoringConcept.value = true
     try {
       const data = await apiFetch<GameConcept>(`/api/game-concept/${conceptId}/restore/`, {
@@ -76,9 +88,13 @@ export function useGameConcept() {
       })
       designIdea.value = data.content
       success('Game concept restored!')
+      addLog('info', 'game_concept_restore_succeeded')
       // Refresh history
       await fetchConceptHistory()
     } catch (err) {
+      addLog('error', 'game_concept_restore_failed', {
+        message: err instanceof Error ? err.message : String(err),
+      })
       errorToast(err)
     } finally {
       isRestoringConcept.value = false

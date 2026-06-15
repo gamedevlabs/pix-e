@@ -6,7 +6,6 @@ at rest and session-scoped decryption keys.
 """
 
 import logging
-import re
 
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
@@ -31,6 +30,10 @@ from .encryption import (
 from .models import UserApiKey, UserSalt
 from .serializers import UserApiKeySerializer
 from .throttling import ApiKeyTestRateThrottle
+from .validation import (
+    should_auto_disable,
+    test_provider_connection,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -241,95 +244,6 @@ class ApiKeyViewSet(viewsets.ModelViewSet):
             )
 
         return Response({"keys": result})
-
-
-AUTH_FAILURE_PATTERNS = [
-    r"\b401\b",
-    r"\b403\b",
-    "http 401",
-    "http 403",
-    "status 401",
-    "status 403",
-    "401 unauthorized",
-    "403 forbidden",
-    "unauthorized",
-    "forbidden",
-    "invalid api key",
-    "authentication failed",
-    "permission denied",
-    "not authorized",
-    "auth error",
-    "invalid authentication credentials",
-    "api key not found",
-    "credential",
-]
-_AUTH_FAILURE_REGEX = [re.compile(p, re.IGNORECASE) for p in AUTH_FAILURE_PATTERNS]
-
-
-def should_auto_disable(error_message: str) -> bool:
-    return any(patt.search(error_message) for patt in _AUTH_FAILURE_REGEX)
-
-
-def sanitize_error_message(error_msg: str, api_key: str) -> str:
-    if not api_key or not error_msg:
-        return error_msg
-    pattern = re.escape(api_key)
-    error_msg = re.sub(pattern, "***", error_msg, flags=re.IGNORECASE)
-    if len(api_key) >= 12:
-        prefix = re.escape(api_key[:8])
-        suffix = re.escape(api_key[-4:])
-        truncated_pattern = prefix + r".*?" + suffix
-        error_msg = re.sub(truncated_pattern, "***", error_msg, flags=re.IGNORECASE)
-    return error_msg
-
-
-def test_provider_connection(provider: str, api_key: str, base_url: str = "") -> tuple:
-    try:
-        if provider in ("openai", "custom", "morpheus"):
-            from openai import OpenAI
-
-            client = OpenAI(
-                api_key=api_key,
-                base_url=base_url or None,
-                timeout=15,
-            )
-            models = client.models.list()
-            first_model = next((m.id for m in models if m.id), "gpt-4o-mini")
-            client.chat.completions.create(
-                model=first_model,
-                messages=[{"role": "user", "content": "test"}],
-                max_tokens=1,
-            )
-            return True, "Connected successfully."
-
-        elif provider == "gemini":
-            from google import genai
-
-            gemini_client = genai.Client(api_key=api_key)
-            gemini_models = list(gemini_client.models.list())
-            # Strip "models/" prefix from model names (Google SDK returns
-            # "models/gemini-2.5-flash" format) before picking a fallback
-            first_model = next(
-                (
-                    m.name.split("/")[-1]
-                    for m in gemini_models
-                    if m.name and m.name.startswith("models/gemini")
-                ),
-                "gemini-2.5-flash",
-            )
-            gemini_client.models.generate_content(
-                model=first_model,
-                contents="test",
-                config={"max_output_tokens": 1},
-            )
-            return True, "Connected to Gemini API."
-
-        else:
-            return False, f"Unknown provider: {provider}"
-
-    except Exception as e:
-        error_msg = sanitize_error_message(str(e), api_key)
-        return False, error_msg
 
 
 def _list_models_for_key(provider: str, api_key: str, base_url: str = ""):

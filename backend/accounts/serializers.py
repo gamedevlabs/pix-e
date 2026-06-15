@@ -9,7 +9,7 @@ from rest_framework import serializers
 from .constants import ProviderType
 from .encryption import encrypt_api_key, get_encryption_key_from_session
 from .models import UserApiKey
-from .validation import validate_key_format
+from .validation import test_provider_connection, validate_key_format
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -129,12 +129,23 @@ class UserApiKeySerializer(serializers.ModelSerializer):
         raw_key = validated_data.pop("key")
         request = self.context.get("request")
 
-        # Pre-validate key format before encrypting
+        # Simple format validation (non-empty, no whitespace, min length)
         is_valid, error_msg = validate_key_format(
             validated_data.get("provider", ""), raw_key
         )
         if not is_valid:
             raise serializers.ValidationError({"key": error_msg})
+
+        # Actually test the key against the provider API before saving
+        success, test_msg = test_provider_connection(
+            validated_data.get("provider", ""),
+            raw_key,
+            validated_data.get("base_url", ""),
+        )
+        if not success:
+            raise serializers.ValidationError(
+                {"key": f"Key validation failed: {test_msg}"}
+            )
 
         # Encrypt the key BEFORE storing
         enc_key = get_encryption_key_from_session(request.session)
