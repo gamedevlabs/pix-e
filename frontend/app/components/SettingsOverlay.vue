@@ -35,9 +35,14 @@ watch(open, async (val) => {
   }
 })
 
-function onKeyCreated(key: UserApiKey) {
+async function onKeyCreated(key: UserApiKey) {
   keys.value.push(key)
   showAddForm.value = false
+  try {
+    await llmStore.refreshModels()
+  } catch {
+    getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+  }
 }
 
 function onKeyUpdated(updated: UserApiKey) {
@@ -45,8 +50,17 @@ function onKeyUpdated(updated: UserApiKey) {
   if (idx !== -1) keys.value[idx] = updated
 }
 
-function onKeyDeleted(id: string) {
+async function onKeyDeleted(id: string) {
   keys.value = keys.value.filter((k) => k.id !== id)
+  // Optimistic: remove models from this key immediately
+  if (llmStore.models) {
+    llmStore.models = llmStore.models.filter((m) => m.apiKeyId !== id)
+  }
+  try {
+    await llmStore.refreshModels()
+  } catch {
+    getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+  }
 }
 
 async function onKeyTest(id: string) {

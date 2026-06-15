@@ -83,7 +83,7 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
     Error messages have the API key stripped to avoid leaking secrets.
     """
     try:
-        if provider in ("openai", "custom", "morpheus"):
+        if provider in ("openai", "custom"):
             from openai import OpenAI
 
             client = OpenAI(
@@ -99,6 +99,38 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
                 max_tokens=1,
             )
             return True, "Connected successfully."
+
+        elif provider == "morpheus":
+            import httpx
+
+            base = (base_url or "https://morpheus.cit.tum.de/api").rstrip("/")
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            with httpx.Client() as client:
+                models_resp = client.get(
+                    f"{base}/v1/models",
+                    headers=headers,
+                    timeout=15,
+                )
+                models_resp.raise_for_status()
+                models_data = models_resp.json()
+                first_model = next(
+                    (m["id"] for m in models_data.get("data", []) if m.get("id")),
+                    "ministral-3",
+                )
+                client.post(
+                    f"{base}/v1/chat/completions",
+                    headers=headers,
+                    json={
+                        "model": first_model,
+                        "messages": [{"role": "user", "content": "test"}],
+                        "max_tokens": 1,
+                    },
+                    timeout=15,
+                )
+            return True, "Connected to Morpheus API."
 
         elif provider == "gemini":
             from google import genai
