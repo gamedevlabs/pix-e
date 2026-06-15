@@ -91,10 +91,11 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
                 base_url=base_url or None,
                 timeout=15,
             )
-            models = client.models.list()
-            first_model = next((m.id for m in models if m.id), "gpt-4o-mini")
+            # Auth check — lightweight, no token cost
+            client.models.list()
+            # Actual capability test — hardcoded known chat model
             client.chat.completions.create(
-                model=first_model,
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=1,
             )
@@ -108,8 +109,8 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             }
-            with httpx.Client() as client:
-                models_resp = client.get(
+            with httpx.Client() as morpheus_conn:
+                models_resp = morpheus_conn.get(
                     f"{base}/v1/models",
                     headers=headers,
                     timeout=15,
@@ -120,7 +121,7 @@ def test_provider_connection(provider: str, api_key: str, base_url: str = "") ->
                     (m["id"] for m in models_data.get("data", []) if m.get("id")),
                     "ministral-3",
                 )
-                client.post(
+                morpheus_conn.post(
                     f"{base}/v1/chat/completions",
                     headers=headers,
                     json={

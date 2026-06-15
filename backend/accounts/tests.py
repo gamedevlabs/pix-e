@@ -146,7 +146,7 @@ class UserApiKeyModelTests(TestCase):
             key_fingerprint=_make_fingerprint("sk-" + "b" * 48),
             masked_key=_masked("sk-" + "b" * 48),
         )
-        qs = UserApiKey.objects.filter(user=self.user)
+        qs = UserApiKey.objects.filter(user=self.user).order_by("-created_at", "-pk")
         self.assertEqual(qs[0], key2)
         self.assertEqual(qs[1], key1)
 
