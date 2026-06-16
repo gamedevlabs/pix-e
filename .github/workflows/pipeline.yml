@@ -1,9 +1,19 @@
 on:
   push: { }
-  workflow_dispatch: { }
+  workflow_dispatch:
+    inputs:
+      trigger_frontend:
+        description: 'Trigger frontend build and push'
+        type: boolean
+        default: true
+      trigger_backend:
+        description: 'Trigger backend build and push'
+        type: boolean
+        default: true
 
 jobs:
   detect-changes:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.changes.outputs.backend }}
@@ -22,7 +32,14 @@ jobs:
 
   frontend:
     needs: [ detect-changes ]
-    if: needs.detect-changes.outputs.frontend == 'true'
+    if: |
+      always() &&
+      !cancelled() &&
+      !failure() &&
+      (
+        (github.event_name == 'workflow_dispatch' && inputs.trigger_frontend == true) ||
+        (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.frontend == 'true')
+      )
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,7 +63,14 @@ jobs:
 
   backend:
     needs: [ detect-changes ]
-    if: needs.detect-changes.outputs.backend == 'true'
+    if: |
+      always() &&
+      !cancelled() &&
+      !failure() &&
+      (
+        (github.event_name == 'workflow_dispatch' && inputs.trigger_backend == true) ||
+        (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true')
+      )
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -87,7 +111,10 @@ jobs:
 
   build-and-publish-images:
     needs: [ detect-changes, frontend, backend ]
-    if: always() && needs.detect-changes.result == 'success' && (needs.frontend.result == 'success' || needs.backend.result == 'success')
+    if: |
+      always() &&
+      (needs.detect-changes.result == 'success' || needs.detect-changes.result == 'skipped') &&
+      (needs.frontend.result == 'success' || needs.backend.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
