@@ -82,7 +82,7 @@ function listenToResizing() {
         :node-id="pxNode.id"
         :visualization-style="'detailed'"
         :is-collapsible="true"
-        @delete-container="handleDelete()"
+        @delete="handleDelete()"
         @switch-node="handleSwitchPxNode()"
       />
     </div>

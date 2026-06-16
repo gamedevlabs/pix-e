@@ -20,7 +20,7 @@ const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
-  (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
+  (e: 'containerAdded' | 'edgeConnected'): void
 }>()
 
 const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
@@ -264,10 +264,8 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
-//TODO: unnecessary, delete if/once overall empty container are deleted
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
-  emit('nodeAddedToContainer')
   fetchPxNodes()
   fetchPxChartContainers()
 }

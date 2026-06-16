@@ -39,10 +39,6 @@ async function handleToggleSnapToGrid() {
       </UTooltip>
       <USeparator orientation="vertical" class="h-10" size="sm" />
 
-      <UTooltip text="Settings" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="emit('editSettings')" />
-      </UTooltip>
-
       <UTooltip text="Toggle snap to grid" :content="{ align: 'center', side: 'right' }">
         <USwitch
           v-model="toolbarSnapToGrid"
@@ -56,6 +52,10 @@ async function handleToggleSnapToGrid() {
       <USeparator orientation="vertical" class="h-10" size="sm" />
 
       <!-- Most frequently used buttons -->
+      <UTooltip text="Settings" :content="{ align: 'center', side: 'right' }">
+        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="emit('editSettings')" />
+      </UTooltip>
+
       <UTooltip text="Create new Node" :content="{ align: 'center', side: 'right' }">
         <UButton size="xs" color="primary" @click="handleAddNewNodeFromToolbar()">
           <Icon name="i-heroicons-plus-solid" size="2em" />
