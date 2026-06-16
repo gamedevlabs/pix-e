@@ -17,6 +17,9 @@ export function usePxChartsCanvasApi(chartId: string) {
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
   const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+  const { fetchById: fetchPxNode, fetchAll: fetchPxNodes, items: _pxNodes } = usePxNodes()
+  const { fetchAll: fetchPxLocks, items: pxLocks } = usePxLocks(chartId)
+  const { fetchAll: fetchPxKeys, items: pxKeys } = usePxKeys()
 
   const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
 
@@ -66,6 +69,10 @@ export function usePxChartsCanvasApi(chartId: string) {
       return
     }
 
+    await fetchPxLocks()
+    await fetchPxNodes()
+    await fetchPxKeys()
+
     nodes.value = data.containers.map((n: PxChartContainer) => ({
       id: n.id,
       type: n.content ? 'pxNode' : containerDefaultValues.type,
@@ -75,7 +82,12 @@ export function usePxChartsCanvasApi(chartId: string) {
       },
       height: n.layout.height,
       width: n.layout.width,
-      data: { name: n.name, content: n.content, px_chart: n.px_chart },
+      data: {
+        name: n.name,
+        content: n.content,
+        px_chart: n.px_chart,
+        keys: pxKeys.value.filter((key) => key.node === n.content),
+      },
     }))
 
     edges.value = data.edges.map((e: PxChartEdge) => ({
@@ -86,6 +98,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: e.targetHandle,
       markerEnd: edgeDefaultValues.markerEnd,
       type: edgeDefaultValues.type,
+      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id) },
     }))
   }
 
@@ -98,6 +111,34 @@ export function usePxChartsCanvasApi(chartId: string) {
     })
   }
    */
+
+  async function getKeysForNode(nodeId: string | null): Promise<PxKey[]> {
+    if (!nodeId) {
+      return []
+    }
+    let node
+    try {
+      node = await fetchPxNode(nodeId)
+    } catch (err) {
+      alert('Failed to fetch PxNode: ' + err.message)
+      error.value = 'Failed to fetch PxNode'
+      return []
+    }
+    if (!node) {
+      alert('Failed to fetch PxNode')
+      error.value = 'Failed to fetch PxNode'
+      return []
+    }
+    return node.keys
+  }
+
+  async function getLocksForEdge(edgeId: string | null): Promise<PxLock[]> {
+    if (!edgeId) {
+      return []
+    }
+    await fetchPxLocks()
+    return pxLocks.value.filter((lock) => lock.edge === edgeId)
+  }
 
   async function addContainer(position_x = 0, position_y = 0) {
     const newContainerPayload = {
@@ -132,6 +173,7 @@ export function usePxChartsCanvasApi(chartId: string) {
         name: newContainerPayload.name,
         content: newContainerPayload.content,
         px_chart: chartId,
+        keys: [],
       },
     })
     return newId
@@ -168,7 +210,9 @@ export function usePxChartsCanvasApi(chartId: string) {
     // frontend array, these attributes need to be put into data.
     let data = null
     if (updatedContainer.content !== undefined) {
-      data = merge(data, { data: { content: updatedContainer.content } })
+      data = merge(data, {
+        data: { content: updatedContainer.content, keys: getKeysForNode(updatedContainer.content) },
+      })
     }
     if (updatedContainer.name) {
       data = merge(data, { data: { name: updatedContainer.name } })
@@ -308,6 +352,7 @@ export function usePxChartsCanvasApi(chartId: string) {
         target: connection.target,
         targetHandle: connection.targetHandle!,
         px_chart: chartId,
+        locks: [],
       })
     } catch (err) {
       alert('Could not add edge: ' + err.message)
@@ -322,6 +367,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: connection.targetHandle,
       type: edgeDefaultValues.type,
       markerEnd: edgeDefaultValues.markerEnd,
+      data: { px_chart: chartId, locks: [] },
     })
   }
 
@@ -345,6 +391,15 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
   }
 
+  async function updateLocksOnEdge(edgeId: string) {
+    const edge = edges.value.find((e) => e.id === edgeId)
+    if (!edge) {
+      console.warn('Could not find edge.')
+    } else {
+      edge.data.locks = await getLocksForEdge(edgeId)
+    }
+  }
+
   return {
     nodes,
     edges,
@@ -363,5 +418,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     addEdge,
     applyDefaultEdgeChanges,
     deleteEdge,
+    updateLocksOnEdge,
   }
 }

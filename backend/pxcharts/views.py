@@ -5,14 +5,22 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from projects.utils import get_current_project
-from pxcharts.models import PxChart, PxChartContainer, PxChartEdge
+from pxcharts.models import (
+    PxChart,
+    PxChartContainer,
+    PxChartEdge,
+    PxChartPathSettings,
+    PxLockAssignment,
+)
 from pxcharts.permissions import IsOwner
 from pxcharts.serializers import (
     PxChartContainerDetailSerializer,
     PxChartContainerSerializer,
     PxChartDetailSerializer,
     PxChartEdgeSerializer,
+    PxChartPathSettingsSerializer,
     PxChartSerializer,
+    PxLockAssignmentSerializer,
 )
 
 
@@ -111,3 +119,41 @@ class PxChartEdgeViewSet(viewsets.ModelViewSet):
             chart_filters["project__isnull"] = True
         chart = get_object_or_404(PxChart, **chart_filters)
         serializer.save(id=uuid.uuid4(), px_chart=chart, owner=self.request.user)
+
+
+class PxLockAssignmentViewSet(viewsets.ModelViewSet):
+    serializer_class = PxLockAssignmentSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        if self.action == "list":
+            chart_id = self.kwargs["px_chart_pk"]
+            return PxLockAssignment.objects.filter(
+                px_chart_id=chart_id,
+                px_chart__owner=self.request.user,
+                owner=self.request.user,
+            )
+        return PxLockAssignment.objects.order_by("created_at")
+
+    def perform_create(self, serializer):
+        chart_id = self.kwargs["px_chart_pk"]
+        serializer.save(id=uuid.uuid4(), px_chart_id=chart_id, owner=self.request.user)
+
+
+class PxChartPathSettingsViewSet(viewsets.ModelViewSet):
+    serializer_class = PxChartPathSettingsSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        if self.action == "list":
+            chart_id = self.kwargs["px_chart_pk"]
+            return PxChartPathSettings.objects.filter(
+                px_chart_id=chart_id,
+                px_chart__owner=self.request.user,
+                owner=self.request.user,
+            )
+        return PxChartPathSettings.objects.order_by("created_at")
+
+    def perform_create(self, serializer):
+        chart_id = self.kwargs["px_chart_pk"]
+        serializer.save(id=uuid.uuid4(), px_chart_id=chart_id, owner=self.request.user)

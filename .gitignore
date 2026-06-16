@@ -24,6 +24,7 @@ backend/docs/experiments/*
 .claude/CLAUDE.md
 .gitignore
 .cursor/rules/*
+.antigravitycli
 backend/db_backup_20260104_125924.sql
 backend/vectors.db
 backend/artifacts/*

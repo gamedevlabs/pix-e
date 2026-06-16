@@ -52,5 +52,13 @@ export function usePixeToast() {
     }
   }
 
-  return { success, error }
+  function info(description?: string, title = 'Info') {
+    toast.add({
+      title,
+      description,
+      color: 'info',
+    })
+  }
+
+  return { success, error, info }
 }
