@@ -33,7 +33,11 @@ const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
 
-const { items: pxChartEdges, fetchAll: fetchPxChartEdges, fetchById: fetchPxChartEdgeById } = usePxChartEdges(props.chartId)
+const {
+  items: pxChartEdges,
+  fetchAll: fetchPxChartEdges,
+  fetchById: fetchPxChartEdgeById,
+} = usePxChartEdges(props.chartId)
 
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
