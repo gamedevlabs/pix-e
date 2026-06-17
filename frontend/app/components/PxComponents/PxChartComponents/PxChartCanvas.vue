@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   type NodeDragEvent,
   VueFlow,
@@ -428,6 +428,8 @@ async function handleEditLocks() {
   await lockModal
     .open({ selectedEdge: pxChartEdge, chartId: chartId })
     .result.then(async (edgeId) => await updateLocksOnEdge(edgeId))
+
+  fetchPxChartEdges()
 }
 
 async function handleEditSettings() {
