@@ -28,7 +28,7 @@ const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
 const chartId = props.chartId
 const { success: successToast, error: errorToast } = usePixeToast()
 
-const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
+const { items: pxNodes, fetchAll: fetchPxNodes, fetchById: fetchPxNodeById } = usePxNodes()
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
@@ -58,6 +58,7 @@ const {
   applyDefaultEdgeChanges,
   deleteEdge,
   updateLocksOnEdge,
+  getKeysForNode,
 } = usePxChartsCanvasApi(chartId)
 
 const {
@@ -275,6 +276,17 @@ async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
 async function handleSwitchPxNode(pxGraphContainerId: string) {
   await switchNodeInContainer(pxGraphContainerId)
   fetchPxNodes()
+  fetchPxChartContainers()
+}
+
+async function handleEditPxNode(containerId: string, nodeId: string) {
+  fetchPxNodeById(nodeId)
+  await updateContainer({
+    id: containerId,
+    data: {
+      keys: await getKeysForNode(nodeId),
+    },
+  })
   fetchPxChartContainers()
 }
 
@@ -577,6 +589,7 @@ async function handleEditSettings() {
         v-bind="customNodeProps"
         @switch-px-node="handleSwitchPxNode"
         @delete="handleDeletePxGraphContainer"
+        @update-px-node="(containerId, nodeId) => handleEditPxNode(containerId, nodeId)"
       />
     </template>
 

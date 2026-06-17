@@ -419,5 +419,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     applyDefaultEdgeChanges,
     deleteEdge,
     updateLocksOnEdge,
+    getKeysForNode,
   }
 }
