@@ -33,7 +33,7 @@ const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
 
-const { items: pxChartEdges, fetchAll: fetchPxChartEdges } = usePxChartEdges(props.chartId)
+const { items: pxChartEdges, fetchAll: fetchPxChartEdges, fetchById: fetchPxChartEdgeById } = usePxChartEdges(props.chartId)
 
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
@@ -441,7 +441,7 @@ async function handleEditLocks() {
     .open({ selectedEdge: pxChartEdge, chartId: chartId })
     .result.then(async (edgeId) => await updateLocksOnEdge(edgeId))
 
-  fetchPxChartEdges()
+  fetchPxChartEdgeById(pxChartEdge.id)
 }
 
 async function handleEditSettings() {
