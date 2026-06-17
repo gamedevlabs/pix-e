@@ -240,6 +240,16 @@ export function usePxChartsCanvasApi(chartId: string) {
     )
   }
 
+  async function updateKeysInContainer(id: string, keys: PxKey[]) {
+    const node = nodes.value.find(node => node.id === id)
+    if (node) {
+        node.data.keys = keys
+    } else {
+      alert('Failed to update keys in container.')
+      error.value = 'Failed to update keys in container'
+    }
+  }
+
   function applyDefaultNodeChanges(moveChanges: NodeChange[]) {
     applyNodeChanges(moveChanges)
   }
@@ -412,6 +422,7 @@ export function usePxChartsCanvasApi(chartId: string) {
     addContainerWithNewNode,
     switchNodeInContainer,
     updateContainer,
+    updateKeysInContainer,
     applyDefaultNodeChanges,
     addNodeToContainer,
     deleteContainer,

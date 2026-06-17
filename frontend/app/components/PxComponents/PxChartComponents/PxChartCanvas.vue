@@ -54,6 +54,7 @@ const {
   applyDefaultNodeChanges,
   addNodeToContainer,
   deleteContainer,
+  updateKeysInContainer,
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
@@ -281,13 +282,7 @@ async function handleSwitchPxNode(pxGraphContainerId: string) {
 
 async function handleEditPxNode(containerId: string, nodeId: string) {
   fetchPxNodeById(nodeId)
-  await updateContainer({
-    id: containerId,
-    data: {
-      keys: await getKeysForNode(nodeId),
-    },
-  })
-  fetchPxChartContainers()
+  updateKeysInContainer(containerId, await getKeysForNode(nodeId))
 }
 
 // We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
