@@ -133,12 +133,19 @@ const menuItems = computed(() => [
   {
     label: 'Snap to grid',
     type: 'checkbox' as const,
+    kbds: 'G',
     checked: menuSnapToGrid.value,
     onUpdateChecked(checked: boolean) {
       menuSnapToGrid.value = checked
     },
   },
 ])
+
+defineShortcuts({
+  g: () => {
+    handleToggleSnapToGrid()
+  },
+})
 
 function handleNodeClick(event: { node: Node }) {
   const container = event.node.data as PxChartContainer

@@ -25,7 +25,7 @@ async function handleToggleSnapToGrid() {
 <template>
   <!-- Toolbar -->
   <UDashboardToolbar>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <!-- General buttons like settings and undo -->
       <UTooltip text="Undo changes" :content="{ align: 'center', side: 'right' }">
         <UButton size="xl" color="primary" :disabled="true">
@@ -39,7 +39,7 @@ async function handleToggleSnapToGrid() {
       </UTooltip>
       <USeparator orientation="vertical" class="h-10" size="sm" />
 
-      <UTooltip text="Toggle snap to grid" :content="{ align: 'center', side: 'right' }">
+      <UTooltip text="Toggle snap to grid (G)" :content="{ align: 'center', side: 'right' }">
         <USwitch
           v-model="toolbarSnapToGrid"
           unchecked-icon="material-symbols:grid-3x3-off"

@@ -73,6 +73,14 @@ function listenToResizing() {
     observer.observe(cardRef.value)
   }
 }
+
+defineShortcuts({
+  Delete: () => {
+    if (props.selected) {
+      handleDelete()
+    }
+  },
+})
 </script>
 
 <template>
