@@ -1,14 +1,14 @@
 """Evaluate the Change Propagation agent against frozen scenarios.
 
 Loads the dataset into an isolated, throwaway project, runs each scenario under
-one or more modes (flat / graph / neighbors), scores flagged affected nodes
-against the ground truth, and reports Precision/Recall/F1 (mean ± std). DB writes
-are rolled back unless --keep.
+one or more modes (flat / graph / semantic / neighbors / pairwise), scores flagged
+affected nodes against the ground truth, and reports Precision/Recall/F1
+(mean ± std). DB writes are rolled back unless --keep.
 
 Usage:
     python manage.py run_propagation_eval \
         --dataset pxnodes/llm/eval/dataset/anno1404.json \
-        --modes flat,graph,neighbors --runs 3
+        --modes flat,graph,semantic,neighbors,pairwise --runs 3
 """
 
 import json

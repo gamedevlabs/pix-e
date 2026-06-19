@@ -156,6 +156,52 @@ RESPONSE FORMAT (JSON):
 """
 
 
+PAIRWISE_PROPAGATION_PROMPT = """You are a game design document analyzer.
+
+A PxNode in the game design graph has been updated. You must decide whether ONE
+specific other node is DIRECTLY affected by this change and needs updating.
+
+CHANGED NODE:
+- Name: {changed_node_name}
+- Old Description: {old_description}
+- New Description: {new_description}
+
+CANDIDATE NODE (decide about THIS node only):
+- ID: {candidate_id}
+- Name: {candidate_name}
+- Description: {candidate_description}
+
+TASK:
+Decide whether the CANDIDATE node is affected by the change and needs an update.
+Check both directions: concepts the change ADDED/renamed that the candidate
+should now reflect, and concepts the change REMOVED that the candidate still
+references.
+
+Apply a HIGH bar. In a real project the vast majority of nodes are NOT affected
+by any single change. Report the candidate as affected ONLY if there is a
+concrete, direct dependency — it references a specific mechanic, feature, value,
+or entity that the change added, removed, renamed, or contradicted. Do NOT report
+the candidate merely because it shares a theme, domain, genre, or general topic
+with the changed node.
+
+If the candidate is not clearly and directly affected, return an empty findings
+list. Returning no finding is the correct answer for most candidates.
+
+RESPONSE FORMAT (JSON) — contains 0 or 1 finding:
+{{
+  "findings": [
+    {{
+      "affected_node_id": "{candidate_id}",
+      "affected_node_name": "{candidate_name}",
+      "reason": "Concrete explanation of the direct dependency",
+      "confidence": <float between 0.0 and 1.0>,
+      "suggested_action": "Concrete suggestion for how to update this node"
+    }}
+  ]
+}}
+"""
+
+
 class ChangePropagationResponse(BaseModel):
     """LLM response schema for the change propagation agent."""
 
@@ -253,6 +299,69 @@ class ChangePropagationAgent(BaseAgent):
                 logger.warning(
                     "ChangePropagationAgent failed for node '%s': %s",
                     changed_node.name,
+                    result.error.message if result.error else "unknown error",
+                )
+            return []
+
+        findings = []
+        for item in result.data.get("findings", []):
+            if item.get("confidence", 0.0) < self._min_confidence:
+                continue
+            findings.append(
+                PropagationFinding(
+                    affected_node_id=item["affected_node_id"],
+                    affected_node_name=item["affected_node_name"],
+                    reason=item["reason"],
+                    confidence=item["confidence"],
+                    suggested_action=item["suggested_action"],
+                )
+            )
+        return findings
+
+    def analyze_pair(
+        self,
+        changed_node: Any,
+        old_description: str,
+        new_description: str,
+        candidate: Any,
+    ) -> List[PropagationFinding]:
+        """Pointwise judgement over a SINGLE candidate node.
+
+        Uses a dedicated strict binary prompt (high bar, "most nodes are NOT
+        affected") rather than reusing the listwise flat prompt with one item —
+        the latter triggers a strong yes-bias because it is framed as "report all
+        affected nodes". Returns 0 or 1 finding for this candidate.
+        """
+        if isinstance(candidate, dict):
+            cid = str(candidate["id"])
+            cname = candidate["name"]
+            cdesc = candidate.get("description", "") or ""
+        else:
+            cid = str(candidate.id)
+            cname = candidate.name
+            cdesc = candidate.description or ""
+
+        prompt = PAIRWISE_PROPAGATION_PROMPT.format(
+            changed_node_name=changed_node.name,
+            old_description=old_description,
+            new_description=new_description,
+            candidate_id=cid,
+            candidate_name=cname,
+            candidate_description=cdesc,
+        )
+
+        context = {
+            "model_manager": self._model_manager,
+            "data": {"_raw_prompt": prompt},
+            "model_id": self._model_id,
+        }
+        result = self.execute(context)
+
+        if not result.success or not result.data:
+            if not result.success:
+                logger.warning(
+                    "ChangePropagationAgent (pairwise) failed for candidate '%s': %s",
+                    cname,
                     result.error.message if result.error else "unknown error",
                 )
             return []

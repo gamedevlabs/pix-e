@@ -25,7 +25,11 @@ class ChangePropagationView(APIView):
         "node_id": "<uuid>",
         "old_description": "...",
         "new_description": "...",
-        "min_confidence": 0.5  (optional, float 0.0–1.0, default 0.5)
+        "strategy": "flat" | "graph" | "semantic" | "neighbors" | "pairwise"
+                    (optional, default "flat"; legacy use_graph_context still works),
+        "semantic_top_k": 10  (optional, only used by "semantic"),
+        "max_depth": 3        (optional, used by "graph"/"neighbors"),
+        "min_confidence": 0.5 (optional, float 0.0–1.0, default 0.5)
     }
     """
 
@@ -70,8 +74,30 @@ class ChangePropagationView(APIView):
             )
 
         min_confidence = float(request.data.get("min_confidence", 0.5))
-        use_graph_context = bool(request.data.get("use_graph_context", False))
         max_depth = int(request.data.get("max_depth", 3))
+        semantic_top_k = int(request.data.get("semantic_top_k", 10))
+
+        # Retrieval/decision strategy. Backwards compatible: if no explicit
+        # strategy is sent, fall back to the legacy use_graph_context boolean.
+        valid_strategies = {"flat", "graph", "semantic", "neighbors", "pairwise"}
+        strategy = request.data.get("strategy")
+        if strategy is None:
+            strategy = (
+                "graph"
+                if bool(request.data.get("use_graph_context", False))
+                else "flat"
+            )
+        if strategy not in valid_strategies:
+            return Response(
+                {
+                    "error": (
+                        f"Invalid strategy '{strategy}'. "
+                        f"Must be one of: {', '.join(sorted(valid_strategies))}."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Mirror the consistency view: pin the agent to gpt-5.4-mini so the
         # production endpoint matches the evaluated model. Without this the
         # workflow falls back to the orchestrator's "auto" default (gpt-3.5-turbo).
@@ -85,7 +111,10 @@ class ChangePropagationView(APIView):
                 old_description=old_description,
                 new_description=new_description,
                 min_confidence=min_confidence,
-                use_graph_context=use_graph_context,
+                use_graph_context=(strategy == "graph"),
+                pairwise=(strategy == "pairwise"),
+                neighbors=(strategy == "neighbors"),
+                semantic_top_k=semantic_top_k if strategy == "semantic" else None,
                 max_depth=max_depth,
                 model_id=model_id,
             )

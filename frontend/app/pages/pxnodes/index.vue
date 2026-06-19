@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 import { ConsistencyFixModal, PropagationFixModal } from '#components'
 
 definePageMeta({
@@ -27,7 +28,7 @@ const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
 const { currentProject } = useProjectHandler()
 const { toggleSubstep, loadForProject } = useProjectWorkflow()
 if (currentProject.value?.id) {
-  await loadForProject(currentProject.value.id)
+  await loadForProject(String(currentProject.value.id))
 }
 
 const {
@@ -53,7 +54,7 @@ const overlay = useOverlay()
 
 async function openConsistencyFixModal(finding: ConsistencyFinding) {
   if (!currentProject.value?.id) return
-  const projectId = currentProject.value.id
+  const projectId = String(currentProject.value.id)
   const fixModal = overlay.create(ConsistencyFixModal, {
     props: {
       finding,
@@ -81,8 +82,16 @@ const {
 const propagationNodeId = ref<string | null>(null)
 const propagationOldDescription = ref<string>('')
 const propagationNewDescription = ref<string>('')
-const useGraphContext = ref(false)
+const propagationStrategy = ref<PropagationStrategy>('flat')
 const maxDepth = ref(3)
+const semanticTopK = ref(10)
+const propagationStrategies: { label: string; value: PropagationStrategy }[] = [
+  { label: 'Flat (all nodes)', value: 'flat' },
+  { label: 'Graph-aware (BFS)', value: 'graph' },
+  { label: 'Semantic (RAG)', value: 'semantic' },
+  { label: 'Neighbors (baseline)', value: 'neighbors' },
+  { label: 'Pairwise', value: 'pairwise' },
+]
 
 async function handleDescriptionChanged(payload: {
   nodeId: string
@@ -94,11 +103,12 @@ async function handleDescriptionChanged(payload: {
   propagationOldDescription.value = payload.oldDescription
   propagationNewDescription.value = payload.newDescription
   await checkPropagation({
-    projectId: currentProject.value.id,
+    projectId: String(currentProject.value.id),
     nodeId: payload.nodeId,
     oldDescription: payload.oldDescription,
     newDescription: payload.newDescription,
-    useGraphContext: useGraphContext.value,
+    strategy: propagationStrategy.value,
+    semanticTopK: semanticTopK.value,
     maxDepth: maxDepth.value,
   })
 }
@@ -231,7 +241,7 @@ async function handleEvaluateCoherence() {
   }
 
   await evaluateCoherence({
-    chartId: selectedChartIds.value[0],
+    chartId: selectedChartIds.value[0]!,
   })
 }
 
@@ -274,7 +284,7 @@ function toggleConsistencyPanel() {
 
 async function handleRunConsistencyCheck(layers: 'all' | 'structural' | 'semantic' = 'all') {
   if (!currentProject.value?.id) return
-  await checkConsistency(currentProject.value.id, 0.5, layers)
+  await checkConsistency(String(currentProject.value.id), 0.5, layers)
 }
 
 const consistencyCheckItems = computed<DropdownMenuItem[][]>(() => [
@@ -307,8 +317,8 @@ const groupedFindings = computed(() => {
   if (!consistencyReport.value) return []
   const groups: Record<string, ConsistencyFinding[]> = {}
   for (const finding of consistencyReport.value.findings) {
-    if (!groups[finding.category]) groups[finding.category] = []
-    groups[finding.category].push(finding)
+    const bucket = (groups[finding.category] ??= [])
+    bucket.push(finding)
   }
   return Object.entries(groups).map(([category, findings]) => ({
     category,
@@ -336,16 +346,37 @@ async function handleAddComponent() {
           <div>Nodes</div>
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-1.5">
-              <USwitch v-model="useGraphContext" size="sm" />
-              <span class="text-xs text-neutral-500 select-none">Graph-aware propagation</span>
+              <span class="text-xs text-neutral-500 select-none">Propagation:</span>
+              <USelect
+                v-model="propagationStrategy"
+                :items="propagationStrategies"
+                value-key="value"
+                label-key="label"
+                size="sm"
+                class="w-44"
+              />
             </div>
-            <div v-if="useGraphContext" class="flex items-center gap-1.5">
+            <div
+              v-if="propagationStrategy === 'graph' || propagationStrategy === 'neighbors'"
+              class="flex items-center gap-1.5"
+            >
               <span class="text-xs text-neutral-500 select-none">Depth:</span>
               <UInput
                 v-model="maxDepth"
                 type="number"
                 :min="1"
                 :max="10"
+                size="sm"
+                class="w-16"
+              />
+            </div>
+            <div v-if="propagationStrategy === 'semantic'" class="flex items-center gap-1.5">
+              <span class="text-xs text-neutral-500 select-none">Top-k:</span>
+              <UInput
+                v-model="semanticTopK"
+                type="number"
+                :min="1"
+                :max="54"
                 size="sm"
                 class="w-16"
               />

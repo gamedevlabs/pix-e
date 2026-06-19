@@ -6,12 +6,17 @@ irrelevant) with a ground-truth set of *affected* node IDs. For each scenario we
 run a mode N times, collect the flagged affected node IDs, and match them against
 the expected set — reusing the pure metric core in ``metrics``.
 
-Three modes:
-- "flat":      LLM, all other project nodes flat in the prompt (baseline).
+Modes:
+- "flat":      LLM, all other project nodes flat in one prompt (listwise baseline).
 - "graph":     LLM, graph-aware BFS over PxChartEdge (use_graph_context).
+- "semantic":  LLM, embedding top-k retrieval, then one flat prompt (RAG arm).
 - "neighbors": NO LLM — just return all k-hop chart neighbours of the changed
                node. Isolates how much the graph structure alone contributes vs
                the LLM's semantic reasoning.
+- "pairwise":  LLM, pointwise counterpart to flat — one isolated call per other
+               node ("is THIS node affected?"). Same retrieval/prompt as flat,
+               only the decision granularity differs (listwise vs pointwise).
+               Costs O(N) LLM calls per change.
 """
 
 from __future__ import annotations
@@ -32,7 +37,7 @@ from .metrics import AggregateMetrics, Finding, RunResult, Trap, aggregate, matc
 
 logger = logging.getLogger(__name__)
 
-MODES = ("flat", "graph", "semantic", "neighbors")
+MODES = ("flat", "graph", "semantic", "neighbors", "pairwise")
 _AFFECTED = "affected"
 
 
@@ -133,6 +138,7 @@ def _flagged_ids_for_run(
         new_description=scenario["new_description"],
         min_confidence=min_confidence,
         use_graph_context=(mode == "graph"),
+        pairwise=(mode == "pairwise"),
         max_depth=max_depth,
         model_id=model_id,
         semantic_top_k=semantic_top_k if mode == "semantic" else None,

@@ -131,6 +131,8 @@ type PropagationFixResponse = {
 
 // --- Types for change propagation ---
 
+type PropagationStrategy = 'flat' | 'graph' | 'semantic' | 'neighbors' | 'pairwise'
+
 type PropagationFinding = {
   affected_node_id: string
   affected_node_name: string

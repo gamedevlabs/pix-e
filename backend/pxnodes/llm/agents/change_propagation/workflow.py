@@ -40,6 +40,8 @@ class ChangePropagationWorkflow:
         new_description: str,
         min_confidence: float = 0.5,
         use_graph_context: bool = False,
+        pairwise: bool = False,
+        neighbors: bool = False,
         max_depth: int = 3,
         model_id: Optional[str] = None,
         semantic_top_k: Optional[int] = None,
@@ -61,6 +63,20 @@ class ChangePropagationWorkflow:
                     min_confidence=min_confidence,
                     max_depth=max_depth,
                     model_id=model_id,
+                )
+            elif pairwise:
+                findings = self._run_pairwise_propagation(
+                    project=project,
+                    changed_node=changed_node,
+                    old_description=old_description,
+                    new_description=new_description,
+                    min_confidence=min_confidence,
+                    model_id=model_id,
+                )
+            elif neighbors:
+                findings = self._run_neighbors_baseline(
+                    changed_node=changed_node,
+                    max_depth=max_depth,
                 )
             else:
                 if semantic_top_k:
@@ -91,6 +107,99 @@ class ChangePropagationWorkflow:
             changed_node_id=str(changed_node.id),
             findings=findings,
         )
+
+    def _run_pairwise_propagation(
+        self,
+        project: Project,
+        changed_node: PxNode,
+        old_description: str,
+        new_description: str,
+        min_confidence: float,
+        model_id: Optional[str] = None,
+    ) -> List[PropagationFinding]:
+        """Pointwise counterpart to the flat baseline.
+
+        Instead of a single LLM call over all candidates at once (flat=listwise),
+        ask the LLM once *per* other node in isolation ("is THIS node affected?")
+        via a dedicated strict binary prompt (see ``analyze_pair``). Retrieval is
+        identical to flat (every other node); the call granularity is pointwise.
+        Each candidate gets the model's full, undiluted attention (no 'lost in the
+        middle') at the price of O(N) LLM calls per change. The strict prompt
+        counters the yes-bias that a naive single-item flat prompt produced.
+        """
+        agent = ChangePropagationAgent(
+            model_manager=self._model_manager,
+            min_confidence=min_confidence,
+            model_id=model_id,
+        )
+        others = list(project.pxnodes.exclude(id=changed_node.id))
+
+        # Dedup by affected node id, keeping the highest-confidence finding —
+        # mirrors the BFS path so downstream scoring sees a unique affected set.
+        all_findings: Dict[str, PropagationFinding] = {}
+        for node in others:
+            for f in agent.analyze_pair(
+                changed_node=changed_node,
+                old_description=old_description,
+                new_description=new_description,
+                candidate=node,
+            ):
+                existing = all_findings.get(f.affected_node_id)
+                if existing is None or f.confidence > existing.confidence:
+                    all_findings[f.affected_node_id] = f
+        return list(all_findings.values())
+
+    def _run_neighbors_baseline(
+        self,
+        changed_node: PxNode,
+        max_depth: int,
+    ) -> List[PropagationFinding]:
+        """Non-LLM structural baseline: flag every chart neighbour within
+        ``max_depth`` hops of the changed node as 'affected', with no semantic
+        analysis. Mirrors the eval harness's ``neighbors`` mode so the frontend
+        can show the pure-graph baseline alongside the LLM arms. Findings carry a
+        fixed confidence of 1.0 and an explanatory reason (there is no model
+        judgement to score)."""
+        visited: Set[str] = {str(changed_node.id)}
+        frontier: List[str] = [str(changed_node.id)]
+        collected: List[str] = []
+        for _ in range(max_depth):
+            next_frontier: List[str] = []
+            for nid in frontier:
+                for nb in self._get_1hop_neighbors(nid) or []:
+                    if nb["id"] not in visited:
+                        visited.add(nb["id"])
+                        collected.append(nb["id"])
+                        next_frontier.append(nb["id"])
+            frontier = next_frontier
+            if not frontier:
+                break
+
+        if not collected:
+            return []
+
+        nodes_by_id = {
+            str(n.id): n for n in PxNode.objects.filter(id__in=collected)
+        }
+        findings: List[PropagationFinding] = []
+        for nid in collected:
+            node = nodes_by_id.get(nid)
+            if node is None:
+                continue
+            findings.append(
+                PropagationFinding(
+                    affected_node_id=nid,
+                    affected_node_name=node.name,
+                    reason=(
+                        f"Structural baseline: chart neighbour within "
+                        f"{max_depth} hop(s) of the changed node "
+                        f"(no semantic analysis performed)."
+                    ),
+                    confidence=1.0,
+                    suggested_action="Review whether this neighbour is affected.",
+                )
+            )
+        return findings
 
     def _semantic_topk_nodes(
         self,
