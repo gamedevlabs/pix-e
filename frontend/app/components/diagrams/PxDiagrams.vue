@@ -118,30 +118,23 @@ const nodeLabels = computed(() => {
 
 <template>
   <div>
-    <SimpleContentWrapper>
-      <UCollapsible :unmount-on-hide="false" class="flex flex-col gap-6">
-        <UButton
-          label="Show Diagrams"
-          variant="subtle"
-          trailing-icon="i-lucide-chevron-down"
-          block
-        />
-        <template #content>
-          <DiagramCardSection use-add-button @add-clicked="addItem">
-            <div v-for="d in diagrams" :key="d">
-              <PxLineDiagram
-                :node-data="allData"
-                :node-labels="nodeLabels"
-                :px-component-definitions="pxComponentDefinitions"
-                show-edit
-                show-delete
-                @delete="deleteDiagram(d)"
-              />
-            </div>
-          </DiagramCardSection>
-        </template>
-      </UCollapsible>
-    </SimpleContentWrapper>
+    <UCollapsible :unmount-on-hide="false" class="flex flex-col gap-6">
+      <UButton label="Show Diagrams" variant="subtle" trailing-icon="i-lucide-chevron-down" block />
+      <template #content>
+        <DiagramCardSection use-add-button @add-clicked="addItem">
+          <div v-for="d in diagrams" :key="d">
+            <PxLineDiagram
+              :node-data="allData"
+              :node-labels="nodeLabels"
+              :px-component-definitions="pxComponentDefinitions"
+              show-edit
+              show-delete
+              @delete="deleteDiagram(d)"
+            />
+          </div>
+        </DiagramCardSection>
+      </template>
+    </UCollapsible>
   </div>
 </template>
 

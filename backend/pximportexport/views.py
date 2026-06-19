@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 
 from django.db import transaction
 from rest_framework import status

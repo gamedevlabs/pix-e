@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import hashlib
 import os
 import sys
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -40,10 +42,21 @@ configure_logfire()
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-wxqcjs8ufub1x#x)nwi-y4k+sv@$r@9-=&dp!8r=sp8ee=#lh%"
 
+# HelpDesk Token/data
+GITHUB_HELPDESK_TOKEN = os.getenv("GITHUB_HELPDESK_TOKEN", "")
+GITHUB_HELPDESK_OWNER = os.getenv("GITHUB_HELPDESK_OWNER", "")
+GITHUB_HELPDESK_REPO = os.getenv("GITHUB_HELPDESK_REPO", "")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list = ["pixie.soc.cit.tum.de", "localhost", "127.0.0.1", "backend-dev"]
+ALLOWED_HOSTS: list = [
+    "socvm2.cit.tum.de",
+    "pixie.soc.cit.tum.de",
+    "localhost",
+    "127.0.0.1",
+    "backend-dev",
+]
 
 # Application definition
 
@@ -67,6 +80,7 @@ INSTALLED_APPS = [
     "moviescriptevaluator",
     "player_expectations_new",
     "projects",
+    "helpdesk",
 ]
 
 REST_FRAMEWORK = {
@@ -79,6 +93,13 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
         "rest_framework.parsers.JSONParser",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "100/minute",
+        "api_key_test": "10/minute",
+    },
 }
 
 MIDDLEWARE = [
@@ -99,11 +120,16 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-# Session settings for same-origin (Lax is safe for same-domain requests)
+# Session settings
+# Note: The encryption key inside the session has its own 1-hour TTL tracked
+# independently — see accounts/encryption.py KEY_TTL_SECONDS.
+SESSION_COOKIE_AGE = 86400  # 24 hours — server-side session record TTL
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = not DEBUG  # False in dev (HTTP), True in production (HTTPS)
 CSRF_COOKIE_SAMESITE = "Lax"
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = not DEBUG  # False in dev (HTTP), True in production (HTTPS)
 
 # Trust Caddy proxy for HTTPS
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -199,6 +225,26 @@ DOCUMENT_MAX_SIZE_MB = 10
 # Vector database for structural memory context
 # Stored separately from main SQLite database
 VECTOR_DB_PATH = BASE_DIR / "vectors.db"
+
+# === API Key Encryption ===
+# Keys are encrypted with a Fernet key derived from the user's login password
+# and stored ONLY in the server-side session. No global encryption key needed.
+# See accounts/encryption.py for the derivation mechanism.
+
+# Pepper for HMAC-based key fingerprinting (prevents oracle attacks on key_hash).
+# Set this to a random string in production. If empty, key fingerprinting is weaker.
+API_KEY_FINGERPRINT_PEPPER = os.getenv(
+    "API_KEY_FINGERPRINT_PEPPER",
+    hashlib.sha256(f"{SECRET_KEY}:fingerprint".encode()).hexdigest() if DEBUG else "",
+)
+
+if not API_KEY_FINGERPRINT_PEPPER and not DEBUG:
+    raise RuntimeError(
+        "API_KEY_FINGERPRINT_PEPPER is not set. "
+        "This is required in production — key fingerprinting with an empty pepper "
+        "makes HMAC-based duplicate detection trivially bypassable. "
+        "Set a random string via the API_KEY_FINGERPRINT_PEPPER env variable."
+    )
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -15,23 +15,20 @@ async function onSubmit() {
 </script>
 
 <template>
-  <UModal
-    :title="'Add new PX node'"
-    description="Use this modal to add a PX node to a PX container"
-  >
+  <UModal :title="'Add PX node'" description="Add PX node from list of already existing node.">
     <template #body>
       <UForm :state="formState" class="space-y-4" @submit="onSubmit">
         <UFormField label="Node Reference" name="selectedNodeId" class="max-w-96" required>
-          <USelect
+          <USelectMenu
             v-model="formState.selectedNodeId"
             value-key="id"
             label-key="name"
             :items="pxNodes"
             class="w-full"
-            placeholder="Enter Node Reference"
+            placeholder="Select Node"
           />
         </UFormField>
-        <UButton type="submit"> Submit </UButton>
+        <UButton type="submit"> Add </UButton>
       </UForm>
     </template>
   </UModal>
