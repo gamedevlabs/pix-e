@@ -1,10 +1,11 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-  (e: 'addNewNode' | 'addExistingNode' | 'toggleSnapToGrid' | 'editSettings'): void
+  (e: 'addNewNode' | 'addExistingNode' | 'toggleSnapToGrid' | 'editSettings' | 'editLocks'): void
 }>()
 
 const props = defineProps({
   menuSnapToGrid: Boolean,
+  singleEdgeSelected: Boolean,
 })
 
 const toolbarSnapToGrid = computed(() => props.menuSnapToGrid)
@@ -79,6 +80,15 @@ async function handleToggleSnapToGrid() {
         </UButton>
       </UTooltip>
       <USeparator orientation="vertical" class="h-10" size="sm" />
+      <!-- Edge-specific Action, only available when edge is selected -->
+      <UTooltip
+        v-if="singleEdgeSelected"
+        text="Add or Edit Locks"
+        :content="{ align: 'center', side: 'right' }"
+      >
+        <UButton size="xl" icon="i-lucide-lock" color="primary" @click="emit('editLocks')" />
+      </UTooltip>
+      <USeparator v-if="singleEdgeSelected" orientation="vertical" class="h-10" size="sm" />
     </div>
 
     <!-- Temporary Buttons -->
