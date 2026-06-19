@@ -236,30 +236,32 @@ async function handleEvaluateCoherence() {
 }
 
 // Get severity badge color
-function getSeverityColor(severity: string): string {
+type UiColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+
+function getSeverityColor(severity: string): UiColor {
   switch (severity) {
     case 'error':
-      return 'red'
+      return 'error'
     case 'warning':
-      return 'amber'
+      return 'warning'
     case 'info':
-      return 'blue'
+      return 'info'
     default:
       return 'neutral'
   }
 }
 
 // Get issue type badge color
-function getIssueTypeColor(type: string): string {
+function getIssueTypeColor(type: string): UiColor {
   switch (type) {
     case 'prerequisite':
-      return 'red'
+      return 'error'
     case 'pacing':
-      return 'amber'
+      return 'warning'
     case 'story':
-      return 'violet'
+      return 'secondary'
     case 'category':
-      return 'cyan'
+      return 'info'
     default:
       return 'neutral'
   }
@@ -446,7 +448,7 @@ async function handleAddComponent() {
             </UButton>
 
             <UButton
-              color="violet"
+              color="secondary"
               variant="soft"
               :loading="evaluatingCoherence"
               :disabled="selectedChartIds.length !== 1 || totalProcessedNodes === 0"
@@ -538,7 +540,7 @@ async function handleAddComponent() {
                     <span class="font-medium">{{ nodeResult.node_name }}</span>
                   </div>
                   <UBadge
-                    :color="nodeResult.is_coherent ? 'green' : 'red'"
+                    :color="nodeResult.is_coherent ? 'success' : 'error'"
                     variant="soft"
                     size="sm"
                   >
