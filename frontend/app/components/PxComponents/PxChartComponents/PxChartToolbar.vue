@@ -27,17 +27,28 @@ async function handleToggleSnapToGrid() {
   <UDashboardToolbar>
     <div class="flex items-center gap-2">
       <!-- General buttons like settings and undo -->
+
       <UTooltip text="Undo changes" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" color="primary" :disabled="true">
-          <Icon name="i-heroicons-arrow-uturn-left-16-solid" />
-        </UButton>
+        <UButton
+          size="xl"
+          color="primary"
+          icon="i-heroicons-arrow-uturn-left-16-solid"
+          :disabled="true"
+        />
       </UTooltip>
       <UTooltip text="Redo changes" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" color="primary" :disabled="true">
-          <Icon name="i-heroicons-arrow-uturn-right-16-solid" />
-        </UButton>
+        <UButton
+          size="xl"
+          color="primary"
+          icon="i-heroicons-arrow-uturn-right-16-solid"
+          :disabled="true"
+        />
       </UTooltip>
       <USeparator orientation="vertical" class="h-10" size="sm" />
+
+      <UTooltip text="Settings" :content="{ align: 'center', side: 'right' }">
+        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="emit('editSettings')" />
+      </UTooltip>
 
       <UTooltip text="Toggle snap to grid (G)" :content="{ align: 'center', side: 'right' }">
         <USwitch
@@ -52,18 +63,15 @@ async function handleToggleSnapToGrid() {
       <USeparator orientation="vertical" class="h-10" size="sm" />
 
       <!-- Most frequently used buttons -->
-      <UTooltip text="Settings" :content="{ align: 'center', side: 'right' }">
-        <UButton size="xl" icon="i-lucide-settings" color="primary" @click="emit('editSettings')" />
-      </UTooltip>
 
-      <UTooltip text="Create new Node" :content="{ align: 'center', side: 'right' }">
+      <UTooltip text="Create new Node (N)" :content="{ align: 'center', side: 'right' }">
         <UButton size="xs" color="primary" @click="handleAddNewNodeFromToolbar()">
           <Icon name="i-heroicons-plus-solid" size="2em" />
           Create <br />
           new node
         </UButton>
       </UTooltip>
-      <UTooltip text="Add existing Node" :content="{ align: 'center', side: 'right' }">
+      <UTooltip text="Add existing Node (M)" :content="{ align: 'center', side: 'right' }">
         <UButton size="xs" color="primary" @click="handleAddExistingNodeFromToolbar()">
           <Icon name="i-heroicons-arrow-up-on-square" size="2em" />
           Add <br />

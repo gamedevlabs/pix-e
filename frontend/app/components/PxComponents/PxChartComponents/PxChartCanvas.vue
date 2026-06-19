@@ -115,6 +115,7 @@ const { vueFlowRef } = useVueFlow()
 const menuItems = computed(() => [
   {
     label: 'Create new node',
+    kbds: 'N',
     icon: 'i-heroicons-plus-solid',
     onSelect() {
       handleAddContainerFromPanel(true, true)
@@ -122,6 +123,7 @@ const menuItems = computed(() => [
   },
   {
     label: 'Add existing node',
+    kbds: 'M',
     icon: 'i-heroicons-arrow-up-on-square',
     onSelect() {
       handleAddContainerFromPanel(false, true)
@@ -144,6 +146,12 @@ const menuItems = computed(() => [
 defineShortcuts({
   g: () => {
     handleToggleSnapToGrid()
+  },
+  n: () => {
+    handleAddContainerFromPanel(true, false)
+  },
+  m: () => {
+    handleAddContainerFromPanel(false, false)
   },
 })
 
