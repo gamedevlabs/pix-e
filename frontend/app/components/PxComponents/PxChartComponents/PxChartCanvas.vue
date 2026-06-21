@@ -285,8 +285,8 @@ async function handleSwitchPxNode(pxGraphContainerId: string) {
 }
 
 async function handleEditPxNode(containerId: string, nodeId: string) {
-  fetchPxNodeById(nodeId)
-  updateKeysInContainer(containerId, await getKeysForNode(nodeId))
+  await fetchPxNodeById(nodeId)
+  await updateKeysInContainer(containerId, await getKeysForNode(nodeId))
 }
 
 // We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
@@ -440,7 +440,7 @@ async function handleEditLocks() {
     .open({ selectedEdge: pxChartEdge, chartId: chartId })
     .result.then(async (edgeId) => await updateLocksOnEdge(edgeId))
 
-  fetchPxChartEdgeById(pxChartEdge.id)
+  await fetchPxChartEdgeById(pxChartEdge.id)
 }
 
 async function handleEditSettings() {
