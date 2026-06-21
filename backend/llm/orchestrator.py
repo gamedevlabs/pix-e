@@ -39,6 +39,30 @@ class LLMOrchestrator:
         self.model_manager = model_manager or ModelManager()
         self.config = get_config()
 
+    @classmethod
+    def for_user(cls, user, enc_key: bytes) -> "LLMOrchestrator":
+        if not enc_key:
+            raise RuntimeError(
+                "No encryption key in session. User must log in to access API keys."
+            )
+        orch = cls.__new__(cls)
+        orch.config = get_config()
+        orch.model_manager = ModelManager.for_user(user, enc_key)
+        return orch
+
+    @classmethod
+    def for_user_and_key(
+        cls, user, api_key_id: str, enc_key: bytes
+    ) -> "LLMOrchestrator":
+        if not enc_key:
+            raise RuntimeError(
+                "No encryption key in session. User must log in to access API keys."
+            )
+        orch = cls.__new__(cls)
+        orch.config = get_config()
+        orch.model_manager = ModelManager.for_user_and_key(user, api_key_id, enc_key)
+        return orch
+
     def execute(self, request: LLMRequest) -> LLMResponse:
         """Execute LLM operation in monolithic or agentic mode."""
         logfire = get_logfire()

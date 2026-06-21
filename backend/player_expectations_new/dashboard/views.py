@@ -9,6 +9,7 @@ Runs a few SQL aggregation queries (counts, averages, grouped totals)
 
 Returns the results as JSON for the frontend charts
 """
+
 from __future__ import annotations
 
 from functools import lru_cache

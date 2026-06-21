@@ -22,7 +22,8 @@ const { fetchById: fetchComponentById } = usePxComponents()
 const { fetchById: fetchPxKeyById } = usePxKeys()
 
 const emit = defineEmits<{
-  (e: 'addForeignComponent', nodeId: string, componentId: string): void
+  (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
+  (e: 'addComponent' | 'addKey' | 'deleteKey'): void
 }>()
 
 onMounted(() => {
@@ -82,12 +83,14 @@ async function handleAddKey(nodeId: string, keyId: string) {
     console.error(err)
   }
   fetchedNode.value.keys.push(addedKey!)
+  emit('addKey')
 }
 
 async function handleDeleteKey(nodeId: string, keyId: string) {
   const index = fetchedNode.value.keys.findIndex((key) => key.id === keyId)
   if (index > -1) {
     fetchedNode.value.keys.splice(index, 1)
+    emit('deleteKey')
   }
 }
 </script>
