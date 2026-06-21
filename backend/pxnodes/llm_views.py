@@ -106,8 +106,32 @@ class NodeFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             except APIException:
                 raise
             except OrchestratorError as e:
-                logger.warning("Provider error for user=%s: %s", request.user.id, e)
-                return JsonResponse({"error": str(e)}, status=502)
+                logger.warning("Orchestrator error for user=%s: %s", request.user.id, e)
+                # Differentiate configuration errors from upstream provider failures
+                error_message = str(e)
+                if "No valid API keys" in error_message or "No LLM providers" in error_message:
+                    return JsonResponse(
+                        {
+                            "error": "no_api_keys",
+                            "detail": (
+                                "No API keys configured. "
+                                "Add an API key in Settings to enable AI features."
+                            ),
+                        },
+                        status=400,
+                    )
+                if "not found in registry" in error_message:
+                    return JsonResponse(
+                        {
+                            "error": "model_unavailable",
+                            "detail": (
+                                "The selected model is not available "
+                                "with your current API keys."
+                            ),
+                        },
+                        status=400,
+                    )
+                return JsonResponse({"error": error_message}, status=502)
             except Exception as e:
                 logger.exception(f"Error in validate_node: {e}")
                 logfire.error("nodes.validate.error", error=str(e), node_id=pk)
@@ -191,8 +215,31 @@ class NodeFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             except APIException:
                 raise
             except OrchestratorError as e:
-                logger.warning("Provider error for user=%s: %s", request.user.id, e)
-                return JsonResponse({"error": str(e)}, status=502)
+                logger.warning("Orchestrator error for user=%s: %s", request.user.id, e)
+                error_message = str(e)
+                if "No valid API keys" in error_message or "No LLM providers" in error_message:
+                    return JsonResponse(
+                        {
+                            "error": "no_api_keys",
+                            "detail": (
+                                "No API keys configured. "
+                                "Add an API key in Settings to enable AI features."
+                            ),
+                        },
+                        status=400,
+                    )
+                if "not found in registry" in error_message:
+                    return JsonResponse(
+                        {
+                            "error": "model_unavailable",
+                            "detail": (
+                                "The selected model is not available "
+                                "with your current API keys."
+                            ),
+                        },
+                        status=400,
+                    )
+                return JsonResponse({"error": error_message}, status=502)
             except Exception as e:
                 logger.exception(f"Error in fix_node: {e}")
                 logfire.error("nodes.fix.error", error=str(e), node_id=pk)

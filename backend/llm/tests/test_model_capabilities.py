@@ -4,6 +4,8 @@ Tests for model capability matching and availability.
 Tests ModelCapabilities structure and model unavailability handling.
 """
 
+import warnings
+
 import pytest
 
 from llm import LLMOrchestrator, ModelManager
@@ -14,12 +16,14 @@ from llm.types import LLMRequest, ModelCapabilities
 @pytest.fixture
 def manager():
     """Return a configured orchestrator or skip if missing credentials."""
-    try:
-        return ModelManager()
-    except ProviderError as e:
-        pytest.skip(f"Missing provider ({e})")
-    except Exception as e:
-        raise e
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        try:
+            return ModelManager()
+        except ProviderError as e:
+            pytest.skip(f"Missing provider ({e})")
+        except Exception as e:
+            raise e
 
 
 class TestModelCapabilityMatching:

@@ -23,6 +23,7 @@ from llm.agent_runtime import BaseAgent
 from llm.providers.manager import ModelManager
 from llm.types import AgentResult, ErrorInfo
 from pxcharts.models import PxChart
+from pxnodes.models import PxNode
 from pxnodes.llm.agents.coherence import (
     BackwardCoherenceAgent,
     ForwardCoherenceAgent,
@@ -1372,35 +1373,43 @@ class PxNodesCoherenceMonolithicWorkflow:
 
 
 def evaluate_node_agentic(
-    node_id: str,
-    chart_id: str,
+    *,
+    node: PxNode,
+    chart: PxChart,
+    model_manager: ModelManager,
     model_id: Optional[str] = None,
     strategy: str = "structural_memory",
     dimensions: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    project=None,
+    project_pillars=None,
+    game_concept=None,
+) -> Any:
     """
-    Convenience function to evaluate a node using agentic workflow.
+    Evaluate a node using the agentic coherence workflow.
 
     Args:
-        node_id: UUID of the node to evaluate
-        chart_id: UUID of the chart
+        node: PxNode to evaluate
+        chart: PxChart the node belongs to
+        model_manager: User-scoped ModelManager (from orchestrator)
         model_id: Optional specific model to use
         strategy: Context strategy name
         dimensions: Optional list of dimensions to evaluate
+        project: Optional project context
+        project_pillars: Optional project pillars
+        game_concept: Optional game concept
 
     Returns:
-        Evaluation result dictionary
+        Evaluation result (PxNodeCoherenceResult or similar)
     """
     import asyncio
 
-    from pxnodes.llm.context.shared import create_llm_provider
+    from llm.llm_adapter import LLMProviderAdapter
 
-    node = PxNode.objects.get(id=node_id)
-    chart = PxChart.objects.get(id=chart_id)
-
-    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini")
-    model_manager = ModelManager()
-
+    llm_provider = LLMProviderAdapter(
+        model_manager=model_manager,
+        model_name=model_id or "gpt-4o-mini",
+        temperature=0,
+    )
     strategy_type = StrategyType(strategy)
 
     workflow = PxNodesCoherenceWorkflow(
@@ -1409,46 +1418,55 @@ def evaluate_node_agentic(
         llm_provider=llm_provider,
     )
 
-    result = asyncio.run(
+    return asyncio.run(
         workflow.evaluate_node(
             node=node,
             chart=chart,
             model_id=model_id,
             dimensions=dimensions,
+            project=project,
+            project_pillars=project_pillars,
+            game_concept=game_concept,
         )
     )
 
-    return result.model_dump()
-
 
 def evaluate_node_monolithic(
-    node_id: str,
-    chart_id: str,
+    *,
+    node: PxNode,
+    chart: PxChart,
+    model_manager: ModelManager,
     model_id: Optional[str] = None,
     strategy: str = "structural_memory",
-) -> Dict[str, Any]:
+    project=None,
+    project_pillars=None,
+    game_concept=None,
+) -> Any:
     """
-    Convenience function to evaluate a node using monolithic workflow.
+    Evaluate a node using the monolithic coherence workflow.
 
     Args:
-        node_id: UUID of the node to evaluate
-        chart_id: UUID of the chart
+        node: PxNode to evaluate
+        chart: PxChart the node belongs to
+        model_manager: User-scoped ModelManager (from orchestrator)
         model_id: Optional specific model to use
         strategy: Context strategy name
+        project: Optional project context
+        project_pillars: Optional project pillars
+        game_concept: Optional game concept
 
     Returns:
-        Evaluation result dictionary
+        Evaluation result (PxNodeCoherenceResult or similar)
     """
     import asyncio
 
-    from pxnodes.llm.context.shared import create_llm_provider
+    from llm.llm_adapter import LLMProviderAdapter
 
-    node = PxNode.objects.get(id=node_id)
-    chart = PxChart.objects.get(id=chart_id)
-
-    llm_provider = create_llm_provider(model_name=model_id or "gpt-4o-mini")
-    model_manager = ModelManager()
-
+    llm_provider = LLMProviderAdapter(
+        model_manager=model_manager,
+        model_name=model_id or "gpt-4o-mini",
+        temperature=0,
+    )
     strategy_type = StrategyType(strategy)
 
     workflow = PxNodesCoherenceMonolithicWorkflow(
@@ -1457,12 +1475,13 @@ def evaluate_node_monolithic(
         llm_provider=llm_provider,
     )
 
-    result = asyncio.run(
+    return asyncio.run(
         workflow.evaluate_node(
             node=node,
             chart=chart,
             model_id=model_id,
+            project=project,
+            project_pillars=project_pillars,
+            game_concept=game_concept,
         )
     )
-
-    return result.model_dump()

@@ -6,7 +6,7 @@ Router-based agentic evaluation endpoints.
 
 import logging
 import os
-from typing import Optional, cast
+from typing import Optional
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
@@ -15,10 +15,9 @@ from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from accounts.encryption import get_encryption_key_from_session
 from game_concept.models import Project
 from llm.logfire_config import get_logfire
-from llm.providers.manager import ModelManager
+from llm.mixins import UserLLMOrchestratorMixin
 from projects.utils import get_current_project
 
 # Import to trigger workflow registration
@@ -65,7 +64,7 @@ def save_game_concept(
     )
 
 
-class SPARCV2EvaluateView(APIView):
+class SPARCV2EvaluateView(UserLLMOrchestratorMixin, APIView):
     """
     V2 full evaluation using router-based agentic execution.
 
@@ -188,10 +187,7 @@ class SPARCV2EvaluateView(APIView):
                         context_strategy=context_strategy,
                         document_data=document_data,
                     )
-                    enc_key = get_encryption_key_from_session(request.session)
-                    model_manager: Optional[ModelManager] = None
-                    if request.user.is_authenticated and enc_key:
-                        model_manager = ModelManager.for_user(request.user, enc_key)
+                    orchestrator = self.get_llm_orchestrator(request)
 
                     result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
@@ -199,7 +195,7 @@ class SPARCV2EvaluateView(APIView):
                         evaluation=evaluation,
                         user=request.user if request.user.is_authenticated else None,
                         mode="full",
-                        model_manager=model_manager,
+                        model_manager=orchestrator.model_manager,
                     )
 
                     if not result.success:
@@ -217,7 +213,7 @@ class SPARCV2EvaluateView(APIView):
                     # Auto-save game concept
                     if request.user.is_authenticated:
                         save_game_concept(
-                            cast(User, request.user), game_text, evaluation
+                            request.user, game_text, evaluation
                         )
 
                     return JsonResponse(aggregated, status=status.HTTP_200_OK)
@@ -238,7 +234,7 @@ class SPARCV2EvaluateView(APIView):
                             logger.warning(f"Failed to clean up temp file: {str(e)}")
 
 
-class SPARCV2AspectView(APIView):
+class SPARCV2AspectView(UserLLMOrchestratorMixin, APIView):
     """
     V2 single or multiple aspect evaluation.
 
@@ -357,10 +353,7 @@ class SPARCV2AspectView(APIView):
                         context_strategy=context_strategy,
                     )
 
-                    enc_key = get_encryption_key_from_session(request.session)
-                    model_manager: Optional[ModelManager] = None
-                    if request.user.is_authenticated and enc_key:
-                        model_manager = ModelManager.for_user(request.user, enc_key)
+                    orchestrator = self.get_llm_orchestrator(request)
 
                     result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
@@ -369,7 +362,7 @@ class SPARCV2AspectView(APIView):
                         user=request.user if request.user.is_authenticated else None,
                         mode=mode,
                         target_aspects=target_aspects,
-                        model_manager=model_manager,
+                        model_manager=orchestrator.model_manager,
                     )
 
                     if not result.success:

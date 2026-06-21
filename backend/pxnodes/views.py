@@ -16,7 +16,7 @@ from projects.utils import get_current_project
 from pxcharts.models import PxChart
 from pxnodes.llm.context.artifacts import ArtifactInventory
 from pxnodes.llm.context.base.types import StrategyType
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.shared.graph_retrieval import get_full_path
 from pxnodes.llm.context.strategy_needs import get_strategy_needs
 
@@ -288,7 +288,7 @@ class StructuralMemoryStatsView(APIView):
             )
 
 
-class ContextArtifactsPrecomputeView(APIView):
+class ContextArtifactsPrecomputeView(UserLLMOrchestratorMixin, APIView):
     """
     Precompute context artifacts for a chart and strategy.
 
@@ -341,6 +341,7 @@ class ContextArtifactsPrecomputeView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        orchestrator = self.get_llm_orchestrator(request)
         needs = get_strategy_needs(strategy_type)
         with logfire.span(
             "context.precompute",
@@ -351,6 +352,7 @@ class ContextArtifactsPrecomputeView(APIView):
             llm_provider = None
             if not skip_llm:
                 llm_provider = LLMProviderAdapter(
+                    model_manager=orchestrator.model_manager,
                     model_name=llm_model,
                     temperature=0,
                 )
@@ -645,7 +647,7 @@ class CoherenceEvaluateView(UserLLMOrchestratorMixin, APIView):
                 )
                 from accounts.models import UserApiKey
                 from pxnodes.llm.context.evaluator import NodeCoherenceEvaluator
-                from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+                from llm.llm_adapter import LLMProviderAdapter
 
                 # Get user's OpenAI key for embeddings
                 enc_key = get_encryption_key_from_session(request.session)
@@ -917,7 +919,7 @@ class StrategyEvaluateView(UserLLMOrchestratorMixin, APIView):
                 )
                 from accounts.models import UserApiKey
                 from pxnodes.llm.context.base import StrategyType
-                from pxnodes.llm.context.shared import create_llm_provider
+                from llm.llm_adapter import create_llm_provider
 
                 # Check for OpenAI key if the strategy needs embeddings
                 if strategy in EMBEDDING_REQUIRING_STRATEGIES:
@@ -962,56 +964,32 @@ class StrategyEvaluateView(UserLLMOrchestratorMixin, APIView):
                     model_manager=orchestrator.model_manager,
                 )
 
-                strategy_type = StrategyType(strategy)
-
-                # Import shared dependencies
-                import asyncio
-
                 from pxnodes.llm.workflows import (
-                    PxNodesCoherenceMonolithicWorkflow,
-                    PxNodesCoherenceWorkflow,
+                    evaluate_node_agentic,
+                    evaluate_node_monolithic,
                 )
 
-                model_manager = orchestrator.model_manager
-
                 if execution_mode == "agentic":
-                    # Use agentic workflow with 4 parallel dimension agents
-                    workflow = PxNodesCoherenceWorkflow(
-                        model_manager=model_manager,
-                        strategy_type=strategy_type,
-                        llm_provider=llm_provider,
-                    )
-
-                    # Run async workflow
-                    result = asyncio.run(
-                        workflow.evaluate_node(
-                            node=node,
-                            chart=chart,
-                            model_id=llm_model,
-                            project=project_context,
-                            project_pillars=pillars,
-                            game_concept=game_concept,
-                        )
+                    result = evaluate_node_agentic(
+                        node=node,
+                        chart=chart,
+                        model_manager=orchestrator.model_manager,
+                        model_id=llm_model,
+                        strategy=strategy,
+                        project=project_context,
+                        project_pillars=pillars,
+                        game_concept=game_concept,
                     )
                 else:
-                    # Use monolithic workflow with unified prompt
-                    # Same response schema as agentic for fair thesis comparison
-                    workflow = PxNodesCoherenceMonolithicWorkflow(
-                        model_manager=model_manager,
-                        strategy_type=strategy_type,
-                        llm_provider=llm_provider,
-                    )
-
-                    # Run async workflow
-                    result = asyncio.run(
-                        workflow.evaluate_node(
-                            node=node,
-                            chart=chart,
-                            model_id=llm_model,
-                            project=project_context,
-                            project_pillars=pillars,
-                            game_concept=game_concept,
-                        )
+                    result = evaluate_node_monolithic(
+                        node=node,
+                        chart=chart,
+                        model_manager=orchestrator.model_manager,
+                        model_id=llm_model,
+                        strategy=strategy,
+                        project=project_context,
+                        project_pillars=pillars,
+                        game_concept=game_concept,
                     )
 
                 logfire.info(
@@ -1140,7 +1118,7 @@ class StrategyCompareView(UserLLMOrchestratorMixin, APIView):
                 )
                 from accounts.models import UserApiKey
                 from pxnodes.llm.context.base import StrategyType
-                from pxnodes.llm.context.shared import create_llm_provider
+                from llm.llm_adapter import create_llm_provider
                 from pxnodes.llm.context.strategy_evaluator import StrategyEvaluator
 
                 # Check for OpenAI key if comparing embedding-requiring strategies

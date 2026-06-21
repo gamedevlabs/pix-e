@@ -1,8 +1,15 @@
 """
-LLM Adapter for Structural Memory Context.
+LLM Provider Adapter.
 
-Adapts the LLM Orchestrator/ModelManager to work with the
-structural memory system's LLMProvider protocol.
+Canonical adapter that wraps ModelManager to work with the
+LLMProvider protocol used by strategies, generators, and evaluators.
+This is the single, authoritative implementation — all consumers
+MUST import from here.
+
+Contract:
+    from llm.llm_adapter import LLMProviderAdapter, create_llm_provider
+
+See ``backend/llm/CONTRACT.md`` (Rule 3) for usage guidance.
 """
 
 import logging
@@ -17,8 +24,7 @@ logger = logging.getLogger(__name__)
 
 class LLMProviderAdapter:
     """
-    Adapter that makes ModelManager compatible with structural memory's
-    LLMProvider protocol.
+    Adapter for ModelManager to work with LLMProvider protocol.
 
     This allows us to use the existing LLM orchestrator infrastructure
     for generating atomic facts and knowledge triples.
@@ -26,7 +32,7 @@ class LLMProviderAdapter:
 
     def __init__(
         self,
-        model_manager: Optional[ModelManager] = None,
+        model_manager: ModelManager,
         model_name: Optional[str] = None,
         temperature: float = 0,
         max_tokens: Optional[int] = None,
@@ -35,12 +41,20 @@ class LLMProviderAdapter:
         Initialize LLM adapter.
 
         Args:
-            model_manager: ModelManager instance (creates new one if not provided)
+            model_manager: ModelManager instance (required — use ModelManager.for_user())
             model_name: Specific model to use (auto-selects if not provided)
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate
+
+        Raises:
+            ValueError: If model_manager is not provided
         """
-        self.model_manager = model_manager or ModelManager()
+        if model_manager is None:
+            raise ValueError(
+                "model_manager is required — use ModelManager.for_user(user, enc_key) "
+                "to create one"
+            )
+        self.model_manager = model_manager
         self.model_name = model_name
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -69,7 +83,6 @@ class LLMProviderAdapter:
             Generated text
         """
         # Force deterministic output for all context prompts.
-        operation = kwargs.pop("operation", None)
         temperature = 0.0
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         model_name = kwargs.get("model_name", self.model_name)
@@ -81,9 +94,8 @@ class LLMProviderAdapter:
                 "during initialization"
             )
 
-        span_name = f"llm.generate.{operation}" if operation else "llm.generate"
         with logfire.span(
-            span_name,
+            "llm.generate",
             model=model_name,
             temperature=temperature,
             prompt_length=len(prompt),
@@ -123,6 +135,7 @@ class LLMProviderAdapter:
 
 # Convenience function to create adapter with specific model
 def create_llm_provider(
+    model_manager: ModelManager,
     model_name: Optional[str] = None,
     temperature: float = 0,
 ) -> LLMProviderAdapter:
@@ -130,6 +143,7 @@ def create_llm_provider(
     Create an LLM provider adapter.
 
     Args:
+        model_manager: ModelManager instance (required)
         model_name: Specific model to use (auto-selects if None)
         temperature: Sampling temperature
 
@@ -137,6 +151,7 @@ def create_llm_provider(
         LLMProviderAdapter instance
     """
     return LLMProviderAdapter(
+        model_manager=model_manager,
         model_name=model_name,
         temperature=temperature,
     )

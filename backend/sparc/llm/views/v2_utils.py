@@ -13,7 +13,7 @@ from game_concept.models import Project
 from game_concept.utils import get_current_game_concept
 from llm.config import get_config
 from llm.events import EventCollector
-from llm.providers.manager import ModelManager
+from llm.providers.manager import ModelManager  # noqa: used in type annotation
 from llm.types import LLMRequest
 from projects.utils import get_current_project
 from sparc.llm.utils.file_extraction import validate_file_size, validate_file_type
@@ -111,10 +111,9 @@ async def run_router_workflow(
     mode: str,
     target_aspects: Optional[list[str]] = None,
     event_collector: Optional[EventCollector] = None,
-    model_manager: Optional[ModelManager] = None,
+    model_manager: ModelManager,
 ):
     config = get_config()
-    model_manager = model_manager or ModelManager(config)
     event_collector = event_collector or EventCollector()
 
     workflow = SPARCRouterWorkflow(

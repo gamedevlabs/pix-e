@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from game_concept.models import Project
-from llm.providers.manager import ModelManager
+from llm.mixins import UserLLMOrchestratorMixin
 from pxnodes.models import PxNode
 
 from .workflow import ChangePropagationWorkflow
@@ -14,7 +14,7 @@ from .workflow import ChangePropagationWorkflow
 logger = logging.getLogger(__name__)
 
 
-class ChangePropagationView(APIView):
+class ChangePropagationView(UserLLMOrchestratorMixin, APIView):
     """Run change propagation analysis on a changed PxNode and return
     which other nodes in the project are semantically affected.
 
@@ -71,7 +71,8 @@ class ChangePropagationView(APIView):
         min_confidence = float(request.data.get("min_confidence", 0.5))
 
         try:
-            workflow = ChangePropagationWorkflow(model_manager=ModelManager())
+            orchestrator = self.get_llm_orchestrator(request)
+            workflow = ChangePropagationWorkflow(model_manager=orchestrator.model_manager)
             report = workflow.check_change(
                 project=project,
                 changed_node=changed_node,

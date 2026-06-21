@@ -12,7 +12,7 @@ Central manager that handles:
 
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from llm.config import Config, get_config
 from llm.exceptions import (
@@ -24,9 +24,6 @@ from llm.providers.capabilities import (
     filter_by_capabilities,
     find_best_model,
 )
-from llm.providers.gemini_provider import GeminiProvider
-from llm.providers.ollama_provider import OllamaProvider
-from llm.providers.openai_provider import OpenAIProvider
 from llm.types import (
     CapabilityRequirements,
     ModelDetails,
@@ -63,63 +60,17 @@ class ModelManager:
         self._model_cache: Optional[List[ModelDetails]] = None
         self._cache_timestamp: Optional[float] = None
 
-        self._init_env_providers()
-
-    def _init_env_providers(self) -> None:
-        try:
-            ollama = OllamaProvider(
-                {
-                    "base_url": self.config.ollama_base_url,
-                    "timeout": self.config.ollama_timeout_seconds,
-                }
-            )
-            if ollama.is_available():
-                self._provider_list.setdefault("ollama", []).append(ollama)
-                self.providers["ollama"] = ollama
-                logger.info("Ollama provider initialized")
-            else:
-                logger.info("Ollama provider not available")
-        except Exception as e:
-            logger.warning(f"Ollama provider initialization failed: {e}")
-
-        if self.config.openai_api_key:
-            try:
-                openai = OpenAIProvider(
-                    {
-                        "api_key": self.config.openai_api_key,
-                        "organization": self.config.openai_organization,
-                        "timeout": self.config.openai_timeout_seconds,
-                    }
-                )
-                if openai.is_available():
-                    self._provider_list.setdefault("openai", []).append(openai)
-                    self.providers["openai"] = openai
-                    logger.info("OpenAI provider initialized")
-                else:
-                    logger.warning("OpenAI provider not available")
-            except Exception as e:
-                logger.warning(f"OpenAI provider initialization failed: {e}")
-        else:
-            logger.info("OpenAI API key not configured")
-
-        if self.config.gemini_api_key:
-            try:
-                gemini = GeminiProvider(
-                    {
-                        "api_key": self.config.gemini_api_key,
-                        "timeout": self.config.gemini_timeout_seconds,
-                    }
-                )
-                if gemini.is_available():
-                    self._provider_list.setdefault("gemini", []).append(gemini)
-                    self.providers["gemini"] = gemini
-                    logger.info("Gemini provider initialized")
-                else:
-                    logger.warning("Gemini provider not available")
-            except Exception as e:
-                logger.warning(f"Gemini provider initialization failed: {e}")
-        else:
-            logger.info("Gemini API key not configured")
+        # DEPRECATED: Direct ModelManager() construction no longer loads
+        # providers. Use ModelManager.for_user(user, enc_key) to create
+        # a properly configured instance with the user's API keys.
+        import warnings
+        warnings.warn(
+            "ModelManager() called directly — use ModelManager.for_user(user, enc_key) "
+            "instead. The constructor no longer loads providers from environment "
+            "variables; provider lists will be empty.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
     @classmethod
     def for_user(cls, user, enc_key: bytes) -> "ModelManager":
@@ -150,6 +101,7 @@ class ModelManager:
         else:
             if "ollama" not in manager._provider_list:
                 try:
+                    from llm.providers.ollama_provider import OllamaProvider
                     ollama = OllamaProvider(
                         {
                             "base_url": manager.config.ollama_base_url,
@@ -211,6 +163,7 @@ class ModelManager:
             manager._provider_list[api_key_obj.provider] = [provider]
 
         try:
+            from llm.providers.ollama_provider import OllamaProvider
             ollama = OllamaProvider(
                 {
                     "base_url": manager.config.ollama_base_url,
@@ -301,7 +254,7 @@ class ModelManager:
         models = self.list_models(refresh=refresh)
         return ModelInventory(models=models)
 
-    def _find_model_by_name(self, model_name: str) -> Tuple[ModelDetails, BaseProvider]:
+    def _find_model_by_name(self, model_name: str) -> ModelDetails:
         self._ensure_registry()
         provider = self._model_registry.get(model_name)
         if not provider:
@@ -316,7 +269,7 @@ class ModelManager:
         models = provider.list_models()
         for model in models:
             if model.name == model_name:
-                return model, provider
+                return model
 
         raise ModelUnavailableError(
             model=model_name,
@@ -332,7 +285,14 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> GenerationResult:
-        model_details, provider = self._find_model_by_name(model_name)
+        model_details = self._find_model_by_name(model_name)
+        provider = self._model_registry.get(model_name)
+
+        if not provider:
+            raise ProviderError(
+                message=f"Provider for model '{model_name}' not found in registry",
+                provider="unknown",
+            )
 
         text = provider.generate_text(
             model_name=model_details.name,
@@ -355,7 +315,14 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
-        model_details, provider = self._find_model_by_name(model_name)
+        model_details = self._find_model_by_name(model_name)
+        provider = self._model_registry.get(model_name)
+
+        if provider is None:
+            raise ProviderError(
+                message=f"Provider for model '{model_name}' not found in registry",
+                provider="unknown",
+            )
 
         if not model_details.capabilities.json_strict:
             logger.warning(f"Model {model_name} may not have strict JSON support")
@@ -378,7 +345,14 @@ class ModelManager:
         max_tokens: Optional[int] = None,
         **kwargs: Any,
     ) -> Any:
-        model_details, provider = self._find_model_by_name(model_name)
+        model_details = self._find_model_by_name(model_name)
+        provider = self._model_registry.get(model_name)
+
+        if provider is None:
+            raise ProviderError(
+                message=f"Provider for model '{model_name}' not found in registry",
+                provider="unknown",
+            )
 
         if not model_details.capabilities.json_strict:
             logger.warning(f"Model {model_name} may not have strict JSON support")

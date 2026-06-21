@@ -125,12 +125,19 @@ class StructuralMemoryStrategy(BaseContextStrategy):
         """
         # Create a fixed precompute LLM provider if any provider was requested
         if llm_provider is not None:
-            from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+            from llm.llm_adapter import LLMProviderAdapter
 
-            precompute_provider = LLMProviderAdapter(
-                model_name=PRECOMPUTE_MODEL,
-                temperature=0,
-            )
+            # Use llm_provider's model_manager if available, otherwise skip precompute
+            mm = getattr(llm_provider, "model_manager", None)
+            if mm is None:
+                logger.warning("No model_manager available, skipping precompute provider")
+                precompute_provider = llm_provider
+            else:
+                precompute_provider = LLMProviderAdapter(
+                    model_manager=mm,
+                    model_name=PRECOMPUTE_MODEL,
+                    temperature=0,
+                )
             super().__init__(llm_provider=precompute_provider, **kwargs)
             logger.debug(
                 f"StructuralMemoryStrategy using fixed precompute model: "

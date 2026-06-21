@@ -59,9 +59,12 @@ const dropdownItems = computed(() => [
           v-model="llmStore.activeModel"
           :items="llmStore.models"
           value-key="value"
-          :icon="llmStore.activeModelIcon"
           class="w-96"
-        />
+        >
+          <template #leading>
+            <UIcon v-if="llmStore.activeModelIcon" :name="llmStore.activeModelIcon" class="size-4 shrink-0" />
+          </template>
+        </USelect>
         <UDropdownMenu :items="dropdownItems">
           <!-- Wrap so the whole avatar surface is clickable -->
           <div>

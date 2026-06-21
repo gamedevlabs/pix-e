@@ -36,7 +36,19 @@ class LLMOrchestrator:
 
     def __init__(self, model_manager: Optional[ModelManager] = None) -> None:
         """Initialize orchestrator with optional ModelManager."""
-        self.model_manager = model_manager or ModelManager()
+        if model_manager is None:
+            import warnings
+
+            warnings.warn(
+                "LLMOrchestrator() called without model_manager — "
+                "use LLMOrchestrator.for_user(user, enc_key) instead. "
+                "Direct construction no longer loads providers from "
+                "environment variables; the provider list will be empty.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            model_manager = ModelManager()
+        self.model_manager = model_manager
         self.config = get_config()
 
     @classmethod

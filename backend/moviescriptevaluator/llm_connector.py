@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from llm import LLMOrchestrator, LLMRequest
 
@@ -10,10 +10,8 @@ from moviescriptevaluator.models import AssetMetaData, MovieScript
 class MovieScriptLLMConnector:
     orchestrator: LLMOrchestrator
 
-    def __init__(self, orchestrator: Optional[LLMOrchestrator] = None):
-        self.orchestrator = (
-            orchestrator if orchestrator is not None else LLMOrchestrator()
-        )
+    def __init__(self, orchestrator: LLMOrchestrator):
+        self.orchestrator = orchestrator
 
     def analyze_movie_script(
         self, movie_script: MovieScript, asset_list: list[AssetMetaData]

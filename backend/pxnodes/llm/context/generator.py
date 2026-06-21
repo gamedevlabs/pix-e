@@ -25,7 +25,7 @@ from pxnodes.llm.context.change_detection import (
 )
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
@@ -115,7 +115,8 @@ class StructuralMemoryGenerator:
         embedding_model: str = "text-embedding-3-small",
         skip_embeddings: bool = False,
         force_regenerate: bool = False,
-        model_manager: Optional[ModelManager] = None,
+        *,
+        model_manager: ModelManager,
         api_key: Optional[str] = None,
     ):
         """
@@ -126,7 +127,7 @@ class StructuralMemoryGenerator:
             embedding_model: OpenAI embedding model
             skip_embeddings: If True, skip embedding generation
             force_regenerate: If True, process all nodes regardless of changes
-            model_manager: Per-user ModelManager (creates global one if not provided)
+            model_manager: Per-user ModelManager (use ModelManager.for_user())
             api_key: User's OpenAI API key for embeddings (uses env var if not provided)
         """
         self.llm_provider = LLMProviderAdapter(
@@ -464,38 +465,4 @@ class StructuralMemoryGenerator:
         self.vector_store.close()
 
 
-def generate_structural_memory(
-    chart_ids: list[str],
-    llm_model: str = "gpt-4o-mini",
-    embedding_model: str = "text-embedding-3-small",
-    skip_embeddings: bool = False,
-    force_regenerate: bool = False,
-) -> list[dict]:
-    """
-    Convenience function to generate structural memory for charts.
 
-    Args:
-        chart_ids: List of chart UUIDs to process
-        llm_model: Model for atomic fact extraction
-        embedding_model: OpenAI embedding model
-        skip_embeddings: If True, skip embedding generation
-        force_regenerate: If True, process all nodes regardless of changes
-
-    Returns:
-        List of result dictionaries
-    """
-    from pxcharts.models import PxChart
-
-    generator = StructuralMemoryGenerator(
-        llm_model=llm_model,
-        embedding_model=embedding_model,
-        skip_embeddings=skip_embeddings,
-        force_regenerate=force_regenerate,
-    )
-
-    try:
-        charts = list(PxChart.objects.filter(id__in=chart_ids))
-        results = generator.generate_for_charts(charts)
-        return [r.to_dict() for r in results]
-    finally:
-        generator.close()

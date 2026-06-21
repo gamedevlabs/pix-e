@@ -15,7 +15,7 @@ import json
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional
 
 if TYPE_CHECKING:
-    from pxnodes.llm.context.llm_adapter import LLMProviderAdapter  # noqa: F401
+    from llm.llm_adapter import LLMProviderAdapter  # noqa: F401
 
 import logfire
 
@@ -182,10 +182,13 @@ class ArtifactInventory:
         # ignoring whatever model was passed in. This ensures consistent
         # preprocessing across experiments.
         if llm_provider is not None:
-            from pxnodes.llm.context.llm_adapter import LLMProviderAdapter  # noqa: F811
+            from llm.llm_adapter import LLMProviderAdapter  # noqa: F811
 
             # Create a new provider with the fixed precompute model
+            # Extract model_manager from the passed provider if available
+            mm = getattr(llm_provider, "model_manager", None)
             self.llm_provider: Optional[LLMProviderAdapter] = LLMProviderAdapter(
+                model_manager=mm,
                 model_name=PRECOMPUTE_MODEL,
                 temperature=0,
             )

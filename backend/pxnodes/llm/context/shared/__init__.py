@@ -15,7 +15,7 @@ from pxnodes.llm.context.shared.graph_retrieval import (
     get_all_paths_through_node,
     get_graph_slice,
 )
-from pxnodes.llm.context.shared.llm_adapter import (
+from llm.llm_adapter import (
     LLMProviderAdapter,
     create_llm_provider,
 )

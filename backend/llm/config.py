@@ -41,18 +41,9 @@ class Config:
     # Model Provider Configuration
     # ============================================
 
-    # Ollama settings
+    # Ollama settings (local service, not a user credential)
     ollama_base_url: str = "http://localhost:11434"
     ollama_timeout_seconds: int = 60
-
-    # OpenAI settings
-    openai_api_key: Optional[str] = None
-    openai_organization: Optional[str] = None
-    openai_timeout_seconds: int = 60
-
-    # Gemini settings
-    gemini_api_key: Optional[str] = None
-    gemini_timeout_seconds: int = 60
 
     # ============================================
     # Execution Configuration
@@ -71,12 +62,12 @@ class Config:
     default_execution_mode: str = "monolithic"  # "monolithic" | "agentic"
 
     # Model name aliases: maps friendly names to full model IDs
+    # Note: Users select actual model names from their API keys.
+    # These aliases are only for backward compatibility where
+    # frontend code may send "gemini" or "openai" as model names.
     model_aliases: dict = field(
         default_factory=lambda: {
             "gemini": "gemini-3.1-flash-lite-preview",
-            "openai": "gemini-3.1-flash-lite-preview",
-            # !!! Changed openai to route to gemini as a hack
-            # to have llm functions working !!!
         }
     )
 
@@ -209,21 +200,11 @@ class Config:
                 return env_value
 
         ollama_url = get_setting("ollama_base_url", "http://localhost:11434")
-        openai_key = get_setting("openai_api_key") or os.getenv("OPENAI_API_KEY")
-        openai_org = get_setting("openai_organization") or os.getenv(
-            "OPENAI_ORGANIZATION"
-        )
-        gemini_key = get_setting("gemini_api_key") or os.getenv("GEMINI_API_KEY")
 
         return cls(
-            # Model providers
+            # Model providers (Ollama only — user API keys come from UserApiKey model)
             ollama_base_url=ollama_url,
             ollama_timeout_seconds=get_setting("ollama_timeout_seconds", 30, int),
-            openai_api_key=openai_key,
-            openai_organization=openai_org,
-            openai_timeout_seconds=get_setting("openai_timeout_seconds", 30, int),
-            gemini_api_key=gemini_key,
-            gemini_timeout_seconds=get_setting("gemini_timeout_seconds", 30, int),
             # Execution
             default_timeout_ms=get_setting("default_timeout_ms", 120000, int),
             max_parallel_agents=get_setting("max_parallel_agents", 10, int),
@@ -233,10 +214,7 @@ class Config:
                 "model_aliases",
                 {
                     "gemini": "gemini-3.1-flash-lite-preview",
-                    "openai": "gemini-3.1-flash-lite-preview",
                 },
-                # !!! Changed openai to route to gemini as a hack
-                # to have llm functions working !!!
                 dict,
             ),
             # Storage
@@ -299,9 +277,6 @@ class Config:
         if self.ollama_timeout_seconds <= 0:
             issues.append("ollama_timeout_seconds must be positive")
 
-        if self.openai_timeout_seconds <= 0:
-            issues.append("openai_timeout_seconds must be positive")
-
         # Check parallel limits
         if self.max_parallel_agents <= 0:
             issues.append("max_parallel_agents must be positive")
@@ -338,12 +313,9 @@ class Config:
         if self.default_execution_mode not in valid_modes:
             issues.append(f"default_execution_mode must be one of {valid_modes}")
 
-        # Warn if no provider API keys configured
-        if not self.openai_api_key and not self.gemini_api_key:
-            issues.append(
-                "Warning: No cloud provider API keys configured. "
-                "Only local models will be available."
-            )
+        # Note: Provider API keys are no longer configured globally.
+        # Users manage their own keys via the UserApiKey model.
+        # This is intentional — no warning needed.
 
         return issues
 
@@ -370,16 +342,11 @@ class Config:
                 "base_url": self.ollama_base_url,
                 "timeout_seconds": self.ollama_timeout_seconds,
             }
-        elif provider == "openai":
+        elif provider in ("openai", "gemini"):
+            # Cloud provider config is per-user via UserApiKey,
+            # not global config. Return only Ollama-compatible fields.
             return {
-                "api_key": self.openai_api_key,
-                "organization": self.openai_organization,
-                "timeout_seconds": self.openai_timeout_seconds,
-            }
-        elif provider == "gemini":
-            return {
-                "api_key": self.gemini_api_key,
-                "timeout_seconds": self.gemini_timeout_seconds,
+                "timeout_seconds": self.ollama_timeout_seconds,
             }
         else:
             return {}
@@ -398,14 +365,10 @@ class Config:
         return self.model_aliases.get(model_name, model_name)
 
     def __str__(self) -> str:
-        """String representation (hides sensitive data)."""
-        openai_display = "***" if self.openai_api_key else "None"
-        gemini_display = "***" if self.gemini_api_key else "None"
+        """String representation."""
         return (
             f"Config(\n"
             f"  ollama_base_url={self.ollama_base_url}\n"
-            f"  openai_api_key={openai_display}\n"
-            f"  gemini_api_key={gemini_display}\n"
             f"  default_timeout_ms={self.default_timeout_ms}\n"
             f"  max_parallel_agents={self.max_parallel_agents}\n"
             f"  cache_enabled={self.cache_enabled}\n"

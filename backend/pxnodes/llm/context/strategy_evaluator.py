@@ -529,7 +529,7 @@ def evaluate_node_with_strategy(
     Returns:
         Evaluation result dictionary
     """
-    from pxnodes.llm.context.shared import create_llm_provider
+    from llm.llm_adapter import create_llm_provider
 
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
@@ -559,7 +559,7 @@ def compare_all_strategies(
     Returns:
         Comparison result dictionary
     """
-    from pxnodes.llm.context.shared import create_llm_provider
+    from llm.llm_adapter import create_llm_provider
 
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)

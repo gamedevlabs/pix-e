@@ -7,12 +7,13 @@ from __future__ import annotations
 import logfire
 from django.core.management.base import BaseCommand, CommandError
 
+from accounts.management_utils import add_user_argument, get_model_manager_for_user
 from game_concept.utils import get_current_game_concept
 from pillars.models import Pillar
 from pxcharts.models import PxChart
 from pxnodes.llm.context.artifacts import ArtifactInventory
 from pxnodes.llm.context.base.types import StrategyType
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
+from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.shared.graph_retrieval import get_full_path
 from pxnodes.llm.context.strategy_needs import get_strategy_needs
 from pxnodes.models import PxNode
@@ -22,6 +23,7 @@ class Command(BaseCommand):
     help = "Precompute context artifacts for a chart and strategy"
 
     def add_arguments(self, parser) -> None:
+        add_user_argument(parser)
         parser.add_argument(
             "--chart-id",
             type=str,
@@ -67,7 +69,12 @@ class Command(BaseCommand):
 
         llm_provider = None
         if not options["skip_llm"]:
+            model_manager = get_model_manager_for_user(
+                username=options["user"],
+                password_from_stdin=options.get("password_from_stdin", False),
+            )
             llm_provider = LLMProviderAdapter(
+                model_manager=model_manager,
                 model_name=options["model"],
                 temperature=0,
             )
