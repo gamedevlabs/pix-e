@@ -2,7 +2,6 @@
 import {
   type NodeDragEvent,
   VueFlow,
-  Panel,
   type Connection,
   type EdgeChange,
   type NodeChange,
@@ -473,10 +472,12 @@ async function handleEditSettings() {
 
   <PxChartToolbar
     :menu-snap-to-grid="menuSnapToGrid"
+    :single-edge-selected="getSelectedEdges.length === 1"
     @add-existing-node="handleAddContainerFromPanel(false, false)"
     @add-new-node="handleAddContainerFromPanel(true, false)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
     @edit-settings="handleEditSettings()"
+    @edit-locks="handleEditLocks()"
   >
     <template #right>
       <!-- Context Strategy Analysis Button -->
@@ -604,17 +605,6 @@ async function handleEditSettings() {
         @update-px-node="(containerId, nodeId) => handleEditPxNode(containerId, nodeId)"
       />
     </template>
-
-    <Panel :position="'top-left'">
-      <!-- Edge-specific Action, only available when edge is selected -->
-      <UTooltip
-        v-if="getSelectedEdges.length === 1"
-        text="Add or Edit Locks"
-        :content="{ align: 'center', side: 'right' }"
-      >
-        <UButton size="xl" icon="i-lucide-lock" color="primary" @click="handleEditLocks" />
-      </UTooltip>
-    </Panel>
   </VueFlow>
 
   <!-- Context Strategy Slideover -->

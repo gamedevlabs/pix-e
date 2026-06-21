@@ -21,7 +21,7 @@ const { toggleSubstep } = useProjectWorkflow()
 const { fetchById: fetchComponentById } = usePxComponents()
 const { fetchById: fetchPxKeyById } = usePxKeys()
 
-// TODO: clean up emits and figure out what "addForeign" is supposed to do
+// TODO: figure out what "addForeign" is supposed to do and clean up emits
 const emit = defineEmits<{
   (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
   (e: 'addComponent' | 'addKey' | 'deleteKey'): void
