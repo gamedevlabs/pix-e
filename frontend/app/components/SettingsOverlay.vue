@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import type { UserApiKey } from '~/types/api-key'
+import { SessionExpiredError } from '~/utils/sessionFetch'
+import { getSessionKey } from '~/composables/useSessionKey'
 import { useApiKeysApi } from '~/composables/api/apiKeysApi'
 import ApiKeyAddForm from '~/components/ApiKeyAddForm.vue'
 import ApiKeyList from '~/components/ApiKeyList.vue'
 import MorpheusHelpModal from '~/components/MorpheusHelpModal.vue'
 
 const open = defineModel<boolean>('open', { default: false })
+const llmStore = useLLM()
 
-const { fetchKeys } = useApiKeysApi()
+const { fetchKeys, testKey } = useApiKeysApi()
 const keys = ref<UserApiKey[]>([])
+const toast = useToast()
 
 const showAddForm = ref(false)
 const showMorpheusHelp = ref(false)
+const testingId = ref<string | null>(null)
 
 watch(open, async (val) => {
   if (val) {
@@ -20,14 +25,24 @@ watch(open, async (val) => {
     } catch {
       /* */
     }
+    try {
+      await llmStore.refreshModels()
+    } catch {
+      getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+    }
   } else {
     showAddForm.value = false
   }
 })
 
-function onKeyCreated(key: UserApiKey) {
+async function onKeyCreated(key: UserApiKey) {
   keys.value.push(key)
   showAddForm.value = false
+  try {
+    await llmStore.refreshModels()
+  } catch {
+    getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+  }
 }
 
 function onKeyUpdated(updated: UserApiKey) {
@@ -35,8 +50,42 @@ function onKeyUpdated(updated: UserApiKey) {
   if (idx !== -1) keys.value[idx] = updated
 }
 
-function onKeyDeleted(id: string) {
+async function onKeyDeleted(id: string) {
   keys.value = keys.value.filter((k) => k.id !== id)
+  // Optimistic: remove models from this key immediately
+  if (llmStore.models) {
+    llmStore.models = llmStore.models.filter((m) => m.apiKeyId !== id)
+  }
+  try {
+    await llmStore.refreshModels()
+  } catch {
+    getSessionKey().handleSessionExpired(() => llmStore.refreshModels())
+  }
+}
+
+async function onKeyTest(id: string) {
+  testingId.value = id
+  try {
+    const result = await testKey(id)
+    toast.add({
+      title: result.status === 'ok' ? 'Key works!' : 'Key test failed',
+      description: result.detail,
+      color: result.status === 'ok' ? 'success' : 'error',
+    })
+  } catch (err) {
+    if (err instanceof SessionExpiredError) {
+      getSessionKey().handleSessionExpired(() => onKeyTest(id))
+      return
+    }
+    toast.add({ title: 'Key test failed', description: 'Could not connect', color: 'error' })
+  } finally {
+    testingId.value = null
+  }
+  try {
+    keys.value = await fetchKeys()
+  } catch {
+    /* */
+  }
 }
 </script>
 
@@ -67,8 +116,10 @@ function onKeyDeleted(id: string) {
         <ApiKeyList
           v-if="keys.length > 0"
           :keys="keys"
+          :testing-id="testingId"
           @updated="onKeyUpdated"
           @deleted="onKeyDeleted"
+          @test="onKeyTest"
         />
       </div>
     </template>

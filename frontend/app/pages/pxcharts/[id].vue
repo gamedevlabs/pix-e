@@ -35,11 +35,6 @@ async function handleEdgeConnected() {
   // px-1-6: "Connect both containers"
   await toggleSubstep('px-1', 'px-1-6')
 }
-
-async function handleNodeAddedToContainer() {
-  // px-2-4: "Open a chart and add a node to any container"
-  await toggleSubstep('px-2', 'px-2-4')
-}
 </script>
 
 <template>
@@ -48,7 +43,6 @@ async function handleNodeAddedToContainer() {
       :chart-id="chartId"
       @container-added="handleContainerAdded"
       @edge-connected="handleEdgeConnected"
-      @node-added-to-container="handleNodeAddedToContainer"
     />
   </div>
 </template>

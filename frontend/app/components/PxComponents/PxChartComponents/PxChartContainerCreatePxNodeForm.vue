@@ -3,7 +3,6 @@ import { NamedEntityCard } from '#components'
 const { error } = usePixeToast()
 
 const { createItem: createPxNode } = usePxNodes()
-const { toggleSubstep } = useProjectWorkflow()
 
 const emit = defineEmits<{ close: [string] }>()
 
@@ -15,8 +14,6 @@ async function createItem(newEntityDraft: Partial<NamedEntity>) {
     return
   } else {
     const nodeId = await createPxNode(newEntityDraft)
-    // px-2-2: "Create your first node"
-    await toggleSubstep('px-2', 'px-2-2')
     emit('close', nodeId)
   }
 }

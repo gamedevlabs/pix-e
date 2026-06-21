@@ -6,6 +6,7 @@ import '@vue-flow/node-resizer/dist/style.css'
 const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
   (e: 'delete' | 'switchPxNode', id: string): void
+  (e: 'updatePxNode', containerId: string, pxNodeId: string): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
@@ -61,6 +62,10 @@ async function handleSwitchPxNode() {
   emit('switchPxNode', props.id)
 }
 
+async function handleUpdatePxNode() {
+  emit('updatePxNode', props.id, pxNode.value?.id)
+}
+
 function listenToResizing() {
   if (cardRef.value) {
     observer = new ResizeObserver((entries) => {
@@ -73,6 +78,14 @@ function listenToResizing() {
     observer.observe(cardRef.value)
   }
 }
+
+defineShortcuts({
+  Delete: () => {
+    if (props.selected) {
+      handleDelete()
+    }
+  },
+})
 </script>
 
 <template>
@@ -82,8 +95,10 @@ function listenToResizing() {
         :node-id="pxNode.id"
         :visualization-style="'detailed'"
         :is-collapsible="true"
-        @delete-container="handleDelete()"
+        @delete="handleDelete()"
         @switch-node="handleSwitchPxNode()"
+        @add-key="handleUpdatePxNode()"
+        @delete-key="handleUpdatePxNode()"
       />
     </div>
 

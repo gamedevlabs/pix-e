@@ -2,20 +2,26 @@ export function usePixeToast() {
   const toast = useToast()
   const nuxtApp = useNuxtApp()
 
+  function safeShow(fn: () => void) {
+    if (import.meta.server) return
+
+    if (nuxtApp.isHydrating) {
+      onNuxtReady(() => {
+        requestAnimationFrame(fn)
+      })
+    } else {
+      fn()
+    }
+  }
+
   function success(description?: string, title = 'Success') {
-    const show = () => {
+    safeShow(() => {
       toast.add({
         title,
         description,
         color: 'success',
       })
-    }
-
-    if (nuxtApp.isHydrating) {
-      onNuxtReady(show)
-    } else {
-      show()
-    }
+    })
   }
 
   function error(error: unknown, fallback = 'Something went wrong', title = 'Error') {
@@ -37,20 +43,24 @@ export function usePixeToast() {
       }
     }
 
-    const show = () => {
+    safeShow(() => {
       toast.add({
         title,
         description,
         color: 'error',
       })
-    }
-
-    if (nuxtApp.isHydrating) {
-      onNuxtReady(show)
-    } else {
-      show()
-    }
+    })
   }
 
-  return { success, error }
+  function info(description?: string, title = 'Info') {
+    safeShow(() => {
+      toast.add({
+        title,
+        description,
+        color: 'info',
+      })
+    })
+  }
+
+  return { success, error, info }
 }

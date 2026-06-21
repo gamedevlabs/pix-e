@@ -45,7 +45,9 @@ export function useMovieScriptEvaluatorApi() {
         },
       )
     } catch (error) {
-      throw new Error((error as Error)?.message || 'Failed to analyze movie script')
+      throw new Error((error as Error)?.message || 'Failed to analyze movie script', {
+        cause: error,
+      })
     }
   }
 
@@ -66,7 +68,9 @@ export function useMovieScriptEvaluatorApi() {
         },
       )
     } catch (error) {
-      throw new Error((error as Error)?.message || 'Failed to create script scene analysis items')
+      throw new Error((error as Error)?.message || 'Failed to create script scene analysis items', {
+        cause: error,
+      })
     }
   }
 

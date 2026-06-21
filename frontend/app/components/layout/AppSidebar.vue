@@ -15,6 +15,12 @@ const sidebarCollapsed = ref(false)
 async function handleToggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
+
+defineShortcuts({
+  s: () => {
+    handleToggleSidebar()
+  },
+})
 </script>
 
 <template>
@@ -83,7 +89,7 @@ async function handleToggleSidebar() {
           <OnboardingTrigger mode="sidebar" :collapsed="collapsed" />
 
           <div v-if="!collapsed" class="mt-auto w-full min-w-0 flex flex-col items-start">
-            <UTooltip text="Hide sidebar">
+            <UTooltip text="Hide sidebar (S)">
               <UButton
                 :block="true"
                 style="justify-content: left"
@@ -98,7 +104,7 @@ async function handleToggleSidebar() {
             </UTooltip>
           </div>
           <div v-else class="mt-auto w-full flex flex-col items-start text-truncate">
-            <UTooltip text="Show sidebar">
+            <UTooltip text="Show sidebar (S)">
               <UButton
                 :block="true"
                 :square="true"
