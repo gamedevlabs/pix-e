@@ -22,7 +22,7 @@ const toast = useToast()
 
 // session logging
 const attachLogs = ref(true)
-const { getLogs, addLog } = useSessionLog()
+const { getLogs, addLog, getSessionId } = useSessionLog()
 
 // open / close logic for the form
 function openRequestForm() {
@@ -96,6 +96,7 @@ async function submitRequestForm() {
         title: requestTitle.value,
         description: formDescription.value,
         contact: userContact.value,
+        sessionId: requestType.value === 'Bug Report' ? getSessionId() : null,
         logs: requestType.value === 'Bug Report' && attachLogs.value ? getLogs() : null,
       },
     })

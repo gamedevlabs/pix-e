@@ -12,6 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
+from helpdesk.session_logging import buffer_backend_session_log
 from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.types import LLMRequest
@@ -103,6 +104,20 @@ class NodeFeedbackView(ViewSet):
                 return JsonResponse(response.results, status=200)
 
             except Exception as e:
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes_llm.validate_node.fail",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "node_id": pk,
+                        "model": request.data.get("model"),
+                        "validation_issue_count": len(
+                            request.data.get("validation_issues", [])
+                        ),
+                    },
+                )
                 logger.exception(f"Error in validate_node: {e}")
                 logfire.error("nodes.validate.error", error=str(e), node_id=pk)
                 return JsonResponse({"error": str(e)}, status=500)
@@ -182,6 +197,20 @@ class NodeFeedbackView(ViewSet):
                 )
 
             except Exception as e:
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes_llm.fix_node.fail",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "node_id": pk,
+                        "model": request.data.get("model"),
+                        "validation_issue_count": len(
+                            request.data.get("validation_issues", [])
+                        ),
+                    },
+                )
                 logger.exception(f"Error in fix_node: {e}")
                 logfire.error("nodes.fix.error", error=str(e), node_id=pk)
                 return JsonResponse({"error": str(e)}, status=500)
@@ -251,6 +280,20 @@ class NodeFeedbackView(ViewSet):
                 return JsonResponse(data, status=200)
 
             except Exception as e:
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes_llm.accept_fix.fail",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "node_id": pk,
+                        "model": request.data.get("model"),
+                        "validation_issue_count": len(
+                            request.data.get("validation_issues", [])
+                        ),
+                    },
+                )
                 logger.exception(f"Error in accept_fix: {e}")
                 logfire.error("nodes.accept_fix.error", error=str(e), node_id=pk)
                 return JsonResponse({"error": str(e)}, status=500)

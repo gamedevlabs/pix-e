@@ -16,6 +16,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from game_concept.models import Project
+from helpdesk.session_logging import buffer_backend_session_log
 from llm.logfire_config import get_logfire
 from projects.utils import get_current_project
 
@@ -163,6 +164,24 @@ class SPARCV2EvaluateView(APIView):
                             )
                         except Exception as e:
                             logger.error(f"File upload failed: {str(e)}")
+                            buffer_backend_session_log(
+                                session_id=getattr(request, "pixe_session_id", ""),
+                                level="error",
+                                event="sparc_v2.file_upload.fail",
+                                message=str(e),
+                                request=request,
+                                metadata={
+                                    "model": request.data.get("model"),
+                                    "game_text_length": len(
+                                        request.data.get("game_text", "")
+                                    ),
+                                    "context_strategy": request.data.get(
+                                        "context_strategy"
+                                    ),
+                                    "pillar_mode": request.data.get("pillar_mode"),
+                                    "has_document": bool(request.FILES.get("document")),
+                                },
+                            )
                             return JsonResponse(
                                 {"error": f"File upload failed: {str(e)}"},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -214,6 +233,20 @@ class SPARCV2EvaluateView(APIView):
 
                 except Exception as e:
                     logger.exception(f"Error in SPARC V2 evaluation: {e}")
+                    buffer_backend_session_log(
+                        session_id=getattr(request, "pixe_session_id", ""),
+                        level="error",
+                        event="sparc_v2_evaluateView.evaluation.error",
+                        message=str(e),
+                        request=request,
+                        metadata={
+                            "model": request.data.get("model"),
+                            "game_text_length": len(request.data.get("game_text", "")),
+                            "context_strategy": request.data.get("context_strategy"),
+                            "pillar_mode": request.data.get("pillar_mode"),
+                            "has_document": bool(request.FILES.get("document")),
+                        },
+                    )
                     return JsonResponse(
                         {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
@@ -370,6 +403,20 @@ class SPARCV2AspectView(APIView):
 
                 except Exception as e:
                     logger.exception(f"Error in SPARC V2 evaluation: {e}")
+                    buffer_backend_session_log(
+                        session_id=getattr(request, "pixe_session_id", ""),
+                        level="error",
+                        event="sparc_v2_aspectView.evaluation.error",
+                        message=str(e),
+                        request=request,
+                        metadata={
+                            "model": request.data.get("model"),
+                            "game_text_length": len(request.data.get("game_text", "")),
+                            "context_strategy": request.data.get("context_strategy"),
+                            "pillar_mode": request.data.get("pillar_mode"),
+                            "has_document": bool(request.FILES.get("document")),
+                        },
+                    )
                     return JsonResponse(
                         {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )

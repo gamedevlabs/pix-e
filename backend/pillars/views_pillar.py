@@ -10,6 +10,7 @@ from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
+from helpdesk.session_logging import buffer_backend_session_log
 from llm import LLMOrchestrator
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
@@ -75,6 +76,19 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse(response.results, status=200)
 
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars.validate.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "pillar_id": pk,
+                    "model": request.data.get("model"),
+                    "operation": "validate",
+                },
+            )
+
             logger.exception("Error in validate_pillar: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -135,6 +149,18 @@ class PillarFeedbackView(ViewSet):
             )
 
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars.fix.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "pillar_id": pk,
+                    "model": request.data.get("model"),
+                    "operation": "fix",
+                },
+            )
             logger.exception("Error in fix_pillar: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -166,5 +192,17 @@ class PillarFeedbackView(ViewSet):
             return JsonResponse(data, status=200)
 
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars.accept_fix.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "pillar_id": pk,
+                    "model": request.data.get("model"),
+                    "operation": "accept_fix",
+                },
+            )
             logger.exception("Error in accept_fix: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
