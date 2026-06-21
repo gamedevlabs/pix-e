@@ -64,9 +64,15 @@ export const useApi = () => {
     return response.body
   }
 
+  function apiUrl(path: string) {
+    return `${baseURL}${path}`
+  }
+
   return {
     apiFetch,
     apiFetchStream,
     baseURL,
+    csrfToken,
+    apiUrl,
   }
 }
