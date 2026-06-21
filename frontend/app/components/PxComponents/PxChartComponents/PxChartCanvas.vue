@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   type NodeDragEvent,
   VueFlow,
@@ -28,12 +28,16 @@ const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
 const chartId = props.chartId
 const { success: successToast, error: errorToast } = usePixeToast()
 
-const { items: pxNodes, fetchAll: fetchPxNodes } = usePxNodes()
+const { items: pxNodes, fetchAll: fetchPxNodes, fetchById: fetchPxNodeById } = usePxNodes()
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
 const { items: pxComponentDefinitions, fetchAll: fetchPxComponentDefinitions } =
   usePxComponentDefinitions()
 
-const { items: pxChartEdges, fetchAll: fetchPxChartEdges } = usePxChartEdges(props.chartId)
+const {
+  items: pxChartEdges,
+  fetchAll: fetchPxChartEdges,
+  fetchById: fetchPxChartEdgeById,
+} = usePxChartEdges(props.chartId)
 
 const { items: pxChartContainers, fetchAll: fetchPxChartContainers } = usePxChartContainers(
   props.chartId,
@@ -54,10 +58,12 @@ const {
   applyDefaultNodeChanges,
   addNodeToContainer,
   deleteContainer,
+  updateKeysInContainer,
   addEdge,
   applyDefaultEdgeChanges,
   deleteEdge,
   updateLocksOnEdge,
+  getKeysForNode,
 } = usePxChartsCanvasApi(chartId)
 
 const {
@@ -278,6 +284,11 @@ async function handleSwitchPxNode(pxGraphContainerId: string) {
   fetchPxChartContainers()
 }
 
+async function handleEditPxNode(containerId: string, nodeId: string) {
+  await fetchPxNodeById(nodeId)
+  await updateKeysInContainer(containerId, await getKeysForNode(nodeId))
+}
+
 // We disabled the automatic behavior of Vue Flow, therefore, we need to handle all
 // changes either ourselves, or let Vue Flow handle them explicitly
 async function onNodesChange(changes: NodeChange[]) {
@@ -428,6 +439,8 @@ async function handleEditLocks() {
   await lockModal
     .open({ selectedEdge: pxChartEdge, chartId: chartId })
     .result.then(async (edgeId) => await updateLocksOnEdge(edgeId))
+
+  await fetchPxChartEdgeById(pxChartEdge.id)
 }
 
 async function handleEditSettings() {
@@ -575,6 +588,7 @@ async function handleEditSettings() {
         v-bind="customNodeProps"
         @switch-px-node="handleSwitchPxNode"
         @delete="handleDeletePxGraphContainer"
+        @update-px-node="(containerId, nodeId) => handleEditPxNode(containerId, nodeId)"
       />
     </template>
 

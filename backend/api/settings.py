@@ -50,7 +50,13 @@ GITHUB_HELPDESK_REPO = os.getenv("GITHUB_HELPDESK_REPO", "")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list = ["pixie.soc.cit.tum.de", "localhost", "127.0.0.1", "backend-dev"]
+ALLOWED_HOSTS: list = [
+    "socvm2.cit.tum.de",
+    "pixie.soc.cit.tum.de",
+    "localhost",
+    "127.0.0.1",
+    "backend-dev",
+]
 
 # Application definition
 
@@ -91,7 +97,7 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "1000/minute",
+        "user": "10000/minute",
         "api_key_test": "10/minute",
     },
 }

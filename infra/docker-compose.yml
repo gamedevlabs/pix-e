@@ -19,12 +19,12 @@ services:
   #                                      DEV configuration                                       #
   ################################################################################################
   frontend-dev:
-    image: ghcr.io/gamedevlabs/pix-e/frontend:feature-pipeline-rework
+    image: ghcr.io/gamedevlabs/pix-e/frontend:main
     env_file:
       - .env
     
   backend-dev:
-    image: ghcr.io/gamedevlabs/pix-e/backend:feature-pipeline-rework
+    image: ghcr.io/gamedevlabs/pix-e/backend:main
     env_file:
       - .env
     environment:
@@ -62,14 +62,14 @@ services:
   frontend-prod:
     profiles:
       - prod
-    image: ghcr.io/gamedevlabs/pix-e/frontend:feature-pipeline-rework
+    image: ghcr.io/gamedevlabs/pix-e/frontend:release
     env_file:
       - .env
   
   backend-prod:
     profiles:
       - prod
-    image: ghcr.io/gamedevlabs/pix-e/backend:feature-pipeline-rework
+    image: ghcr.io/gamedevlabs/pix-e/backend:release
     env_file:
       - .env
     environment:
