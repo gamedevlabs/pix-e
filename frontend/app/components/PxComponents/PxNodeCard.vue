@@ -17,9 +17,11 @@ const {
   updateItem: updatePxNode,
 } = usePxNodes()
 
+const { toggleSubstep } = useProjectWorkflow()
 const { fetchById: fetchComponentById } = usePxComponents()
 const { fetchById: fetchPxKeyById } = usePxKeys()
 
+// TODO: clean up emits and figure out what "addForeign" is supposed to do
 const emit = defineEmits<{
   (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
   (e: 'addComponent' | 'addKey' | 'deleteKey'): void
@@ -56,8 +58,10 @@ async function handleAddComponent(nodeId: string, componentId: string) {
   } catch (err) {
     console.error(err)
   }
+  // px-2-2: "Add a component to your new node"
+  console.log('addedComp')
+  await toggleSubstep('px-2', 'px-2-2')
   fetchedNode.value.components.push(addedComponent!)
-  emit('addComponent')
 }
 
 async function handleDeleteComponent(nodeId: string, componentId: string) {

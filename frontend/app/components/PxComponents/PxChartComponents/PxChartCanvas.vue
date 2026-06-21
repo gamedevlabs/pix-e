@@ -20,7 +20,7 @@ const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
-  (e: 'containerAdded' | 'edgeConnected' | 'nodeAddedToContainer'): void
+  (e: 'containerAdded' | 'edgeConnected'): void
 }>()
 
 const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
@@ -121,6 +121,7 @@ const { vueFlowRef } = useVueFlow()
 const menuItems = computed(() => [
   {
     label: 'Create new node',
+    kbds: 'N',
     icon: 'i-heroicons-plus-solid',
     onSelect() {
       handleAddContainerFromPanel(true, true)
@@ -128,6 +129,7 @@ const menuItems = computed(() => [
   },
   {
     label: 'Add existing node',
+    kbds: 'M',
     icon: 'i-heroicons-arrow-up-on-square',
     onSelect() {
       handleAddContainerFromPanel(false, true)
@@ -139,12 +141,25 @@ const menuItems = computed(() => [
   {
     label: 'Snap to grid',
     type: 'checkbox' as const,
+    kbds: 'G',
     checked: menuSnapToGrid.value,
     onUpdateChecked(checked: boolean) {
       menuSnapToGrid.value = checked
     },
   },
 ])
+
+defineShortcuts({
+  g: () => {
+    handleToggleSnapToGrid()
+  },
+  n: () => {
+    handleAddContainerFromPanel(true, false)
+  },
+  m: () => {
+    handleAddContainerFromPanel(false, false)
+  },
+})
 
 function handleNodeClick(event: { node: Node }) {
   const container = event.node.data as PxChartContainer
@@ -270,10 +285,8 @@ async function handleUpdatePxGraphContainer(updatedPxChartContainer: Partial<PxC
   fetchPxChartContainers()
 }
 
-//TODO: unnecessary, delete if/once overall empty container are deleted
 async function handleAddPxNode(pxGraphContainerId: string, pxNodeId: string) {
   await addNodeToContainer(pxGraphContainerId, pxNodeId)
-  emit('nodeAddedToContainer')
   fetchPxNodes()
   fetchPxChartContainers()
 }

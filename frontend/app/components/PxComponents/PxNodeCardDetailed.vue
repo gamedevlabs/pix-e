@@ -16,7 +16,7 @@ const emit = defineEmits<{
     nodeId: string,
     componentId: string,
   ): void
-  (e: 'deleteContainer' | 'switchNode'): void
+  (e: 'switchNode'): void
 }>()
 
 const isCollapsed = ref(true)
@@ -35,10 +35,13 @@ const editForm = ref({
 
 const menuItems = ref<ContextMenuItem[]>([
   {
-    label: 'Delete node',
+    label: 'Add component',
     onSelect() {
-      handleDeleteContainer()
+      handleAddComponent()
     },
+  },
+  {
+    type: 'separator' as const,
   },
   {
     label: 'Switch node',
@@ -53,9 +56,12 @@ const menuItems = ref<ContextMenuItem[]>([
     },
   },
   {
-    label: 'Add component',
+    type: 'separator' as const,
+  },
+  {
+    label: 'Delete node',
     onSelect() {
-      handleAddComponent()
+      emitDelete()
     },
   },
 ])
@@ -106,10 +112,6 @@ async function handleAddComponent() {
   }
 
   emit('addComponent', result.nodeId, result.componentId)
-}
-
-function handleDeleteContainer() {
-  emit('deleteContainer')
 }
 
 async function handleSwitchNode() {
@@ -203,7 +205,11 @@ async function handleAddKey() {
           <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
           <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
           <section class="flex flex-wrap gap-4">
-            <div v-for="component in node.components" :key="component.id">
+            <div
+              v-for="component in node.components"
+              :key="component.id"
+              @dblclick="$event.stopPropagation()"
+            >
               <PxComponentCard
                 visualization-style="preview"
                 :component="component"
@@ -307,7 +313,7 @@ async function handleAddKey() {
       </template>
 
       <template #footer>
-        <div v-if="!isBeingEdited">
+        <div v-if="!isBeingEdited" @dblclick="$event.stopPropagation()">
           <!--collapsed-->
           <div
             v-if="isCollapsed && isCollapsible"
@@ -377,22 +383,7 @@ async function handleAddKey() {
                 </UTooltip>
 
                 <UTooltip text="Delete">
-                  <UButton
-                    v-if="!isCollapsible"
-                    icon="i-lucide-trash"
-                    color="error"
-                    variant="soft"
-                    @click="emitDelete"
-                  />
-                  <!-- TODO: nodes should not know about containers. this can be handle with emitDelete,
-                  as the user of this component should decide what emitDelete() does -->
-                  <UButton
-                    v-else
-                    icon="i-lucide-trash"
-                    color="error"
-                    variant="soft"
-                    @click="handleDeleteContainer()"
-                  />
+                  <UButton icon="i-lucide-trash" color="error" variant="soft" @click="emitDelete" />
                 </UTooltip>
               </div>
             </div>
