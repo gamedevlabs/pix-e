@@ -117,24 +117,38 @@ const nodeLabels = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="p-4">
+    <!--
     <UCollapsible :unmount-on-hide="false" class="flex flex-col gap-6">
       <UButton label="Show Diagrams" variant="subtle" trailing-icon="i-lucide-chevron-down" block />
       <template #content>
-        <DiagramCardSection use-add-button @add-clicked="addItem">
-          <div v-for="d in diagrams" :key="d">
-            <PxLineDiagram
-              :node-data="allData"
-              :node-labels="nodeLabels"
-              :px-component-definitions="pxComponentDefinitions"
-              show-edit
-              show-delete
-              @delete="deleteDiagram(d)"
-            />
-          </div>
-        </DiagramCardSection>
+      -->
+    <UButton icon="lucide-plus" @click="addItem" />
+    <UCarousel
+      v-slot="{ item }"
+      dots
+      :items="diagrams"
+      class="w-full max-w-xl mx-auto"
+      :ui="{
+        viewport: 'overflow-hidden',
+        item: 'basis-full shrink-0 grow-0',
+      }"
+    >
+      <div class="w-xl max-w-full h-full mx-auto">
+        <PxLineDiagram
+          :node-data="allData"
+          :node-labels="nodeLabels"
+          :px-component-definitions="pxComponentDefinitions"
+          show-edit
+          show-delete
+          @delete="deleteDiagram(item)"
+        />
+      </div>
+    </UCarousel>
+    <!--
       </template>
     </UCollapsible>
+    -->
   </div>
 </template>
 

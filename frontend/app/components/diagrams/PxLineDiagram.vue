@@ -104,44 +104,53 @@ function emitDelete() {
 <template>
   <UCard class="min-h-55">
     <template #header>
-      <div class="grid grid-cols-2 gap-6">
-        <UFieldGroup>
-          <UBadge color="neutral" variant="outline" size="lg" label="X" />
-          <USelect
-            v-if="numericalComponentDefinitionNames.length"
-            placeholder="Select Component"
-            :v-model="undefined"
-            :items="['None'].concat(numericalComponentDefinitionNames)"
-            :ui="{ content: 'min-w-fit' }"
-            :content="{
-              align: 'start',
-              side: 'right',
-              sideOffset: 8,
-            }"
-            @update:model-value="handleDefinitionSelectionX"
+      <div class="flex items-center gap-3 w-full">
+        <UTooltip text="Remove Diagram">
+          <UButton
+            class="shrink-0"
+            icon="lucide-trash"
+            aria-label="Delete"
+            color="error"
+            variant="soft"
+            square
+            @click="emitDelete"
           />
-        </UFieldGroup>
-        <UFieldGroup>
-          <UBadge color="neutral" variant="outline" size="lg" label="Y" />
-          <USelect
-            v-if="numericalComponentDefinitionNames.length"
-            placeholder="Select Components"
-            label="Y"
-            multiple
-            :v-model="undefined"
-            :items="numericalComponentDefinitionNames"
-            :ui="{ content: 'min-w-fit' }"
-            :content="{
-              align: 'start',
-              side: 'right',
-              sideOffset: 8,
-            }"
-            @update:model-value="handleDefinitionSelectionY"
-          />
-        </UFieldGroup>
+        </UTooltip>
+
+        <div class="grid grid-cols-2 gap-6 flex-1 min-w-0">
+          <UFieldGroup class="min-w-0">
+            <UBadge color="neutral" variant="outline" size="lg" label="f(X)" />
+            <USelect
+              v-if="numericalComponentDefinitionNames.length"
+              class="w-full"
+              placeholder="Select Components"
+              multiple
+              :v-model="undefined"
+              :items="numericalComponentDefinitionNames"
+              :ui="{ content: 'min-w-fit' }"
+              :content="{ align: 'start', side: 'right', sideOffset: 8 }"
+              @update:model-value="handleDefinitionSelectionY"
+            />
+          </UFieldGroup>
+
+          <UFieldGroup class="min-w-0">
+            <UBadge color="neutral" variant="outline" size="lg" label="X" />
+            <USelect
+              v-if="numericalComponentDefinitionNames.length"
+              class="w-full"
+              placeholder="Select Component"
+              :v-model="undefined"
+              :items="['Nodes'].concat(numericalComponentDefinitionNames)"
+              :ui="{ content: 'min-w-fit' }"
+              :content="{ align: 'start', side: 'right', sideOffset: 8 }"
+              @update:model-value="handleDefinitionSelectionX"
+            />
+          </UFieldGroup>
+        </div>
       </div>
     </template>
-    <div class="chart-container">
+
+    <div class="relative mx-auto w-full min-h-l">
       <Line
         v-if="data && data.datasets[0]?.data.some((v: NodeData) => !!v) && selectedDefinitionsX"
         :data="data"
@@ -154,22 +163,7 @@ function emitDelete() {
       />
       <p v-else>No data to display.</p>
     </div>
-    <template #footer>
-      <UButton
-        aria-label="Delete"
-        color="error"
-        variant="soft"
-        label="Remove Diagram"
-        @click="emitDelete"
-      />
-    </template>
   </UCard>
 </template>
 
-<style scoped>
-.chart-container {
-  position: relative;
-  margin: auto;
-  width: 100%;
-}
-</style>
+<style scoped></style>
