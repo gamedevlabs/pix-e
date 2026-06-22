@@ -2,12 +2,20 @@
 import type { GraphEdge } from '@vue-flow/core'
 
 const emit = defineEmits<{
-  (e: 'addNewNode' | 'addExistingNode' | 'toggleSnapToGrid' | 'editSettings' | 'editLocks' | 'changeEdgeDirectionality'): void
+  (
+    e:
+      | 'addNewNode'
+      | 'addExistingNode'
+      | 'toggleSnapToGrid'
+      | 'editSettings'
+      | 'editLocks'
+      | 'changeEdgeDirectionality',
+  ): void
 }>()
 
 const props = defineProps<{
-  menuSnapToGrid: boolean,
-  selectedEdges: GraphEdge[],
+  menuSnapToGrid: boolean
+  selectedEdges: GraphEdge[]
   chartId: string
 }>()
 
@@ -25,7 +33,9 @@ async function handleToggleSnapToGrid() {
   emit('toggleSnapToGrid')
 }
 
-const singleEdgeSelected = computed(() => { return props.selectedEdges.length === 1 })
+const singleEdgeSelected = computed(() => {
+  return props.selectedEdges.length === 1
+})
 </script>
 
 <template>
@@ -98,7 +108,16 @@ const singleEdgeSelected = computed(() => { return props.selectedEdges.length ==
         :text="selectedEdges[0]!.data.bidirectional ? 'Make Unidirectional' : 'Make Bidirectional'"
         :content="{ align: 'center', side: 'right' }"
       >
-        <UButton size="xl" :icon="selectedEdges[0]!.data.bidirectional ? 'i-lucide-move-horizontal' : 'i-lucide-move-right'" color="primary" @click="emit('changeEdgeDirectionality')" />
+        <UButton
+          size="xl"
+          :icon="
+            selectedEdges[0]!.data.bidirectional
+              ? 'i-lucide-move-horizontal'
+              : 'i-lucide-move-right'
+          "
+          color="primary"
+          @click="emit('changeEdgeDirectionality')"
+        />
       </UTooltip>
       <USeparator v-if="singleEdgeSelected" orientation="vertical" class="h-10" size="sm" />
     </div>

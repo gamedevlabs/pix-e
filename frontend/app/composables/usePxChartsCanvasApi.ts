@@ -16,7 +16,11 @@ export function usePxChartsCanvasApi(chartId: string) {
     createItem: createPxChartContainer,
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
-  const { createItem: createPxEdge, deleteItem: deletePxEdge, updateItem: updatePxEdge } = usePxChartEdges(chartId)
+  const {
+    createItem: createPxEdge,
+    deleteItem: deletePxEdge,
+    updateItem: updatePxEdge,
+  } = usePxChartEdges(chartId)
   const { fetchById: fetchPxNode, fetchAll: fetchPxNodes, items: _pxNodes } = usePxNodes()
   const { fetchAll: fetchPxLocks, items: pxLocks } = usePxLocks(chartId)
   const { fetchAll: fetchPxKeys, items: pxKeys } = usePxKeys()

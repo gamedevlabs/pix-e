@@ -2,7 +2,13 @@ import type { Edge, Node } from '@vue-flow/core'
 import { getConnectedEdges } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
 
-import { type PxKeySet, getKeySetFromKeyAssignment, mergePxKeySets, pxKeyInventoriesAreEqual, pxKeySetsAreEqual } from '~/utils/pxkeysets'
+import {
+  type PxKeySet,
+  getKeySetFromKeyAssignment,
+  mergePxKeySets,
+  pxKeyInventoriesAreEqual,
+  pxKeySetsAreEqual,
+} from '~/utils/pxkeysets'
 
 import type { PxChartPathCalculationResult } from '#imports'
 
@@ -257,7 +263,7 @@ export function usePxChartPathCalculation(
           console.log(`Found target node!`)
           found = true
           targetQId = outNodeQId
-          previousInventory.value = q.find(entry => entry.id === outNodeId)!.keys
+          previousInventory.value = q.find((entry) => entry.id === outNodeId)!.keys
           break
         }
       }
