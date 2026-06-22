@@ -8,6 +8,7 @@ import {
   mergePxKeySets,
   pxKeyInventoriesAreEqual,
   pxKeySetsAreEqual,
+  filterPxKeySet,
 } from '~/utils/pxkeysets'
 
 import type { PxChartPathCalculationResult } from '#imports'
@@ -52,6 +53,10 @@ export function usePxChartPathCalculation(
     return nodes.value.find((node) => node.id === id)
   }
 
+  const fixedPxKeyDefinitions = computed(() => {
+    return pxKeyDefinitions.value.filter((def) => def.fixed)
+  })
+
   interface QueueNode {
     qId: number
     id: string
@@ -88,7 +93,7 @@ export function usePxChartPathCalculation(
         prio: 0,
         keys: firstNodeInventory,
         name: findNodeById(sourceId)?.data.name,
-        revisit: false
+        revisit: false,
       },
     ]
     // qNodeIdsToContainerNames[qNodeCount] = findNodeById(sourceId)?.data.name
@@ -107,7 +112,7 @@ export function usePxChartPathCalculation(
           prio: Infinity,
           keys: [getKeySetFromKeyAssignment(node.data.keys)],
           name: node.data.name,
-          revisit: false
+          revisit: false,
         })
         // qNodeIdsToContainerNames[qNodeCount] = node.data.name
         qNodeIdsToNodeIds[qNodeCount++] = node.id
@@ -188,7 +193,11 @@ export function usePxChartPathCalculation(
 
         // first check whether node is both in queue and reachable from the current state
         // (re-visited nodes hold no keys, so if a node is re-visited, all keys available in it must be available in its predecessor)
-        let outNodeQId = q.find((qNode) => qNode.id === outNodeId && (!qNode.revisit || pxKeyInventoriesAreEqual(inventory, qNode.keys)))?.qId
+        let outNodeQId = q.find(
+          (qNode) =>
+            qNode.id === outNodeId &&
+            (!qNode.revisit || pxKeyInventoriesAreEqual(inventory, qNode.keys)),
+        )?.qId
         // console.log(`outNodeQId: ${outNodeQId}`)
 
         // to enable re-visiting of nodes:
@@ -209,9 +218,14 @@ export function usePxChartPathCalculation(
             qId: qNodeCount,
             id: outNodeId,
             prio: alt,
-            keys: [{}],
+            keys: [
+              filterPxKeySet(
+                getKeySetFromKeyAssignment(getKeysInNode(outNodeId)),
+                fixedPxKeyDefinitions.value,
+              ),
+            ],
             name: findNodeById(outNodeId)?.data.name,
-            revisit: true
+            revisit: true,
           })
           outNodeQId = qNodeCount
           // qNodeIdsToContainerNames[qNodeCount] = findNodeById(outNodeId)?.data.name

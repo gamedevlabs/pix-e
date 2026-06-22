@@ -75,7 +75,7 @@ export function pxKeySetsAreEqual(keyset1: PxKeySet, keyset2: PxKeySet) {
 
 export function pxKeyInventoriesAreEqual(inv1: PxKeySet[], inv2: PxKeySet[]) {
   if (inv1.length !== inv2.length) return false
-  
+
   for (const keyset of inv1) {
     if (inv2.some((keyset2) => !pxKeySetsAreEqual(keyset, keyset2))) {
       return false
@@ -87,4 +87,15 @@ export function pxKeyInventoriesAreEqual(inv1: PxKeySet[], inv2: PxKeySet[]) {
     }
   }
   return true
+}
+
+export function filterPxKeySet(keyset: PxKeySet, remainingDefs: PxKeyDefinition[]) {
+  const remainingDefIds = remainingDefs.map((def) => def.id)
+  const filtered: PxKeySet = {}
+  for (const [def, count] of Object.entries(keyset)) {
+    if (remainingDefIds.includes(def)) {
+      filtered[def] = count
+    }
+  }
+  return filtered
 }
