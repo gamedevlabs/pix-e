@@ -382,7 +382,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: connection.targetHandle,
       type: edgeDefaultValues.type,
       markerEnd: edgeDefaultValues.markerEnd,
-      data: { px_chart: chartId, locks: [] },
+      data: { px_chart: chartId, locks: [], bidirectional: false },
     })
   }
 
@@ -418,7 +418,8 @@ export function usePxChartsCanvasApi(chartId: string) {
   async function changeEdgeDirectionality(edgeId: string) {
     const edge = edges.value.find((e) => e.id === edgeId)
     if (!edge) {
-      console.warn('Could not find edge.')
+      console.warn(`Could not find edge. (ID: ${edgeId})`)
+      console.warn(`Available Edges: ${JSON.stringify(edges.value, null, 2)}`)
     } else {
       edge.data.bidirectional = !edge.data.bidirectional
       edge.markerEnd = edge.data.bidirectional ? undefined : edgeDefaultValues.markerEnd

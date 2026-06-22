@@ -2,7 +2,7 @@ import type { Edge, Node } from '@vue-flow/core'
 import { getConnectedEdges } from '@vue-flow/core'
 import findIndex from 'lodash.findindex'
 
-import { type PxKeySet, getKeySetFromKeyAssignment, mergePxKeySets } from '~/utils/pxkeysets'
+import { type PxKeySet, getKeySetFromKeyAssignment, mergePxKeySets, pxKeyInventoriesAreEqual, pxKeySetsAreEqual } from '~/utils/pxkeysets'
 
 import type { PxChartPathCalculationResult } from '#imports'
 
