@@ -58,6 +58,7 @@ export function usePxChartPathCalculation(
     prio: number
     keys: PxKeySet[]
     name: string
+    revisit: boolean
   }
 
   async function dijkstraInChart(
@@ -87,6 +88,7 @@ export function usePxChartPathCalculation(
         prio: 0,
         keys: firstNodeInventory,
         name: findNodeById(sourceId)?.data.name,
+        revisit: false
       },
     ]
     // qNodeIdsToContainerNames[qNodeCount] = findNodeById(sourceId)?.data.name
@@ -105,6 +107,7 @@ export function usePxChartPathCalculation(
           prio: Infinity,
           keys: [getKeySetFromKeyAssignment(node.data.keys)],
           name: node.data.name,
+          revisit: false
         })
         // qNodeIdsToContainerNames[qNodeCount] = node.data.name
         qNodeIdsToNodeIds[qNodeCount++] = node.id
@@ -175,7 +178,7 @@ export function usePxChartPathCalculation(
 
       // check each outgoing edge
       for (const outEdge of outEdges) {
-        // console.log(`Checking outgoing edge: ${outEdge.id} to ${findNodeById(outEdge.target !== node.id ? outEdge.target : outEdge.source)?.data.name}`)
+        // console.log(`Checking outgoing edge: ${outEdge.id} to ${outEdge.target !== node.id ? outEdge.target : outEdge.source}`)
         previouslyUnlockedEdges.add(outEdge.id)
         const outNodeId =
           !outEdge.data.bidirectional || outEdge.source === node.id
@@ -183,11 +186,15 @@ export function usePxChartPathCalculation(
             : outEdge.source
         const alt = dist.get(node.qId)! + 1
 
+        // first check whether node is both in queue and reachable from the current state
+        // (re-visited nodes hold no keys, so if a node is re-visited, all keys available in it must be available in its predecessor)
+        let outNodeQId = q.find((qNode) => qNode.id === outNodeId && (!qNode.revisit || pxKeyInventoriesAreEqual(inventory, qNode.keys)))?.qId
+        // console.log(`outNodeQId: ${outNodeQId}`)
+
         // to enable re-visiting of nodes:
         //      if successor node is not in queue (i.e. will not be processed again by regular iteration),
         //      and the target node has neither been visited LIMIT times not visited with the current inventory available,
         //      add it to queue
-        let outNodeQId = q.find((qNode) => qNode.id === outNodeId)?.qId
         if (
           !outNodeQId &&
           (!nodesVisitedWithKeys[outNodeId] ||
@@ -196,7 +203,7 @@ export function usePxChartPathCalculation(
                 pxKeyInventoriesAreEqual(inventory, inv),
               )))
         ) {
-          //console.log(`Adding for re-visit: ${findNodeById(outNodeId)?.data.name} with prio ${alt}`)
+          // console.log(`Adding for re-visit: ${outNodeId} with prio ${alt} and qID ${qNodeCount}`)
           dist.set(qNodeCount, Infinity)
           q.push({
             qId: qNodeCount,
@@ -204,6 +211,7 @@ export function usePxChartPathCalculation(
             prio: alt,
             keys: [{}],
             name: findNodeById(outNodeId)?.data.name,
+            revisit: true
           })
           outNodeQId = qNodeCount
           // qNodeIdsToContainerNames[qNodeCount] = findNodeById(outNodeId)?.data.name
