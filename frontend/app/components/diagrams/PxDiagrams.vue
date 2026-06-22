@@ -134,7 +134,7 @@ const nodeLabels = computed(() => {
         item: 'basis-full shrink-0 grow-0',
       }"
     >
-      <div class="w-xl max-w-full h-full mx-auto">
+      <div class="w-xl max-w-full h-full mx-auto p-2">
         <PxLineDiagram
           :node-data="allData"
           :node-labels="nodeLabels"
