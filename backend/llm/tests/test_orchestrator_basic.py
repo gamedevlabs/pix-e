@@ -4,9 +4,8 @@ Tests for basic orchestrator functionality.
 Tests orchestrator initialization, configuration, and basic request validation.
 """
 
-from unittest.mock import Mock
-
 import warnings
+from unittest.mock import Mock
 
 import pytest
 

@@ -13,7 +13,8 @@ from llm.llm_adapter import LLMProviderAdapter, create_llm_provider  # noqa: F40
 
 warnings.warn(
     "Import from 'pxnodes.llm.context.shared.llm_adapter' is deprecated. "
-    "Use 'from llm.llm_adapter import LLMProviderAdapter, create_llm_provider' instead.",
+    "Use 'from llm.llm_adapter import LLMProviderAdapter, "
+    "create_llm_provider' instead.",
     DeprecationWarning,
     stacklevel=2,
 )

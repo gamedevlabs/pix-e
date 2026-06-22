@@ -62,7 +62,11 @@ const dropdownItems = computed(() => [
           class="w-96"
         >
           <template #leading>
-            <UIcon v-if="llmStore.activeModelIcon" :name="llmStore.activeModelIcon" class="size-4 shrink-0" />
+            <UIcon
+              v-if="llmStore.activeModelIcon"
+              :name="llmStore.activeModelIcon"
+              class="size-4 shrink-0"
+            />
           </template>
         </USelect>
         <UDropdownMenu :items="dropdownItems">

@@ -17,6 +17,7 @@ from typing import Optional
 
 import logfire
 
+from llm.llm_adapter import LLMProviderAdapter
 from llm.providers import ModelManager
 from pxcharts.models import PxChart
 from pxnodes.llm.context.change_detection import (
@@ -25,7 +26,6 @@ from pxnodes.llm.context.change_detection import (
 )
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
-from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
@@ -463,6 +463,3 @@ class StructuralMemoryGenerator:
     def close(self) -> None:
         """Close resources."""
         self.vector_store.close()
-
-
-

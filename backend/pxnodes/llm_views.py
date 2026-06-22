@@ -109,7 +109,10 @@ class NodeFeedbackView(UserLLMOrchestratorMixin, ViewSet):
                 logger.warning("Orchestrator error for user=%s: %s", request.user.id, e)
                 # Differentiate configuration errors from upstream provider failures
                 error_message = str(e)
-                if "No valid API keys" in error_message or "No LLM providers" in error_message:
+                if (
+                    "No valid API keys" in error_message
+                    or "No LLM providers" in error_message
+                ):
                     return JsonResponse(
                         {
                             "error": "no_api_keys",
@@ -217,7 +220,10 @@ class NodeFeedbackView(UserLLMOrchestratorMixin, ViewSet):
             except OrchestratorError as e:
                 logger.warning("Orchestrator error for user=%s: %s", request.user.id, e)
                 error_message = str(e)
-                if "No valid API keys" in error_message or "No LLM providers" in error_message:
+                if (
+                    "No valid API keys" in error_message
+                    or "No LLM providers" in error_message
+                ):
                     return JsonResponse(
                         {
                             "error": "no_api_keys",

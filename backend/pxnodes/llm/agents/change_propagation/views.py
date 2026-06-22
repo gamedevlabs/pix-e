@@ -72,7 +72,9 @@ class ChangePropagationView(UserLLMOrchestratorMixin, APIView):
 
         try:
             orchestrator = self.get_llm_orchestrator(request)
-            workflow = ChangePropagationWorkflow(model_manager=orchestrator.model_manager)
+            workflow = ChangePropagationWorkflow(
+                model_manager=orchestrator.model_manager
+            )
             report = workflow.check_change(
                 project=project,
                 changed_node=changed_node,

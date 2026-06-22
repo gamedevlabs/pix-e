@@ -64,6 +64,7 @@ class ModelManager:
         # providers. Use ModelManager.for_user(user, enc_key) to create
         # a properly configured instance with the user's API keys.
         import warnings
+
         warnings.warn(
             "ModelManager() called directly — use ModelManager.for_user(user, enc_key) "
             "instead. The constructor no longer loads providers from environment "
@@ -102,6 +103,7 @@ class ModelManager:
             if "ollama" not in manager._provider_list:
                 try:
                     from llm.providers.ollama_provider import OllamaProvider
+
                     ollama = OllamaProvider(
                         {
                             "base_url": manager.config.ollama_base_url,
@@ -164,6 +166,7 @@ class ModelManager:
 
         try:
             from llm.providers.ollama_provider import OllamaProvider
+
             ollama = OllamaProvider(
                 {
                     "base_url": manager.config.ollama_base_url,

@@ -23,7 +23,6 @@ from llm.agent_runtime import BaseAgent
 from llm.providers.manager import ModelManager
 from llm.types import AgentResult, ErrorInfo
 from pxcharts.models import PxChart
-from pxnodes.models import PxNode
 from pxnodes.llm.agents.coherence import (
     BackwardCoherenceAgent,
     ForwardCoherenceAgent,

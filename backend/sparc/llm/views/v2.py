@@ -212,9 +212,7 @@ class SPARCV2EvaluateView(UserLLMOrchestratorMixin, APIView):
 
                     # Auto-save game concept
                     if request.user.is_authenticated:
-                        save_game_concept(
-                            request.user, game_text, evaluation
-                        )
+                        save_game_concept(request.user, game_text, evaluation)
 
                     return JsonResponse(aggregated, status=status.HTTP_200_OK)
 

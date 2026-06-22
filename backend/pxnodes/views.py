@@ -10,13 +10,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from game_concept.utils import get_current_game_concept
+from llm.llm_adapter import LLMProviderAdapter
 from llm.mixins import UserLLMOrchestratorMixin
 from pillars.models import Pillar
 from projects.utils import get_current_project
 from pxcharts.models import PxChart
 from pxnodes.llm.context.artifacts import ArtifactInventory
 from pxnodes.llm.context.base.types import StrategyType
-from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.shared.graph_retrieval import get_full_path
 from pxnodes.llm.context.strategy_needs import get_strategy_needs
 
@@ -646,8 +646,8 @@ class CoherenceEvaluateView(UserLLMOrchestratorMixin, APIView):
                     get_encryption_key_from_session,
                 )
                 from accounts.models import UserApiKey
-                from pxnodes.llm.context.evaluator import NodeCoherenceEvaluator
                 from llm.llm_adapter import LLMProviderAdapter
+                from pxnodes.llm.context.evaluator import NodeCoherenceEvaluator
 
                 # Get user's OpenAI key for embeddings
                 enc_key = get_encryption_key_from_session(request.session)
@@ -918,8 +918,6 @@ class StrategyEvaluateView(UserLLMOrchestratorMixin, APIView):
                     get_encryption_key_from_session,
                 )
                 from accounts.models import UserApiKey
-                from pxnodes.llm.context.base import StrategyType
-                from llm.llm_adapter import create_llm_provider
 
                 # Check for OpenAI key if the strategy needs embeddings
                 if strategy in EMBEDDING_REQUIRING_STRATEGIES:
@@ -954,15 +952,7 @@ class StrategyEvaluateView(UserLLMOrchestratorMixin, APIView):
                             status=status.HTTP_400_BAD_REQUEST,
                         )
 
-                # Create per-user orchestrator and model manager
                 orchestrator = self.get_llm_orchestrator(request)
-
-                # Create LLM provider with per-user model manager
-                llm_provider = create_llm_provider(
-                    model_name=llm_model,
-                    temperature=0,
-                    model_manager=orchestrator.model_manager,
-                )
 
                 from pxnodes.llm.workflows import (
                     evaluate_node_agentic,
@@ -1117,8 +1107,8 @@ class StrategyCompareView(UserLLMOrchestratorMixin, APIView):
                     get_encryption_key_from_session,
                 )
                 from accounts.models import UserApiKey
-                from pxnodes.llm.context.base import StrategyType
                 from llm.llm_adapter import create_llm_provider
+                from pxnodes.llm.context.base import StrategyType
                 from pxnodes.llm.context.strategy_evaluator import StrategyEvaluator
 
                 # Check for OpenAI key if comparing embedding-requiring strategies

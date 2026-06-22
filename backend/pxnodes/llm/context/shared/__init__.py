@@ -9,15 +9,15 @@ These modules are used by multiple strategies:
 - prompts: Shared prompt templates for extraction
 """
 
+from llm.llm_adapter import (
+    LLMProviderAdapter,
+    create_llm_provider,
+)
 from pxnodes.llm.context.shared.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.shared.graph_retrieval import (
     GraphSlice,
     get_all_paths_through_node,
     get_graph_slice,
-)
-from llm.llm_adapter import (
-    LLMProviderAdapter,
-    create_llm_provider,
 )
 from pxnodes.llm.context.shared.prompts import (
     ATOMIC_FACT_EXTRACTION_PROMPT,

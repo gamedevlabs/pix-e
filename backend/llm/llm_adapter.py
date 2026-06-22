@@ -41,7 +41,8 @@ class LLMProviderAdapter:
         Initialize LLM adapter.
 
         Args:
-            model_manager: ModelManager instance (required — use ModelManager.for_user())
+            model_manager: ModelManager instance
+                (required — use ModelManager.for_user())
             model_name: Specific model to use (auto-selects if not provided)
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate

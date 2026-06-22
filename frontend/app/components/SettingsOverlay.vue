@@ -46,9 +46,6 @@ watch(open, async (val) => {
     formLabel.value = `${props.presetProvider.charAt(0).toUpperCase() + props.presetProvider.slice(1)} Key`
   }
   /////////////////
-
-
-
 })
 
 async function onKeyCreated(key: UserApiKey) {

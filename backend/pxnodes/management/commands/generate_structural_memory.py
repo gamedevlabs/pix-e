@@ -10,10 +10,10 @@ import logfire
 from django.core.management.base import BaseCommand, CommandError
 
 from accounts.management_utils import add_user_argument, get_model_manager_for_user
+from llm.llm_adapter import LLMProviderAdapter
 from pxcharts.models import PxChart
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
-from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode

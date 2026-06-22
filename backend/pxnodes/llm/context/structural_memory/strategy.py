@@ -130,7 +130,9 @@ class StructuralMemoryStrategy(BaseContextStrategy):
             # Use llm_provider's model_manager if available, otherwise skip precompute
             mm = getattr(llm_provider, "model_manager", None)
             if mm is None:
-                logger.warning("No model_manager available, skipping precompute provider")
+                logger.warning(
+                    "No model_manager available, skipping precompute provider"
+                )
                 precompute_provider = llm_provider
             else:
                 precompute_provider = LLMProviderAdapter(

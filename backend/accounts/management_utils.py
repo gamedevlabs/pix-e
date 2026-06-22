@@ -12,7 +12,7 @@ import sys
 from typing import Optional
 
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import CommandParser
 
 from accounts.encryption import derive_encryption_key
 from accounts.models import UserSalt

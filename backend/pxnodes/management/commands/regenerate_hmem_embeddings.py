@@ -9,12 +9,12 @@ from django.core.management.base import BaseCommand, CommandError
 
 from accounts.management_utils import add_user_argument, get_model_manager_for_user
 from game_concept.utils import get_current_game_concept
+from llm.llm_adapter import LLMProviderAdapter
 from pillars.models import Pillar
 from projects.utils import get_current_project
 from pxcharts.models import PxChart
 from pxnodes.llm.context.base.types import EvaluationScope
 from pxnodes.llm.context.hmem.strategy import HMEMStrategy
-from llm.llm_adapter import LLMProviderAdapter
 from pxnodes.models import HMEMLayerEmbedding, PxNode
 
 logger = logging.getLogger(__name__)
@@ -137,9 +137,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("H-MEM regeneration complete."))
 
-    def _resolve_user(
-        self, chart: PxChart, username: Optional[str]
-    ):
+    def _resolve_user(self, chart: PxChart, username: Optional[str]):
         from django.contrib.auth import get_user_model
 
         UserModel = get_user_model()
