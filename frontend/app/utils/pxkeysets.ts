@@ -77,12 +77,12 @@ export function pxKeyInventoriesAreEqual(inv1: PxKeySet[], inv2: PxKeySet[]) {
   if (inv1.length !== inv2.length) return false
 
   for (const keyset of inv1) {
-    if (inv2.some((keyset2) => !pxKeySetsAreEqual(keyset, keyset2))) {
+    if (inv2.every((keyset2) => !pxKeySetsAreEqual(keyset, keyset2))) {
       return false
     }
   }
   for (const keyset of inv2) {
-    if (inv1.some((keyset1) => !pxKeySetsAreEqual(keyset, keyset1))) {
+    if (inv1.every((keyset1) => !pxKeySetsAreEqual(keyset, keyset1))) {
       return false
     }
   }

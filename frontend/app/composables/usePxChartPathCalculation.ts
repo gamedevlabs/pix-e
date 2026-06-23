@@ -147,8 +147,8 @@ export function usePxChartPathCalculation(
 
       if (!nodesVisitedWithKeys[node.id]) {
         nodesVisitedWithKeys[node.id] = [node.keys]
-      } else {
-        nodesVisitedWithKeys[node.id]?.push(node.keys)
+      } else if (nodesVisitedWithKeys[node.id]!.every(inv => !pxKeyInventoriesAreEqual(inv, node.keys))){
+        nodesVisitedWithKeys[node.id]!.push(node.keys)
       }
 
       let outEdges = getConnectedEdges(node.id, edges.value).filter(
@@ -208,7 +208,7 @@ export function usePxChartPathCalculation(
           !outNodeQId &&
           (!nodesVisitedWithKeys[outNodeId] ||
             (nodesVisitedWithKeys[outNodeId].length < CYCLE_LIMIT &&
-              !nodesVisitedWithKeys[outNodeId]?.every((inv) =>
+              !nodesVisitedWithKeys[outNodeId]?.some((inv) =>
                 pxKeyInventoriesAreEqual(inventory, inv),
               )))
         ) {
