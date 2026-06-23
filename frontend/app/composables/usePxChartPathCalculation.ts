@@ -79,7 +79,6 @@ export function usePxChartPathCalculation(
     }
 
     const qNodeIdsToNodeIds: Record<number, string> = {}
-    // const qNodeIdsToContainerNames: Record<number, string> = {}
 
     let qNodeCount = 1
     const firstNodeKeys = getKeySetFromKeyAssignment(getKeysInNode(sourceId))
@@ -92,12 +91,10 @@ export function usePxChartPathCalculation(
         id: sourceId,
         prio: 0,
         keys: firstNodeInventory,
-        // name: findNodeById(sourceId)?.data.name,
         revisit: false,
-        alreadyUnlocked: []
+        alreadyUnlocked: [],
       },
     ]
-    // qNodeIdsToContainerNames[qNodeCount] = findNodeById(sourceId)?.data.name
     qNodeIdsToNodeIds[qNodeCount++] = sourceId
     const dist = new Map<number, number>()
     dist.set(1, 0)
@@ -114,15 +111,13 @@ export function usePxChartPathCalculation(
           keys: [getKeySetFromKeyAssignment(node.data.keys)],
           // name: node.data.name,
           revisit: false,
-          alreadyUnlocked: []
+          alreadyUnlocked: [],
         })
-        // qNodeIdsToContainerNames[qNodeCount] = node.data.name
         qNodeIdsToNodeIds[qNodeCount++] = node.id
       }
     }
 
-    //console.log(`qNodeCount after initialization: ${qNodeCount}`)
-    //console.log(`qNodeIdsToNodeIds: ${JSON.stringify(qNodeIdsToNodeIds, null, 2)}`)
+    // console.log(`initial q: ${JSON.stringify(q, null, 2)}`)
 
     // sort (descending so we can use pop)
     q.sort((n1, n2) => n2.prio - n1.prio)
@@ -148,7 +143,9 @@ export function usePxChartPathCalculation(
 
       if (!nodesVisitedWithKeys[node.id]) {
         nodesVisitedWithKeys[node.id] = [node.keys]
-      } else if (nodesVisitedWithKeys[node.id]!.every(inv => !pxKeyInventoriesAreEqual(inv, node.keys))){
+      } else if (
+        nodesVisitedWithKeys[node.id]!.every((inv) => !pxKeyInventoriesAreEqual(inv, node.keys))
+      ) {
         nodesVisitedWithKeys[node.id]!.push(node.keys)
       }
 
@@ -198,7 +195,6 @@ export function usePxChartPathCalculation(
             qNode.id === outNodeId &&
             (!qNode.revisit || pxKeyInventoriesAreEqual(inventory, qNode.keys)),
         )?.qId
-        // console.log(`outNodeQId: ${outNodeQId}`)
 
         // to enable re-visiting of nodes:
         //      if successor node is not in queue (i.e. will not be processed again by regular iteration),
@@ -212,7 +208,7 @@ export function usePxChartPathCalculation(
                 pxKeyInventoriesAreEqual(inventory, inv),
               )))
         ) {
-          // console.log(`Adding for re-visit: ${outNodeId} with prio ${alt} and qID ${qNodeCount}`)
+          // console.log(`Adding for re-visit: ${getNodeName(outNodeId)} with prio ${alt} and qID ${qNodeCount}`)
           dist.set(qNodeCount, Infinity)
           q.push({
             qId: qNodeCount,
@@ -225,10 +221,9 @@ export function usePxChartPathCalculation(
               ),
             ],
             revisit: true,
-            alreadyUnlocked: []
+            alreadyUnlocked: [],
           })
           outNodeQId = qNodeCount
-          // qNodeIdsToContainerNames[qNodeCount] = findNodeById(outNodeId)?.data.name
           qNodeIdsToNodeIds[qNodeCount++] = outNodeId
         }
 
@@ -243,7 +238,11 @@ export function usePxChartPathCalculation(
           q[idx]!.prio = alt
 
           // update key inventory in successor node
-          if (useLocks && !settings.value.ignore_consumable_keys && !node.alreadyUnlocked.includes(outEdge.id)) {
+          if (
+            useLocks &&
+            !settings.value.ignore_consumable_keys &&
+            !node.alreadyUnlocked.includes(outEdge.id)
+          ) {
             // console.log(`Updating inventory for ${outNodeQId} from ${node.qId}`)
             // console.log(`inventory: ${JSON.stringify(inventory, null, 2)}`)
             let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
@@ -272,7 +271,8 @@ export function usePxChartPathCalculation(
             q[idx]!.keys.push(...keysetsToAdd)
 
             q[idx]!.alreadyUnlocked.push(...node.alreadyUnlocked)
-            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id)) q[idx]!.alreadyUnlocked.push(outEdge.id)
+            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
+              q[idx]!.alreadyUnlocked.push(outEdge.id)
           } else if (useLocks) {
             const keysetsToAdd = inventory
               .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
@@ -284,7 +284,8 @@ export function usePxChartPathCalculation(
             q[idx]!.keys.push(...keysetsToAdd)
 
             q[idx]!.alreadyUnlocked.push(...node.alreadyUnlocked)
-            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id)) q[idx]!.alreadyUnlocked.push(outEdge.id)
+            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
+              q[idx]!.alreadyUnlocked.push(outEdge.id)
           }
 
           q.sort((n1, n2) => n2.prio - n1.prio)
@@ -324,7 +325,10 @@ export function usePxChartPathCalculation(
       }
     }
 
-    result.value.locked = result.value.locked.concat(allLockedEdges)
+    const targetQNode = q.find((qnode) => qnode.qId === targetQId)
+    result.value.locked = result.value.locked
+      .concat(allLockedEdges)
+      .filter((edge) => !targetQNode?.alreadyUnlocked.includes(edge))
     result.value.pathEdges = seqEdges.reverse()
     return seq.reverse()
   }
