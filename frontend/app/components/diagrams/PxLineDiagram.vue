@@ -77,11 +77,17 @@ const numericalComponentDefinitionNames = computed(() => {
   return props.pxComponentDefinitions.filter((def) => def.type === 'number').map((def) => def.name)
 })
 
-//const selectedDefinitionsX: Ref<string, string> = ref('')
-const selectedDefinitionsY: Ref<string[], string[]> = ref([])
+const selectedXLabel = defineModel<string>('selectedXLabel', {
+  default: 'Nodes',
+})
 
-const selectedXLabel = ref('Nodes')
-const selectedDefinitionsX = ref('')
+const selectedDefinitionsX = defineModel<string>('selectedDefinitionsX', {
+  default: '',
+})
+
+const selectedDefinitionsY = defineModel<string[]>('selectedDefinitionsY', {
+  default: () => [],
+})
 
 async function handleDefinitionSelectionX(selection: string) {
   selectedXLabel.value = selection

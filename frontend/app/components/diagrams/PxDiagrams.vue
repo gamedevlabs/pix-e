@@ -28,6 +28,13 @@ const props = defineProps({
 })
 
 const diagrams = ref(new Array<string>())
+type DiagramState = {
+  selectedXLabel: string
+  selectedDefinitionsX: string
+  selectedDefinitionsY: string[]
+}
+
+const diagramState = ref<Record<string, DiagramState>>({})
 
 const carousel = useTemplateRef('carousel')
 
@@ -42,12 +49,21 @@ async function addDiagramAndShow() {
 function addItem() {
   const newUuid = v4()
   diagrams.value.push(newUuid)
+
+  diagramState.value[newUuid] = {
+    selectedXLabel: 'Nodes',
+    selectedDefinitionsX: '',
+    selectedDefinitionsY: [],
+  }
 }
 
 async function deleteDiagram(deleteId: string) {
   console.log("delete id", deleteId)
   diagrams.value.forEach((item) => {console.log(item)})
   diagrams.value = diagrams.value.filter((id) => id != deleteId)
+
+  const { [deleteId]: _, ...remaining } = diagramState.value
+  diagramState.value = remaining
 }
 
 const dummyNode: PxNode = {
@@ -144,6 +160,10 @@ const nodeLabels = computed(() => {
     >
       <div :key="item" class="w-xl max-w-full mx-auto p-2">
         <PxLineDiagram
+          :key="item"
+          v-model:selected-x-label="diagramState[item].selectedXLabel"
+          v-model:selected-definitions-x="diagramState[item].selectedDefinitionsX"
+          v-model:selected-definitions-y="diagramState[item].selectedDefinitionsY"
           :node-data="allData"
           :node-labels="nodeLabels"
           :px-component-definitions="pxComponentDefinitions"
