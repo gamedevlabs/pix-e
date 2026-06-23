@@ -186,7 +186,7 @@ async function handleAddKey() {
 
 <template>
   <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback || !isCollapsible)">
-    <UCard class="hover:shadow-lg transition" @dblclick.stop="onDbClick()">
+    <UCard variant="outline" class="transition-all hover:ring hover:ring-primary hover:shadow-lg" @dblclick.stop="onDbClick()">
       <template #header>
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
           <NuxtLink :to="{ name: 'pxnodes-id', params: { id: props.node.id } }">
