@@ -29,12 +29,24 @@ const props = defineProps({
 
 const diagrams = ref(new Array<string>())
 
+const carousel = useTemplateRef('carousel')
+
+async function addDiagramAndShow() {
+  addItem()
+
+  await nextTick()
+
+  carousel.value?.emblaApi?.scrollTo(diagrams.value.length -1)
+}
+
 function addItem() {
   const newUuid = v4()
   diagrams.value.push(newUuid)
 }
 
 async function deleteDiagram(deleteId: string) {
+  console.log("delete id", deleteId)
+  diagrams.value.forEach((item) => {console.log(item)})
   diagrams.value = diagrams.value.filter((id) => id != deleteId)
 }
 
@@ -117,38 +129,34 @@ const nodeLabels = computed(() => {
 </script>
 
 <template>
-  <div class="p-4">
-    <!--
-    <UCollapsible :unmount-on-hide="false" class="flex flex-col gap-6">
-      <UButton label="Show Diagrams" variant="subtle" trailing-icon="i-lucide-chevron-down" block />
-      <template #content>
-      -->
-    <UButton icon="lucide-plus" @click="addItem" />
+  <div>
     <UCarousel
+      ref="carousel"
       v-slot="{ item }"
       dots
       :items="diagrams"
       class="w-full max-w-xl mx-auto"
       :ui="{
         viewport: 'overflow-hidden',
+        container: 'items-end',
         item: 'basis-full shrink-0 grow-0',
       }"
     >
-      <div class="w-xl max-w-full h-full mx-auto p-2">
+      <div :key="item" class="w-xl max-w-full mx-auto p-2">
         <PxLineDiagram
           :node-data="allData"
           :node-labels="nodeLabels"
           :px-component-definitions="pxComponentDefinitions"
+          :diagram-id="item"
           show-edit
           show-delete
-          @delete="deleteDiagram(item)"
+          @delete="deleteDiagram"
         />
       </div>
     </UCarousel>
-    <!--
-      </template>
-    </UCollapsible>
-    -->
+    <UTooltip text="Add Diagram">
+      <UButton icon="lucide-plus" class="m-2" @click="addDiagramAndShow" />
+    </UTooltip>
   </div>
 </template>
 
