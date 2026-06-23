@@ -270,7 +270,8 @@ export function usePxChartPathCalculation(
               )
             q[idx]!.keys.push(...keysetsToAdd)
 
-            q[idx]!.alreadyUnlocked.push(...node.alreadyUnlocked)
+            const newlyUnlocked = [...node.alreadyUnlocked, outEdge.id].filter(edge => !q[idx]!.alreadyUnlocked.includes(edge))
+            q[idx]!.alreadyUnlocked.push(...newlyUnlocked)
             if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
               q[idx]!.alreadyUnlocked.push(outEdge.id)
           } else if (useLocks) {
@@ -283,7 +284,8 @@ export function usePxChartPathCalculation(
               )
             q[idx]!.keys.push(...keysetsToAdd)
 
-            q[idx]!.alreadyUnlocked.push(...node.alreadyUnlocked)
+            const newlyUnlocked = [...node.alreadyUnlocked].filter(edge => !q[idx]!.alreadyUnlocked.includes(edge))
+            q[idx]!.alreadyUnlocked.push(...newlyUnlocked)
             if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
               q[idx]!.alreadyUnlocked.push(outEdge.id)
           }
