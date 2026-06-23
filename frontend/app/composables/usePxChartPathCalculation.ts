@@ -62,8 +62,8 @@ export function usePxChartPathCalculation(
     id: string
     prio: number
     keys: PxKeySet[]
-    // name: string
     revisit: boolean
+    alreadyUnlocked: string[]
   }
 
   async function dijkstraInChart(
@@ -94,6 +94,7 @@ export function usePxChartPathCalculation(
         keys: firstNodeInventory,
         // name: findNodeById(sourceId)?.data.name,
         revisit: false,
+        alreadyUnlocked: []
       },
     ]
     // qNodeIdsToContainerNames[qNodeCount] = findNodeById(sourceId)?.data.name
@@ -113,6 +114,7 @@ export function usePxChartPathCalculation(
           keys: [getKeySetFromKeyAssignment(node.data.keys)],
           // name: node.data.name,
           revisit: false,
+          alreadyUnlocked: []
         })
         // qNodeIdsToContainerNames[qNodeCount] = node.data.name
         qNodeIdsToNodeIds[qNodeCount++] = node.id
@@ -133,7 +135,6 @@ export function usePxChartPathCalculation(
     // with backtracking, nodes are considered to exist in different realities where different keysets may be available
     // this Record tracks which nodes have been visited with which inventories (a.k.a. in which realities)
     const nodesVisitedWithKeys: Record<string, PxKeySet[][]> = {}
-    const previouslyUnlockedEdges: Set<string> = new Set()
 
     let targetQId: number | undefined = 0
 
@@ -159,7 +160,7 @@ export function usePxChartPathCalculation(
         // check for locked transitions
         const [unlockedOutEdges, lockedOutEdges] = outEdges.reduce(
           (acc, edge) =>
-            previouslyUnlockedEdges.has(edge.id) ||
+            node.alreadyUnlocked.includes(edge.id) ||
             node.keys.some((keys) => canUnlock(keys, edge.data.locks))
               ? (acc[0].push(edge), acc)
               : (acc[1].push(edge), acc),
@@ -183,8 +184,7 @@ export function usePxChartPathCalculation(
 
       // check each outgoing edge
       for (const outEdge of outEdges) {
-        // console.log(`Checking outgoing edge: ${outEdge.id} to ${outEdge.target !== node.id ? outEdge.target : outEdge.source}`)
-        previouslyUnlockedEdges.add(outEdge.id)
+        // console.log(`Checking outgoing edge to ${outEdge.target !== node.id ? outEdge.target : outEdge.source}`)
         const outNodeId =
           !outEdge.data.bidirectional || outEdge.source === node.id
             ? outEdge.target
@@ -224,8 +224,8 @@ export function usePxChartPathCalculation(
                 fixedPxKeyDefinitions.value,
               ),
             ],
-            name: findNodeById(outNodeId)?.data.name,
             revisit: true,
+            alreadyUnlocked: []
           })
           outNodeQId = qNodeCount
           // qNodeIdsToContainerNames[qNodeCount] = findNodeById(outNodeId)?.data.name
@@ -243,7 +243,7 @@ export function usePxChartPathCalculation(
           q[idx]!.prio = alt
 
           // update key inventory in successor node
-          if (useLocks && !settings.value.ignore_consumable_keys && !previouslyUnlockedEdges.has(outEdge.id)) {
+          if (useLocks && !settings.value.ignore_consumable_keys && !node.alreadyUnlocked.includes(outEdge.id)) {
             // console.log(`Updating inventory for ${outNodeQId} from ${node.qId}`)
             // console.log(`inventory: ${JSON.stringify(inventory, null, 2)}`)
             let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
@@ -270,6 +270,9 @@ export function usePxChartPathCalculation(
                 ),
               )
             q[idx]!.keys.push(...keysetsToAdd)
+
+            q[idx]!.alreadyUnlocked.push(...node.alreadyUnlocked)
+            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id)) q[idx]!.alreadyUnlocked.push(outEdge.id)
           } else if (useLocks) {
             const keysetsToAdd = inventory
               .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
@@ -279,6 +282,9 @@ export function usePxChartPathCalculation(
                 ),
               )
             q[idx]!.keys.push(...keysetsToAdd)
+
+            q[idx]!.alreadyUnlocked.push(...node.alreadyUnlocked)
+            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id)) q[idx]!.alreadyUnlocked.push(outEdge.id)
           }
 
           q.sort((n1, n2) => n2.prio - n1.prio)
