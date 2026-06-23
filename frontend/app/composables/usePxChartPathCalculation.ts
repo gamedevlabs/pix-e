@@ -243,7 +243,9 @@ export function usePxChartPathCalculation(
           q[idx]!.prio = alt
 
           // update key inventory in successor node
-          if (useLocks && !settings.value.ignore_consumable_keys) {
+          if (useLocks && !settings.value.ignore_consumable_keys && !previouslyUnlockedEdges.has(outEdge.id)) {
+            // console.log(`Updating inventory for ${outNodeQId} from ${node.qId}`)
+            // console.log(`inventory: ${JSON.stringify(inventory, null, 2)}`)
             let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
               inventory,
               outEdge.data.locks,
@@ -268,7 +270,7 @@ export function usePxChartPathCalculation(
                 ),
               )
             q[idx]!.keys.push(...keysetsToAdd)
-          } else if (useLocks && settings.value.ignore_consumable_keys) {
+          } else if (useLocks) {
             const keysetsToAdd = inventory
               .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
               .filter((keyset) =>
