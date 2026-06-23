@@ -62,7 +62,7 @@ export function usePxChartPathCalculation(
     id: string
     prio: number
     keys: PxKeySet[]
-    name: string
+    // name: string
     revisit: boolean
   }
 
@@ -92,7 +92,7 @@ export function usePxChartPathCalculation(
         id: sourceId,
         prio: 0,
         keys: firstNodeInventory,
-        name: findNodeById(sourceId)?.data.name,
+        // name: findNodeById(sourceId)?.data.name,
         revisit: false,
       },
     ]
@@ -111,7 +111,7 @@ export function usePxChartPathCalculation(
           id: node.id,
           prio: Infinity,
           keys: [getKeySetFromKeyAssignment(node.data.keys)],
-          name: node.data.name,
+          // name: node.data.name,
           revisit: false,
         })
         // qNodeIdsToContainerNames[qNodeCount] = node.data.name
@@ -300,7 +300,6 @@ export function usePxChartPathCalculation(
     }
 
     console.log(`qNodeIdsToNodeIds after calculation: ${JSON.stringify(qNodeIdsToNodeIds, null, 2)}`)
-    console.log(`qNodeIdsToNodeNames after calculation: ${JSON.stringify(qNodeIdsToContainerNames, null, 2)}`)
     */
 
     const seq: string[] = []
