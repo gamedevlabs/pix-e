@@ -77,17 +77,20 @@ const numericalComponentDefinitionNames = computed(() => {
   return props.pxComponentDefinitions.filter((def) => def.type === 'number').map((def) => def.name)
 })
 
-const selectedDefinitionsX: Ref<string, string> = ref('')
+//const selectedDefinitionsX: Ref<string, string> = ref('')
 const selectedDefinitionsY: Ref<string[], string[]> = ref([])
 
+const selectedXLabel = ref('Nodes')
+const selectedDefinitionsX = ref('')
+
 async function handleDefinitionSelectionX(selection: string) {
-  // check whether selection is actual component or dummy option for equal spacing
-  const foundId = props.pxComponentDefinitions.find((def) => selection === def.name)?.id
-  if (foundId) {
-    selectedDefinitionsX.value = foundId
-  } else {
-    selectedDefinitionsX.value = ''
-  }
+  selectedXLabel.value = selection
+
+  const foundId = props.pxComponentDefinitions.find(
+      (def) => selection === def.name
+  )?.id
+
+  selectedDefinitionsX.value = foundId ?? ''
 }
 
 async function handleDefinitionSelectionY(selection: string[]) {
@@ -102,7 +105,7 @@ function emitDelete() {
 </script>
 
 <template>
-  <UCard class="min-h-55">
+  <UCard class="min-h-55 transition-all hover:ring hover:ring-primary hover:shadow-lg hover:bg-default" variant="subtle">
     <template #header>
       <div class="flex items-center gap-3 w-full">
         <UTooltip text="Remove Diagram">
@@ -137,10 +140,10 @@ function emitDelete() {
             <UBadge color="neutral" variant="outline" size="lg" label="X" />
             <USelect
               v-if="numericalComponentDefinitionNames.length"
+              v-model="selectedXLabel"
               class="w-full"
               placeholder="Select Component"
-              :v-model="undefined"
-              :items="['Nodes'].concat(numericalComponentDefinitionNames)"
+              :items="['Nodes', ...numericalComponentDefinitionNames]"
               :ui="{ content: 'min-w-fit' }"
               :content="{ align: 'start', side: 'right', sideOffset: 8 }"
               @update:model-value="handleDefinitionSelectionX"
