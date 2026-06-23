@@ -92,9 +92,7 @@ const selectedDefinitionsY = defineModel<string[]>('selectedDefinitionsY', {
 async function handleDefinitionSelectionX(selection: string) {
   selectedXLabel.value = selection
 
-  const foundId = props.pxComponentDefinitions.find(
-      (def) => selection === def.name
-  )?.id
+  const foundId = props.pxComponentDefinitions.find((def) => selection === def.name)?.id
 
   selectedDefinitionsX.value = foundId ?? ''
 }
@@ -111,7 +109,10 @@ function emitDelete() {
 </script>
 
 <template>
-  <UCard class="min-h-55 transition-all hover:ring hover:ring-primary hover:shadow-lg hover:bg-default" variant="subtle">
+  <UCard
+    class="min-h-55 transition-all hover:ring hover:ring-primary hover:shadow-lg hover:bg-default"
+    variant="subtle"
+  >
     <template #header>
       <div class="flex items-center gap-3 w-full">
         <UTooltip text="Remove Diagram">

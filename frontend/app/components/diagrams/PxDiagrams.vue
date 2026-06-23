@@ -43,7 +43,7 @@ async function addDiagramAndShow() {
 
   await nextTick()
 
-  carousel.value?.emblaApi?.scrollTo(diagrams.value.length -1)
+  carousel.value?.emblaApi?.scrollTo(diagrams.value.length - 1)
 }
 
 function addItem() {
@@ -58,8 +58,6 @@ function addItem() {
 }
 
 async function deleteDiagram(deleteId: string) {
-  console.log("delete id", deleteId)
-  diagrams.value.forEach((item) => {console.log(item)})
   diagrams.value = diagrams.value.filter((id) => id != deleteId)
 
   const { [deleteId]: _, ...remaining } = diagramState.value
