@@ -58,12 +58,12 @@ export function usePxChartPathCalculation(
   })
 
   interface QueueNode {
-    qId: number
     id: string
     prio: number
     keys: PxKeySet[]
-    revisit: boolean
+    name: string
     alreadyUnlocked: string[]
+    alreadyCollected: string[]
   }
 
   async function dijkstraInChart(
@@ -78,30 +78,34 @@ export function usePxChartPathCalculation(
       await fetchPxKeyDefinitions()
     }
 
-    const qNodeIdsToNodeIds: Record<number, string> = {}
+    //const qNodeIdsToNodeIds: Record<number, string> = {}
 
-    let qNodeCount = 1
+    //let qNodeCount = 1
     const firstNodeKeys = getKeySetFromKeyAssignment(getKeysInNode(sourceId))
     const firstNodeInventory = initialInventory.map((keyset) =>
       mergePxKeySets(keyset, firstNodeKeys),
     )
     const q: QueueNode[] = [
       {
-        qId: qNodeCount,
         id: sourceId,
         prio: 0,
         keys: firstNodeInventory,
-        revisit: false,
+        name: nodes.value.filter((node) => node.id === sourceId)[0].data.name,
         alreadyUnlocked: [],
+        alreadyCollected: Object.keys(firstNodeKeys).length > 0 ? [sourceId] : [],
       },
     ]
-    qNodeIdsToNodeIds[qNodeCount++] = sourceId
-    const dist = new Map<number, number>()
-    dist.set(1, 0)
-    const prev = new Map<number, number>()
-    const prevEdges = new Map<number, Edge>()
+    //qNodeIdsToNodeIds[qNodeCount++] = sourceId
+    const dist = new Map<string, number>()
+    const prev = new Map<string, string>()
+    const prevEdges = new Map<string, Edge>()
+    const states = new Map<string, QueueNode>()
 
-    for (const node of nodes.value) {
+    const sourceNodeStateKey = makeStateKey(q[0])
+    dist.set(sourceNodeStateKey, 0)
+    states.set(sourceNodeStateKey, q[0])
+
+    /*for (const node of nodes.value) {
       if (node.id != sourceId) {
         dist.set(qNodeCount, Infinity)
         q.push({
@@ -109,51 +113,61 @@ export function usePxChartPathCalculation(
           id: node.id,
           prio: Infinity,
           keys: [getKeySetFromKeyAssignment(node.data.keys)],
-          // name: node.data.name,
+          name: node.data.name,
           revisit: false,
           alreadyUnlocked: [],
         })
         qNodeIdsToNodeIds[qNodeCount++] = node.id
       }
-    }
+    }*/
 
-    // console.log(`initial q: ${JSON.stringify(q, null, 2)}`)
+    console.log(`initial q: ${JSON.stringify(q, null, 2)}`)
 
     // sort (descending so we can use pop)
     q.sort((n1, n2) => n2.prio - n1.prio)
 
     // iterate
     let found = false
-    let inventory: PxKeySet[] = []
-    let allLockedEdges: string[] = []
+    //let inventory: PxKeySet[] = []
+    const allLockedEdges: string[] = []
 
     // with backtracking, nodes are considered to exist in different realities where different keysets may be available
     // this Record tracks which nodes have been visited with which inventories (a.k.a. in which realities)
-    const nodesVisitedWithKeys: Record<string, PxKeySet[][]> = {}
+    //const nodesVisitedWithKeys: Record<string, PxKeySet[][]> = {}
 
-    let targetQId: number | undefined = 0
+    //let targetQId: number | undefined = 0
+    let targetKeyState: string = ''
 
     while (q.length && !found) {
-      const node = q.pop()
-      if (!node) {
+      const poppedNodeState = q.pop()
+      if (!poppedNodeState) {
+        break
+      }
+
+      if (poppedNodeState.id === targetId) {
+        console.log(`Found target node!`)
+        found = true
+        targetKeyState = makeStateKey(poppedNodeState)
+        //targetQId = outNodeQId
+        //previousInventory.value = q.find((entry) => entry.id === edgeTarget)!.keys
         break
       }
 
       // console.log(`Processing node: ${JSON.stringify(node, null, 2)}`)
 
-      if (!nodesVisitedWithKeys[node.id]) {
+      /*if (!nodesVisitedWithKeys[node.id]) {
         nodesVisitedWithKeys[node.id] = [node.keys]
       } else if (
         nodesVisitedWithKeys[node.id]!.every((inv) => !pxKeyInventoriesAreEqual(inv, node.keys))
       ) {
         nodesVisitedWithKeys[node.id]!.push(node.keys)
-      }
+      }*/
 
-      let outEdges = getConnectedEdges(node.id, edges.value).filter(
-        (edge) => edge.source === node.id || edge.data.bidirectional,
+      const outEdges = getConnectedEdges(poppedNodeState.id, edges.value).filter(
+        (edge) => edge.source === poppedNodeState.id || edge.data.bidirectional,
       )
 
-      if (useLocks) {
+      /*if (useLocks) {
         // check for locked transitions
         const [unlockedOutEdges, lockedOutEdges] = outEdges.reduce(
           (acc, edge) =>
@@ -175,36 +189,172 @@ export function usePxChartPathCalculation(
             ),
           ),
         )
-      }
+      }*/
 
-      // console.log(`Found ${outEdges.length} outgoing Edges!`)
+      console.log(`Found ${outEdges.length} outgoing Edges in node ${poppedNodeState.name}!`)
+
+      const currentDistance = dist.get(makeStateKey(poppedNodeState))!
+
+      const keySet = getKeySetFromKeyAssignment(getKeysInNode(poppedNodeState.id))
+
+      if (
+        Object.keys(keySet).length > 0 &&
+        !poppedNodeState.alreadyCollected.includes(poppedNodeState.id)
+      ) {
+        console.log('new key set!')
+
+        const currentInventory = [...poppedNodeState.keys]
+        const unlockedEdges = [...poppedNodeState.alreadyUnlocked]
+
+        const newNodeState = {
+          id: poppedNodeState.id,
+          prio: currentDistance,
+          keys: currentInventory.map((keyset) => mergePxKeySets(keyset, keySet)),
+          name: poppedNodeState.name,
+          alreadyUnlocked: [...unlockedEdges],
+          alreadyCollected: [...poppedNodeState.alreadyCollected, poppedNodeState.id],
+        }
+
+        const newStateKey = makeStateKey(newNodeState)
+
+        const oldDist = dist.get(newStateKey) ?? Infinity
+
+        if (currentDistance < oldDist) {
+          dist.set(newStateKey, currentDistance)
+          states.set(newStateKey, newNodeState)
+
+          prev.set(newStateKey, makeStateKey(poppedNodeState))
+          //prevEdges.set(newStateKey, prevEdges.get(makeStateKey(poppedNodeState))!)
+
+          q.push(newNodeState)
+        }
+      }
 
       // check each outgoing edge
       for (const outEdge of outEdges) {
         // console.log(`Checking outgoing edge to ${outEdge.target !== node.id ? outEdge.target : outEdge.source}`)
-        const outNodeId =
-          !outEdge.data.bidirectional || outEdge.source === node.id
+
+        // Get Edge Target
+        const edgeTarget =
+          !outEdge.data.bidirectional || outEdge.source === poppedNodeState.id
             ? outEdge.target
             : outEdge.source
-        const alt = dist.get(node.qId)! + 1
+        const edgeTargetName = nodes.value.filter((node) => node.id === edgeTarget)[0].data.name
+
+        let currentInventory = [...poppedNodeState.keys]
+        let unlockedEdges = [...poppedNodeState.alreadyUnlocked]
+
+        // Check whether edge is unlocked or needs to be unlocked
+        if (
+          useLocks &&
+          outEdge.data.locks.length != 0 &&
+          !poppedNodeState.alreadyUnlocked.includes(outEdge.id)
+        ) {
+          console.log('LOCKety: outgoing edge is locked')
+          // If it needs to be unlocked, check with how many keys
+
+          console.log(`LOCKety current ${JSON.stringify(canonicalizeInventory(currentInventory))}`)
+          if (currentInventory.some((keys) => canUnlock(keys, outEdge.data.locks))) {
+            // Nice, add an unlocked alternative
+            // one for each key??
+
+            // Check whether it is permanent/reversible/etc.
+            unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
+
+            console.log('LOCKety: can we ever unlock this bitch')
+
+            if (!settings.value.ignore_consumable_keys) {
+              console.log(
+                `consumable: currently in node ${poppedNodeState.name} with ${JSON.stringify(canonicalizeInventory(currentInventory))} for ${edgeTargetName}`,
+              )
+
+              // console.log(`Updating inventory for ${outNodeQId} from ${node.qId}`)
+              // console.log(`inventory: ${JSON.stringify(inventory, null, 2)}`)
+              let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
+                currentInventory,
+                outEdge.data.locks,
+              )
+
+              const possibleInventoriesAfterUnlock = currentInventory
+                .filter((keyset) => canUnlock(keyset, outEdge.data.locks))
+                .flatMap((keyset) => removeConsumed([keyset], outEdge.data.locks))
+
+              possibleInventoriesAfterUnlock.forEach((keySet) => {
+                console.log(`consumable: keyset ${JSON.stringify(keySet)} unlocked`)
+              })
+
+              console.log(
+                `consumable after ${JSON.stringify(canonicalizeInventory(inventoryAfterConsumption))}`,
+              )
+
+              // a potential softlock occurs when unlock is possible with some, but not all keysets in inventory
+              // this must be checked before removing fully consumed keysets
+              if (inventoryAfterConsumption.length !== currentInventory.length) {
+                result.value.softLocked.push(edgeTarget)
+              }
+              inventoryAfterConsumption = inventoryAfterConsumption.filter(
+                (keyset) => Object.entries(keyset).length > 0,
+              )
+              if (!inventoryAfterConsumption.length) {
+                inventoryAfterConsumption = [{}]
+              }
+
+              currentInventory = inventoryAfterConsumption
+            }
+          } else {
+            // We don't have a key yet, so add it to unlocked edges for highlighting and filter later
+            allLockedEdges.push(outEdge.id)
+            continue
+          }
+        }
+        const distanceToTarget = currentDistance + 1
+
+        const newNodeState = {
+          id: edgeTarget,
+          prio: distanceToTarget,
+          keys: currentInventory,
+          name: nodes.value.filter((node) => node.id === edgeTarget)[0].data.name,
+          alreadyUnlocked: unlockedEdges,
+          alreadyCollected: [...poppedNodeState.alreadyCollected],
+        }
+
+        console.log(`old node state ${makeStateKey(poppedNodeState)}`)
+        console.log(`new node state ${makeStateKey(newNodeState)}`)
+
+        const newStateKey = makeStateKey(newNodeState)
+
+        const oldDist = dist.get(newStateKey) ?? Infinity
+
+        if (distanceToTarget < oldDist) {
+          dist.set(newStateKey, newNodeState.prio)
+          states.set(newStateKey, newNodeState)
+
+          prev.set(newStateKey, makeStateKey(poppedNodeState))
+          prevEdges.set(newStateKey, outEdge)
+
+          q.push(newNodeState)
+        }
+
+        //const nodeState =
+        //console.log(`new node state ${edgeTarget} ${distanceToTarget} ${currentInventory} ${unlockedEdges}`)
 
         // first check whether node is both in queue and reachable from the current state
         // (re-visited nodes hold no keys, so if a node is re-visited, all keys available in it must be available in its predecessor)
-        let outNodeQId = q.find(
+        /*let outNodeQId = q.find(
           (qNode) =>
-            qNode.id === outNodeId &&
-            (!qNode.revisit || pxKeyInventoriesAreEqual(inventory, qNode.keys)),
-        )?.qId
+            qNode.id === edgeTarget &&
+            (pxKeyInventoriesAreEqual(currentInventory, qNode.keys)),
+        )?.qId*/
 
         // to enable re-visiting of nodes:
         //      if successor node is not in queue (i.e. will not be processed again by regular iteration),
         //      and the target node has neither been visited LIMIT times not visited with the current inventory available,
         //      add it to queue
-        if (
+        /*if (
           !outNodeQId &&
-          (!nodesVisitedWithKeys[outNodeId] ||
-            (nodesVisitedWithKeys[outNodeId].length < CYCLE_LIMIT &&
-              !nodesVisitedWithKeys[outNodeId]?.some((inv) =>
+          (!nodesVisitedWithKeys[edgeTarget] ||
+            (nodesVisitedWithKeys[edgeTarget].length < CYCLE_LIMIT &&
+              !nodesVisitedWithKeys[edgeTarget]?.some((inv) =>
                 pxKeyInventoriesAreEqual(inventory, inv),
               )))
         ) {
@@ -212,94 +362,97 @@ export function usePxChartPathCalculation(
           dist.set(qNodeCount, Infinity)
           q.push({
             qId: qNodeCount,
-            id: outNodeId,
-            prio: alt,
+            id: edgeTarget,
+            prio: distanceToTarget,
             keys: [
               filterPxKeySet(
-                getKeySetFromKeyAssignment(getKeysInNode(outNodeId)),
+                getKeySetFromKeyAssignment(getKeysInNode(edgeTarget)),
                 fixedPxKeyDefinitions.value,
               ),
             ],
-            revisit: true,
+            name: node.name + " with new keys",
             alreadyUnlocked: [],
           })
           outNodeQId = qNodeCount
-          qNodeIdsToNodeIds[qNodeCount++] = outNodeId
-        }
+          qNodeIdsToNodeIds[qNodeCount++] = edgeTarget
+        }*/
 
         // nodes may be reachable with shorter paths, but going the shorter path may miss keys that need to be collected
         // thus, we loosen the condition here to include all reachable nodes
         // potential improvement: make condition more robust by calculating combined score of dist, keys collected, ...
-        if (outNodeQId && alt < Infinity) {
-          prev.set(outNodeQId, node.qId)
-          prevEdges.set(outNodeQId, outEdge)
-          dist.set(outNodeQId, alt)
-          const idx = findIndex(q, ['qId', outNodeQId])
-          q[idx]!.prio = alt
+        /*if (outNodeQId && distanceToTarget < Infinity) {
+        prev.set(outNodeQId, poppedNodeState.qId)
+        prevEdges.set(outNodeQId, outEdge)
+        dist.set(outNodeQId, distanceToTarget)
+        const idx = findIndex(q, ['qId', outNodeQId])
+        q[idx]!.prio = distanceToTarget
 
-          // update key inventory in successor node
-          if (
-            useLocks &&
-            !settings.value.ignore_consumable_keys &&
-            !node.alreadyUnlocked.includes(outEdge.id)
-          ) {
-            // console.log(`Updating inventory for ${outNodeQId} from ${node.qId}`)
-            // console.log(`inventory: ${JSON.stringify(inventory, null, 2)}`)
-            let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
-              inventory,
-              outEdge.data.locks,
+        // update key inventory in successor node
+        if (
+          useLocks &&
+          !settings.value.ignore_consumable_keys &&
+          !poppedNodeState.alreadyUnlocked.includes(outEdge.id)
+        ) {
+          // console.log(`Updating inventory for ${outNodeQId} from ${node.qId}`)
+          // console.log(`inventory: ${JSON.stringify(inventory, null, 2)}`)
+          let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
+            inventory,
+            outEdge.data.locks,
+          )
+          // a potential softlock occurs when unlock is possible with some, but not all keysets in inventory
+          // this must be checked before removing fully consumed keysets
+          if (inventoryAfterConsumption.length !== inventory.length)
+            result.value.softLocked.push(edgeTarget)
+          inventoryAfterConsumption = inventoryAfterConsumption.filter(
+            (keyset) => Object.entries(keyset).length > 0,
+          )
+          if (!inventoryAfterConsumption.length) inventoryAfterConsumption = [{}]
+
+          // nodes may be reached in multiple ways
+          // so we leave the original keyset in the node at index 0
+          // and append inventories from preceding paths after the original keyset
+          const keysetsToAdd = inventoryAfterConsumption
+            .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
+            .filter((keyset) =>
+              q[idx]!.keys.every(
+                (inventoryKeyset) => !pxKeySetsAreEqual(keyset, inventoryKeyset),
+              ),
             )
-            // a potential softlock occurs when unlock is possible with some, but not all keysets in inventory
-            // this must be checked before removing fully consumed keysets
-            if (inventoryAfterConsumption.length !== inventory.length)
-              result.value.softLocked.push(outNodeId)
-            inventoryAfterConsumption = inventoryAfterConsumption.filter(
-              (keyset) => Object.entries(keyset).length > 0,
+          q[idx]!.keys.push(...keysetsToAdd)
+
+          const newlyUnlocked = [...poppedNodeState.alreadyUnlocked, outEdge.id].filter(edge => !q[idx]!.alreadyUnlocked.includes(edge))
+          q[idx]!.alreadyUnlocked.push(...newlyUnlocked)
+          if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
+            q[idx]!.alreadyUnlocked.push(outEdge.id)
+        } else if (useLocks) {
+          const keysetsToAdd = inventory
+            .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
+            .filter((keyset) =>
+              q[idx]!.keys.every(
+                (inventoryKeyset) => !pxKeySetsAreEqual(keyset, inventoryKeyset),
+              ),
             )
-            if (!inventoryAfterConsumption.length) inventoryAfterConsumption = [{}]
+          q[idx]!.keys.push(...keysetsToAdd)
 
-            // nodes may be reached in multiple ways
-            // so we leave the original keyset in the node at index 0
-            // and append inventories from preceding paths after the original keyset
-            const keysetsToAdd = inventoryAfterConsumption
-              .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
-              .filter((keyset) =>
-                q[idx]!.keys.every(
-                  (inventoryKeyset) => !pxKeySetsAreEqual(keyset, inventoryKeyset),
-                ),
-              )
-            q[idx]!.keys.push(...keysetsToAdd)
-
-            const newlyUnlocked = [...node.alreadyUnlocked, outEdge.id].filter(edge => !q[idx]!.alreadyUnlocked.includes(edge))
-            q[idx]!.alreadyUnlocked.push(...newlyUnlocked)
-            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
-              q[idx]!.alreadyUnlocked.push(outEdge.id)
-          } else if (useLocks) {
-            const keysetsToAdd = inventory
-              .map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
-              .filter((keyset) =>
-                q[idx]!.keys.every(
-                  (inventoryKeyset) => !pxKeySetsAreEqual(keyset, inventoryKeyset),
-                ),
-              )
-            q[idx]!.keys.push(...keysetsToAdd)
-
-            const newlyUnlocked = [...node.alreadyUnlocked].filter(edge => !q[idx]!.alreadyUnlocked.includes(edge))
-            q[idx]!.alreadyUnlocked.push(...newlyUnlocked)
-            if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
-              q[idx]!.alreadyUnlocked.push(outEdge.id)
-          }
-
-          q.sort((n1, n2) => n2.prio - n1.prio)
+          const newlyUnlocked = [...poppedNodeState.alreadyUnlocked].filter(edge => !q[idx]!.alreadyUnlocked.includes(edge))
+          q[idx]!.alreadyUnlocked.push(...newlyUnlocked)
+          if (!q[idx]!.alreadyUnlocked.includes(outEdge.id))
+            q[idx]!.alreadyUnlocked.push(outEdge.id)
         }
-        if (outNodeId === targetId) {
+
+        q.sort((n1, n2) => n2.prio - n1.prio)
+      }*/
+        /*if (edgeTarget === targetId) {
           console.log(`Found target node!`)
           found = true
-          targetQId = outNodeQId
-          previousInventory.value = q.find((entry) => entry.id === outNodeId)!.keys
+          targetKeyState = makeStateKey(targetId)
+          //targetQId = outNodeQId
+          previousInventory.value = q.find((entry) => entry.id === edgeTarget)!.keys
           break
-        }
+        }*/
       }
+
+      q.sort((n1, n2) => n2.prio - n1.prio)
     }
 
     /*
@@ -313,26 +466,59 @@ export function usePxChartPathCalculation(
 
     const seq: string[] = []
     const seqEdges = []
-    if (found && targetQId) {
+
+    if (found && targetKeyState) {
       // construct sequence
-      let current = targetQId
-      if (prev.has(current) || qNodeIdsToNodeIds[current] === sourceId) {
-        while (current) {
-          seq.push(qNodeIdsToNodeIds[current]!)
-          if (prevEdges.has(current)) {
-            seqEdges.push(prevEdges.get(current)!)
-          }
-          current = prev.get(current)!
+      let current: string | undefined = targetKeyState
+
+      while (current) {
+        const state = states.get(current)
+
+        if (!state) {
+          console.warn(`Missing state for key: ${current}`)
+          break
         }
+
+        seq.push(state.id)
+
+        const edge = prevEdges.get(current)
+        if (edge) {
+          seqEdges.push(edge)
+        }
+
+        current = prev.get(current)
       }
     }
 
-    const targetQNode = q.find((qnode) => qnode.qId === targetQId)
+    //const targetQNode = states.get(targetKeyState)
     result.value.locked = result.value.locked
       .concat(allLockedEdges)
-      .filter((edge) => !targetQNode?.alreadyUnlocked.includes(edge))
+      .filter((edge) => !states.get(targetKeyState)?.alreadyUnlocked.includes(edge))
     result.value.pathEdges = seqEdges.reverse()
     return seq.reverse()
+  }
+
+  function makeStateKey(qNode: QueueNode): string {
+    return JSON.stringify({
+      id: qNode.id,
+      keys: canonicalizeInventory(qNode.keys),
+      unlocked: [...new Set(qNode.alreadyUnlocked)].sort(),
+      collected: [...new Set(qNode.alreadyCollected)].sort(),
+    })
+  }
+
+  function canonicalizeInventory(inventory: PxKeySet[]) {
+    return inventory
+      .map(canonicalizeKeySet)
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+  }
+
+  function canonicalizeKeySet(keyset: PxKeySet): PxKeySet {
+    return Object.fromEntries(
+      Object.entries(keyset)
+        .filter(([, count]) => count > 0)
+        .sort(([a], [b]) => a.localeCompare(b)),
+    )
   }
 
   async function dijkstraInChartMultiple(selected: string[], useLocks: boolean = true) {

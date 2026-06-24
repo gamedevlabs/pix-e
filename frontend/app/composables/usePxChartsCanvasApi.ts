@@ -148,9 +148,9 @@ export function usePxChartsCanvasApi(chartId: string) {
     return pxLocks.value.filter((lock) => lock.edge === edgeId)
   }
 
-  async function addContainer(position_x = 0, position_y = 0) {
+  async function addContainer(name: string, position_x = 0, position_y = 0) {
     const newContainerPayload = {
-      name: 'Empty Container',
+      name: name,
       content: containerDefaultValues.content,
       layout: {
         position_x: position_x,
@@ -201,7 +201,11 @@ export function usePxChartsCanvasApi(chartId: string) {
     if (!nodeId) {
       return
     } else {
-      const containerId = await addContainer(position_x, position_y)
+      const containerId = await addContainer(
+        _pxNodes.value.filter((node) => node.id === nodeId)[0].name,
+        position_x,
+        position_y,
+      )
       await addNodeToContainer(containerId, nodeId)
     }
   }

@@ -57,7 +57,7 @@ export function usePxChartPathCalculationUnlock(
     if (!locks.length) return inventory
 
     const consumableRequirements = locks
-      .flatMap((lock) => new Array(lock.count).fill([lock.definition]))
+      .flatMap((lock) => new Array(lock.count).fill(lock.definition))
       .map((lockDefId) => pxLockDefinitionsById.value[lockDefId]!.unlocked_by)
       .filter(
         (requiredKeys) =>
@@ -97,7 +97,7 @@ export function usePxChartPathCalculationUnlock(
 
     // for set of locks, determine all sets of keys that can unlock them
     const requiredKeysPerLock: string[][] = locks
-      .flatMap((lock) => new Array(lock.count).fill([lock.definition]))
+      .flatMap((lock) => new Array(lock.count).fill(lock.definition))
       .map((lockDefId) => pxLockDefinitionsById.value[lockDefId]!)
       .map((def) => (def.soft_gate && unlockSoftGates ? [] : def.unlocked_by))
     const unlockingKeySets: PxKeySet[] = cartesian(requiredKeysPerLock).map((keys) =>
@@ -109,7 +109,7 @@ export function usePxChartPathCalculationUnlock(
       Object.entries(unlocking).every(
         ([key, count]) =>
           // locks can be unlocked if keys are present and, if consumable, present at least as many times as required
-          keysInInventory[key] &&
+          keysInInventory[key] !== undefined &&
           (!pxKeyDefinitionsById.value[key]!.consumable ||
             settings.value.ignore_consumable_keys ||
             keysInInventory[key] >= count),
