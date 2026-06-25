@@ -1,15 +1,7 @@
 import type { Edge, Node } from '@vue-flow/core'
 import { getConnectedEdges } from '@vue-flow/core'
-import findIndex from 'lodash.findindex'
 
-import {
-  type PxKeySet,
-  getKeySetFromKeyAssignment,
-  mergePxKeySets,
-  pxKeyInventoriesAreEqual,
-  pxKeySetsAreEqual,
-  filterPxKeySet,
-} from '~/utils/pxkeysets'
+import { type PxKeySet, getKeySetFromKeyAssignment, mergePxKeySets } from '~/utils/pxkeysets'
 
 import type { PxChartPathCalculationResult } from '#imports'
 
@@ -49,10 +41,6 @@ export function usePxChartPathCalculation(
   function findNodeById(id: string) {
     return nodes.value.find((node) => node.id === id)
   }
-
-  const fixedPxKeyDefinitions = computed(() => {
-    return pxKeyDefinitions.value.filter((def) => def.fixed)
-  })
 
   interface QueueNode {
     id: string
@@ -95,11 +83,7 @@ export function usePxChartPathCalculation(
 
     const q: QueueNode[] = [firstQNode]
 
-    function pushIfBetter(
-      newNodeState: QueueNode,
-      previousState: QueueNode,
-      edge?: Edge,
-    ) {
+    function pushIfBetter(newNodeState: QueueNode, previousState: QueueNode, edge?: Edge) {
       const newStateKey = makeStateKey(newNodeState)
       const previousStateKey = makeStateKey(previousState)
 
@@ -137,7 +121,7 @@ export function usePxChartPathCalculation(
         console.log(`Found target node!`)
         found = true
         targetKeyState = makeStateKey(poppedNodeState)
-        previousInventory.value = {...poppedNodeState.keys}
+        previousInventory.value = { ...poppedNodeState.keys }
         //console.log(`previous inventory for real ${JSON.stringify(previousInventory.value)}`)
         break
       }
@@ -211,13 +195,14 @@ export function usePxChartPathCalculation(
           !poppedNodeState.alreadyUnlocked.includes(outEdge.id)
         ) {
           if (canUnlock(currentInventory, outEdge.data.locks)) {
-
             // TODO: Check whether it is permanent/reversible/etc.
             unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
 
             if (!settings.value.ignore_consumable_keys) {
-
-              possibleInventoriesAfterConsumption = removeConsumed([currentInventory], outEdge.data.locks)
+              possibleInventoriesAfterConsumption = removeConsumed(
+                [currentInventory],
+                outEdge.data.locks,
+              )
 
               /*console.log(
                 `consumable after ${JSON.stringify(canonicalizeInventory(possibleInventoriesAfterConsumption))}`,
@@ -229,9 +214,7 @@ export function usePxChartPathCalculation(
               }
             }
           } else if (canUnlock(fixedKeys, outEdge.data.locks)) {
-
             unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
-
           } else {
             // We don't have a key (yet), so add it to locked edges for highlighting (and filtering) later
             allLockedEdges.push(outEdge.id)
@@ -240,7 +223,7 @@ export function usePxChartPathCalculation(
         }
         const distanceToTarget = currentDistance + 1
 
-        possibleInventoriesAfterConsumption.forEach(inventory => {
+        possibleInventoriesAfterConsumption.forEach((inventory) => {
           const newNodeState = {
             id: edgeTarget,
             prio: distanceToTarget,
