@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import PxNodeCardSimple from "~/components/PxComponents/PxNodeCardSimple.vue";
+
 const props = defineProps({
   nodeId: {
     type: String as PropType<string>,
     required: true,
   },
   visualizationStyle: {
-    type: String as PropType<'preview' | 'detailed'>,
+    type: String as PropType<'preview' | 'detailed' | 'simple'>,
     default: 'detailed',
   },
 })
@@ -119,6 +121,20 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
     @add-key="handleAddKey"
     @update="handleUpdate"
   />
+  <PxNodeCardSimple
+      v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
+      :node="fetchedNode"
+      :is-collapsible="false"
+      @delete-component="handleDeleteComponent"
+      @add-component="handleAddComponent"
+      @delete-key="handleDeleteKey"
+      @add-key="handleAddKey"
+      @update="handleUpdate"
+  >
+    <template #bottom-right-buttons>
+      <slot name="bottom-right-buttons" />
+    </template>
+  </PxNodeCardSimple>
 </template>
 
 <style scoped></style>

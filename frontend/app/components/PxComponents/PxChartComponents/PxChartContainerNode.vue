@@ -94,14 +94,25 @@ defineShortcuts({
     <div v-if="pxNode">
       <PxNodeCard
         :node-id="pxNode.id"
-        :visualization-style="'detailed'"
-        :is-collapsible="true"
+        :visualization-style="'simple'"
+        :is-collapsible="false"
         @delete="handleDelete()"
         @switch-node="handleSwitchPxNode()"
         @add-key="handleUpdatePxNode()"
         @delete-key="handleUpdatePxNode()"
         @components-updated="$emit('componentsUpdated')"
-      />
+      >
+        <template #bottom-right-buttons>
+          <UTooltip text="Switch Node">
+            <UButton
+                icon="i-lucide-arrow-right-left"
+                color="secondary"
+                variant="soft"
+                @click="handleSwitchPxNode()"
+            />
+          </UTooltip>
+        </template>
+      </PxNodeCard>
     </div>
 
     <NodeResizer

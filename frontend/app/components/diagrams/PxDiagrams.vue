@@ -37,8 +37,17 @@ type DiagramState = {
 const diagramState = ref<Record<string, DiagramState>>({})
 
 const carousel = useTemplateRef('carousel')
+const showCarousel = ref(true)
+
+function toggleCarousel() {
+  showCarousel.value = !showCarousel.value
+}
 
 async function addDiagramAndShow() {
+  if (!showCarousel.value) {
+    toggleCarousel()
+  }
+
   addItem()
 
   await nextTick()
@@ -145,6 +154,7 @@ const nodeLabels = computed(() => {
 <template>
   <div>
     <UCarousel
+      v-show="showCarousel"
       ref="carousel"
       v-slot="{ item }"
       dots
@@ -174,6 +184,13 @@ const nodeLabels = computed(() => {
     </UCarousel>
     <UTooltip text="Add Diagram">
       <UButton icon="lucide-plus" class="m-2" @click="addDiagramAndShow" />
+    </UTooltip>
+    <UTooltip v-if="diagrams.length > 0" text="showCarousel ? 'Hide diagrams' : 'Show diagrams'">
+      <UButton
+          :icon="showCarousel ? 'lucide-eye-off' : 'lucide-eye'"
+          variant="ghost"
+          @click="toggleCarousel"
+      />
     </UTooltip>
   </div>
 </template>
