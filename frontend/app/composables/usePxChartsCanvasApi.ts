@@ -202,7 +202,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       return
     } else {
       const containerId = await addContainer(
-        _pxNodes.value.filter((node) => node.id === nodeId)[0].name,
+        _pxNodes.value.filter((node) => node.id === nodeId)[0]?.name ?? 'New Container',
         position_x,
         position_y,
       )
