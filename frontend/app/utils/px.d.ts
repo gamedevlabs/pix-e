@@ -85,6 +85,7 @@ interface PxChartEdge {
   target: string
   targetHandle: string
   locks: PxLock[]
+  bidirectional: boolean
   created_at: string
   updated_at: string
   owner: number | null

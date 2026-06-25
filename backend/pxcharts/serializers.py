@@ -128,19 +128,21 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
             "target",
             "targetHandle",
             "locks",
+            "bidirectional",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, data):
+        print(str(data))
         chart_id = self.context["view"].kwargs.get("px_chart_pk")
 
-        if str(data["source"].px_chart_id) != chart_id:
+        if "source" in data and str(data["source"].px_chart_id) != chart_id:
             raise serializers.ValidationError(
                 "Source container does not belong to the chart."
             )
-        if str(data["target"].px_chart_id) != chart_id:
+        if "target" in data and str(data["target"].px_chart_id) != chart_id:
             raise serializers.ValidationError(
                 "Target container does not belong to the chart."
             )

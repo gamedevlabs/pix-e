@@ -63,6 +63,7 @@ const {
   deleteEdge,
   updateLocksOnEdge,
   getKeysForNode,
+  changeEdgeDirectionality,
 } = usePxChartsCanvasApi(chartId)
 
 const {
@@ -460,6 +461,13 @@ async function handleEditSettings() {
     .open({ chartId: chartId, settings: settings.value })
     .result.then(async () => await loadChartSettingsForUser())
 }
+
+async function handleChangeEdgeDirectionality() {
+  if (!getSelectedEdges.value.length) return
+
+  const selectedEdge = getSelectedEdges.value[0]!
+  await changeEdgeDirectionality(selectedEdge.id)
+}
 </script>
 
 <template>
@@ -472,12 +480,14 @@ async function handleEditSettings() {
 
   <PxChartToolbar
     :menu-snap-to-grid="menuSnapToGrid"
-    :single-edge-selected="getSelectedEdges.length === 1"
+    :selected-edges="getSelectedEdges"
+    :chart-id="chartId"
     @add-existing-node="handleAddContainerFromPanel(false, false)"
     @add-new-node="handleAddContainerFromPanel(true, false)"
     @toggle-snap-to-grid="handleToggleSnapToGrid()"
     @edit-settings="handleEditSettings()"
     @edit-locks="handleEditLocks()"
+    @change-edge-directionality="handleChangeEdgeDirectionality()"
   >
     <template #right>
       <!-- Context Strategy Analysis Button -->
