@@ -6,9 +6,10 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement,
   CategoryScale,
   LinearScale,
+  LineElement,
+  PointElement,
 } from 'chart.js'
 
 import {
@@ -18,7 +19,15 @@ import {
 } from './DiagramOptions'
 import { type NodeData, initColorIterator } from './DiagramUtils'
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale, LinearScale)
+ChartJS.register(
+    Title,
+    Tooltip,
+    Legend,
+    CategoryScale,
+    LinearScale,
+    LineElement,
+    PointElement,
+)
 
 const props = defineProps({
   nodeData: {
@@ -89,6 +98,15 @@ const selectedDefinitionsY = defineModel<string[]>('selectedDefinitionsY', {
   default: () => [],
 })
 
+const chartKey = computed(() =>
+    JSON.stringify({
+      data: props.nodeData,
+      labels: props.nodeLabels,
+      x: selectedDefinitionsX.value,
+      y: selectedDefinitionsY.value,
+    }),
+)
+
 async function handleDefinitionSelectionX(selection: string) {
   selectedXLabel.value = selection
 
@@ -135,7 +153,6 @@ function emitDelete() {
               class="w-full"
               placeholder="Select Components"
               multiple
-              :v-model="undefined"
               :items="numericalComponentDefinitionNames"
               :ui="{ content: 'min-w-fit' }"
               :content="{ align: 'start', side: 'right', sideOffset: 8 }"
@@ -163,11 +180,13 @@ function emitDelete() {
     <div class="relative mx-auto w-full min-h-l">
       <Line
         v-if="data && data.datasets[0]?.data.some((v: NodeData) => !!v) && selectedDefinitionsX"
+        :key="`linear-${chartKey}`"
         :data="data"
         :options="lineLinearOptions"
       />
       <Line
         v-else-if="data && data.datasets[0]?.data.some((v: NodeData) => !!v)"
+        :key="`category-${chartKey}`"
         :data="data"
         :options="lineCategoryOptions"
       />

@@ -463,6 +463,10 @@ async function handleEditSettings() {
     .result.then(async () => await loadChartSettingsForUser())
 }
 
+async function handleComponentsUpdated() {
+  await fetchPxComponents()
+}
+
 async function handleChangeEdgeDirectionality() {
   if (!getSelectedEdges.value.length) return
 
@@ -481,44 +485,44 @@ async function handleChangeEdgeDirectionality() {
   />
   -->
   <div class="h-full flex flex-col min-h-0">
-  <PxChartToolbar
-    :menu-snap-to-grid="menuSnapToGrid"
-    :selected-edges="getSelectedEdges"
-    :chart-id="chartId"
-    @add-existing-node="handleAddContainerFromPanel(false, false)"
-    @add-new-node="handleAddContainerFromPanel(true, false)"
-    @toggle-snap-to-grid="handleToggleSnapToGrid()"
-    @edit-settings="handleEditSettings()"
-    @edit-locks="handleEditLocks()"
-    @change-edge-directionality="handleChangeEdgeDirectionality()"
-  >
-    <template #right>
-      <!-- Context Strategy Analysis Button -->
-      <div class="flex flex-col items-end gap-2">
-        <div class="flex items-center gap-2">
-          <USelect
-            v-model="precomputeScope"
-            :items="precomputeScopeOptions"
-            value-key="value"
-            label-key="label"
-            size="sm"
-            :disabled="true"
-          />
-          <USelect
-            v-model="precomputeStrategy"
-            :items="precomputeStrategyOptions"
-            value-key="value"
-            label-key="label"
-            size="sm"
-            :disabled="true"
-          />
-          <UButton
-            size="sm"
-            icon="i-heroicons-cog-6-tooth"
-            color="primary"
-            :loading="precomputeLoading"
-            :disabled="true"
-            @click="handlePrecomputeArtifacts"
+    <PxChartToolbar
+      :menu-snap-to-grid="menuSnapToGrid"
+      :selected-edges="getSelectedEdges"
+      :chart-id="chartId"
+      @add-existing-node="handleAddContainerFromPanel(false, false)"
+      @add-new-node="handleAddContainerFromPanel(true, false)"
+      @toggle-snap-to-grid="handleToggleSnapToGrid()"
+      @edit-settings="handleEditSettings()"
+      @edit-locks="handleEditLocks()"
+      @change-edge-directionality="handleChangeEdgeDirectionality()"
+    >
+      <template #right>
+        <!-- Context Strategy Analysis Button -->
+        <div class="flex flex-col items-end gap-2">
+          <div class="flex items-center gap-2">
+            <USelect
+              v-model="precomputeScope"
+              :items="precomputeScopeOptions"
+              value-key="value"
+              label-key="label"
+              size="sm"
+              :disabled="true"
+            />
+            <USelect
+              v-model="precomputeStrategy"
+              :items="precomputeStrategyOptions"
+              value-key="value"
+              label-key="label"
+              size="sm"
+              :disabled="true"
+            />
+            <UButton
+              size="sm"
+              icon="i-heroicons-cog-6-tooth"
+              color="primary"
+              :loading="precomputeLoading"
+              :disabled="true"
+              @click="handlePrecomputeArtifacts"
             >
               Precompute Artifacts
             </UButton>
@@ -625,6 +629,7 @@ async function handleChangeEdgeDirectionality() {
           @switch-px-node="handleSwitchPxNode"
           @delete="handleDeletePxGraphContainer"
           @update-px-node="(containerId, nodeId) => handleEditPxNode(containerId, nodeId)"
+          @components-updated="handleComponentsUpdated"
         />
       </template>
     </VueFlow>

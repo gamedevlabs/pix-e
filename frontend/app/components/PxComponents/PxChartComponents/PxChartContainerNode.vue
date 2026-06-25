@@ -7,6 +7,7 @@ const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
   (e: 'delete' | 'switchPxNode', id: string): void
   (e: 'updatePxNode', containerId: string, pxNodeId: string): void
+  (e: 'componentsUpdated'): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
@@ -99,6 +100,7 @@ defineShortcuts({
         @switch-node="handleSwitchPxNode()"
         @add-key="handleUpdatePxNode()"
         @delete-key="handleUpdatePxNode()"
+        @components-updated="$emit('componentsUpdated')"
       />
     </div>
 
