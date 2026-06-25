@@ -75,16 +75,13 @@ export function usePxChartPathCalculation(
       await fetchPxKeyDefinitions()
     }
 
-    const firstNodeKeys = getKeySetFromKeyAssignment(getKeysInNode(sourceId))
-    const firstNodeInventory = mergePxKeySets(initialInventory, firstNodeKeys)
-
     const firstQNode = {
       id: sourceId,
       prio: 0,
-      keys: firstNodeInventory,
+      keys: initialInventory,
       name: findNodeById(sourceId)?.data.name ?? sourceId,
       alreadyUnlocked: [],
-      alreadyCollected: Object.keys(firstNodeKeys).length > 0 ? [sourceId] : [],
+      alreadyCollected: [],
     }
 
     const dist = new Map<string, number>()
@@ -154,13 +151,22 @@ export function usePxChartPathCalculation(
       const currentDistance = dist.get(makeStateKey(poppedNodeState))!
 
       const keySet = getKeySetFromKeyAssignment(getKeysInNode(poppedNodeState.id))
+      const entries = Object.entries(keySet)
+
+      const fixedKeys = Object.fromEntries(
+        entries.filter(([keyDef]) => pxKeyDefinitionsById.value[keyDef]!.fixed),
+      )
+
+      const nonFixedKeys = Object.fromEntries(
+        entries.filter(([keyDef]) => !pxKeyDefinitionsById.value[keyDef]!.fixed),
+      )
 
       if (
-        Object.keys(keySet).length > 0 &&
+        Object.keys(nonFixedKeys).length > 0 &&
         !poppedNodeState.alreadyCollected.includes(poppedNodeState.id)
       ) {
         const currentInventory = { ...poppedNodeState.keys }
-        const newInventory = mergePxKeySets(currentInventory, keySet)
+        const newInventory = mergePxKeySets(currentInventory, nonFixedKeys)
 
         /*console.log(
           `consumable: collecting new key set before ${JSON.stringify(currentInventory)} after ${JSON.stringify(newInventory)} in ${poppedNodeState.name}`,
@@ -222,6 +228,10 @@ export function usePxChartPathCalculation(
                 result.value.softLocked.push(edgeTarget)
               }
             }
+          } else if (canUnlock(fixedKeys, outEdge.data.locks)) {
+
+            unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
+
           } else {
             // We don't have a key (yet), so add it to locked edges for highlighting (and filtering) later
             allLockedEdges.push(outEdge.id)
@@ -293,12 +303,6 @@ export function usePxChartPathCalculation(
       unlocked: [...new Set(qNode.alreadyUnlocked)].sort(),
       collected: [...new Set(qNode.alreadyCollected)].sort(),
     })
-  }
-
-  function canonicalizeInventory(inventory: PxKeySet[]) {
-    return inventory
-      .map(canonicalizeKeySet)
-      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
   }
 
   function canonicalizeKeySet(keyset: PxKeySet): PxKeySet {
