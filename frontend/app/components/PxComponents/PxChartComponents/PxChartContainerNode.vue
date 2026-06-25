@@ -105,10 +105,10 @@ defineShortcuts({
         <template #bottom-right-buttons>
           <UTooltip text="Switch Node">
             <UButton
-                icon="i-lucide-arrow-right-left"
-                color="secondary"
-                variant="soft"
-                @click="handleSwitchPxNode()"
+              icon="i-lucide-arrow-right-left"
+              color="secondary"
+              variant="soft"
+              @click="handleSwitchPxNode()"
             />
           </UTooltip>
         </template>
@@ -141,10 +141,10 @@ defineShortcuts({
 }
 
 .px-node::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -16px; /* expand hover area by 16px on all sides */
-  z-index: -1
+  z-index: -1;
 }
 
 .px-node-handle {
@@ -157,11 +157,11 @@ defineShortcuts({
   opacity: 0;
   pointer-events: none;
 
-  transition: all .15s ease;
+  transition: all 0.15s ease;
 }
 
 .px-node-handle::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: -16px;
 }
@@ -175,5 +175,4 @@ defineShortcuts({
 .px-node-handle:hover {
   background: var(--ui-primary);
 }
-
 </style>

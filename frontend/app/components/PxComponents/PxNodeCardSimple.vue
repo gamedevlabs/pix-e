@@ -12,9 +12,9 @@ const emit = defineEmits<{
   (e: 'update', updatedNode: PxNode): void
   (e: 'delete', nodeId: string): void
   (
-      e: 'deleteComponent' | 'addComponent' | 'deleteKey' | 'addKey',
-      nodeId: string,
-      componentId: string,
+    e: 'deleteComponent' | 'addComponent' | 'deleteKey' | 'addKey',
+    nodeId: string,
+    componentId: string,
   ): void
   (e: 'switchNode'): void
 }>()
@@ -187,9 +187,9 @@ async function handleAddKey() {
 <template>
   <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback || !isCollapsible)">
     <UCard
-        variant="outline"
-        class="transition-all group-hover:ring group-hover:ring-primary group-hover:shadow-lg"
-        @dblclick.stop="onDbClick()"
+      variant="outline"
+      class="transition-all group-hover:ring group-hover:ring-primary group-hover:shadow-lg"
+      @dblclick.stop="onDbClick()"
     >
       <template #header>
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
@@ -210,14 +210,14 @@ async function handleAddKey() {
             <h2 class="font-semibold text-lg mb-2">Components</h2>
             <section class="flex flex-wrap gap-4">
               <div
-                  v-for="component in node.components"
-                  :key="component.id"
-                  @dblclick="$event.stopPropagation()"
+                v-for="component in node.components"
+                :key="component.id"
+                @dblclick="$event.stopPropagation()"
               >
                 <PxComponentCard
-                    visualization-style="preview"
-                    :component="component"
-                    @delete="handleDeleteComponent"
+                  visualization-style="preview"
+                  :component="component"
+                  @delete="handleDeleteComponent"
                 />
               </div>
             </section>
@@ -241,14 +241,14 @@ async function handleAddKey() {
               <div class="flex items-center gap-2 mb-2">
                 <span class="text-sm text-gray-600 dark:text-gray-400">Coherence Score:</span>
                 <UBadge
-                    :color="
+                  :color="
                     llmFeedback.overall_coherence_score >= 7
                       ? 'success'
                       : llmFeedback.overall_coherence_score >= 4
                         ? 'warning'
                         : 'error'
                   "
-                    variant="solid"
+                  variant="solid"
                 >
                   {{ llmFeedback.overall_coherence_score }}/10
                 </UBadge>
@@ -259,12 +259,12 @@ async function handleAddKey() {
             <!-- Show issues list -->
             <div v-for="(issue, index) in llmFeedback?.issues" :key="index">
               <UAlert
-                  class="mb-2"
-                  variant="subtle"
-                  :color="issue.severity >= 3 ? 'error' : 'warning'"
-                  :title="issue.title"
-                  :description="`${issue.description} (Severity: ${issue.severity})`"
-                  :actions="[
+                class="mb-2"
+                variant="subtle"
+                :color="issue.severity >= 3 ? 'error' : 'warning'"
+                :title="issue.title"
+                :description="`${issue.description} (Severity: ${issue.severity})`"
+                :actions="[
                   {
                     label: 'Dismiss',
                     color: 'warning',
@@ -276,16 +276,16 @@ async function handleAddKey() {
               />
               <!-- Related components -->
               <div
-                  v-if="issue.related_components.length > 0"
-                  class="ml-4 mb-2 flex flex-wrap gap-1"
+                v-if="issue.related_components.length > 0"
+                class="ml-4 mb-2 flex flex-wrap gap-1"
               >
                 <span class="text-xs text-gray-500">Related components:</span>
                 <UBadge
-                    v-for="comp in issue.related_components"
-                    :key="comp"
-                    color="neutral"
-                    variant="subtle"
-                    size="xs"
+                  v-for="comp in issue.related_components"
+                  :key="comp"
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
                 >
                   {{ comp }}
                 </UBadge>
@@ -294,12 +294,12 @@ async function handleAddKey() {
 
             <!-- Single "Fix All Issues" button (only show if there are issues) -->
             <UButton
-                v-if="(llmFeedback?.issues?.length ?? 0) > 0"
-                class="mt-3 w-full"
-                color="primary"
-                icon="i-heroicons-sparkles"
-                label="Fix All Issues with AI"
-                @click="openFixModal"
+              v-if="(llmFeedback?.issues?.length ?? 0) > 0"
+              class="mt-3 w-full"
+              color="primary"
+              icon="i-heroicons-sparkles"
+              label="Fix All Issues with AI"
+              @click="openFixModal"
             />
           </div>
         </div>
@@ -310,10 +310,10 @@ async function handleAddKey() {
         <div v-if="!isBeingEdited" @dblclick="$event.stopPropagation()">
           <!--collapsed-->
           <div
-              v-if="isCollapsed && isCollapsible"
-              class="flex justify-center"
-              style="padding: -5px; margin: -5px; cursor: default"
-              @click="toggleCollapsed()"
+            v-if="isCollapsed && isCollapsible"
+            class="flex justify-center"
+            style="padding: -5px; margin: -5px; cursor: default"
+            @click="toggleCollapsed()"
           >
             <Icon name="heroicons:chevron-down-20-solid" class="size-5" />
           </div>
@@ -325,11 +325,11 @@ async function handleAddKey() {
               <div class="justify-self-start">
                 <UTooltip text="Check with AI">
                   <UButton
-                      icon="i-lucide-sparkles"
-                      color="warning"
-                      variant="soft"
-                      :loading="isValidating"
-                      @click="handleValidation"
+                    icon="i-lucide-sparkles"
+                    color="warning"
+                    variant="soft"
+                    :loading="isValidating"
+                    @click="handleValidation"
                   />
                 </UTooltip>
               </div>
@@ -338,33 +338,32 @@ async function handleAddKey() {
               <div class="flex justify-center gap-2">
                 <UTooltip text="Add Component">
                   <UButton
-                      icon="i-lucide-component"
-                      color="primary"
-                      variant="soft"
-                      @click="handleAddComponent"
+                    icon="i-lucide-component"
+                    color="primary"
+                    variant="soft"
+                    @click="handleAddComponent"
                   />
                 </UTooltip>
                 <UTooltip text="Add Key">
                   <UButton
-                      icon="i-lucide-key-round"
-                      color="primary"
-                      variant="soft"
-                      @click="handleAddKey"
+                    icon="i-lucide-key-round"
+                    color="primary"
+                    variant="soft"
+                    @click="handleAddKey"
                   />
                 </UTooltip>
               </div>
 
               <!-- Right aligned -->
               <div class="flex justify-self-end gap-2">
-
                 <slot name="bottom-right-buttons" />
 
                 <UTooltip text="Edit">
                   <UButton
-                      icon="i-lucide-square-pen"
-                      color="secondary"
-                      variant="soft"
-                      @click="startEdit"
+                    icon="i-lucide-square-pen"
+                    color="secondary"
+                    variant="soft"
+                    @click="startEdit"
                   />
                 </UTooltip>
 
@@ -376,9 +375,9 @@ async function handleAddKey() {
 
             <!-- Second row -->
             <div
-                v-if="isCollapsible"
-                class="flex justify-center pt-4 cursor-default"
-                @click="toggleCollapsed()"
+              v-if="isCollapsible"
+              class="flex justify-center pt-4 cursor-default"
+              @click="toggleCollapsed()"
             >
               <Icon name="heroicons:chevron-up-20-solid" class="size-5" />
             </div>

@@ -19,15 +19,7 @@ import {
 } from './DiagramOptions'
 import { type NodeData, initColorIterator } from './DiagramUtils'
 
-ChartJS.register(
-    Title,
-    Tooltip,
-    Legend,
-    CategoryScale,
-    LinearScale,
-    LineElement,
-    PointElement,
-)
+ChartJS.register(Title, Tooltip, Legend, CategoryScale, LinearScale, LineElement, PointElement)
 
 const props = defineProps({
   nodeData: {
@@ -99,12 +91,12 @@ const selectedDefinitionsY = defineModel<string[]>('selectedDefinitionsY', {
 })
 
 const chartKey = computed(() =>
-    JSON.stringify({
-      data: props.nodeData,
-      labels: props.nodeLabels,
-      x: selectedDefinitionsX.value,
-      y: selectedDefinitionsY.value,
-    }),
+  JSON.stringify({
+    data: props.nodeData,
+    labels: props.nodeLabels,
+    x: selectedDefinitionsX.value,
+    y: selectedDefinitionsY.value,
+  }),
 )
 
 async function handleDefinitionSelectionX(selection: string) {

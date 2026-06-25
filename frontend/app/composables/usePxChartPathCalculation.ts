@@ -264,8 +264,7 @@ export function usePxChartPathCalculation(
         const prevKey = prev.get(current)
         const prevState = prevKey ? states.get(prevKey) : undefined
 
-        const isGhostConnection =
-          prevState && prevState.id === state.id
+        const isGhostConnection = prevState && prevState.id === state.id
 
         if (!isGhostConnection) {
           seq.push(state.id)

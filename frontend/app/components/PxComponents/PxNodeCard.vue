@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PxNodeCardSimple from "~/components/PxComponents/PxNodeCardSimple.vue";
+import PxNodeCardSimple from '~/components/PxComponents/PxNodeCardSimple.vue'
 
 const props = defineProps({
   nodeId: {
@@ -26,8 +26,7 @@ const { fetchById: fetchPxKeyById } = usePxKeys()
 // TODO: figure out what "addForeign" is supposed to do and clean up emits
 const emit = defineEmits<{
   (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
-  (e: 'addComponent' | 'addKey' | 'deleteKey'): void
-  (e: 'componentsUpdated'): void
+  (e: 'addComponent' | 'addKey' | 'deleteKey' | 'componentsUpdated'): void
 }>()
 
 onMounted(() => {
@@ -122,14 +121,14 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
     @update="handleUpdate"
   />
   <PxNodeCardSimple
-      v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
-      :node="fetchedNode"
-      :is-collapsible="false"
-      @delete-component="handleDeleteComponent"
-      @add-component="handleAddComponent"
-      @delete-key="handleDeleteKey"
-      @add-key="handleAddKey"
-      @update="handleUpdate"
+    v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
+    :node="fetchedNode"
+    :is-collapsible="false"
+    @delete-component="handleDeleteComponent"
+    @add-component="handleAddComponent"
+    @delete-key="handleDeleteKey"
+    @add-key="handleAddKey"
+    @update="handleUpdate"
   >
     <template #bottom-right-buttons>
       <slot name="bottom-right-buttons" />

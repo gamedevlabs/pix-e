@@ -185,11 +185,11 @@ const nodeLabels = computed(() => {
     <UTooltip text="Add Diagram">
       <UButton icon="lucide-plus" class="m-2" @click="addDiagramAndShow" />
     </UTooltip>
-    <UTooltip v-if="diagrams.length > 0" text="showCarousel ? 'Hide diagrams' : 'Show diagrams'">
+    <UTooltip v-if="diagrams.length > 0" :text="showCarousel ? 'Hide diagrams' : 'Show diagrams'">
       <UButton
-          :icon="showCarousel ? 'lucide-eye-off' : 'lucide-eye'"
-          variant="ghost"
-          @click="toggleCarousel"
+        :icon="showCarousel ? 'lucide-eye-off' : 'lucide-eye'"
+        variant="ghost"
+        @click="toggleCarousel"
       />
     </UTooltip>
   </div>
