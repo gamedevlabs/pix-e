@@ -188,7 +188,7 @@ async function handleAddKey() {
   <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback || !isCollapsible)">
     <UCard
       variant="outline"
-      class="transition-all hover:ring hover:ring-primary hover:shadow-lg"
+      class="transition-all group-hover:ring group-hover:ring-primary group-hover:shadow-lg"
       @dblclick.stop="onDbClick()"
     >
       <template #header>
