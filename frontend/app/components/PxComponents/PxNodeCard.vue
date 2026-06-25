@@ -10,6 +10,10 @@ const props = defineProps({
     type: String as PropType<'preview' | 'detailed' | 'simple'>,
     default: 'detailed',
   },
+  showContextMenu: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const {
@@ -124,6 +128,7 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
     v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
     :node="fetchedNode"
     :is-collapsible="false"
+    :show-context-menu="showContextMenu"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
     @delete-key="handleDeleteKey"

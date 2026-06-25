@@ -96,6 +96,7 @@ defineShortcuts({
         :node-id="pxNode.id"
         :visualization-style="'simple'"
         :is-collapsible="false"
+        :show-context-menu="true"
         @delete="handleDelete()"
         @switch-node="handleSwitchPxNode()"
         @add-key="handleUpdatePxNode()"

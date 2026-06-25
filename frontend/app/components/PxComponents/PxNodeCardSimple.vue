@@ -6,6 +6,7 @@ import type { ContextMenuItem } from '#ui/components/ContextMenu.vue'
 const props = defineProps<{
   node: PxNode
   isCollapsible: boolean
+  showContextMenu: boolean
 }>()
 
 const emit = defineEmits<{
@@ -185,7 +186,7 @@ async function handleAddKey() {
 </script>
 
 <template>
-  <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback || !isCollapsible)">
+  <UContextMenu :items="menuItems" :disabled="!!(isBeingEdited || llmFeedback || !showContextMenu)">
     <UCard
       variant="outline"
       class="transition-all group-hover:ring group-hover:ring-primary group-hover:shadow-lg"
