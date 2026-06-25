@@ -261,14 +261,21 @@ export function usePxChartPathCalculation(
           break
         }
 
-        seq.push(state.id)
+        const prevKey = prev.get(current)
+        const prevState = prevKey ? states.get(prevKey) : undefined
 
-        const edge = prevEdges.get(current)
-        if (edge) {
-          seqEdges.push(edge)
+        const isGhostConnection = prevState && prevState.id === state.id
+
+        if (!isGhostConnection) {
+          seq.push(state.id)
+
+          const edge = prevEdges.get(current)
+          if (edge) {
+            seqEdges.push(edge)
+          }
         }
 
-        current = prev.get(current)
+        current = prevKey
       }
     }
 

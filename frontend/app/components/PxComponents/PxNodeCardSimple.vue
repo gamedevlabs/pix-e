@@ -202,44 +202,34 @@ async function handleAddKey() {
 
       <template #default>
         <div v-if="!isBeingEdited">
-          <h2 class="font-semibold text-lg mb-2">Description</h2>
           <p>{{ props.node.description }}</p>
-          <USeparator class="mt-6" />
-          <br />
-          <h2 v-if="node.components.length === 0" class="italic">This node has no components.</h2>
-          <h2 v-else class="font-semibold text-lg mb-2">Components</h2>
-          <section class="flex flex-wrap gap-4">
-            <div
-              v-for="component in node.components"
-              :key="component.id"
-              @dblclick="$event.stopPropagation()"
-            >
-              <PxComponentCard
-                visualization-style="preview"
-                :component="component"
-                @delete="handleDeleteComponent"
-              />
-            </div>
-          </section>
-          <USeparator class="mt-6" />
-          <br />
-          <h2 v-if="node.keys.length === 0" class="italic">This node has no keys.</h2>
-          <h2 v-else class="font-semibold text-lg mb-2">Keys</h2>
-          <section class="flex flex-wrap gap-4">
-            <div v-for="pxKey in node.keys" :key="pxKey.id">
-              <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
-            </div>
-          </section>
-          <USeparator class="mt-6" />
-          <br />
-          <h2 v-if="node.charts.length === 0" class="italic">
-            This node is not associated to any charts.
-          </h2>
-          <div v-else>
-            <h2 class="font-semibold text-lg mb-2">Associated Charts</h2>
-            <section class="grid grid-cols-1 gap-6">
-              <div v-for="chart in node.charts" :key="chart.id">
-                <PxChartCard :px-chart="chart" :visualization-style="'preview'" />
+
+          <div v-if="node.components.length !== 0">
+            <USeparator class="mt-6" />
+            <br />
+            <h2 class="font-semibold text-lg mb-2">Components</h2>
+            <section class="flex flex-wrap gap-4">
+              <div
+                v-for="component in node.components"
+                :key="component.id"
+                @dblclick="$event.stopPropagation()"
+              >
+                <PxComponentCard
+                  visualization-style="preview"
+                  :component="component"
+                  @delete="handleDeleteComponent"
+                />
+              </div>
+            </section>
+          </div>
+
+          <div v-if="node.keys.length !== 0">
+            <USeparator class="mt-6" />
+            <br />
+            <h2 class="font-semibold text-lg mb-2">Keys</h2>
+            <section class="flex flex-wrap gap-4">
+              <div v-for="pxKey in node.keys" :key="pxKey.id">
+                <PxKeyCard visualization-style="preview" :pxkey="pxKey" @delete="handleDeleteKey" />
               </div>
             </section>
           </div>
@@ -366,23 +356,14 @@ async function handleAddKey() {
 
               <!-- Right aligned -->
               <div class="flex justify-self-end gap-2">
+                <slot name="bottom-right-buttons" />
+
                 <UTooltip text="Edit">
                   <UButton
                     icon="i-lucide-square-pen"
                     color="secondary"
                     variant="soft"
                     @click="startEdit"
-                  />
-                </UTooltip>
-                <UTooltip text="Switch Node">
-                  <!-- TODO: nodes should not know about switching nodes. this can be handled with a vue slot
-                   vue slots allow us to inject buttons from the parent -->
-                  <UButton
-                    v-if="isCollapsible"
-                    icon="i-lucide-arrow-right-left"
-                    color="secondary"
-                    variant="soft"
-                    @click="handleSwitchNode()"
                   />
                 </UTooltip>
 
