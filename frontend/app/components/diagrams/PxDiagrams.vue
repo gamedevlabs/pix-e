@@ -28,14 +28,49 @@ const props = defineProps({
 })
 
 const diagrams = ref(new Array<string>())
+type DiagramState = {
+  selectedXLabel: string
+  selectedDefinitionsX: string
+  selectedDefinitionsY: string[]
+}
+
+const diagramState = ref<Record<string, DiagramState>>({})
+
+const carousel = useTemplateRef('carousel')
+const showCarousel = ref(true)
+
+function toggleCarousel() {
+  showCarousel.value = !showCarousel.value
+}
+
+async function addDiagramAndShow() {
+  if (!showCarousel.value) {
+    toggleCarousel()
+  }
+
+  addItem()
+
+  await nextTick()
+
+  carousel.value?.emblaApi?.scrollTo(diagrams.value.length - 1)
+}
 
 function addItem() {
   const newUuid = v4()
   diagrams.value.push(newUuid)
+
+  diagramState.value[newUuid] = {
+    selectedXLabel: 'Nodes',
+    selectedDefinitionsX: '',
+    selectedDefinitionsY: [],
+  }
 }
 
 async function deleteDiagram(deleteId: string) {
   diagrams.value = diagrams.value.filter((id) => id != deleteId)
+
+  const { [deleteId]: _, ...remaining } = diagramState.value
+  diagramState.value = remaining
 }
 
 const dummyNode: PxNode = {
@@ -118,23 +153,45 @@ const nodeLabels = computed(() => {
 
 <template>
   <div>
-    <UCollapsible :unmount-on-hide="false" class="flex flex-col gap-6">
-      <UButton label="Show Diagrams" variant="subtle" trailing-icon="i-lucide-chevron-down" block />
-      <template #content>
-        <DiagramCardSection use-add-button @add-clicked="addItem">
-          <div v-for="d in diagrams" :key="d">
-            <PxLineDiagram
-              :node-data="allData"
-              :node-labels="nodeLabels"
-              :px-component-definitions="pxComponentDefinitions"
-              show-edit
-              show-delete
-              @delete="deleteDiagram(d)"
-            />
-          </div>
-        </DiagramCardSection>
-      </template>
-    </UCollapsible>
+    <UCarousel
+      v-show="showCarousel"
+      ref="carousel"
+      v-slot="{ item }"
+      dots
+      :items="diagrams"
+      class="w-full max-w-xl mx-auto"
+      :ui="{
+        viewport: 'overflow-hidden',
+        container: 'items-end',
+        item: 'basis-full shrink-0 grow-0',
+      }"
+    >
+      <div :key="item" class="w-xl max-w-full mx-auto p-2">
+        <PxLineDiagram
+          :key="item"
+          v-model:selected-x-label="diagramState[item].selectedXLabel"
+          v-model:selected-definitions-x="diagramState[item].selectedDefinitionsX"
+          v-model:selected-definitions-y="diagramState[item].selectedDefinitionsY"
+          :node-data="allData"
+          :node-labels="nodeLabels"
+          :px-component-definitions="pxComponentDefinitions"
+          :diagram-id="item"
+          show-edit
+          show-delete
+          @delete="deleteDiagram"
+        />
+      </div>
+    </UCarousel>
+    <UTooltip text="Add Diagram">
+      <UButton icon="lucide-plus" class="m-2" @click="addDiagramAndShow" />
+    </UTooltip>
+    <UTooltip v-if="diagrams.length > 0" :text="showCarousel ? 'Hide diagrams' : 'Show diagrams'">
+      <UButton
+        :icon="showCarousel ? 'lucide-eye-off' : 'lucide-eye'"
+        variant="ghost"
+        @click="toggleCarousel"
+      />
+    </UTooltip>
   </div>
 </template>
 

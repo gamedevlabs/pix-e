@@ -1,5 +1,3 @@
-import { useApi } from './useApi'
-
 export function useAuthentication() {
   const { apiFetch } = useApi()
   const user = useState<User | null>('auth-user', () => null)
@@ -7,6 +5,8 @@ export function useAuthentication() {
   const checkedLogin = useState<boolean>('checkedLogin', () => false)
   const router = useRouter()
   const { addLog } = useSessionLog()
+  const llmStore = useLLM()
+  const route = useRoute()
 
   async function register(username: string, password: string): Promise<boolean> {
     // log registration start
@@ -15,7 +15,6 @@ export function useAuthentication() {
       await apiFetch('/api/accounts/register/', {
         method: 'POST',
         body: { username: username, password: password },
-        credentials: 'include',
       })
       return await login(username, password)
     } catch {
@@ -32,8 +31,6 @@ export function useAuthentication() {
       await apiFetch('/api/accounts/login/', {
         method: 'POST',
         body: { username: username, password: password },
-        credentials: 'include',
-        headers: useRequestHeaders(['cookie']),
       })
       const success = await checkAuthentication()
       if (!success) {
@@ -43,7 +40,7 @@ export function useAuthentication() {
         })
         return false
       }
-      const route = useRoute()
+      await llmStore.refreshModels()
       const redirectTo = (route.query.redirect as string) || '/'
       await router.push(redirectTo)
       // log login success
@@ -63,11 +60,8 @@ export function useAuthentication() {
   async function checkAuthentication(): Promise<boolean> {
     try {
       checkedLogin.value = true
-      user.value = await apiFetch<User>('/api/accounts/me/', {
-        method: 'GET',
-        credentials: 'include',
-        headers: useRequestHeaders(['cookie']),
-      })
+      user.value = await apiFetch<User>('/api/accounts/me/')
+      await llmStore.refreshModels()
       return true
     } catch {
       user.value = null
@@ -84,10 +78,6 @@ export function useAuthentication() {
     try {
       await apiFetch('/api/accounts/logout/', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': useCookie('csrftoken').value,
-        } as HeadersInit,
       })
       user.value = null
       await router.push('/')

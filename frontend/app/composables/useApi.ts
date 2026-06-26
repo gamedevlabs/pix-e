@@ -8,7 +8,7 @@ export const useApi = () => {
     ? config.apiUrl || 'http://backend-dev:8000'
     : config.public.apiBase
 
-  const { addLog } = useSessionLog()
+  const { addLog, getSessionId } = useSessionLog()
 
   const apiFetch = $fetch.create({
     baseURL: baseURL as string,
@@ -25,6 +25,10 @@ export const useApi = () => {
 
     onRequest({ options }) {
       options.headers = new Headers(options.headers || {})
+      const sessionId = getSessionId()
+      if (sessionId) {
+        options.headers.set('X-Pixe-Session-Id', sessionId)
+      }
 
       if (csrfToken.value) {
         options.headers.set('X-CSRFToken', csrfToken.value)
@@ -41,6 +45,10 @@ export const useApi = () => {
       new Headers(options.headers).forEach((value, key) => {
         mergedHeaders.set(key, value)
       })
+    }
+    const sessionId = getSessionId()
+    if (sessionId) {
+      mergedHeaders.set('X-Pixe-Session-Id', sessionId)
     }
     if (csrfToken.value) {
       mergedHeaders.set('X-CSRFToken', csrfToken.value)
@@ -64,9 +72,15 @@ export const useApi = () => {
     return response.body
   }
 
+  function apiUrl(path: string) {
+    return `${baseURL}${path}`
+  }
+
   return {
     apiFetch,
     apiFetchStream,
     baseURL,
+    csrfToken,
+    apiUrl,
   }
 }

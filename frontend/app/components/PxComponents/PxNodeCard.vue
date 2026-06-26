@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import PxNodeCardSimple from '~/components/PxComponents/PxNodeCardSimple.vue'
+
 const props = defineProps({
   nodeId: {
     type: String as PropType<string>,
     required: true,
   },
   visualizationStyle: {
-    type: String as PropType<'preview' | 'detailed'>,
+    type: String as PropType<'preview' | 'detailed' | 'simple'>,
     default: 'detailed',
+  },
+  showContextMenu: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -17,12 +23,14 @@ const {
   updateItem: updatePxNode,
 } = usePxNodes()
 
+const { toggleSubstep } = useProjectWorkflow()
 const { fetchById: fetchComponentById } = usePxComponents()
 const { fetchById: fetchPxKeyById } = usePxKeys()
 
+// TODO: figure out what "addForeign" is supposed to do and clean up emits
 const emit = defineEmits<{
-  (e: 'addForeignComponent', nodeId: string, componentId: string): void
-  (e: 'addComponent'): void
+  (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
+  (e: 'addComponent' | 'addKey' | 'deleteKey' | 'componentsUpdated'): void
   (e: 'descriptionChanged', payload: { nodeId: string; oldDescription: string; newDescription: string }): void
 }>()
 
@@ -57,8 +65,12 @@ async function handleAddComponent(nodeId: string, componentId: string) {
   } catch (err) {
     console.error(err)
   }
+  // px-2-2: "Add a component to your new node"
+  console.log('addedComp')
+  await toggleSubstep('px-2', 'px-2-2')
   fetchedNode.value.components.push(addedComponent!)
-  emit('addComponent')
+
+  emit('componentsUpdated')
 }
 
 async function handleDeleteComponent(nodeId: string, componentId: string) {
@@ -66,6 +78,8 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
   if (index > -1) {
     fetchedNode.value.components.splice(index, 1)
   }
+
+  emit('componentsUpdated')
 }
 
 async function handleAddKey(nodeId: string, keyId: string) {
@@ -81,12 +95,14 @@ async function handleAddKey(nodeId: string, keyId: string) {
     console.error(err)
   }
   fetchedNode.value.keys.push(addedKey!)
+  emit('addKey')
 }
 
 async function handleDeleteKey(nodeId: string, keyId: string) {
   const index = fetchedNode.value.keys.findIndex((key) => key.id === keyId)
   if (index > -1) {
     fetchedNode.value.keys.splice(index, 1)
+    emit('deleteKey')
   }
 }
 </script>
@@ -110,6 +126,21 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
     @update="handleUpdate"
     @description-changed="$emit('descriptionChanged', $event)"
   />
+  <PxNodeCardSimple
+    v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
+    :node="fetchedNode"
+    :is-collapsible="false"
+    :show-context-menu="showContextMenu"
+    @delete-component="handleDeleteComponent"
+    @add-component="handleAddComponent"
+    @delete-key="handleDeleteKey"
+    @add-key="handleAddKey"
+    @update="handleUpdate"
+  >
+    <template #bottom-right-buttons>
+      <slot name="bottom-right-buttons" />
+    </template>
+  </PxNodeCardSimple>
 </template>
 
 <style scoped></style>

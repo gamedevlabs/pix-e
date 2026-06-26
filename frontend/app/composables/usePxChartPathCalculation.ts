@@ -1,6 +1,5 @@
 import type { Edge, Node } from '@vue-flow/core'
 import { getConnectedEdges } from '@vue-flow/core'
-import findIndex from 'lodash.findindex'
 
 import { type PxKeySet, getKeySetFromKeyAssignment, mergePxKeySets } from '~/utils/pxkeysets'
 
@@ -24,6 +23,8 @@ export function usePxChartPathCalculation(
     softLocked: [],
   })
 
+  const previousInventory = ref<PxKeySet>({})
+
   const { updateNodeStyling, updateEdgeStyling } = usePxChartPathStyling(
     nodes,
     edges,
@@ -37,136 +38,269 @@ export function usePxChartPathCalculation(
   const { canUnlock, removeConsumed, pxKeyDefinitionsById, getKeysInNode } =
     usePxChartPathCalculationUnlock(nodes, settings, pxLockDefinitions, pxKeyDefinitions)
 
+  function findNodeById(id: string) {
+    return nodes.value.find((node) => node.id === id)
+  }
+
   interface QueueNode {
     id: string
     prio: number
-    keys: PxKeySet[]
+    keys: PxKeySet
+    name: string
+    alreadyUnlocked: string[]
+    alreadyCollected: string[]
   }
 
-  async function dijkstraInChart(sourceId: string, targetId: string, useLocks: boolean = true) {
+  async function dijkstraInChart(
+    sourceId: string,
+    targetId: string,
+    useLocks: boolean = true,
+    initialInventory: PxKeySet = {},
+  ) {
     // initialize
     if (useLocks) {
       await fetchPxLockDefinitions()
       await fetchPxKeyDefinitions()
     }
 
-    const q: QueueNode[] = [
-      { id: sourceId, prio: 0, keys: [getKeySetFromKeyAssignment(getKeysInNode(sourceId))] },
-    ]
-    const dist = new Map<string, number>()
-    dist.set(sourceId, 0)
-    const prev = new Map<string, string>()
-    const prevEdges = new Map<string, Edge>()
-
-    for (const node of nodes.value) {
-      if (node.id != sourceId) {
-        dist.set(node.id, Infinity)
-        q.push({ id: node.id, prio: Infinity, keys: [getKeySetFromKeyAssignment(node.data.keys)] })
-      }
+    const firstQNode = {
+      id: sourceId,
+      prio: 0,
+      keys: initialInventory,
+      name: findNodeById(sourceId)?.data.name ?? sourceId,
+      alreadyUnlocked: [],
+      alreadyCollected: [],
     }
 
-    // sort (descending so we can use pop)
-    q.sort((n1, n2) => n2.prio - n1.prio)
+    const dist = new Map<string, number>()
+    const prev = new Map<string, string>()
+    const prevEdges = new Map<string, Edge>()
+    const states = new Map<string, QueueNode>()
+
+    const sourceNodeStateKey = makeStateKey(firstQNode)
+    dist.set(sourceNodeStateKey, 0)
+    states.set(sourceNodeStateKey, firstQNode)
+
+    const q: QueueNode[] = [firstQNode]
+
+    function pushIfBetter(newNodeState: QueueNode, previousState: QueueNode, edge?: Edge) {
+      const newStateKey = makeStateKey(newNodeState)
+      const previousStateKey = makeStateKey(previousState)
+
+      const oldDist = dist.get(newStateKey) ?? Infinity
+
+      if (newNodeState.prio < oldDist) {
+        //console.log(`consumable push ${newNodeState.name} ${newStateKey} with ${newNodeState.prio}`)
+
+        dist.set(newStateKey, newNodeState.prio)
+        states.set(newStateKey, newNodeState)
+
+        prev.set(newStateKey, previousStateKey)
+
+        if (edge) {
+          prevEdges.set(newStateKey, edge)
+        }
+
+        q.push(newNodeState)
+      }
+    }
 
     // iterate
     let found = false
-    let inventory: PxKeySet[] = []
-    let allLockedEdges: string[] = []
+    const allLockedEdges: string[] = []
+
+    let targetKeyState: string = ''
+
     while (q.length && !found) {
-      const node = q.pop()
-      if (!node) {
+      const poppedNodeState = q.pop()
+      if (!poppedNodeState) {
         break
       }
 
-      let outEdges = getConnectedEdges(node.id, edges.value).filter(
-        (edge) => edge.source === node.id,
+      if (poppedNodeState.id === targetId) {
+        console.log(`Found target node!`)
+        found = true
+        targetKeyState = makeStateKey(poppedNodeState)
+        previousInventory.value = { ...poppedNodeState.keys }
+        //console.log(`previous inventory for real ${JSON.stringify(previousInventory.value)}`)
+        break
+      }
+
+      const outEdges = getConnectedEdges(poppedNodeState.id, edges.value).filter(
+        (edge) => edge.source === poppedNodeState.id || edge.data.bidirectional,
       )
 
-      if (useLocks) {
-        // check for locked transitions
-        const [unlockedOutEdges, lockedOutEdges] = outEdges.reduce(
-          (acc, edge) =>
-            node.keys.some((keys) => canUnlock(keys, edge.data.locks))
-              ? (acc[0].push(edge), acc)
-              : (acc[1].push(edge), acc),
-          [[], []] as [Edge[], Edge[]],
-        )
+      //console.log(`Found ${outEdges.length} outgoing Edges in node ${poppedNodeState.name}!`)
 
-        allLockedEdges = allLockedEdges.concat(lockedOutEdges.map((edge) => edge.id))
-        outEdges = unlockedOutEdges
+      const currentDistance = dist.get(makeStateKey(poppedNodeState))!
 
-        // clean up inventory
-        inventory = node.keys.map((keyset) =>
-          Object.fromEntries(
-            Object.entries(keyset).filter(
-              ([keyDef, _count]) => !pxKeyDefinitionsById.value[keyDef]!.fixed,
-            ),
-          ),
-        )
+      const keySet = getKeySetFromKeyAssignment(getKeysInNode(poppedNodeState.id))
+      const entries = Object.entries(keySet)
+
+      const fixedKeys = Object.fromEntries(
+        entries.filter(([keyDef]) => pxKeyDefinitionsById.value[keyDef]!.fixed),
+      )
+
+      const nonFixedKeys = Object.fromEntries(
+        entries.filter(([keyDef]) => !pxKeyDefinitionsById.value[keyDef]!.fixed),
+      )
+
+      if (
+        Object.keys(nonFixedKeys).length > 0 &&
+        !poppedNodeState.alreadyCollected.includes(poppedNodeState.id)
+      ) {
+        const currentInventory = { ...poppedNodeState.keys }
+        const newInventory = mergePxKeySets(currentInventory, nonFixedKeys)
+
+        /*console.log(
+          `consumable: collecting new key set before ${JSON.stringify(currentInventory)} after ${JSON.stringify(newInventory)} in ${poppedNodeState.name}`,
+        )*/
+
+        const newNodeState = {
+          id: poppedNodeState.id,
+          prio: currentDistance,
+          keys: newInventory,
+          name: poppedNodeState.name,
+          alreadyUnlocked: [...poppedNodeState.alreadyUnlocked],
+          alreadyCollected: [...poppedNodeState.alreadyCollected, poppedNodeState.id],
+        }
+
+        pushIfBetter(newNodeState, poppedNodeState)
       }
 
+      // check each outgoing edge
       for (const outEdge of outEdges) {
-        const outNodeId = outEdge.target
-        const alt = dist.get(node.id)! + 1
-        if (alt < dist.get(outNodeId)!) {
-          prev.set(outNodeId, node.id)
-          prevEdges.set(outNodeId, outEdge)
-          dist.set(outNodeId, alt)
-          const idx = findIndex(q, ['id', outNodeId])
-          q[idx]!.prio = alt
+        // console.log(`Checking outgoing edge to ${outEdge.target !== node.id ? outEdge.target : outEdge.source}`)
 
-          // update key inventory in successor node
-          if (useLocks && !settings.value.ignore_consumable_keys) {
-            let inventoryAfterConsumption: PxKeySet[] = removeConsumed(
-              inventory,
-              outEdge.data.locks,
-            )
-            // a potential softlock occurs when unlock is possible with some, but not all keysets in inventory
-            // this must be checked before removing fully consumed keysets
-            if (inventoryAfterConsumption.length !== inventory.length)
-              //softLocked.value.push(outNodeId)
-              result.value.softLocked.push(outNodeId)
-            inventoryAfterConsumption = inventoryAfterConsumption.filter(
-              (keyset) => Object.entries(keyset).length > 0,
-            )
-            if (!inventoryAfterConsumption.length) inventoryAfterConsumption = [{}]
+        // Get Edge Target
+        const edgeTarget =
+          !outEdge.data.bidirectional || outEdge.source === poppedNodeState.id
+            ? outEdge.target
+            : outEdge.source
 
-            // unprocessed nodes only have one keyset, so we can just index into the array
-            q[idx]!.keys = inventoryAfterConsumption.map((keyset) =>
-              mergePxKeySets(keyset, q[idx]!.keys[0]!),
-            )
-          } else if (useLocks && settings.value.ignore_consumable_keys) {
-            q[idx]!.keys = inventory.map((keyset) => mergePxKeySets(keyset, q[idx]!.keys[0]!))
+        const edgeTargetName = findNodeById(edgeTarget)?.data.name ?? edgeTarget
+
+        const currentInventory = { ...poppedNodeState.keys }
+        let possibleInventoriesAfterConsumption = [currentInventory]
+        let unlockedEdges = [...poppedNodeState.alreadyUnlocked]
+
+        /*console.log(
+          `consumable: currently in node ${poppedNodeState.name} with ${JSON.stringify(canonicalizeKeySet(poppedNodeState.keys))} for ${edgeTargetName} with ${currentDistance}`,
+        )*/
+
+        // Check whether edge is unlocked or needs to be unlocked
+        if (
+          useLocks &&
+          outEdge.data.locks.length != 0 &&
+          !poppedNodeState.alreadyUnlocked.includes(outEdge.id)
+        ) {
+          if (canUnlock(currentInventory, outEdge.data.locks)) {
+            // TODO: Check whether it is permanent/reversible/etc.
+            unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
+
+            if (!settings.value.ignore_consumable_keys) {
+              possibleInventoriesAfterConsumption = removeConsumed(
+                [currentInventory],
+                outEdge.data.locks,
+              )
+
+              /*console.log(
+                `consumable after ${JSON.stringify(canonicalizeInventory(possibleInventoriesAfterConsumption))}`,
+              )*/
+
+              // a potential softlock occurs when unlock is possible with more than one key
+              if (possibleInventoriesAfterConsumption.length > 1) {
+                result.value.softLocked.push(edgeTarget)
+              }
+            }
+          } else if (canUnlock(fixedKeys, outEdge.data.locks)) {
+            unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
+          } else {
+            // We don't have a key (yet), so add it to locked edges for highlighting (and filtering) later
+            allLockedEdges.push(outEdge.id)
+            continue
+          }
+        }
+        const distanceToTarget = currentDistance + 1
+
+        possibleInventoriesAfterConsumption.forEach((inventory) => {
+          const newNodeState = {
+            id: edgeTarget,
+            prio: distanceToTarget,
+            keys: inventory,
+            name: edgeTargetName,
+            alreadyUnlocked: unlockedEdges,
+            alreadyCollected: [...poppedNodeState.alreadyCollected],
           }
 
-          q.sort((n1, n2) => n2.prio - n1.prio)
-        }
-        if (outNodeId == targetId) {
-          found = true
+          pushIfBetter(newNodeState, poppedNodeState, outEdge)
+
+          //console.log("consumable for each inventory")
+
+          //console.log(`old node state ${makeStateKey(poppedNodeState)}`)
+          //console.log(`new node state ${makeStateKey(newNodeState)}`)
+        })
+      }
+
+      // sort (descending so we can use pop)
+      q.sort((n1, n2) => n2.prio - n1.prio)
+    }
+
+    const seq: string[] = []
+    const seqEdges = []
+
+    if (found && targetKeyState) {
+      // construct sequence
+      let current: string | undefined = targetKeyState
+
+      while (current) {
+        const state = states.get(current)
+
+        if (!state) {
+          console.warn(`Missing state for key: ${current}`)
           break
         }
-      }
-    }
 
-    const seq = []
-    const seqEdges = []
-    if (found) {
-      // construct sequence
-      let current = targetId
-      if (prev.has(current) || current == sourceId) {
-        while (current) {
-          seq.push(current)
-          if (prevEdges.has(current)) {
-            seqEdges.push(prevEdges.get(current)!)
+        const prevKey = prev.get(current)
+        const prevState = prevKey ? states.get(prevKey) : undefined
+
+        const isGhostConnection = prevState && prevState.id === state.id
+
+        if (!isGhostConnection) {
+          seq.push(state.id)
+
+          const edge = prevEdges.get(current)
+          if (edge) {
+            seqEdges.push(edge)
           }
-          current = prev.get(current)!
         }
+
+        current = prevKey
       }
     }
 
-    result.value.locked = result.value.locked.concat(allLockedEdges)
+    result.value.locked = result.value.locked
+      .concat(allLockedEdges)
+      .filter((edge) => !states.get(targetKeyState)?.alreadyUnlocked.includes(edge))
     result.value.pathEdges = seqEdges.reverse()
     return seq.reverse()
+  }
+
+  function makeStateKey(qNode: QueueNode): string {
+    return JSON.stringify({
+      id: qNode.id,
+      keys: canonicalizeKeySet(qNode.keys),
+      unlocked: [...new Set(qNode.alreadyUnlocked)].sort(),
+      collected: [...new Set(qNode.alreadyCollected)].sort(),
+    })
+  }
+
+  function canonicalizeKeySet(keyset: PxKeySet): PxKeySet {
+    return Object.fromEntries(
+      Object.entries(keyset)
+        .filter(([, count]) => count > 0)
+        .sort(([a], [b]) => a.localeCompare(b)),
+    )
   }
 
   async function dijkstraInChartMultiple(selected: string[], useLocks: boolean = true) {
@@ -179,7 +313,12 @@ export function usePxChartPathCalculation(
     fullPath.push(selected[0]!)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const nextSeq = await dijkstraInChart(selected[i]!, selected[i + 1]!, useLocks)
+      const nextSeq = await dijkstraInChart(
+        selected[i]!,
+        selected[i + 1]!,
+        useLocks,
+        previousInventory.value,
+      )
       if (!nextSeq.length) {
         return []
       }
@@ -198,9 +337,6 @@ export function usePxChartPathCalculation(
     let newPath: string[]
     if (selected.length == 2 && selected[0] && selected[1]) {
       newPath = await dijkstraInChart(selected[0], selected[1], settings.value.use_locks)
-      if (!newPath.length) {
-        newPath = await dijkstraInChart(selected[1], selected[0], settings.value.use_locks)
-      }
     } else {
       newPath = await dijkstraInChartMultiple(selected, settings.value.use_locks)
     }
@@ -223,6 +359,7 @@ export function usePxChartPathCalculation(
       softLocked: [],
     }
     selectedNodes.value = []
+    previousInventory.value = {}
   }
 
   return {

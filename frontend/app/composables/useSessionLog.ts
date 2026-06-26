@@ -16,8 +16,24 @@ const STORAGE_KEY = 'pixe-session-logs'
 // limits amount of logs in storage at once
 const MAX_LOGS = 150
 const MAX_ATTACHED_LOGS = 50
+// frontend session ID
+const SESSION_ID_KEY = 'pixe-session-id'
 
 export function useSessionLog() {
+  // returns the session ID
+  function getSessionId() {
+    if (import.meta.server) return null
+
+    let id = sessionStorage.getItem(SESSION_ID_KEY)
+
+    if (!id) {
+      id = crypto.randomUUID()
+      sessionStorage.setItem(SESSION_ID_KEY, id)
+    }
+
+    return id
+  }
+
   // reads the current log list from sessionStorage.
   function readLogs(): SessionLogEntry[] {
     if (import.meta.server) return []
@@ -64,6 +80,7 @@ export function useSessionLog() {
     if (import.meta.server) return null
 
     return {
+      sessionId: getSessionId(),
       url: window.location.href, // current page where bug report was submitted
       userAgent: navigator.userAgent, // browser/system info
       logs: readLogs().slice(-MAX_ATTACHED_LOGS), // recorded browser logs
@@ -76,5 +93,5 @@ export function useSessionLog() {
     sessionStorage.removeItem(STORAGE_KEY)
   }
 
-  return { addLog, getLogs, clearLogs }
+  return { addLog, getLogs, getSessionId, clearLogs }
 }

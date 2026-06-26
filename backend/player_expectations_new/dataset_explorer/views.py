@@ -6,6 +6,7 @@ page of reviews, quotes in those reviews, and code+sentiment pairs for these quo
 
 So the frontend code filters are her implement as one big sql query
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
