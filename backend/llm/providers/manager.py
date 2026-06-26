@@ -12,7 +12,7 @@ Central manager that handles:
 
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from llm.config import Config, get_config
 from llm.exceptions import (
@@ -321,12 +321,15 @@ class ModelManager:
         # Fallback: construct ModelDetails directly for GPT models when the
         # live list_models() call doesn't include the specific versioned name.
         if model_name.startswith("gpt-") and "openai" in self.providers:
-            openai_provider = self.providers["openai"]
-            return ModelDetails(
-                name=model_name,
-                provider="openai",
-                type="cloud",
-                capabilities=openai_provider._get_model_capabilities(model_name),
+            openai_provider = cast(OpenAIProvider, self.providers["openai"])
+            return (
+                ModelDetails(
+                    name=model_name,
+                    provider="openai",
+                    type="cloud",
+                    capabilities=openai_provider._get_model_capabilities(model_name),
+                ),
+                openai_provider,
             )
 
         raise ModelUnavailableError(

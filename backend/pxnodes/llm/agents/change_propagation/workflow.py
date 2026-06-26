@@ -127,6 +127,7 @@ class ChangePropagationWorkflow:
         middle') at the price of O(N) LLM calls per change. The strict prompt
         counters the yes-bias that a naive single-item flat prompt produced.
         """
+        assert self._model_manager is not None
         agent = ChangePropagationAgent(
             model_manager=self._model_manager,
             min_confidence=min_confidence,
@@ -289,6 +290,7 @@ class ChangePropagationWorkflow:
         max_depth: int,
         model_id: Optional[str] = None,
     ) -> List[PropagationFinding]:
+        assert self._model_manager is not None
         agent = ChangePropagationAgent(
             model_manager=self._model_manager,
             min_confidence=min_confidence,
