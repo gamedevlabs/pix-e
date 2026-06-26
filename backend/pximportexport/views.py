@@ -120,9 +120,7 @@ class ImportDataView(APIView):
                 owner=user,
                 project=project,
                 defaults={
-                    k: v
-                    for k, v in node_data.items()
-                    if k not in ("id", "project")
+                    k: v for k, v in node_data.items() if k not in ("id", "project")
                 },
             )
             total_id_map[old_id] = new_id

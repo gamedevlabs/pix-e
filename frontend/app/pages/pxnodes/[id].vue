@@ -65,10 +65,7 @@ async function handleDescriptionChanged(payload: {
         </div>
       </template>
 
-      <div
-        v-if="propagationReport.findings.length === 0"
-        class="text-sm text-neutral-500"
-      >
+      <div v-if="propagationReport.findings.length === 0" class="text-sm text-neutral-500">
         No other nodes are affected by this change.
       </div>
 

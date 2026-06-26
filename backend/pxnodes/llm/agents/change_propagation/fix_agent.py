@@ -7,7 +7,8 @@ from llm.providers.manager import ModelManager
 
 _PROPAGATION_FIX_PROMPT = """You are a game design consistency assistant.
 
-A game design node was just updated. A related node is now potentially out of sync and needs to be rewritten to stay consistent with the change.
+A game design node was just updated. A related node is now potentially out of
+sync and needs to be rewritten to stay consistent with the change.
 
 CHANGED NODE: {changed_node_name}
 OLD DESCRIPTION: {changed_node_old_description}
@@ -16,7 +17,11 @@ NEW DESCRIPTION: {changed_node_new_description}
 AFFECTED NODE: {affected_node_name}
 CURRENT DESCRIPTION: {affected_node_current_description}
 
-TASK: Rewrite the DESCRIPTION of '{affected_node_name}' so that it is consistent with the updated '{changed_node_name}'. Keep the core purpose and scope of '{affected_node_name}' intact — only adjust what is necessary to reflect the change. Do not introduce new mechanics or features. Do NOT change the node name.
+TASK: Rewrite the DESCRIPTION of '{affected_node_name}' so that it is
+consistent with the updated '{changed_node_name}'. Keep the core purpose and
+scope of '{affected_node_name}' intact — only adjust what is necessary to
+reflect the change. Do not introduce new mechanics or features. Do NOT change
+the node name.
 
 RESPONSE FORMAT (JSON):
 {{
@@ -25,8 +30,8 @@ RESPONSE FORMAT (JSON):
     {{
       "field": "description",
       "after": "<the rewritten description>",
-      "reasoning": "<one or two sentences: what you changed and why it stays consistent with the changed node>",
-      "issues_addressed": ["<short label, e.g. 'Stale reference to {changed_node_name}'>"]
+      "reasoning": "<one or two sentences: what changed and why it stays consistent>",
+      "issues_addressed": ["<short label re: {changed_node_name}>"]
     }}
   ],
   "overall_summary": "<one sentence summarizing the fix>",

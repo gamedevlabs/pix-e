@@ -12,13 +12,13 @@ from llm.agent_runtime import BaseAgent
 _RESPONSE_FORMAT = """
 RESPONSE FORMAT (JSON):
 {{
-  "improved_name": "<the node's name — return it UNCHANGED unless you are fixing the name>",
-  "improved_description": "<the node's description — return it UNCHANGED unless you are fixing the description>",
+  "improved_name": "<the name — return it UNCHANGED unless fixing the name>",
+  "improved_description": "<the description — UNCHANGED unless fixing it>",
   "changes": [
     {{
       "field": "name" or "description",
       "after": "<the new value of the field you changed>",
-      "reasoning": "<one or two sentences: what you changed and why it resolves the issue>",
+      "reasoning": "<one or two sentences: what you changed and why>",
       "issues_addressed": ["<short human label of the issue this change fixes>"]
     }}
   ],
@@ -29,7 +29,9 @@ RESPONSE FORMAT (JSON):
 Only list a field in "changes" if you actually changed it.
 """
 
-_PILLAR_MISALIGNMENT_PROMPT = """You are a game design assistant. A game design node has been flagged because its description does not align with a core design pillar.
+_PILLAR_MISALIGNMENT_PROMPT = """You are a game design assistant. A game design
+node has been flagged because its description does not align with a core design
+pillar.
 
 DESIGN PILLAR:
 Name: {pillar_name}
@@ -43,8 +45,9 @@ FINDING:
 {finding_description}
 {other_nodes_section}
 TASK:
-Rewrite the node's DESCRIPTION so that it clearly and concretely supports the design pillar above.
-Significant changes are expected and acceptable — do not just add a token reference to the pillar.
+Rewrite the node's DESCRIPTION so that it clearly and concretely supports the
+design pillar above. Significant changes are expected and acceptable — do not
+just add a token reference to the pillar.
 
 Rules:
 - The rewritten description must genuinely reflect the pillar's values and requirements
@@ -53,7 +56,8 @@ Rules:
 - Write in the same style and approximate length as the original
 {response_format}"""
 
-_NODE_CONTRADICTION_PROMPT = """You are a game design assistant. Two game design nodes have been flagged as contradicting each other.
+_NODE_CONTRADICTION_PROMPT = """You are a game design assistant. Two game design
+nodes have been flagged as contradicting each other.
 
 NODE TO FIX:
 Name: {node_name}
@@ -69,13 +73,15 @@ TASK:
 Rewrite the DESCRIPTION of this node to fully resolve the contradiction.
 
 Rules:
-- Pick ONE clear interpretation that best supports the project pillars — do NOT blend or average the two contradicting descriptions
+- Pick ONE clear interpretation that best supports the project pillars — do NOT
+  blend or average the two contradicting descriptions
 - The result must be internally consistent and no longer contradict the other node
 - Do NOT change the node name
 - Write in the same style and approximate length as the original
 {response_format}"""
 
-_TERMINOLOGY_PROMPT = """You are a game design assistant. A game design node uses terminology that is inconsistent with the rest of the project.
+_TERMINOLOGY_PROMPT = """You are a game design assistant. A game design node uses
+terminology that is inconsistent with the rest of the project.
 
 NODE TO FIX:
 Name: {node_name}
@@ -85,23 +91,27 @@ TERMINOLOGY ISSUE:
 {finding_description}
 {other_nodes_section}
 TASK:
-Rewrite the node's DESCRIPTION so it uses the project's established terminology consistently.
+Rewrite the node's DESCRIPTION so it uses the project's established terminology
+consistently.
 
 Rules:
-- Replace the inconsistent term(s) with the established project term — do not invent new names
+- Replace the inconsistent term(s) with the established project term — do not
+  invent new names
 - Change as little as possible beyond the terminology fix
 - Do NOT change the node name
 - Write in the same style and approximate length as the original
 {response_format}"""
 
-_EMPTY_DESCRIPTION_PROMPT = """You are a game design assistant. A game design node is missing its description.
+_EMPTY_DESCRIPTION_PROMPT = """You are a game design assistant. A game design
+node is missing its description.
 
 NODE TO FIX:
 Name: {node_name}
 Current Description: (empty)
 {other_nodes_section}
 TASK:
-Write a clear, concise DESCRIPTION for this node that fits its name and is consistent with the other nodes in the project.
+Write a clear, concise DESCRIPTION for this node that fits its name and is
+consistent with the other nodes in the project.
 
 Rules:
 - The description must be concrete and match what the node name implies
@@ -109,7 +119,8 @@ Rules:
 - Do NOT change the node name
 {response_format}"""
 
-_EMPTY_NAME_PROMPT = """You are a game design assistant. A game design node is missing its NAME.
+_EMPTY_NAME_PROMPT = """You are a game design assistant. A game design node is
+missing its NAME.
 
 NODE TO FIX:
 Name: (empty)
@@ -126,7 +137,8 @@ Rules:
 - Return "improved_description" unchanged
 {response_format}"""
 
-_DUPLICATE_NAME_PROMPT = """You are a game design assistant. A game design node shares its NAME with another node in the project, which is ambiguous.
+_DUPLICATE_NAME_PROMPT = """You are a game design assistant. A game design node
+shares its NAME with another node in the project, which is ambiguous.
 
 NODE TO FIX:
 Name: {node_name}
@@ -137,13 +149,15 @@ Propose a distinct, more specific NAME for this node so it is no longer a duplic
 Do NOT change the description.
 
 Rules:
-- The new name must be unique within the project and clearly distinguish this node from the duplicate
+- The new name must be unique within the project and clearly distinguish this
+  node from the duplicate
 - Keep it concise and consistent with the project's naming style
 - Put the new name in "improved_name" and add a change with field "name"
 - Return "improved_description" unchanged
 {response_format}"""
 
-_GENERIC_FIX_PROMPT = """You are a game design assistant. A consistency issue has been detected in a game design node.
+_GENERIC_FIX_PROMPT = """You are a game design assistant. A consistency issue
+has been detected in a game design node.
 
 NODE TO FIX:
 Name: {node_name}

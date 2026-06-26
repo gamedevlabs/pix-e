@@ -24,7 +24,7 @@ class ConsistencyCheckView(APIView):
     {
         "project_id": "<uuid>",
         "min_confidence": 0.0,  (optional, float 0.0–1.0, default 0.0)
-        "layers": "all"         (optional: "all" | "structural" | "semantic", default "all")
+        "layers": "all" (optional: "all"|"structural"|"semantic", default "all")
     }
 
     layers="structural"  runs only Layer 1 (deterministic, no LLM)
@@ -49,7 +49,10 @@ class ConsistencyCheckView(APIView):
         layers = request.data.get("layers", "all")
         if layers not in self._VALID_LAYERS:
             return Response(
-                {"error": f"layers must be one of: {', '.join(sorted(self._VALID_LAYERS))}"},
+                {
+                    "error": "layers must be one of: "
+                    f"{', '.join(sorted(self._VALID_LAYERS))}"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -195,7 +198,7 @@ class ConsistencyFixView(APIView):
             )
             if "rate limit" in error_msg.lower():
                 return Response(
-                    {"error": "Rate limit reached. Please wait a moment and try again."},
+                    {"error": "Rate limit reached. Please wait and try again."},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
             return Response(

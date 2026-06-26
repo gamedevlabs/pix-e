@@ -31,7 +31,10 @@ const { fetchById: fetchPxKeyById } = usePxKeys()
 const emit = defineEmits<{
   (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
   (e: 'addComponent' | 'addKey' | 'deleteKey' | 'componentsUpdated'): void
-  (e: 'descriptionChanged', payload: { nodeId: string; oldDescription: string; newDescription: string }): void
+  (
+    e: 'descriptionChanged',
+    payload: { nodeId: string; oldDescription: string; newDescription: string },
+  ): void
 }>()
 
 onMounted(() => {

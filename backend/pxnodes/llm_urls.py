@@ -7,8 +7,14 @@ Mounted at /llm/nodes/ in main urls.py
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from pxnodes.llm.agents.change_propagation.views import ChangePropagationFixView, ChangePropagationView
-from pxnodes.llm.agents.consistency.views import ConsistencyCheckView, ConsistencyFixView
+from pxnodes.llm.agents.change_propagation.views import (
+    ChangePropagationFixView,
+    ChangePropagationView,
+)
+from pxnodes.llm.agents.consistency.views import (
+    ConsistencyCheckView,
+    ConsistencyFixView,
+)
 from pxnodes.llm_views import NodeFeedbackView
 
 app_name = "pxnodes_llm"

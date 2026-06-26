@@ -70,6 +70,7 @@ export function useConsistency() {
     } catch (err) {
       console.error('Error requesting consistency fix:', err)
       errorToast(err)
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete fixSuggestions.value[key]
     }
   }
@@ -98,6 +99,7 @@ export function useConsistency() {
   }
 
   function dismissFix(finding: ConsistencyFinding) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete fixSuggestions.value[findingKey(finding)]
   }
 

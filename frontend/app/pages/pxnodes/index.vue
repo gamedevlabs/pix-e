@@ -128,9 +128,7 @@ function openPropagationFixModal(affectedNodeId: string) {
         if (propagationReport.value) {
           propagationReport.value = {
             ...propagationReport.value,
-            findings: propagationReport.value.findings.filter(
-              (f) => f.affected_node_id !== nodeId,
-            ),
+            findings: propagationReport.value.findings.filter((f) => f.affected_node_id !== nodeId),
           }
         }
         pxNodes.value = []
@@ -358,14 +356,7 @@ async function handleAddComponent() {
               class="flex items-center gap-1.5"
             >
               <span class="text-xs text-neutral-500 select-none">Depth:</span>
-              <UInput
-                v-model="maxDepth"
-                type="number"
-                :min="1"
-                :max="10"
-                size="sm"
-                class="w-16"
-              />
+              <UInput v-model="maxDepth" type="number" :min="1" :max="10" size="sm" class="w-16" />
             </div>
             <div v-if="propagationStrategy === 'semantic'" class="flex items-center gap-1.5">
               <span class="text-xs text-neutral-500 select-none">Top-k:</span>
@@ -660,11 +651,7 @@ async function handleAddComponent() {
                     class="rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-800"
                   >
                     <div class="mb-1 flex items-center gap-2">
-                      <UBadge
-                        :color="getSeverityColor(finding.severity)"
-                        variant="solid"
-                        size="xs"
-                      >
+                      <UBadge :color="getSeverityColor(finding.severity)" variant="solid" size="xs">
                         {{ finding.severity.toUpperCase() }}
                       </UBadge>
                       <span class="font-medium">{{ getNodeName(finding.entity_id) }}</span>
@@ -721,10 +708,7 @@ async function handleAddComponent() {
           </UCard>
 
           <!-- Change Propagation results -->
-          <UCard
-            v-else-if="propagationReport && propagationNodeId === node.id"
-            class="mt-2"
-          >
+          <UCard v-else-if="propagationReport && propagationNodeId === node.id" class="mt-2">
             <template #header>
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -742,10 +726,7 @@ async function handleAddComponent() {
               </div>
             </template>
 
-            <div
-              v-if="propagationReport.findings.length === 0"
-              class="text-sm text-neutral-500"
-            >
+            <div v-if="propagationReport.findings.length === 0" class="text-sm text-neutral-500">
               No other nodes are affected by this change.
             </div>
 

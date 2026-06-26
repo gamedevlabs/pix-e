@@ -237,7 +237,8 @@ class ChangePropagationAgent(BaseAgent):
 
         if use_graph:
             other_nodes_section = "\n".join(
-                f"- [{n.get('relationship', 'UNKNOWN')}] ID: {n['id']}, Name: {n['name']}\n"
+                f"- [{n.get('relationship', 'UNKNOWN')}] "
+                f"ID: {n['id']}, Name: {n['name']}\n"
                 f"  Description: {n.get('description', '')}"
                 for n in nodes
             )
@@ -273,12 +274,14 @@ class ChangePropagationAgent(BaseAgent):
             if isinstance(n, dict):
                 formatted.append(n)
             else:
-                formatted.append({
-                    "id": str(n.id),
-                    "name": n.name,
-                    "description": n.description or "",
-                    "relationship": None,
-                })
+                formatted.append(
+                    {
+                        "id": str(n.id),
+                        "name": n.name,
+                        "description": n.description or "",
+                        "relationship": None,
+                    }
+                )
 
         data: Dict[str, Any] = {
             "changed_node_name": changed_node.name,

@@ -16,7 +16,10 @@ const emit = defineEmits<{
     nodeId: string,
     componentId: string,
   ): void
-  (e: 'descriptionChanged', payload: { nodeId: string; oldDescription: string; newDescription: string }): void
+  (
+    e: 'descriptionChanged',
+    payload: { nodeId: string; oldDescription: string; newDescription: string },
+  ): void
   (e: 'switchNode'): void
 }>()
 

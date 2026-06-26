@@ -178,9 +178,7 @@ class ChangePropagationWorkflow:
         if not collected:
             return []
 
-        nodes_by_id = {
-            str(n.id): n for n in PxNode.objects.filter(id__in=collected)
-        }
+        nodes_by_id = {str(n.id): n for n in PxNode.objects.filter(id__in=collected)}
         findings: List[PropagationFinding] = []
         for nid in collected:
             node = nodes_by_id.get(nid)
@@ -231,9 +229,7 @@ class ChangePropagationWorkflow:
         )
         return [node for node, _ in ranked[:k]]
 
-    def _get_1hop_neighbors(
-        self, node_id: Any
-    ) -> Optional[List[Dict[str, Any]]]:
+    def _get_1hop_neighbors(self, node_id: Any) -> Optional[List[Dict[str, Any]]]:
         """Get direct PREDECESSOR and SUCCESSOR neighbors of a node via PxChartEdge.
 
         Returns None if the node is not placed in any chart.
@@ -270,8 +266,7 @@ class ChangePropagationWorkflow:
             return []
 
         nodes_by_id = {
-            str(n.id): n
-            for n in PxNode.objects.filter(id__in=node_rel.keys())
+            str(n.id): n for n in PxNode.objects.filter(id__in=node_rel.keys())
         }
         return [
             {
@@ -325,7 +320,8 @@ class ChangePropagationWorkflow:
 
         logger.warning(
             "[BFS] Round 1: %d neighbors of '%s'",
-            len(neighbors), changed_node.name,
+            len(neighbors),
+            changed_node.name,
         )
 
         round1_findings = agent.analyze_change(
@@ -361,7 +357,9 @@ class ChangePropagationWorkflow:
 
                 logger.warning(
                     "[BFS] Round %d: expanding '%s' → %d unseen neighbors",
-                    depth, parent_finding.affected_node_name, len(unseen),
+                    depth,
+                    parent_finding.affected_node_name,
+                    len(unseen),
                 )
 
                 try:
