@@ -9,7 +9,7 @@ from pxcharts.models import (
 from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
 
 
-class PxChartSerializer(serializers.ModelSerializer):
+class PxChartTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChart
         fields = [
@@ -18,7 +18,7 @@ class PxChartSerializer(serializers.ModelSerializer):
             "description",
             "associatedNode",
         ]
-
+        read_only_fields = ["id"]
 
 class PxChartContainerSerializer(serializers.ModelSerializer):
     class Meta:

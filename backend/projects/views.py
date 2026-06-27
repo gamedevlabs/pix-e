@@ -10,14 +10,14 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
 
-from pxcharts.services.export import export_project_data as export_charts
-from pxnodes.services.export import export_project_data as export_nodes
+from pxcharts.services.transfer import export_project_data as export_charts
+from pxnodes.services.transfer import export_project_data as export_nodes
 from .models import Project
 from .serializers import (
     ProjectSerializer, ProjectTransferSerializer,
 )
 from projects.services.clone import clone_project
-from .services.import_project import import_project_export
+from .services.import_project import import_project_data
 from .utils import get_current_project
 
 
@@ -77,7 +77,7 @@ class ProjectViewSet(ModelViewSet):
     @action(detail=False, methods=["post"], url_path="import")
     def import_project(self, request):
         with transaction.atomic():
-            project = import_project_export(
+            project = import_project_data(
                 payload=request.data,
                 user=request.user,
             )

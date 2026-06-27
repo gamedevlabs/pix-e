@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 # from projects.import_serializers import ProjectImportSerializer
 # from pxcharts.services.import_project import import_project_data as import_pxcharts
 # from pxnodes.services.import_project import import_project_data as import_pxnodes
+from pxnodes.services.transfer import import_project_data as import_node_data
 
 from projects.serializers import ProjectTransferSerializer
 from projects.models import Project
@@ -10,7 +11,7 @@ from projects.models import Project
 SUPPORTED_VERSION = 1
 
 
-def import_project_export(payload, user):
+def import_project_data(payload, user):
     version = payload.get("version")
 
     if version != SUPPORTED_VERSION:
@@ -26,7 +27,9 @@ def import_project_export(payload, user):
     serializer = ProjectTransferSerializer(data=project_data)
     serializer.is_valid(raise_exception=True)
 
-    project = serializer.save(user=user)  # or user=user, depending on your model
+    project = serializer.save(user=user)
+
+    node_map = import_node_data(project, payload, user)
 
     # import_pxcharts(project, payload)
     # import_pxnodes(project, payload)
