@@ -99,8 +99,8 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
 }
 
 async function handleSuccessfulProjectImport() {
-  await fetchProjects()
   open.value = false
+  await fetchProjects()
 }
 </script>
 
@@ -119,10 +119,11 @@ async function handleSuccessfulProjectImport() {
 
       <div class="flex gap-3">
         <UModal
+          v-model:open="open"
           title="Import Project"
           description="Drag and drop a json file or search in file browser."
         >
-          <UButton label="Import Project" icon="i-lucide-import" color="primary" size="md"/>
+          <UButton label="Import Project" icon="i-lucide-import" color="primary" size="md" />
 
           <template #body>
             <ProjectImporter @submit-success="handleSuccessfulProjectImport" />
