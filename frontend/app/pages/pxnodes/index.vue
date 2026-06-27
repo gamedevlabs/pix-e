@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
+import { ConsistencyFixModal, PropagationFixModal } from '#components'
+
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -25,7 +28,7 @@ const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
 const { currentProject } = useProjectHandler()
 const { loadForProject } = useProjectWorkflow()
 if (currentProject.value?.id) {
-  await loadForProject(currentProject.value.id)
+  await loadForProject(String(currentProject.value.id))
 }
 
 const {
@@ -40,9 +43,106 @@ const {
   clearEvaluation,
 } = useStructuralMemory()
 
+const {
+  checking: checkingConsistency,
+  report: consistencyReport,
+  checkConsistency,
+  clearReport: clearConsistencyReport,
+} = useConsistency()
+
+const overlay = useOverlay()
+
+async function openConsistencyFixModal(finding: ConsistencyFinding) {
+  if (!currentProject.value?.id) return
+  const projectId = String(currentProject.value.id)
+  const fixModal = overlay.create(ConsistencyFixModal, {
+    props: {
+      finding,
+      projectId,
+      onClose: () => fixModal.close(),
+      onAccepted: async () => {
+        fixModal.close()
+        // Unmount PxNodeCards so they re-fetch the updated name/description.
+        pxNodes.value = []
+        await fetchPxNodes()
+        await checkConsistency(projectId)
+      },
+    },
+  })
+  fixModal.open()
+}
+
+const {
+  checking: checkingPropagation,
+  report: propagationReport,
+  checkPropagation,
+  clearReport: clearPropagationReport,
+} = useChangePropagation()
+
+const propagationNodeId = ref<string | null>(null)
+const propagationOldDescription = ref<string>('')
+const propagationNewDescription = ref<string>('')
+const propagationStrategy = ref<PropagationStrategy>('flat')
+const maxDepth = ref(3)
+const semanticTopK = ref(10)
+const propagationStrategies: { label: string; value: PropagationStrategy }[] = [
+  { label: 'Flat (all nodes)', value: 'flat' },
+  { label: 'Graph-aware (BFS)', value: 'graph' },
+  { label: 'Semantic (RAG)', value: 'semantic' },
+  { label: 'Neighbors (baseline)', value: 'neighbors' },
+  { label: 'Pairwise', value: 'pairwise' },
+]
+
+async function handleDescriptionChanged(payload: {
+  nodeId: string
+  oldDescription: string
+  newDescription: string
+}) {
+  if (!currentProject.value?.id) return
+  propagationNodeId.value = payload.nodeId
+  propagationOldDescription.value = payload.oldDescription
+  propagationNewDescription.value = payload.newDescription
+  await checkPropagation({
+    projectId: String(currentProject.value.id),
+    nodeId: payload.nodeId,
+    oldDescription: payload.oldDescription,
+    newDescription: payload.newDescription,
+    strategy: propagationStrategy.value,
+    semanticTopK: semanticTopK.value,
+    maxDepth: maxDepth.value,
+  })
+}
+
+function openPropagationFixModal(affectedNodeId: string) {
+  if (!propagationReport.value) return
+  const changedNodeId = propagationReport.value.changed_node_id
+  const fixModal = overlay.create(PropagationFixModal, {
+    props: {
+      affectedNodeId,
+      changedNodeId,
+      changedNodeOldDescription: propagationOldDescription.value,
+      changedNodeNewDescription: propagationNewDescription.value,
+      onClose: () => fixModal.close(),
+      onAccepted: async (nodeId: string) => {
+        fixModal.close()
+        if (propagationReport.value) {
+          propagationReport.value = {
+            ...propagationReport.value,
+            findings: propagationReport.value.findings.filter((f) => f.affected_node_id !== nodeId),
+          }
+        }
+        pxNodes.value = []
+        await fetchPxNodes()
+      },
+    },
+  })
+  fixModal.open()
+}
+
 // Structural memory generation state
 const selectedChartIds = ref<string[]>([])
 const showMemoryPanel = ref(false)
+const showConsistencyPanel = ref(false)
 const forceRegenerate = ref(false)
 
 // Computed chart options for multi-select
@@ -136,38 +236,100 @@ async function handleEvaluateCoherence() {
   }
 
   await evaluateCoherence({
-    chartId: selectedChartIds.value[0],
+    chartId: selectedChartIds.value[0]!,
   })
 }
 
 // Get severity badge color
-function getSeverityColor(severity: string): string {
+type UiColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+
+function getSeverityColor(severity: string): UiColor {
   switch (severity) {
     case 'error':
-      return 'red'
+      return 'error'
     case 'warning':
-      return 'amber'
+      return 'warning'
     case 'info':
-      return 'blue'
+      return 'info'
     default:
       return 'neutral'
   }
 }
 
 // Get issue type badge color
-function getIssueTypeColor(type: string): string {
+function getIssueTypeColor(type: string): UiColor {
   switch (type) {
     case 'prerequisite':
-      return 'red'
+      return 'error'
     case 'pacing':
-      return 'amber'
+      return 'warning'
     case 'story':
-      return 'violet'
+      return 'secondary'
     case 'category':
-      return 'cyan'
+      return 'info'
     default:
       return 'neutral'
   }
+}
+
+function toggleConsistencyPanel() {
+  showConsistencyPanel.value = !showConsistencyPanel.value
+  if (!showConsistencyPanel.value) clearConsistencyReport()
+}
+
+async function handleRunConsistencyCheck(layers: 'all' | 'structural' | 'semantic' = 'all') {
+  if (!currentProject.value?.id) return
+  await checkConsistency(String(currentProject.value.id), 0.5, layers)
+}
+
+const consistencyCheckItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Full Check',
+      icon: 'i-lucide-scan-search',
+      onSelect: () => handleRunConsistencyCheck('all'),
+    },
+    {
+      label: 'Structural Check',
+      icon: 'i-lucide-ruler',
+      onSelect: () => handleRunConsistencyCheck('structural'),
+    },
+    {
+      label: 'Semantic Check',
+      icon: 'i-lucide-brain-circuit',
+      onSelect: () => handleRunConsistencyCheck('semantic'),
+    },
+  ],
+])
+
+const CATEGORY_LABELS: Record<string, string> = {
+  pillar_misalignment: 'Pillar Misalignment',
+  node_contradiction: 'Node Contradiction',
+  terminology_inconsistency: 'Terminology Inconsistency',
+}
+
+const groupedFindings = computed(() => {
+  if (!consistencyReport.value) return []
+  const groups: Record<string, ConsistencyFinding[]> = {}
+  for (const finding of consistencyReport.value.findings) {
+    const bucket = (groups[finding.category] ??= [])
+    bucket.push(finding)
+  }
+  return Object.entries(groups).map(([category, findings]) => ({
+    category,
+    label: CATEGORY_LABELS[category] ?? 'Structural',
+    findings,
+  }))
+})
+
+function getNodeName(entityId: string): string {
+  if (!entityId) return 'Project-wide'
+  return pxNodes.value.find((n) => n.id === entityId)?.name ?? entityId
+}
+
+async function handleAddComponent() {
+  // px-2-3: "Add a component to your new node"
+  await toggleSubstep('px-2', 'px-2-3')
 }
 </script>
 
@@ -177,15 +339,54 @@ function getIssueTypeColor(type: string): string {
       <template #header>
         <div class="flex justify-between items-center">
           <div>Nodes</div>
-          <UButton
-            :color="showMemoryPanel ? 'primary' : 'neutral'"
-            variant="soft"
-            icon="i-lucide-brain"
-            :disabled="true"
-            @click="toggleMemoryPanel"
-          >
-            Structural Memory
-          </UButton>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-neutral-500 select-none">Propagation:</span>
+              <USelect
+                v-model="propagationStrategy"
+                :items="propagationStrategies"
+                value-key="value"
+                label-key="label"
+                size="sm"
+                class="w-44"
+              />
+            </div>
+            <div
+              v-if="propagationStrategy === 'graph' || propagationStrategy === 'neighbors'"
+              class="flex items-center gap-1.5"
+            >
+              <span class="text-xs text-neutral-500 select-none">Depth:</span>
+              <UInput v-model="maxDepth" type="number" :min="1" :max="10" size="sm" class="w-16" />
+            </div>
+            <div v-if="propagationStrategy === 'semantic'" class="flex items-center gap-1.5">
+              <span class="text-xs text-neutral-500 select-none">Top-k:</span>
+              <UInput
+                v-model="semanticTopK"
+                type="number"
+                :min="1"
+                :max="54"
+                size="sm"
+                class="w-16"
+              />
+            </div>
+            <UButton
+              :color="showConsistencyPanel ? 'primary' : 'neutral'"
+              variant="soft"
+              icon="i-lucide-shield-check"
+              @click="toggleConsistencyPanel"
+            >
+              Consistency Check
+            </UButton>
+            <UButton
+              :color="showMemoryPanel ? 'primary' : 'neutral'"
+              variant="soft"
+              icon="i-lucide-brain"
+              :disabled="true"
+              @click="toggleMemoryPanel"
+            >
+              Structural Memory
+            </UButton>
+          </div>
         </div>
       </template>
 
@@ -266,7 +467,7 @@ function getIssueTypeColor(type: string): string {
             </UButton>
 
             <UButton
-              color="violet"
+              color="secondary"
               variant="soft"
               :loading="evaluatingCoherence"
               :disabled="selectedChartIds.length !== 1 || totalProcessedNodes === 0"
@@ -358,7 +559,7 @@ function getIssueTypeColor(type: string): string {
                     <span class="font-medium">{{ nodeResult.node_name }}</span>
                   </div>
                   <UBadge
-                    :color="nodeResult.is_coherent ? 'green' : 'red'"
+                    :color="nodeResult.is_coherent ? 'success' : 'error'"
                     variant="soft"
                     size="sm"
                   >
@@ -401,6 +602,91 @@ function getIssueTypeColor(type: string): string {
         </div>
       </UCard>
 
+      <!-- Consistency Check Panel -->
+      <UCard v-if="showConsistencyPanel" class="mb-6">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-shield-check" class="text-primary" />
+              <span class="font-semibold">Consistency Check</span>
+            </div>
+            <UButton variant="ghost" size="xs" icon="i-lucide-x" @click="toggleConsistencyPanel" />
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <UDropdownMenu :items="consistencyCheckItems" :disabled="checkingConsistency">
+            <UButton
+              color="primary"
+              :loading="checkingConsistency"
+              icon="i-lucide-scan-search"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              {{ checkingConsistency ? 'Checking...' : 'Run Consistency Check' }}
+            </UButton>
+          </UDropdownMenu>
+
+          <div v-if="consistencyReport">
+            <div
+              v-if="consistencyReport.findings.length === 0"
+              class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-700 dark:text-green-300"
+            >
+              No consistency issues found.
+            </div>
+
+            <div v-else class="space-y-6">
+              <div v-for="group in groupedFindings" :key="group.category">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-sm font-medium uppercase tracking-wide text-neutral-500">
+                    {{ group.label }}
+                  </span>
+                  <UBadge color="neutral" variant="soft" size="xs">
+                    {{ group.findings.length }}
+                  </UBadge>
+                </div>
+                <div class="space-y-2">
+                  <div
+                    v-for="(finding, idx) in group.findings"
+                    :key="idx"
+                    class="rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-800"
+                  >
+                    <div class="mb-1 flex items-center gap-2">
+                      <UBadge :color="getSeverityColor(finding.severity)" variant="solid" size="xs">
+                        {{ finding.severity.toUpperCase() }}
+                      </UBadge>
+                      <span class="font-medium">{{ getNodeName(finding.entity_id) }}</span>
+                    </div>
+                    <p class="text-neutral-600 dark:text-neutral-400">{{ finding.message }}</p>
+
+                    <!-- Fix with AI -->
+                    <div v-if="finding.entity_id" class="mt-2">
+                      <!-- orphaned_node is a placement issue — no text fix possible -->
+                      <p
+                        v-if="finding.category === 'orphaned_node'"
+                        class="flex items-center gap-1 text-xs italic text-neutral-500"
+                      >
+                        <UIcon name="i-lucide-info" />
+                        Add this node to a chart to resolve — this can't be fixed by editing text.
+                      </p>
+                      <UButton
+                        v-else
+                        size="xs"
+                        variant="soft"
+                        color="neutral"
+                        icon="i-lucide-wrench"
+                        @click="openConsistencyFixModal(finding)"
+                      >
+                        Fix with AI
+                      </UButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </UCard>
+
       <SimpleCardSection use-add-button @add-clicked="addItem">
         <div v-for="node in pxNodes" :key="node.id">
           <PxNodeCard
@@ -409,7 +695,86 @@ function getIssueTypeColor(type: string): string {
             :visualization-style="'detailed'"
             @delete="deletePxNode"
             @add-foreign-component="handleForeignAddComponent"
+            @add-component="handleAddComponent"
+            @description-changed="handleDescriptionChanged"
           />
+
+          <!-- Change Propagation loading -->
+          <UCard v-if="checkingPropagation && propagationNodeId === node.id" class="mt-2">
+            <div class="flex items-center gap-3 text-sm text-neutral-500">
+              <UIcon name="i-lucide-loader-circle" class="animate-spin" />
+              Checking for affected nodes...
+            </div>
+          </UCard>
+
+          <!-- Change Propagation results -->
+          <UCard v-else-if="propagationReport && propagationNodeId === node.id" class="mt-2">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-git-branch" class="text-primary" />
+                  <span class="font-semibold">Change Propagation</span>
+                </div>
+                <UButton
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-x"
+                  @click="clearPropagationReport"
+                >
+                  Dismiss
+                </UButton>
+              </div>
+            </template>
+
+            <div v-if="propagationReport.findings.length === 0" class="text-sm text-neutral-500">
+              No other nodes are affected by this change.
+            </div>
+
+            <div v-else class="space-y-3">
+              <p class="text-sm text-neutral-500 mb-3">
+                {{ propagationReport.findings.length }}
+                {{ propagationReport.findings.length === 1 ? 'node' : 'nodes' }} may need updating:
+              </p>
+              <div
+                v-for="finding in propagationReport.findings"
+                :key="finding.affected_node_id"
+                class="rounded-lg bg-neutral-50 p-4 dark:bg-neutral-800"
+              >
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="font-medium">{{ finding.affected_node_name }}</span>
+                  <UBadge color="neutral" variant="soft" size="xs">
+                    {{ Math.round(finding.confidence * 100) }}% confidence
+                  </UBadge>
+                </div>
+                <p class="mb-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  {{ finding.reason }}
+                </p>
+                <div class="flex items-start gap-2 mb-3">
+                  <UIcon
+                    name="i-lucide-lightbulb"
+                    class="mt-0.5 shrink-0 text-amber-500"
+                    size="sm"
+                  />
+                  <p class="text-sm text-amber-700 dark:text-amber-400">
+                    {{ finding.suggested_action }}
+                  </p>
+                </div>
+
+                <!-- Fix with AI -->
+                <div>
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    icon="i-lucide-wrench"
+                    @click="openPropagationFixModal(finding.affected_node_id)"
+                  >
+                    Fix with AI
+                  </UButton>
+                </div>
+              </div>
+            </div>
+          </UCard>
         </div>
         <div v-if="newItem">
           <NamedEntityCard

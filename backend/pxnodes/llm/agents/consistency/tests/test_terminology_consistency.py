@@ -48,7 +48,7 @@ class TestTerminologyConsistencyFindingParsing:
             }
         ]
         with patch(PATCH_EXECUTE, return_value=_make_result(raw)):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         terminology_findings = [
             f for f in findings if f.category == "terminology_inconsistency"
@@ -65,7 +65,7 @@ class TestTerminologyConsistencyFindingParsing:
 
     def test_no_conflict_returns_empty(self):
         with patch(PATCH_EXECUTE, return_value=_make_result([])):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         terminology_findings = [
             f for f in findings if f.category == "terminology_inconsistency"
@@ -94,7 +94,7 @@ class TestTerminologyConsistencyFindingParsing:
             }
         ]
         with patch(PATCH_EXECUTE, return_value=_make_result(raw)):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         terminology_findings = [
             f for f in findings if f.category == "terminology_inconsistency"
@@ -125,7 +125,7 @@ class TestTerminologyConsistencyFindingParsing:
             },
         ]
         with patch(PATCH_EXECUTE, return_value=_make_result(raw)):
-            findings = self._workflow()._run_semantic_checks(
+            findings, _, _ = self._workflow()._run_semantic_checks(
                 _make_project(node_count=3)
             )
 
@@ -143,7 +143,7 @@ class TestTerminologyConsistencyFindingParsing:
             MagicMock(id="n1", name="Node 1", description="Has a description"),
         ]
         with patch(PATCH_EXECUTE, return_value=_make_result([])):
-            findings = self._workflow()._run_semantic_checks(project)
+            findings, _, _ = self._workflow()._run_semantic_checks(project)
 
         terminology_findings = [
             f for f in findings if f.category == "terminology_inconsistency"

@@ -47,7 +47,7 @@ class TestPillarAlignmentFindingParsing:
             }
         ]
         with patch(PATCH_EXECUTE, return_value=_make_result(raw)):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         assert len(findings) == 1
         f = findings[0]
@@ -74,7 +74,7 @@ class TestPillarAlignmentFindingParsing:
             },
         ]
         with patch(PATCH_EXECUTE, return_value=_make_result(raw)):
-            findings = self._workflow()._run_semantic_checks(
+            findings, _, _ = self._workflow()._run_semantic_checks(
                 _make_project(node_count=2)
             )
 
@@ -82,7 +82,7 @@ class TestPillarAlignmentFindingParsing:
 
     def test_empty_findings_list_returns_no_findings(self):
         with patch(PATCH_EXECUTE, return_value=_make_result([])):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         assert findings == []
 
@@ -91,7 +91,7 @@ class TestPillarAlignmentFindingParsing:
         project.pillars.all.return_value = []
 
         with patch(PATCH_EXECUTE) as mock_exec:
-            findings = self._workflow()._run_semantic_checks(project)
+            findings, _, _ = self._workflow()._run_semantic_checks(project)
 
         mock_exec.assert_not_called()
         assert findings == []
@@ -101,20 +101,20 @@ class TestPillarAlignmentFindingParsing:
         project.pxnodes.all.return_value = []
 
         with patch(PATCH_EXECUTE) as mock_exec:
-            findings = self._workflow()._run_semantic_checks(project)
+            findings, _, _ = self._workflow()._run_semantic_checks(project)
 
         mock_exec.assert_not_called()
         assert findings == []
 
     def test_agent_failure_returns_empty(self):
         with patch(PATCH_EXECUTE, return_value=_make_result([], success=False)):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         assert findings == []
 
     def test_agent_exception_returns_empty(self):
         with patch(PATCH_EXECUTE, side_effect=RuntimeError("LLM unavailable")):
-            findings = self._workflow()._run_semantic_checks(_make_project())
+            findings, _, _ = self._workflow()._run_semantic_checks(_make_project())
 
         assert findings == []
 

@@ -1,0 +1,32 @@
+{
+  "dataset": "Anno 1404 Mission I",
+  "description": "19 designed consistency traps. Frozen ground truth — do NOT edit after an evaluation run without recording the change and re-running all configs. See ground_truth.md for the full rationale of each trap.",
+  "layers": {
+    "structural": ["S1", "S2", "S3", "S4"],
+    "semantic": ["P1", "P2", "P3", "P4", "P5", "C1", "C2", "C3", "C4", "C5", "T1", "T2", "T3", "T4", "T5"]
+  },
+  "traps": [
+    {"id": "S1", "layer": "structural", "category": "empty_description", "node": "Abandoned Outpost"},
+    {"id": "S2", "layer": "structural", "category": "empty_name", "node": null},
+    {"id": "S3", "layer": "structural", "category": "duplicate_node_name", "node": "Mission I — A Declaration Of Faith"},
+    {"id": "S4", "layer": "structural", "category": "orphaned_node", "node": "Forgotten Settlement"},
+
+    {"id": "P1", "layer": "semantic", "category": "pillar_misalignment", "node": "Wood Supply State"},
+    {"id": "P2", "layer": "semantic", "category": "pillar_misalignment", "node": "Resource Trade Route"},
+    {"id": "P3", "layer": "semantic", "category": "pillar_misalignment", "node": "Lord Northburgh's Satisfaction"},
+    {"id": "P4", "layer": "semantic", "category": "pillar_misalignment", "node": "Tutorial Completion State"},
+    {"id": "P5", "layer": "semantic", "category": "pillar_misalignment", "node": "Cathedral Construction Progress"},
+
+    {"id": "C1", "layer": "semantic", "category": "node_contradiction", "node": "Optional Quest Rewards Overview", "partner": "Wood for the Imperial cathedral"},
+    {"id": "C2", "layer": "semantic", "category": "node_contradiction", "node": "Player's Ship State", "partner": "A floating gift"},
+    {"id": "C3", "layer": "semantic", "category": "node_contradiction", "node": "Victory Condition Progress", "partner": "Profession of Faith"},
+    {"id": "C4", "layer": "semantic", "category": "node_contradiction", "node": "Fish Delivery Requirements", "partner": "Fish on the table"},
+    {"id": "C5", "layer": "semantic", "category": "node_contradiction", "node": "Peasant Housing Requirements", "partner": "More Peasant houses"},
+
+    {"id": "T1", "layer": "semantic", "category": "terminology_inconsistency", "node": "Settlement Overview"},
+    {"id": "T2", "layer": "semantic", "category": "terminology_inconsistency", "node": "Map Exploration State"},
+    {"id": "T3", "layer": "semantic", "category": "terminology_inconsistency", "node": "Tool Supply State"},
+    {"id": "T4", "layer": "semantic", "category": "terminology_inconsistency", "node": "Optional Quest Rewards Overview"},
+    {"id": "T5", "layer": "semantic", "category": "terminology_inconsistency", "node": "Mission Objectives Overview"}
+  ]
+}

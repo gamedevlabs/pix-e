@@ -1,10 +1,13 @@
 import uuid
 
 from django.db import transaction
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from game_concept.models import Project
+from pillars.models import Pillar
 from pxcharts.models import (
     PxChart,
     PxChartContainer,
@@ -69,15 +72,42 @@ class ImportDataView(APIView):
         user = request.user
         data = request.data
 
+        project_id = data.get("project_id")
+        if not project_id:
+            return Response(
+                {"error": "project_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response(
+                {"error": "Project not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         total_id_map = {}
+        for pillar_data in data.get("pxpillars", []):
+            old_id = pillar_data["id"]
+            pillar = Pillar.objects.create(
+                user=user,
+                project=project,
+                name=pillar_data.get("name", ""),
+                description=pillar_data.get("description", ""),
+            )
+            total_id_map[old_id] = pillar.id
+
         for componentdefinition_data in data.get("pxcomponentdefinitions", []):
             old_id = componentdefinition_data["id"]
             new_id = uuid.uuid4()
             obj, created = PxComponentDefinition.objects.update_or_create(
                 id=new_id,
                 owner=user,
+                project=project,
                 defaults={
-                    k: v for k, v in componentdefinition_data.items() if k != "id"
+                    k: v
+                    for k, v in componentdefinition_data.items()
+                    if k not in ("id", "project")
                 },
             )
             total_id_map[old_id] = new_id
@@ -88,7 +118,10 @@ class ImportDataView(APIView):
             obj, created = PxNode.objects.update_or_create(
                 id=new_id,
                 owner=user,
-                defaults={k: v for k, v in node_data.items() if k != "id"},
+                project=project,
+                defaults={
+                    k: v for k, v in node_data.items() if k not in ("id", "project")
+                },
             )
             total_id_map[old_id] = new_id
 
@@ -117,11 +150,12 @@ class ImportDataView(APIView):
             obj, created = PxChart.objects.update_or_create(
                 id=new_id,
                 owner=user,
+                project=project,
                 associatedNode_id=total_id_map[old_node_id],
                 defaults={
                     k: v
                     for k, v in chart_data.items()
-                    if k != "id" and k != "associatedNode"
+                    if k not in ("id", "associatedNode", "project")
                 },
             )
             total_id_map[old_id] = new_id

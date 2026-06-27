@@ -16,6 +16,10 @@ const emit = defineEmits<{
     nodeId: string,
     componentId: string,
   ): void
+  (
+    e: 'descriptionChanged',
+    payload: { nodeId: string; oldDescription: string; newDescription: string },
+  ): void
   (e: 'switchNode'): void
 }>()
 
@@ -87,8 +91,17 @@ function startEdit() {
 }
 
 function confirmEdit() {
+  const oldDescription = props.node.description
+  const newDescription = editForm.value.description
   isBeingEdited.value = false
   emit('update', { ...props.node, ...editForm.value })
+  if (newDescription !== oldDescription) {
+    emit('descriptionChanged', {
+      nodeId: props.node.id,
+      oldDescription,
+      newDescription,
+    })
+  }
 }
 
 function cancelEdit() {

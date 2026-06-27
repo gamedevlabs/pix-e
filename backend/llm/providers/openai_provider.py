@@ -50,6 +50,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4-turbo-2024-04-09",
         "gpt-4-turbo",
         "gpt-5.2",
+        "gpt-5.4",
     }
 
     # Vision-capable models
@@ -59,6 +60,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4-turbo",
         "gpt-4-vision-preview",
         "gpt-5.2",
+        "gpt-5.4",
     }
 
     # Context window sizes
@@ -69,6 +71,7 @@ class OpenAIProvider(BaseProvider):
         "gpt-4": 8192,
         "gpt-3.5-turbo": 16385,
         "gpt-5.2": 400000,
+        "gpt-5.4": 400000,
     }
 
     def __init__(self, config: Dict[str, Any]):

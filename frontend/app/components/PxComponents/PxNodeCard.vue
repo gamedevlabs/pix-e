@@ -35,6 +35,10 @@ const { fetchById: fetchPxKeyById } = usePxKeys()
 const emit = defineEmits<{
   (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
   (e: 'addComponent' | 'addKey' | 'deleteKey' | 'componentsUpdated'): void
+  (
+    e: 'descriptionChanged',
+    payload: { nodeId: string; oldDescription: string; newDescription: string },
+  ): void
 }>()
 
 onMounted(() => {
@@ -127,6 +131,7 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
     @delete-key="handleDeleteKey"
     @add-key="handleAddKey"
     @update="handleUpdate"
+    @description-changed="$emit('descriptionChanged', $event)"
   />
   <PxNodeCardSimple
     v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"

@@ -72,3 +72,76 @@ type NodeComponentInfo = {
 interface PxNodeWithFeedback extends PxNode {
   llm_feedback?: NodeValidationFeedback | null
 }
+
+// --- Types for consistency check ---
+
+type ConsistencyFindingSeverity = 'info' | 'warning' | 'error'
+
+type ConsistencyFinding = {
+  severity: ConsistencyFindingSeverity
+  category: string
+  entity_id: string
+  message: string
+}
+
+type ConsistencyReport = {
+  findings: ConsistencyFinding[]
+}
+
+// --- Types for consistency fix ---
+
+type ConsistencyFixChange = {
+  field: 'name' | 'description'
+  after: string
+  reasoning: string
+  issues_addressed: string[]
+}
+
+type ConsistencyFixResponse = {
+  node_id: string
+  original: {
+    name: string
+    description: string
+  }
+  improved: {
+    name: string
+    description: string
+    changes: ConsistencyFixChange[]
+    overall_summary: string
+    issues_fixed: string[]
+  }
+}
+
+// --- Types for propagation fix ---
+
+type PropagationFixResponse = {
+  node_id: string
+  original: {
+    name: string
+    description: string
+  }
+  improved: {
+    name: string
+    description: string
+    changes: ConsistencyFixChange[]
+    overall_summary: string
+    issues_fixed: string[]
+  }
+}
+
+// --- Types for change propagation ---
+
+type PropagationStrategy = 'flat' | 'graph' | 'semantic' | 'neighbors' | 'pairwise'
+
+type PropagationFinding = {
+  affected_node_id: string
+  affected_node_name: string
+  reason: string
+  confidence: number
+  suggested_action: string
+}
+
+type PropagationReport = {
+  changed_node_id: string
+  findings: PropagationFinding[]
+}
