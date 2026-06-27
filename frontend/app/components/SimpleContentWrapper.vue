@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="mb-8">
+  <div class="m-8">
     <!-- Optional header slot -->
     <h1 v-if="$slots.header" class="text-2xl font-bold mb-4">
       <slot name="header" />
