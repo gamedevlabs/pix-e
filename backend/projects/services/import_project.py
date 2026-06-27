@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 # from pxcharts.services.import_project import import_project_data as import_pxcharts
 # from pxnodes.services.import_project import import_project_data as import_pxnodes
 from pxnodes.services.transfer import import_project_data as import_node_data
+from pxcharts.services.transfer import import_project_data as import_chart_data
 
 from projects.serializers import ProjectTransferSerializer
 from projects.models import Project
@@ -29,10 +30,8 @@ def import_project_data(payload, user):
 
     project = serializer.save(user=user)
 
-    node_map = import_node_data(project, payload, user)
-
-    # import_pxcharts(project, payload)
-    # import_pxnodes(project, payload)
+    node_map, lock_definitions_map = import_node_data(project, payload, user)
+    import_chart_data(project, payload, user, node_map, lock_definitions_map)
 
     return project
 

@@ -3,21 +3,23 @@ from django.db import models
 
 from pxnodes.models import PxLockDefinition, PxNode
 
+import uuid
+
 User = get_user_model()
 
 
 class PxChart(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     name = models.CharField(max_length=255)
     description = models.TextField()
+    associatedNode = models.ForeignKey(
+        PxNode, on_delete=models.SET_NULL, null=True, blank=True, related_name="charts"
+    )
     project = models.ForeignKey(
         "projects.Project",
         on_delete=models.CASCADE,
         related_name="pxcharts",
-    )
-    associatedNode = models.ForeignKey(
-        PxNode, on_delete=models.SET_NULL, null=True, blank=True, related_name="charts"
     )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -33,12 +35,13 @@ class PxChart(models.Model):
 
 
 class PxChartContainer(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    name = models.CharField(max_length=255)
 
     px_chart = models.ForeignKey(
         PxChart, on_delete=models.CASCADE, related_name="containers"
     )
-    name = models.CharField(max_length=255)
     content = models.ForeignKey(
         PxNode, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -70,27 +73,29 @@ class PxChartContainerLayout(models.Model):
 
 
 class PxChartEdge(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    px_chart = models.ForeignKey(
-        PxChart, on_delete=models.CASCADE, related_name="edges"
-    )
+    sourceHandle = models.CharField(max_length=255, default="")
+    targetHandle = models.CharField(max_length=255, default="")
+
+    bidirectional = models.BooleanField(default=False)
+
     source = models.ForeignKey(
         PxChartContainer,
         on_delete=models.SET_NULL,
         null=True,
         related_name="outgoing_edges",
     )
-    sourceHandle = models.CharField(max_length=255, default="")
     target = models.ForeignKey(
         PxChartContainer,
         on_delete=models.SET_NULL,
         null=True,
         related_name="incoming_edges",
     )
-    targetHandle = models.CharField(max_length=255, default="")
 
-    bidirectional = models.BooleanField(default=False)
+    px_chart = models.ForeignKey(
+        PxChart, on_delete=models.CASCADE, related_name="edges"
+    )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -111,15 +116,17 @@ class PxChartEdge(models.Model):
 
 
 class PxLockAssignment(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    count = models.IntegerField()
+
+    definition = models.ForeignKey(PxLockDefinition, on_delete=models.CASCADE)
+
+    edge = models.ForeignKey(PxChartEdge, on_delete=models.CASCADE)
 
     px_chart = models.ForeignKey(
         PxChart, on_delete=models.CASCADE, related_name="locks"
     )
-
-    edge = models.ForeignKey(PxChartEdge, on_delete=models.CASCADE)
-    definition = models.ForeignKey(PxLockDefinition, on_delete=models.CASCADE)
-    count = models.IntegerField()
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -133,7 +140,7 @@ class PxLockAssignment(models.Model):
 
 
 class PxChartPathSettings(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     px_chart = models.ForeignKey(
         PxChart, on_delete=models.CASCADE, related_name="settings"

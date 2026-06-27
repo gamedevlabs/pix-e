@@ -35,7 +35,7 @@ class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
 class PxChartEdgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartEdge
-        fields = ["id", "px_chart", "source", "sourceHandle", "target", "targetHandle"]
+        fields = ["id", "px_chart", "source", "sourceHandle", "target", "targetHandle", "bidirectional"]
 
 class PxLockAssignmentSerializer(serializers.ModelSerializer):
     class Meta:

@@ -2,6 +2,7 @@ from pxnodes.export_serializers import PxNodeSerializer, PxComponentSerializer, 
     PxKeyDefinitionSerializer, PxKeyAssignmentSerializer, PxLockDefinitionSerializer
 from pxnodes.models import PxNode, PxComponentDefinition, PxComponent, PxKeyDefinition, PxKeyAssignment, \
     PxLockDefinition
+from services.transfer import import_objects
 
 
 def export_project_data(project):
@@ -18,10 +19,10 @@ def export_project_data(project):
     return {
         "px_nodes": PxNodeSerializer(px_nodes, many=True).data,
         "px_component_definitions": PxComponentDefinitionSerializer(px_component_definitions, many=True).data,
-        "px_component": PxComponentSerializer(px_component, many=True).data,
-        "px_key_definition": PxKeyDefinitionSerializer(px_key_definition, many=True).data,
-        "px_key_assignment": PxKeyAssignmentSerializer(px_key_assignment, many=True).data,
-        "px_lock_definition": PxLockDefinitionSerializer(px_lock_definition, many=True).data,
+        "px_components": PxComponentSerializer(px_component, many=True).data,
+        "px_key_definitions": PxKeyDefinitionSerializer(px_key_definition, many=True).data,
+        "px_key_assignments": PxKeyAssignmentSerializer(px_key_assignment, many=True).data,
+        "px_lock_definitions": PxLockDefinitionSerializer(px_lock_definition, many=True).data,
     }
 
 
@@ -42,7 +43,7 @@ def import_project_data(project, payload, user):
                                                    project=project,
                                                ))
 
-    components_map = import_objects(payload.get("px_component", []),
+    components_map = import_objects(payload.get("px_components", []),
                                     lambda d: PxComponent.objects.create(
                                         node=nodes_map[d["node"]],
                                         definition=component_definitions_map[d["definition"]],
@@ -50,7 +51,7 @@ def import_project_data(project, payload, user):
                                         owner=user,
                                     ))
 
-    key_definitions_map = import_objects(payload.get("px_key_definition", []),
+    key_definitions_map = import_objects(payload.get("px_key_definitions", []),
                                          lambda d: PxKeyDefinition.objects.create(
                                              name=d["name"],
                                              key_type=d["key_type"],
@@ -60,7 +61,7 @@ def import_project_data(project, payload, user):
                                              owner=user,
                                          ))
 
-    key_assignment_map = import_objects(payload.get("px_key_assignment", []),
+    key_assignment_map = import_objects(payload.get("px_key_assignments", []),
                                         lambda d: PxKeyAssignment.objects.create(
                                             count=d["count"],
                                             node=nodes_map[d["node"]],
@@ -68,7 +69,7 @@ def import_project_data(project, payload, user):
                                             owner=user,
                                         ))
 
-    lock_definitions = payload.get("px_lock_definition", [])
+    lock_definitions = payload.get("px_lock_definitions", [])
 
     lock_definition_map = import_objects(lock_definitions,
                                          lambda d: PxLockDefinition.objects.create(
@@ -86,15 +87,5 @@ def import_project_data(project, payload, user):
             for old_key_id in d.get("unlocked_by", [])
         ])
 
-    return nodes_map
+    return nodes_map, lock_definition_map
 
-
-def import_objects(data_list, create_fn):
-    obj_map = {}
-
-    for data in data_list:
-        old_id = data["id"]
-        obj = create_fn(data)
-        obj_map[old_id] = obj
-
-    return obj_map

@@ -1,6 +1,8 @@
 from pxcharts.models import PxChart, PxChartContainer, PxChartContainerLayout, PxChartEdge, PxLockAssignment
-from pxcharts.transfer_serializers import PxChartTransferSerializer, PxChartContainerSerializer, PxChartContainerLayoutSerializer, \
+from pxcharts.transfer_serializers import PxChartTransferSerializer, PxChartContainerSerializer, \
+    PxChartContainerLayoutSerializer, \
     PxChartEdgeSerializer, PxLockAssignmentSerializer
+from services.transfer import import_objects
 
 
 def export_project_data(project):
@@ -26,35 +28,62 @@ def export_project_data(project):
         "lock_assignments": PxLockAssignmentSerializer(pxLockAssignments, many=True).data,
     }
 
-def import_project_data(project, payload, user):
-    px_charts = payload.get("px_charts", [])
 
-    chart_map = {}
-    for chart_data in px_charts:
-        old_id = chart_data["id"]
+def import_project_data(project, payload, user, node_map, lock_definition_map):
+    chart_map = import_objects(payload.get("px_charts", []),
+                               lambda d:
+                               PxChart.objects.create(
+                                   name=d["name"],
+                                   description=d["description"],
+                                   associatedNode=node_map.get(d["associatedNode"]),
+                                   project=project,
+                                   owner=user,
+                               ))
 
-        chart = PxChart.objects.create(
-            project=project,
-            owner=user,
-            name=chart_data["name"],
-            description=chart_data["description"],
+    container_map = import_objects(payload.get("px_chart_containers", []),
+                                   lambda d: PxChartContainer.objects.create(
+                                       name=d["name"],
+                                       px_chart=chart_map[d["px_chart"]],
+                                       content=node_map[d["content"]],
+                                       owner=user,
+                                   ))
+
+    layout_map = {}
+
+    for d in payload.get("px_chart_container_layouts", []):
+        old_id = d["id"]
+        container = container_map[d["container"]]
+
+        layout, _created = PxChartContainerLayout.objects.update_or_create(
+            container=container,
+            defaults={
+                "position_x": d["position_x"],
+                "position_y": d["position_y"],
+                "width": d["width"],
+                "height": d["height"],
+            },
         )
 
-        chart_map[old_id] = chart
+        layout_map[old_id] = layout
 
-    px_chart_containers = payload.get("px_chart_containers", [])
+    edge_map = import_objects(payload.get("px_chart_edges", []),
+                              lambda d: PxChartEdge.objects.create(
+                                  sourceHandle=d["sourceHandle"],
+                                  targetHandle=d["targetHandle"],
+                                  # bidirectional=d["bidirectional"],
+                                  source=container_map[d["source"]],
+                                  target=container_map[d["target"]],
+                                  px_chart=chart_map[d["px_chart"]],
+                                  owner=user,
+                              ))
 
-    container_map = {}
-    for container_data in px_chart_containers:
-        old_id = container_data["id"]
+    lock_assignment_map = import_objects(payload.get("px_lock_assignments", []),
+                                         lambda d: PxLockAssignment.objects.create(
+                                             count=d["count"],
+                                             definition=lock_definition_map[d["definition"]],
+                                             edge=edge_map[d["edge"]],
+                                             px_chart=chart_map[d["px_chart"]],
+                                             owner=user,
+                                         ))
 
-        container = PxChartContainer.objects.create(
-            project=project,
-            owner=user,
-            name=container_data["name"],
-            px_chart=chart_map[container_data["px_chart"]],
-        )
-
-        container_map[old_id] = container
-
-    return project
+    return chart_map
