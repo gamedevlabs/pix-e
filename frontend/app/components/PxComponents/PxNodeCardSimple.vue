@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (e: 'switchNode'): void
 }>()
 
-const isCollapsed = ref(false)
+const isCollapsed = ref(true)
 const isBeingEdited = ref(false)
 const toast = useToast()
 const pxNodesLLM = usePxNodesLLM()

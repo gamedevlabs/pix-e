@@ -277,11 +277,23 @@ export function usePxChartPathCalculation(
 
         current = prevKey
       }
-    }
 
-    result.value.locked = result.value.locked
-      .concat(allLockedEdges)
-      .filter((edge) => !states.get(targetKeyState)?.alreadyUnlocked.includes(edge))
+      result.value.locked = result.value.locked
+        .concat(allLockedEdges)
+        .filter((edge) => !states.get(targetKeyState)?.alreadyUnlocked.includes(edge))
+    } else {
+      const unlockedInAnyExploredState = new Set<string>()
+
+      for (const state of states.values()) {
+        for (const edgeId of state.alreadyUnlocked) {
+          unlockedInAnyExploredState.add(edgeId)
+        }
+      }
+
+      result.value.locked = [...new Set(result.value.locked.concat(allLockedEdges))]
+        .filter((edgeId) => !unlockedInAnyExploredState.has(edgeId))
+    }
+    
     result.value.pathEdges = seqEdges.reverse()
     return seq.reverse()
   }
