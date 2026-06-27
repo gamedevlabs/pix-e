@@ -6,7 +6,7 @@
 
 import * as z from 'zod'
 // import type { FormSubmitEvent } from '@nuxt/ui'
-import { useExport } from '~/composables/useExport'
+import { useDataTransfer } from '~/composables/useDataTransfer'
 definePageMeta({
   middleware: ['authentication', 'project-context'],
   pageConfig: {
@@ -20,7 +20,7 @@ definePageMeta({
   },
 })
 
-const { exportPxData, importPxData } = useExport()
+const { exportPxData, importPxData } = useDataTransfer()
 const { downloadJson } = useDownloadJson()
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {useExport} from "~/composables/useExport";
+import {useDataTransfer} from "~/composables/useDataTransfer";
 
 const { downloadJson } = useDownloadJson()
-const { exportProject } = useExport()
+const { exportProject } = useDataTransfer()
 const { currentProjectId } = useProjectHandler()
 
 async function onClickExportCurrentData() {

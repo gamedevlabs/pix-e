@@ -1,6 +1,6 @@
 import { useApi } from '~/composables/useApi'
 
-export function useExport() {
+export function useDataTransfer() {
   const { apiFetch } = useApi()
   const loading = ref<boolean>(false)
   const error = ref<unknown>(null)
@@ -33,7 +33,23 @@ export function useExport() {
   }
 
   async function importProject(payload: object) {
-
+    addLog('info', 'project_import_started')
+    try {
+      await apiFetch<object>('/api/projects/import/', {
+        method: 'POST',
+        body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('JSON imported successfully!')
+      addLog('info', 'project_import_succeeded')
+    } catch (err) {
+      addLog('error', 'project_import_failed')
+      error.value = err
+      errorToast(err)
+    }
   }
 
   async function exportPxData(): Promise<object> {

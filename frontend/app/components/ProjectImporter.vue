@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import * as z from "zod";
+import * as z from 'zod'
+import {useDataTransfer} from "~/composables/useDataTransfer";
+
+const emit = defineEmits(['submitSuccess'])
 
 type schema = z.output<typeof schema>
+
+const { importProject } = useDataTransfer()
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 const ACCEPTED_FILE_FORMATS = ['application/json']
@@ -17,15 +22,15 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 const schema = z.object({
   file: z
-      .instanceof(File, {
-        message: 'Please provide a JSON file.',
-      })
-      .refine((file) => file.size <= MAX_FILE_SIZE, {
-        message: `The file size is too large. Please choose a file smaller than ${formatBytes(MAX_FILE_SIZE)}.`,
-      })
-      .refine((file) => ACCEPTED_FILE_FORMATS.includes(file.type), {
-        message: 'Please upload a valid file (JSON).',
-      }),
+    .instanceof(File, {
+      message: 'Please provide a JSON file.',
+    })
+    .refine((file) => file.size <= MAX_FILE_SIZE, {
+      message: `The file size is too large. Please choose a file smaller than ${formatBytes(MAX_FILE_SIZE)}.`,
+    })
+    .refine((file) => ACCEPTED_FILE_FORMATS.includes(file.type), {
+      message: 'Please upload a valid file (JSON).',
+    }),
 })
 
 const state = reactive<Partial<schema>>({
@@ -42,7 +47,8 @@ async function onSubmit() {
 
   console.log(json)
 
-  //await importPxData(json)
+  await importProject(json)
+  emit('submitSuccess')
 }
 </script>
 
@@ -51,12 +57,12 @@ async function onSubmit() {
     <UForm :schema="schema" :state="state" @submit="onSubmit">
       <UFormField name="file">
         <UFileUpload
-            v-model="state.file"
-            accept="application/json"
-            label="Import PX data here"
-            :dropzone="true"
-            description="JSON File (Max. 8MB)"
-            class="w-96 min-h-48"
+          v-model="state.file"
+          accept="application/json"
+          label="Import project data here"
+          :dropzone="true"
+          description="JSON File (Max. 8MB)"
+          class="w-96 min-h-48"
         />
       </UFormField>
 
@@ -65,6 +71,4 @@ async function onSubmit() {
   </div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

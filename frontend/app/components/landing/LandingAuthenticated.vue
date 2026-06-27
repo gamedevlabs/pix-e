@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import LandingStandaloneModuleCard from '~/components/landing/LandingStandaloneModuleCard.vue'
-import ProjectImporter from "~/components/ProjectImporter.vue";
+import ProjectImporter from '~/components/ProjectImporter.vue'
 
 interface ProjectCard {
   id: number
@@ -25,7 +25,9 @@ defineProps<{
 }>()
 
 const router = useRouter()
-const { projects, switchProject, deleteProject } = useProjectHandler()
+const { projects, switchProject, deleteProject, fetchProjects } = useProjectHandler()
+
+const open = ref(false)
 
 const getInitials = (name: string): string =>
   name
@@ -95,6 +97,11 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
   if (event?.target && (event.target as HTMLElement).closest('.project-menu-button')) return
   await switchProject(projectId)
 }
+
+async function handleSuccessfulProjectImport() {
+  await fetchProjects()
+  open.value = false
+}
 </script>
 
 <template>
@@ -111,19 +118,16 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
       </div>
 
       <div class="flex gap-3">
-        <UModal>
-          <UButton
-              label="Import Project"
-              icon="i-lucide-import"
-              color="primary"
-              size="md"
-          />
+        <UModal
+          title="Import Project"
+          description="Drag and drop a json file or search in file browser."
+        >
+          <UButton label="Import Project" icon="i-lucide-import" color="primary" size="md"/>
 
-          <template #content>
-            <ProjectImporter />
+          <template #body>
+            <ProjectImporter @submit-success="handleSuccessfulProjectImport" />
           </template>
         </UModal>
-
 
         <UButton
           label="New Project"

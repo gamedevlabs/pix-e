@@ -16,7 +16,7 @@ from pxcharts.models import (
 )
 from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
 
-from .models import Project
+from projects.models import Project
 
 
 def clone_project(

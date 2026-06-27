@@ -27,7 +27,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
         return value
 
-class ProjectExportSerializer(serializers.ModelSerializer):
+class ProjectTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
@@ -36,3 +36,12 @@ class ProjectExportSerializer(serializers.ModelSerializer):
             "genres",
             "target_platforms",
         ]
+
+    def validate_genres(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Genres must be a list.")
+
+        if not all(isinstance(item, str) for item in value):
+            raise serializers.ValidationError("Each genre must be a string.")
+
+        return value
