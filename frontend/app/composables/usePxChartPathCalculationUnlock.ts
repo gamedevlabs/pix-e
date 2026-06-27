@@ -34,22 +34,17 @@ export function usePxChartPathCalculationUnlock(
     return !canUnlock(keys, softGates, false)
   }
 
-  function cartesian(sets: string[][]) {
-    if (!sets.length || sets.every((set) => !set.length)) {
-      return [[]]
-    }
+  function cartesian(sets: string[][]): string[][] {
+    return sets.reduce<string[][]>(
+      (prod, set) => {
+        if (!set.length) {
+          return prod
+        }
 
-    let prod: string[][] = sets[0]!.map((x) => [x])
-
-    sets.slice(1).forEach((set) => {
-      let newProd: string[][] = []
-      set.forEach((element) => {
-        newProd = newProd.concat(prod.map((p) => p.concat([element])))
-      })
-      prod = newProd
-    })
-
-    return prod
+        return prod.flatMap((p) => set.map((element) => [...p, element]))
+      },
+      [[]],
+    )
   }
 
   // removes consumed keys for each valid combination of inventory keyset and unlocking key combination

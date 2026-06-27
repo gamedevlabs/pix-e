@@ -14,6 +14,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isCollapsible: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const {
@@ -117,7 +121,7 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
   <PxNodeCardDetailed
     v-else-if="fetchedNode?.components && visualizationStyle === 'detailed'"
     :node="fetchedNode"
-    :is-collapsible="false"
+    :is-collapsible="isCollapsible"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
     @delete-key="handleDeleteKey"
@@ -127,7 +131,7 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
   <PxNodeCardSimple
     v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
     :node="fetchedNode"
-    :is-collapsible="false"
+    :is-collapsible="isCollapsible"
     :show-context-menu="showContextMenu"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"

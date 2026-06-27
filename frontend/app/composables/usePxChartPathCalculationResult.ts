@@ -5,6 +5,7 @@ export interface PxChartPathCalculationResult {
   pathEdges: Edge[]
   locked: string[]
   softLocked: string[]
+  edgeLocked: string[]
 }
 
 export function usePxChartPathCalculationResult(

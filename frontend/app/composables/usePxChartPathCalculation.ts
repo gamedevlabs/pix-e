@@ -21,9 +21,8 @@ export function usePxChartPathCalculation(
     pathEdges: [],
     locked: [],
     softLocked: [],
+    edgeLocked: [],
   })
-
-  const previousInventory = ref<PxKeySet>({})
 
   const { updateNodeStyling, updateEdgeStyling } = usePxChartPathStyling(
     nodes,
@@ -51,11 +50,34 @@ export function usePxChartPathCalculation(
     alreadyCollected: string[]
   }
 
+  function makeStateKey(qNode: QueueNode): string {
+    return JSON.stringify({
+      id: qNode.id,
+      keys: canonicalizeKeySet(qNode.keys),
+      unlocked: [...new Set(qNode.alreadyUnlocked)].sort(),
+      collected: [...new Set(qNode.alreadyCollected)].sort(),
+    })
+  }
+
+  function canonicalizeKeySet(keyset: PxKeySet): PxKeySet {
+    return Object.fromEntries(
+      Object.entries(keyset)
+        .filter(([, count]) => count > 0)
+        .sort(([a], [b]) => a.localeCompare(b)),
+    )
+  }
+
+  // Keep for debugging and potential other purposes
+  /*function canonicalizeInventory(inventory: PxKeySet[]): PxKeySet[] {
+    return inventory
+      .map(canonicalizeKeySet)
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+  }*/
+
   async function dijkstraInChart(
-    sourceId: string,
+    sourceState: QueueNode,
     targetId: string,
     useLocks: boolean = true,
-    initialInventory: PxKeySet = {},
   ) {
     // initialize
     if (useLocks) {
@@ -63,25 +85,16 @@ export function usePxChartPathCalculation(
       await fetchPxKeyDefinitions()
     }
 
-    const firstQNode = {
-      id: sourceId,
-      prio: 0,
-      keys: initialInventory,
-      name: findNodeById(sourceId)?.data.name ?? sourceId,
-      alreadyUnlocked: [],
-      alreadyCollected: [],
-    }
-
     const dist = new Map<string, number>()
     const prev = new Map<string, string>()
     const prevEdges = new Map<string, Edge>()
     const states = new Map<string, QueueNode>()
 
-    const sourceNodeStateKey = makeStateKey(firstQNode)
+    const sourceNodeStateKey = makeStateKey(sourceState)
     dist.set(sourceNodeStateKey, 0)
-    states.set(sourceNodeStateKey, firstQNode)
+    states.set(sourceNodeStateKey, sourceState)
 
-    const q: QueueNode[] = [firstQNode]
+    const q: QueueNode[] = [sourceState]
 
     function pushIfBetter(newNodeState: QueueNode, previousState: QueueNode, edge?: Edge) {
       const newStateKey = makeStateKey(newNodeState)
@@ -90,7 +103,7 @@ export function usePxChartPathCalculation(
       const oldDist = dist.get(newStateKey) ?? Infinity
 
       if (newNodeState.prio < oldDist) {
-        //console.log(`consumable push ${newNodeState.name} ${newStateKey} with ${newNodeState.prio}`)
+        console.log(`consumable push ${newNodeState.name} ${newStateKey} with ${newNodeState.prio}`)
 
         dist.set(newStateKey, newNodeState.prio)
         states.set(newStateKey, newNodeState)
@@ -121,7 +134,6 @@ export function usePxChartPathCalculation(
         console.log(`Found target node!`)
         found = true
         targetKeyState = makeStateKey(poppedNodeState)
-        previousInventory.value = { ...poppedNodeState.keys }
         //console.log(`previous inventory for real ${JSON.stringify(previousInventory.value)}`)
         break
       }
@@ -166,6 +178,10 @@ export function usePxChartPathCalculation(
         }
 
         pushIfBetter(newNodeState, poppedNodeState)
+      }
+
+      if (outEdges.length === 0) {
+        result.value.edgeLocked.push(poppedNodeState.id)
       }
 
       // check each outgoing edge
@@ -277,30 +293,26 @@ export function usePxChartPathCalculation(
 
         current = prevKey
       }
+
+      result.value.locked = result.value.locked
+        .concat(allLockedEdges)
+        .filter((edge) => !states.get(targetKeyState)?.alreadyUnlocked.includes(edge))
+    } else {
+      const unlockedInAnyExploredState = new Set<string>()
+
+      for (const state of states.values()) {
+        for (const edgeId of state.alreadyUnlocked) {
+          unlockedInAnyExploredState.add(edgeId)
+        }
+      }
+
+      result.value.locked = [...new Set(result.value.locked.concat(allLockedEdges))].filter(
+        (edgeId) => !unlockedInAnyExploredState.has(edgeId),
+      )
     }
 
-    result.value.locked = result.value.locked
-      .concat(allLockedEdges)
-      .filter((edge) => !states.get(targetKeyState)?.alreadyUnlocked.includes(edge))
     result.value.pathEdges = seqEdges.reverse()
-    return seq.reverse()
-  }
-
-  function makeStateKey(qNode: QueueNode): string {
-    return JSON.stringify({
-      id: qNode.id,
-      keys: canonicalizeKeySet(qNode.keys),
-      unlocked: [...new Set(qNode.alreadyUnlocked)].sort(),
-      collected: [...new Set(qNode.alreadyCollected)].sort(),
-    })
-  }
-
-  function canonicalizeKeySet(keyset: PxKeySet): PxKeySet {
-    return Object.fromEntries(
-      Object.entries(keyset)
-        .filter(([, count]) => count > 0)
-        .sort(([a], [b]) => a.localeCompare(b)),
-    )
+    return { path: seq.reverse(), targetState: states.get(targetKeyState) ?? undefined }
   }
 
   async function dijkstraInChartMultiple(selected: string[], useLocks: boolean = true) {
@@ -310,19 +322,21 @@ export function usePxChartPathCalculation(
       return []
     }
 
-    fullPath.push(selected[0]!)
+    const sourceId = selected[0] ?? ''
+
+    fullPath.push(sourceId)
+
+    let prevState: QueueNode = createQNodeFromId(sourceId)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const nextSeq = await dijkstraInChart(
-        selected[i]!,
-        selected[i + 1]!,
-        useLocks,
-        previousInventory.value,
-      )
-      if (!nextSeq.length) {
+      const { path, targetState } = await dijkstraInChart(prevState, selected[i + 1]!, useLocks)
+      if (!path.length) {
         return []
       }
-      fullPath = fullPath.concat(nextSeq.slice(1))
+      fullPath = fullPath.concat(path.slice(1))
+      if (targetState) {
+        prevState = targetState
+      }
     }
 
     return fullPath
@@ -336,7 +350,12 @@ export function usePxChartPathCalculation(
     selectedNodes.value = selected
     let newPath: string[]
     if (selected.length == 2 && selected[0] && selected[1]) {
-      newPath = await dijkstraInChart(selected[0], selected[1], settings.value.use_locks)
+      const result = await dijkstraInChart(
+        createQNodeFromId(selected[0]),
+        selected[1],
+        settings.value.use_locks,
+      )
+      newPath = result.path
     } else {
       newPath = await dijkstraInChartMultiple(selected, settings.value.use_locks)
     }
@@ -350,6 +369,17 @@ export function usePxChartPathCalculation(
     )
   }
 
+  function createQNodeFromId(id: string): QueueNode {
+    return {
+      id: id,
+      prio: 0,
+      keys: {},
+      name: findNodeById(id)?.data.name ?? id,
+      alreadyUnlocked: [],
+      alreadyCollected: [],
+    }
+  }
+
   async function resetPathCalculation() {
     // reset path itself and locked edges
     result.value = {
@@ -357,9 +387,9 @@ export function usePxChartPathCalculation(
       pathEdges: [],
       locked: [],
       softLocked: [],
+      edgeLocked: [],
     }
     selectedNodes.value = []
-    previousInventory.value = {}
   }
 
   return {

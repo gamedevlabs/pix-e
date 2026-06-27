@@ -95,7 +95,7 @@ defineShortcuts({
       <PxNodeCard
         :node-id="pxNode.id"
         :visualization-style="'simple'"
-        :is-collapsible="false"
+        :is-collapsible="true"
         :show-context-menu="true"
         @delete="handleDelete()"
         @switch-node="handleSwitchPxNode()"
