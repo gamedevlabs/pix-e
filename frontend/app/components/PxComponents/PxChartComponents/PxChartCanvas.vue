@@ -495,72 +495,7 @@ async function handleChangeEdgeDirectionality() {
       @edit-settings="handleEditSettings()"
       @edit-locks="handleEditLocks()"
       @change-edge-directionality="handleChangeEdgeDirectionality()"
-    >
-      <template #right>
-        <!-- Context Strategy Analysis Button -->
-        <div class="flex flex-col items-end gap-2">
-          <div class="flex items-center gap-2">
-            <USelect
-              v-model="precomputeScope"
-              :items="precomputeScopeOptions"
-              value-key="value"
-              label-key="label"
-              size="sm"
-              :disabled="true"
-            />
-            <USelect
-              v-model="precomputeStrategy"
-              :items="precomputeStrategyOptions"
-              value-key="value"
-              label-key="label"
-              size="sm"
-              :disabled="true"
-            />
-            <UButton
-              size="sm"
-              icon="i-heroicons-cog-6-tooth"
-              color="primary"
-              :loading="precomputeLoading"
-              :disabled="true"
-              @click="handlePrecomputeArtifacts"
-            >
-              Precompute Artifacts
-            </UButton>
-            <UButton
-              size="sm"
-              icon="i-heroicons-trash"
-              color="error"
-              variant="outline"
-              :disabled="true"
-              @click="handleResetArtifacts"
-            >
-              Reset Cache
-            </UButton>
-            <div>
-              <UTooltip
-                :text="selectedNodeForAnalysis ? 'Analyze Node Context' : 'Select a node first'"
-                :content="{ align: 'center', side: 'left' }"
-              >
-                <UButton
-                  size="lg"
-                  icon="i-heroicons-cpu-chip"
-                  color="warning"
-                  :disabled="!selectedNodeForAnalysis || true"
-                  @click="openStrategyPanel"
-                >
-                  Context Analysis
-                </UButton>
-              </UTooltip>
-              <!--
-              <div v-if="selectedNodeForAnalysis" class="text-xs text-gray-600 dark:text-gray-400">
-                Selected: {{ selectedNodeForAnalysis.nodeName }}
-              </div>
-              -->
-            </div>
-          </div>
-        </div>
-      </template>
-    </PxChartToolbar>
+    />
 
     <UDropdownMenu
       v-model:open="contextMenuOpen"
@@ -650,12 +585,14 @@ async function handleChangeEdgeDirectionality() {
           :node-id="selectedNodeForAnalysis.nodeId"
           :node-name="selectedNodeForAnalysis.nodeName"
         />
+
       </template>
 
       <template #footer>
         <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close</UButton>
       </template>
     </USlideover>
+
 
     <div v-if="error" style="color: red; margin-top: 1rem">
       {{ error }}

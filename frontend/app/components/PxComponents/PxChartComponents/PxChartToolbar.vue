@@ -125,7 +125,7 @@ const singleEdgeSelected = computed(() => {
     <!-- Temporary Buttons -->
     <slot name="right" class="flex items-center gap-3">
       <!-- Analysis buttons/menus, less frequently used -->
-      Placeholder for Analysis menus
+      <!-- Placeholder for Analysis menus-->
     </slot>
   </UDashboardToolbar>
 </template>
