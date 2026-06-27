@@ -51,15 +51,23 @@ def import_project_data(project, payload, user):
                                         owner=user,
                                     ))
 
-    key_definitions_map = import_objects(payload.get("px_key_definitions", []),
-                                         lambda d: PxKeyDefinition.objects.create(
-                                             name=d["name"],
-                                             key_type=d["key_type"],
-                                             consumable=d["consumable"],
-                                             fixed=d["fixed"],
-                                             unique=d["unique"],
-                                             owner=user,
-                                         ))
+    key_definitions_map = {}
+
+    for d in payload.get("px_key_definitions", []):
+        old_id = d["id"]
+
+        definition, _created = PxKeyDefinition.objects.get_or_create(
+            owner=user,
+            name=d["name"],
+            defaults={
+                "key_type": d["key_type"],
+                "consumable": d["consumable"],
+                "fixed": d["fixed"],
+                "unique": d["unique"],
+            },
+        )
+
+        key_definitions_map[old_id] = definition
 
     key_assignment_map = import_objects(payload.get("px_key_assignments", []),
                                         lambda d: PxKeyAssignment.objects.create(
@@ -71,13 +79,21 @@ def import_project_data(project, payload, user):
 
     lock_definitions = payload.get("px_lock_definitions", [])
 
-    lock_definition_map = import_objects(lock_definitions,
-                                         lambda d: PxLockDefinition.objects.create(
-                                             name=d["name"],
-                                             soft_gate=d["soft_gate"],
-                                             unlock_mode=d["unlock_mode"],
-                                             owner=user,
-                                         ))
+    lock_definition_map = {}
+
+    for d in lock_definitions:
+        old_id = d["id"]
+
+        lock, _created = PxLockDefinition.objects.get_or_create(
+            owner=user,
+            name=d["name"],
+            defaults={
+                "soft_gate": d["soft_gate"],
+                "unlock_mode": d["unlock_mode"],
+            },
+        )
+
+        lock_definition_map[old_id] = lock
 
     for d in lock_definitions:
         lock = lock_definition_map[d["id"]]
