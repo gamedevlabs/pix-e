@@ -41,9 +41,7 @@ export function usePxChartPathCalculationUnlock(
           return prod
         }
 
-        return prod.flatMap((p) =>
-          set.map((element) => [...p, element]),
-        )
+        return prod.flatMap((p) => set.map((element) => [...p, element]))
       },
       [[]],
     )

@@ -67,13 +67,11 @@ export function usePxChartPathCalculation(
   }
 
   // Keep for debugging and potential other purposes
-  function canonicalizeInventory(inventory: PxKeySet[]): PxKeySet[] {
+  /*function canonicalizeInventory(inventory: PxKeySet[]): PxKeySet[] {
     return inventory
       .map(canonicalizeKeySet)
-      .sort((a, b) =>
-        JSON.stringify(a).localeCompare(JSON.stringify(b)),
-      )
-  }
+      .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+  }*/
 
   async function dijkstraInChart(
     sourceState: QueueNode,
@@ -197,9 +195,9 @@ export function usePxChartPathCalculation(
         let possibleInventoriesAfterConsumption = [currentInventory]
         let unlockedEdges = [...poppedNodeState.alreadyUnlocked]
 
-        console.log(
+        /*console.log(
           `consumable: currently in node ${poppedNodeState.name} with ${JSON.stringify(canonicalizeKeySet(poppedNodeState.keys))} for ${edgeTargetName} with ${currentDistance}`,
-        )
+        )*/
 
         // Check whether edge is unlocked or needs to be unlocked
         if (
@@ -217,9 +215,9 @@ export function usePxChartPathCalculation(
                 outEdge.data.locks,
               )
 
-              console.log(
+              /*console.log(
                 `consumable after ${JSON.stringify(canonicalizeInventory(possibleInventoriesAfterConsumption))}`,
-              )
+              )*/
 
               // a potential softlock occurs when unlock is possible with more than one key
               if (possibleInventoriesAfterConsumption.length > 1) {
@@ -230,9 +228,6 @@ export function usePxChartPathCalculation(
             unlockedEdges = [...poppedNodeState.alreadyUnlocked, outEdge.id]
           } else {
             // We don't have a key (yet), so add it to locked edges for highlighting (and filtering) later
-            console.log(
-              `consumable can't unlock`,
-            )
             allLockedEdges.push(outEdge.id)
             continue
           }
