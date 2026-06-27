@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 
 from game_concept.models import GameConcept
 from pillars.models import Pillar
+from projects.models import Project
 from pxcharts.models import (
     PxChart,
     PxChartContainer,
@@ -15,8 +16,6 @@ from pxcharts.models import (
     PxChartEdge,
 )
 from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
-
-from projects.models import Project
 
 
 def clone_project(

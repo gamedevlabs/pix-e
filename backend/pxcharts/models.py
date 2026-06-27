@@ -1,9 +1,9 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 
 from pxnodes.models import PxLockDefinition, PxNode
-
-import uuid
 
 User = get_user_model()
 

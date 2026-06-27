@@ -10,13 +10,15 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
 
+from projects.services.clone import clone_project
 from pxcharts.services.transfer import export_project_data as export_charts
 from pxnodes.services.transfer import export_project_data as export_nodes
+
 from .models import Project
 from .serializers import (
-    ProjectSerializer, ProjectTransferSerializer,
+    ProjectSerializer,
+    ProjectTransferSerializer,
 )
-from projects.services.clone import clone_project
 from .services.import_project import import_project_data
 from .utils import get_current_project
 
@@ -93,10 +95,7 @@ class ProjectViewSet(ModelViewSet):
 
         serializer = ProjectTransferSerializer(project)
 
-        data = {
-            "version": 1,
-            "project": serializer.data
-        }
+        data = {"version": 1, "project": serializer.data}
 
         data.update(export_charts(project))
         data.update(export_nodes(project))
@@ -137,4 +136,3 @@ class ProjectViewSet(ModelViewSet):
         return Response(
             ProjectSerializer(new_project).data, status=status.HTTP_201_CREATED
         )
-

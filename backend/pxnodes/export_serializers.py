@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from pxcharts.serializers import PxChartSerializer
-
 from .models import (
     PxComponent,
     PxComponentDefinition,

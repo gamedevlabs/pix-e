@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
-import {useDataTransfer} from "~/composables/useDataTransfer";
+import { useDataTransfer } from '~/composables/useDataTransfer'
 
 const emit = defineEmits(['submitSuccess'])
 

@@ -32,6 +32,7 @@ class PxChartSerializer(serializers.ModelSerializer):
             )
         return super().update(instance, validated_data)
 
+
 class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartContainerLayout

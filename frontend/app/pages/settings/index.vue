@@ -4,7 +4,7 @@ import SettingsProjectDetailsCard from '~/components/settings/SettingsProjectDet
 import SettingsProjectIconCard from '~/components/settings/SettingsProjectIconCard.vue'
 import SettingsMetadataCard from '~/components/settings/SettingsMetadataCard.vue'
 import SettingsSaveBar from '~/components/settings/SettingsSaveBar.vue'
-import ProjectExportButton from "~/components/ProjectExportButton.vue";
+import ProjectExportButton from '~/components/ProjectExportButton.vue'
 
 definePageMeta({
   middleware: 'authentication',

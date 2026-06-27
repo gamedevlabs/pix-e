@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {useDataTransfer} from "~/composables/useDataTransfer";
+import { useDataTransfer } from '~/composables/useDataTransfer'
 
 const { downloadJson } = useDownloadJson()
 const { exportProject } = useDataTransfer()
@@ -7,8 +7,8 @@ const { currentProjectId } = useProjectHandler()
 
 async function onClickExportCurrentData() {
   if (!currentProjectId.value) {
-    console.error("No project selected")
-    return;
+    console.error('No project selected')
+    return
   }
 
   const pxdata = await exportProject(currentProjectId.value.toString())

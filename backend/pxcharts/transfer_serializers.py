@@ -4,9 +4,9 @@ from pxcharts.models import (
     PxChart,
     PxChartContainer,
     PxChartContainerLayout,
-    PxChartEdge, PxLockAssignment,
+    PxChartEdge,
+    PxLockAssignment,
 )
-from pxnodes.models import PxComponent, PxComponentDefinition, PxNode
 
 
 class PxChartTransferSerializer(serializers.ModelSerializer):
@@ -19,6 +19,7 @@ class PxChartTransferSerializer(serializers.ModelSerializer):
             "associatedNode",
         ]
         read_only_fields = ["id"]
+
 
 class PxChartContainerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,7 +36,16 @@ class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
 class PxChartEdgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartEdge
-        fields = ["id", "px_chart", "source", "sourceHandle", "target", "targetHandle", "bidirectional"]
+        fields = [
+            "id",
+            "px_chart",
+            "source",
+            "sourceHandle",
+            "target",
+            "targetHandle",
+            "bidirectional",
+        ]
+
 
 class PxLockAssignmentSerializer(serializers.ModelSerializer):
     class Meta:

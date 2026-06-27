@@ -1,10 +1,9 @@
 from rest_framework.exceptions import ValidationError
 
-from pxnodes.services.transfer import import_project_data as import_node_data
-from pxcharts.services.transfer import import_project_data as import_chart_data
-
-from projects.serializers import ProjectTransferSerializer
 from projects.models import Project
+from projects.serializers import ProjectTransferSerializer
+from pxcharts.services.transfer import import_project_data as import_chart_data
+from pxnodes.services.transfer import import_project_data as import_node_data
 
 SUPPORTED_VERSION = 1
 
@@ -20,7 +19,9 @@ def import_project_data(payload, user):
     if not project_data:
         raise ValidationError("Missing project data.")
 
-    project_data["name"] = get_available_project_name(user=user, base_name=project_data["name"])
+    project_data["name"] = get_available_project_name(
+        user=user, base_name=project_data["name"]
+    )
 
     serializer = ProjectTransferSerializer(data=project_data)
     serializer.is_valid(raise_exception=True)
@@ -35,9 +36,9 @@ def import_project_data(payload, user):
 
 def get_available_project_name(user, base_name):
     existing_names = set(
-        Project.objects
-        .filter(user=user, name__startswith=base_name)
-        .values_list("name", flat=True)
+        Project.objects.filter(user=user, name__startswith=base_name).values_list(
+            "name", flat=True
+        )
     )
 
     if base_name not in existing_names:

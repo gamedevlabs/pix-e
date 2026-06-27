@@ -27,6 +27,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
         return value
 
+
 class ProjectTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
