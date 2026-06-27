@@ -10,7 +10,7 @@ definePageMeta({
     title: 'Charts',
     icon: 'i-lucide-chart-network',
     navGroup: 'main',
-    navParent: 'player-experience',
+    //navParent: 'player-experience',
     navOrder: 1,
     showInNav: true,
   },

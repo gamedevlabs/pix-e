@@ -68,12 +68,13 @@ defineShortcuts({
           popover
           class="mt-3"
         />
-
+        <!--
         <USeparator
           :label="collapsed ? undefined : 'Standalone Tools'"
           class="my-3"
           :ui="{ label: 'text-xs text-gray-400 dark:text-gray-500 px-2' }"
         />
+        -->
 
         <!-- Standalone tools -->
         <UNavigationMenu
@@ -86,7 +87,9 @@ defineShortcuts({
 
         <!-- Footer: onboarding trigger + hide sidebar + external links -->
         <div class="mt-auto w-full flex flex-col items-start">
+          <!--
           <OnboardingTrigger mode="sidebar" :collapsed="collapsed" />
+          -->
 
           <div v-if="!collapsed" class="mt-auto w-full min-w-0 flex flex-col items-start">
             <UTooltip text="Hide sidebar (S)">

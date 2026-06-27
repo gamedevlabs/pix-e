@@ -11,7 +11,7 @@ definePageMeta({
     icon: 'i-lucide-landmark',
     navGroup: 'main',
     navOrder: 2,
-    showInNav: true,
+    showInNav: false,
   },
 })
 // ============================================================================

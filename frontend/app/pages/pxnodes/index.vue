@@ -7,7 +7,7 @@ definePageMeta({
     title: 'Nodes',
     icon: 'i-lucide-hexagon',
     navGroup: 'main',
-    navParent: 'player-experience',
+    //navParent: 'player-experience',
     navOrder: 2,
     showInNav: true,
   },

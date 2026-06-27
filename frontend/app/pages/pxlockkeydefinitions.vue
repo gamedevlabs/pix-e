@@ -9,7 +9,7 @@ definePageMeta({
     title: 'Lock and Key Definitions',
     icon: 'i-lucide-book-key',
     navGroup: 'main',
-    navParent: 'player-experience',
+    //navParent: 'player-experience',
     navOrder: 5,
     showInNav: true,
   },

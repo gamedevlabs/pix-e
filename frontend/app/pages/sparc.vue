@@ -11,7 +11,7 @@ definePageMeta({
     icon: 'i-lucide-sparkles',
     navGroup: 'main',
     navOrder: 5,
-    showInNav: true,
+    showInNav: false,
   },
 })
 // ============================================================================

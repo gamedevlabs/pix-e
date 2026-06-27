@@ -7,7 +7,7 @@ definePageMeta({
     title: 'Components',
     icon: 'i-lucide-component',
     navGroup: 'main',
-    navParent: 'player-experience',
+    //navParent: 'player-experience',
     navOrder: 4,
     showInNav: true,
   },

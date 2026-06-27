@@ -12,7 +12,7 @@ definePageMeta({
     icon: 'i-lucide-users',
     navGroup: 'main',
     navOrder: 3,
-    showInNav: true,
+    showInNav: false,
   },
 })
 </script>
