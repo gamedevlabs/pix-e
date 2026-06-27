@@ -1,11 +1,40 @@
 import { useApi } from '~/composables/useApi'
 
-export function usePxExport() {
+export function useExport() {
   const { apiFetch } = useApi()
   const loading = ref<boolean>(false)
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
   const { addLog } = useSessionLog()
+
+  async function exportProject(projectId: string): Promise<object | undefined> {
+    addLog('info', 'project_export_started')
+
+    loading.value = true
+
+    try {
+      const data = await apiFetch<object>(`/api/projects/${projectId}/export/`, {
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      addLog('info', 'project_export_succeeded')
+      return data
+    } catch (err) {
+      addLog('error', 'project_export_failed', {
+        message: err instanceof Error ? err.message : String(err),
+      })
+      error.value = err
+      errorToast(err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function importProject(payload: object) {
+
+  }
 
   async function exportPxData(): Promise<object> {
     addLog('info', 'px_export_started')
@@ -58,5 +87,7 @@ export function usePxExport() {
     error,
     exportPxData,
     importPxData,
+    exportProject,
+    importProject,
   }
 }

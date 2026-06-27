@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import LandingStandaloneModuleCard from '~/components/landing/LandingStandaloneModuleCard.vue'
+import ProjectImporter from "~/components/ProjectImporter.vue";
 
 interface ProjectCard {
   id: number
@@ -110,6 +111,20 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
       </div>
 
       <div class="flex gap-3">
+        <UModal>
+          <UButton
+              label="Import Project"
+              icon="i-lucide-import"
+              color="primary"
+              size="md"
+          />
+
+          <template #content>
+            <ProjectImporter />
+          </template>
+        </UModal>
+
+
         <UButton
           label="New Project"
           icon="i-lucide-plus"
@@ -135,6 +150,7 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
             Create your first project to get started with pix:e's player experience tools.
           </p>
         </div>
+
         <UButton
           label="Create Project"
           icon="i-lucide-plus"

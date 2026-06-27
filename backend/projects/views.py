@@ -9,9 +9,11 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
 
+from pxcharts.services.export import export_project_data as export_charts
+from pxnodes.services.export import export_project_data as export_nodes
 from .models import Project
 from .serializers import (
-    ProjectSerializer,
+    ProjectSerializer, ProjectExportSerializer,
 )
 from .services import clone_project
 from .utils import get_current_project
@@ -70,6 +72,22 @@ class ProjectViewSet(ModelViewSet):
         project.save(update_fields=["is_current"])
         return Response(ProjectSerializer(project).data)
 
+    @action(detail=True, methods=["get"])
+    def export(self, request, pk=None):
+        project = self.get_object()
+
+        serializer = ProjectExportSerializer(project)
+
+        data = {
+            "version": 1,
+            "project": serializer.data
+        }
+
+        data.update(export_charts(project))
+        data.update(export_nodes(project))
+
+        return Response(data)
+
     @action(detail=True, methods=["post"], url_path="clone")
     def clone(self, request: Request, pk: Optional[int] = None) -> Response:
         user = cast(User, request.user)
@@ -104,3 +122,4 @@ class ProjectViewSet(ModelViewSet):
         return Response(
             ProjectSerializer(new_project).data, status=status.HTTP_201_CREATED
         )
+

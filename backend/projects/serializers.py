@@ -26,3 +26,13 @@ class ProjectSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Each genre must be a string.")
 
         return value
+
+class ProjectExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            "name",
+            "description",
+            "genres",
+            "target_platforms",
+        ]
