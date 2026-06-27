@@ -21,6 +21,7 @@ export function usePxChartPathCalculation(
     pathEdges: [],
     locked: [],
     softLocked: [],
+    edgeLocked: [],
   })
 
   const { updateNodeStyling, updateEdgeStyling } = usePxChartPathStyling(
@@ -177,6 +178,10 @@ export function usePxChartPathCalculation(
         }
 
         pushIfBetter(newNodeState, poppedNodeState)
+      }
+
+      if (outEdges.length === 0) {
+        result.value.edgeLocked.push(poppedNodeState.id)
       }
 
       // check each outgoing edge
@@ -382,6 +387,7 @@ export function usePxChartPathCalculation(
       pathEdges: [],
       locked: [],
       softLocked: [],
+      edgeLocked: [],
     }
     selectedNodes.value = []
   }

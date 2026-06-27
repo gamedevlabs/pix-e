@@ -29,7 +29,9 @@ export function usePxChartPathStyling(
   async function updateNodeStyling() {
     // set style of nodes in calculated path
     for (const node of nodes.value) {
-      if (!result.value.pathNodes.length && selectedNodes.value.includes(node.id)) {
+      if (result.value.edgeLocked.includes(node.id)) {
+        node.style = getPathStyle('var(--ui-secondary)')
+      } else if (!result.value.pathNodes.length && selectedNodes.value.includes(node.id)) {
         // use error color for selected nodes when no path connects them
         node.style = getPathStyle('var(--ui-error)')
       } else if (settings.value.show_soft_locks && result.value.softLocked.includes(node.id)) {
