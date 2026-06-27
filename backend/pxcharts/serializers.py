@@ -10,6 +10,29 @@ from .models import (
 )
 
 
+class PxChartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PxChart
+        fields = [
+            "id",
+            "name",
+            "description",
+            "project",
+            "associatedNode",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["owner", "project", "created_at", "updated_at"]
+
+    def update(self, instance, validated_data):
+        if "id" in validated_data and validated_data["id"] != instance.id:
+            raise serializers.ValidationError(
+                {"id": "Cannot update ID after creation."}
+            )
+        return super().update(instance, validated_data)
+
+
 class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartContainerLayout
@@ -147,29 +170,6 @@ class PxChartEdgeSerializer(serializers.ModelSerializer):
                 "Target container does not belong to the chart."
             )
         return data
-
-    def update(self, instance, validated_data):
-        if "id" in validated_data and validated_data["id"] != instance.id:
-            raise serializers.ValidationError(
-                {"id": "Cannot update ID after creation."}
-            )
-        return super().update(instance, validated_data)
-
-
-class PxChartSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PxChart
-        fields = [
-            "id",
-            "name",
-            "description",
-            "project",
-            "associatedNode",
-            "owner",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["owner", "project", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:

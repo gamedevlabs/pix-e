@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -5,7 +7,7 @@ User = get_user_model()
 
 
 class PxNode(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -26,7 +28,7 @@ class PxNode(models.Model):
 
 
 class PxComponentDefinition(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     TYPE_CHOICES = [("number", "Number"), ("string", "String"), ("boolean", "Boolean")]
     name = models.CharField(max_length=255)
@@ -49,7 +51,7 @@ class PxComponentDefinition(models.Model):
 
 
 class PxComponent(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     node = models.ForeignKey(
         "PxNode", on_delete=models.CASCADE, related_name="components"
@@ -386,7 +388,7 @@ class ArtifactEmbedding(models.Model):
 
 class PxKeyDefinition(models.Model):
 
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     name = models.CharField(max_length=255)
 
@@ -409,12 +411,13 @@ class PxKeyDefinition(models.Model):
 
 
 class PxKeyAssignment(models.Model):
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    count = models.IntegerField()
 
     node = models.ForeignKey("PxNode", on_delete=models.CASCADE, related_name="keys")
 
     definition = models.ForeignKey("PxKeyDefinition", on_delete=models.CASCADE)
-    count = models.IntegerField()
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -429,11 +432,10 @@ class PxKeyAssignment(models.Model):
 
 class PxLockDefinition(models.Model):
 
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     name = models.CharField(max_length=255)
 
-    unlocked_by = models.ManyToManyField(PxKeyDefinition)
     soft_gate = models.BooleanField()
 
     UNLOCK_MODE_CHOICES = [
@@ -443,6 +445,7 @@ class PxLockDefinition(models.Model):
         ("collapsible", "Collapsible"),
     ]
     unlock_mode = models.CharField(max_length=20, choices=UNLOCK_MODE_CHOICES)
+    unlocked_by = models.ManyToManyField(PxKeyDefinition)
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
