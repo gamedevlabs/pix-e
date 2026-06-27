@@ -37,8 +37,12 @@ const dropdownItems = computed(() => [
     </template>
 
     <template #right>
-      <HelpdeskFormModal />
+
       <UColorModeSwitch />
+
+
+      <!--<HelpdeskFormModal />-->
+
 
       <UButton
         v-if="!authentication.isLoggedIn.value"
@@ -48,6 +52,7 @@ const dropdownItems = computed(() => [
         @click="router.push('login')"
       />
       <div v-else class="flex items-center gap-2">
+        <!--
         <UButton
           icon="i-lucide-key-round"
           color="neutral"
@@ -62,6 +67,7 @@ const dropdownItems = computed(() => [
           :icon="llmStore.activeModelIcon"
           class="w-48"
         />
+        -->
         <UDropdownMenu :items="dropdownItems">
           <!-- Wrap so the whole avatar surface is clickable -->
           <div>
