@@ -329,6 +329,7 @@ async function handleAddKey() {
                     icon="i-lucide-sparkles"
                     color="warning"
                     variant="soft"
+                    disabled
                     :loading="isValidating"
                     @click="handleValidation"
                   />
