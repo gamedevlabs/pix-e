@@ -294,12 +294,13 @@ export function usePxChartPathCalculation(
         }
       }
 
-      result.value.locked = [...new Set(result.value.locked.concat(allLockedEdges))]
-        .filter((edgeId) => !unlockedInAnyExploredState.has(edgeId))
+      result.value.locked = [...new Set(result.value.locked.concat(allLockedEdges))].filter(
+        (edgeId) => !unlockedInAnyExploredState.has(edgeId),
+      )
     }
 
     result.value.pathEdges = seqEdges.reverse()
-    return { path: seq.reverse(), targetState: states.get(targetKeyState) ?? undefined}
+    return { path: seq.reverse(), targetState: states.get(targetKeyState) ?? undefined }
   }
 
   async function dijkstraInChartMultiple(selected: string[], useLocks: boolean = true) {
@@ -308,19 +309,15 @@ export function usePxChartPathCalculation(
     if (selected.length < 2) {
       return []
     }
-    
+
     const sourceId = selected[0] ?? ''
 
     fullPath.push(sourceId)
-    
+
     let prevState: QueueNode = createQNodeFromId(sourceId)
 
     for (let i = 0; i < selected.length - 1; i++) {
-      const {path, targetState} = await dijkstraInChart(
-        prevState,
-        selected[i + 1]!,
-        useLocks,
-      )
+      const { path, targetState } = await dijkstraInChart(prevState, selected[i + 1]!, useLocks)
       if (!path.length) {
         return []
       }
@@ -341,7 +338,11 @@ export function usePxChartPathCalculation(
     selectedNodes.value = selected
     let newPath: string[]
     if (selected.length == 2 && selected[0] && selected[1]) {
-      const result = await dijkstraInChart(createQNodeFromId(selected[0]), selected[1], settings.value.use_locks)
+      const result = await dijkstraInChart(
+        createQNodeFromId(selected[0]),
+        selected[1],
+        settings.value.use_locks,
+      )
       newPath = result.path
     } else {
       newPath = await dijkstraInChartMultiple(selected, settings.value.use_locks)

@@ -17,7 +17,7 @@ const props = defineProps({
   isCollapsible: {
     type: Boolean,
     default: false,
-  }
+  },
 })
 
 const {
