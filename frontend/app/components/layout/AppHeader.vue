@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import HelpdeskFormModal from '~/components/helpdesk/HelpdeskFormModal.vue'
+//import HelpdeskFormModal from '~/components/helpdesk/HelpdeskFormModal.vue'
 
 const authentication = useAuthentication()
-const llmStore = useLLM()
+//const llmStore = useLLM()
 const router = useRouter()
 const apiKeysOpen = ref(false)
 
@@ -37,12 +37,9 @@ const dropdownItems = computed(() => [
     </template>
 
     <template #right>
-
       <UColorModeSwitch />
 
-
       <!--<HelpdeskFormModal />-->
-
 
       <UButton
         v-if="!authentication.isLoggedIn.value"

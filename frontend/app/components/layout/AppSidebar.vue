@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
+//import OnboardingTrigger from '~/components/onboarding/OnboardingTrigger.vue'
 
 defineProps<{
   links: NavigationMenuItem[][]

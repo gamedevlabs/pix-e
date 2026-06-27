@@ -14,9 +14,9 @@ import {
 import { Background } from '@vue-flow/background'
 import PxChartToolbar from './PxChartToolbar.vue'
 import { PxChartEdge, PxChartSettingsForm, PxLockEditForm } from '#components'
-import { useApi } from '~/composables/useApi'
+//import { useApi } from '~/composables/useApi'
 
-const { apiFetch } = useApi()
+//const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
 
 const emit = defineEmits<{
@@ -26,7 +26,7 @@ const emit = defineEmits<{
 const { screenToFlowCoordinate, _onPaneReady, getSelectedEdges } = useVueFlow()
 
 const chartId = props.chartId
-const { success: successToast, error: errorToast } = usePixeToast()
+//const { success: successToast, error: errorToast } = usePixeToast()
 
 const { items: pxNodes, fetchAll: fetchPxNodes, fetchById: fetchPxNodeById } = usePxNodes()
 const { items: pxComponents, fetchAll: fetchPxComponents } = usePxComponents()
@@ -90,7 +90,7 @@ const selectedNodeForAnalysis = ref<{
   nodeName: string
 } | null>(null)
 const showStrategyPanel = ref(false)
-const precomputeLoading = ref(false)
+/*const precomputeLoading = ref(false)
 const precomputeStrategy = ref('structural_memory')
 const precomputeScope = ref('all')
 const precomputeScopeOptions = [
@@ -107,7 +107,7 @@ const precomputeStrategyOptions = [
   { value: 'full_context', label: 'Full Context' },
 ]
 const strategiesNeedingNode = new Set(['hmem', 'combined'])
-
+*/
 const menuSnapToGrid = ref(true)
 //same distance as background grid
 const grid = [20, 20] as SnapGrid
@@ -173,11 +173,11 @@ function handleNodeClick(event: { node: Node }) {
   }
 }
 
-function openStrategyPanel() {
+/*function openStrategyPanel() {
   if (selectedNodeForAnalysis.value) {
     showStrategyPanel.value = true
   }
-}
+  }
 
 function closeStrategyPanel() {
   showStrategyPanel.value = false
@@ -242,7 +242,7 @@ async function handleResetArtifacts() {
   } catch (err) {
     errorToast(err)
   }
-}
+}*/
 
 onMounted(() => {
   loadGraph()
@@ -585,14 +585,12 @@ async function handleChangeEdgeDirectionality() {
           :node-id="selectedNodeForAnalysis.nodeId"
           :node-name="selectedNodeForAnalysis.nodeName"
         />
-
       </template>
 
       <template #footer>
         <UButton color="neutral" variant="outline" @click="closeStrategyPanel"> Close</UButton>
       </template>
     </USlideover>
-
 
     <div v-if="error" style="color: red; margin-top: 1rem">
       {{ error }}
