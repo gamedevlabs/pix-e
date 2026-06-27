@@ -25,7 +25,7 @@ def export_project_data(project):
             pxchartcontainerlayouts, many=True
         ).data,
         "px_chart_edges": PxChartEdgeSerializer(pxchartedges, many=True).data,
-        "lock_assignments": PxLockAssignmentSerializer(pxLockAssignments, many=True).data,
+        "px_lock_assignments": PxLockAssignmentSerializer(pxLockAssignments, many=True).data,
     }
 
 
@@ -70,7 +70,7 @@ def import_project_data(project, payload, user, node_map, lock_definition_map):
                               lambda d: PxChartEdge.objects.create(
                                   sourceHandle=d["sourceHandle"],
                                   targetHandle=d["targetHandle"],
-                                  # bidirectional=d["bidirectional"],
+                                  bidirectional=d["bidirectional"],
                                   source=container_map[d["source"]],
                                   target=container_map[d["target"]],
                                   px_chart=chart_map[d["px_chart"]],

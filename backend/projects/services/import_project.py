@@ -1,8 +1,5 @@
 from rest_framework.exceptions import ValidationError
 
-# from projects.import_serializers import ProjectImportSerializer
-# from pxcharts.services.import_project import import_project_data as import_pxcharts
-# from pxnodes.services.import_project import import_project_data as import_pxnodes
 from pxnodes.services.transfer import import_project_data as import_node_data
 from pxcharts.services.transfer import import_project_data as import_chart_data
 
