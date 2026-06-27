@@ -148,5 +148,5 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./${{ matrix.component }}
-          push: ${{ github.ref_name == 'main' || github.ref_name == 'release' }}
+          push: ${{ github.ref_name == 'main' || github.ref_name == 'release' || github.ref_name == 'state-px-user-study'}}
           tags: ${{ steps.meta.outputs.tags }}
