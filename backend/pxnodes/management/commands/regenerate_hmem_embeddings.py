@@ -3,25 +3,21 @@ Management command to purge and regenerate H-MEM embeddings for a chart.
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
+from accounts.management_utils import add_user_argument, get_model_manager_for_user
 from game_concept.utils import get_current_game_concept
+from llm.llm_adapter import LLMProviderAdapter
 from pillars.models import Pillar
 from projects.utils import get_current_project
 from pxcharts.models import PxChart
 from pxnodes.llm.context.base.types import EvaluationScope
 from pxnodes.llm.context.hmem.strategy import HMEMStrategy
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
 from pxnodes.models import HMEMLayerEmbedding, PxNode
 
-if TYPE_CHECKING:
-    from django.contrib.auth.models import AbstractBaseUser
-
 logger = logging.getLogger(__name__)
-UserModel = get_user_model()
 
 
 class Command(BaseCommand):
@@ -30,6 +26,7 @@ class Command(BaseCommand):
     help = "Purge and regenerate H-MEM embeddings for a chart"
 
     def add_arguments(self, parser):
+        add_user_argument(parser)
         parser.add_argument(
             "--chart-id",
             type=str,
@@ -40,11 +37,6 @@ class Command(BaseCommand):
             "--node-id",
             type=str,
             help="Optional node UUID to regenerate only for a single node",
-        )
-        parser.add_argument(
-            "--user-id",
-            type=str,
-            help="Optional user UUID to select pillars/game concept",
         )
         parser.add_argument(
             "--clear-only",
@@ -80,7 +72,7 @@ class Command(BaseCommand):
         except PxChart.DoesNotExist:
             raise CommandError(f"Chart {options['chart_id']} not found")
 
-        user = self._resolve_user(chart, options.get("user_id"))
+        user = self._resolve_user(chart, options.get("user"))
         project = chart.project or (get_current_project(user) if user else None)
         game_concept = get_current_game_concept(project)
         pillars = list(Pillar.objects.filter(project=project)) if project else []
@@ -111,7 +103,12 @@ class Command(BaseCommand):
 
         llm_provider = None
         if not options["no_llm"]:
+            model_manager = get_model_manager_for_user(
+                username=options["user"],
+                password_from_stdin=options.get("password_from_stdin", False),
+            )
             llm_provider = LLMProviderAdapter(
+                model_manager=model_manager,
                 model_name=options["model"],
                 temperature=0,
             )
@@ -140,14 +137,15 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("H-MEM regeneration complete."))
 
-    def _resolve_user(
-        self, chart: PxChart, user_id: Optional[str]
-    ) -> Optional["AbstractBaseUser"]:
-        if user_id:
+    def _resolve_user(self, chart: PxChart, username: Optional[str]):
+        from django.contrib.auth import get_user_model
+
+        UserModel = get_user_model()
+        if username:
             try:
-                return UserModel.objects.get(id=user_id)
+                return UserModel.objects.get(username=username)
             except UserModel.DoesNotExist:
-                raise CommandError(f"User {user_id} not found")
+                raise CommandError(f"User '{username}' not found")
 
         if chart.owner:
             return chart.owner

@@ -9,10 +9,11 @@ from typing import Optional
 import logfire
 from django.core.management.base import BaseCommand, CommandError
 
+from accounts.management_utils import add_user_argument, get_model_manager_for_user
+from llm.llm_adapter import LLMProviderAdapter
 from pxcharts.models import PxChart
 from pxnodes.llm.context.embeddings import OpenAIEmbeddingGenerator
 from pxnodes.llm.context.facts import extract_atomic_facts
-from pxnodes.llm.context.llm_adapter import LLMProviderAdapter
 from pxnodes.llm.context.triples import extract_llm_triples_only
 from pxnodes.llm.context.vector_store import VectorStore
 from pxnodes.models import PxNode
@@ -27,6 +28,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Add command arguments."""
+        add_user_argument(parser)
         parser.add_argument(
             "--node-id",
             type=str,
@@ -75,7 +77,12 @@ class Command(BaseCommand):
         with logfire.span("generate_structural_memory", level="info"):
             try:
                 # Initialize LLM and embedding generators
+                model_manager = get_model_manager_for_user(
+                    username=options["user"],
+                    password_from_stdin=options.get("password_from_stdin", False),
+                )
                 llm_provider = LLMProviderAdapter(
+                    model_manager=model_manager,
                     model_name=options["model"],
                     temperature=0,
                 )

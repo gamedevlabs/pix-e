@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import time
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, cast
+from typing import Any, AsyncGenerator, Dict, Generator, List, Optional
 
 from django.contrib.auth.models import User
 from django.http import StreamingHttpResponse
@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 from helpdesk.session_logging import buffer_backend_session_log
 from llm.events import EventCollector
 from llm.logfire_config import get_logfire
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import AgentOutputEvent, AgentStartedEvent
 from sparc.llm.views.v2 import save_game_concept
 from sparc.llm.views.v2_utils import (
@@ -67,7 +68,7 @@ class ProgressEventCollector(EventCollector):
         return events
 
 
-class SPARCV2StreamView(APIView):
+class SPARCV2StreamView(UserLLMOrchestratorMixin, APIView):
     """
     V2 evaluation with real-time progress via SSE.
 
@@ -80,7 +81,7 @@ class SPARCV2StreamView(APIView):
     Returns Server-Sent Events stream with progress updates.
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> StreamingHttpResponse:
         """Execute V2 evaluation with streaming progress."""
@@ -156,19 +157,22 @@ class SPARCV2StreamView(APIView):
 
             # Stream the evaluation with progress
             concept_meta = resolve_concept_meta(request)
+            orchestrator = self.get_llm_orchestrator(request)
+
             response = StreamingHttpResponse(
                 self._stream_evaluation(
-                    game_text,
-                    context_text,
-                    pillar_mode,
-                    context_strategy,
-                    model_id,
-                    evaluation,
-                    cast(User, request.user),
-                    document_data,
-                    temp_file_path,
-                    concept_meta,
-                    request.data.get("project_id"),
+                    game_text=game_text,
+                    context_text=context_text,
+                    pillar_mode=pillar_mode,
+                    context_strategy=context_strategy,
+                    model_id=model_id,
+                    evaluation=evaluation,
+                    user=request.user,  # type: ignore[arg-type]
+                    model_manager=orchestrator.model_manager,
+                    document_data=document_data,
+                    temp_file_path=temp_file_path,
+                    concept_meta=concept_meta,
+                    project_id=request.data.get("project_id"),
                 ),
                 content_type="text/event-stream",
             )
@@ -213,6 +217,7 @@ class SPARCV2StreamView(APIView):
         model_id: str,
         evaluation: SPARCEvaluation,
         user: User,
+        model_manager,
         document_data: Optional[Dict[str, Any]] = None,
         temp_file_path: Optional[str] = None,
         concept_meta: Optional[Dict[str, str]] = None,
@@ -283,6 +288,7 @@ class SPARCV2StreamView(APIView):
                             user=user if user.is_authenticated else None,
                             mode="full",
                             event_collector=event_collector,
+                            model_manager=model_manager,
                         )
                     )
 

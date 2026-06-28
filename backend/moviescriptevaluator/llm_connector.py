@@ -10,8 +10,8 @@ from moviescriptevaluator.models import AssetMetaData, MovieScript
 class MovieScriptLLMConnector:
     orchestrator: LLMOrchestrator
 
-    def __init__(self):
-        self.orchestrator = LLMOrchestrator()
+    def __init__(self, orchestrator: LLMOrchestrator):
+        self.orchestrator = orchestrator
 
     def analyze_movie_script(
         self, movie_script: MovieScript, asset_list: list[AssetMetaData]

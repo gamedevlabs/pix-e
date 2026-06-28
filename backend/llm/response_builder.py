@@ -54,7 +54,7 @@ def build_handler_response(
 
     # Get model info
     try:
-        model_details, _ = model_manager._find_model_by_name(model_name)
+        model_details = model_manager._find_model_by_name(model_name)
         model_info = ModelInfo(
             name=model_details.name,
             type=model_details.type,
@@ -129,7 +129,7 @@ def build_agent_response(
     models_used: List[ModelInfo] = []
     for model_name in models_used_names:
         try:
-            model_details, _ = model_manager._find_model_by_name(model_name)
+            model_details = model_manager._find_model_by_name(model_name)
             models_used.append(
                 ModelInfo(
                     name=model_details.name,

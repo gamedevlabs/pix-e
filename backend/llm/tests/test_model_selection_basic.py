@@ -83,8 +83,8 @@ class TestModelAliasResolution:
         """Test that 'openai' alias resolves to full model ID."""
         config = get_config()
         resolved = config.resolve_model_alias("openai")
-        # TODO: Fix on next merge
-        assert resolved == "gemini-3.1-flash-lite-preview"
+        # "openai" alias was removed — returns as-is
+        assert resolved == "openai"
 
     def test_alias_resolution_in_orchestrator(self, mock_model_manager):
         """Test that orchestrator resolves aliases during execution."""
@@ -132,10 +132,7 @@ class TestAutoModelSelection:
         mock_model_details.name = "gemini-2.0-flash-exp"
         mock_model_details.type = "cloud"
         mock_model_details.provider = "gemini"
-        mock_model_manager._find_model_by_name.return_value = (
-            mock_model_details,
-            Mock(),
-        )
+        mock_model_manager._find_model_by_name.return_value = mock_model_details
 
         # No model_id specified
         request = LLMRequest(
@@ -166,10 +163,7 @@ class TestAutoModelSelection:
         mock_model_details.name = "gemini-2.0-flash-exp"
         mock_model_details.type = "cloud"
         mock_model_details.provider = "gemini"
-        mock_model_manager._find_model_by_name.return_value = (
-            mock_model_details,
-            Mock(),
-        )
+        mock_model_manager._find_model_by_name.return_value = mock_model_details
 
         request = LLMRequest(
             feature="pillars",

@@ -68,7 +68,6 @@ __all__ = [
     # Legacy - Generation
     "StructuralMemoryGenerator",
     "GenerationResult",
-    "generate_structural_memory",
     # Legacy - Change Detection
     "compute_node_content_hash",
     "has_node_changed",
@@ -98,11 +97,11 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "get_graph_slice",
     ),
     "LLMProviderAdapter": (
-        "pxnodes.llm.context.shared.llm_adapter",
+        "llm.llm_adapter",
         "LLMProviderAdapter",
     ),
     "create_llm_provider": (
-        "pxnodes.llm.context.shared.llm_adapter",
+        "llm.llm_adapter",
         "create_llm_provider",
     ),
     # Structural Memory Strategy
@@ -220,10 +219,6 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "StructuralMemoryGenerator",
     ),
     "GenerationResult": ("pxnodes.llm.context.generator", "GenerationResult"),
-    "generate_structural_memory": (
-        "pxnodes.llm.context.generator",
-        "generate_structural_memory",
-    ),
     # Legacy - Change Detection
     "compute_node_content_hash": (
         "pxnodes.llm.context.change_detection",

@@ -8,7 +8,8 @@ export function usePxNodesLLMApi() {
     return await apiFetch<NodeValidationFeedback>(`/api/llm/nodes/${nodeId}/validate/`, {
       method: 'POST',
       body: {
-        model: llm.active_llm,
+        model: llm.activeModelName,
+        api_key_id: llm.activeKeyId,
       },
       credentials: 'include',
       headers: {
@@ -24,7 +25,8 @@ export function usePxNodesLLMApi() {
     return await apiFetch<FixNodeAPIResponse>(`/api/llm/nodes/${nodeId}/fix/`, {
       method: 'POST',
       body: {
-        model: llm.active_llm,
+        model: llm.activeModelName,
+        api_key_id: llm.activeKeyId,
         validation_issues: validationIssues.map((issue) => ({
           title: issue.title,
           description: issue.description,

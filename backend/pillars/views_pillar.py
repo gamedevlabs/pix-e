@@ -6,12 +6,14 @@ from django.db.models import QuerySet
 from django.http import JsonResponse
 from rest_framework import permissions
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from helpdesk.session_logging import buffer_backend_session_log
-from llm import LLMOrchestrator
+from llm.exceptions import OrchestratorError
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
@@ -19,7 +21,7 @@ from projects.utils import get_current_project
 from .models import Pillar
 from .serializers import PillarSerializer
 from .utils import save_pillar_llm_call
-from .view_utils import get_project_pillars
+from .view_utils import get_project_pillars, handle_orchestrator_error
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +39,7 @@ class PillarViewSet(ModelViewSet):
         serializer.save(user=user, project=get_current_project(user))
 
 
-class PillarFeedbackView(ViewSet):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__()
-        self.orchestrator = LLMOrchestrator()
-
+class PillarFeedbackView(UserLLMOrchestratorMixin, ViewSet):
     @action(detail=True, methods=["POST"], url_path="validate")
     def validate_pillar(
         self, request: Request, pk: Optional[int] = None
@@ -56,6 +54,7 @@ class PillarFeedbackView(ViewSet):
                 return JsonResponse({"error": "Pillar not found"}, status=404)
 
             model = request.data.get("model", "gemini")
+            orchestrator = self.get_llm_orchestrator(request)
 
             llm_request = LLMRequest(
                 feature="pillars",
@@ -64,7 +63,7 @@ class PillarFeedbackView(ViewSet):
                 model_id=get_model_id(model),
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = orchestrator.execute(llm_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -75,6 +74,10 @@ class PillarFeedbackView(ViewSet):
 
             return JsonResponse(response.results, status=200)
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             buffer_backend_session_log(
                 session_id=getattr(request, "pixe_session_id", ""),
@@ -105,6 +108,7 @@ class PillarFeedbackView(ViewSet):
 
             model = request.data.get("model", "openai")
             model_id = get_model_id(model)
+            orchestrator = self.get_llm_orchestrator(request)
 
             validation_issues = request.data.get("validation_issues", [])
 
@@ -119,7 +123,7 @@ class PillarFeedbackView(ViewSet):
                 model_id=model_id,
             )
 
-            response = self.orchestrator.execute(llm_request)
+            response = orchestrator.execute(llm_request)
 
             save_pillar_llm_call(
                 user=user,
@@ -148,6 +152,10 @@ class PillarFeedbackView(ViewSet):
                 status=200,
             )
 
+        except APIException:
+            raise
+        except OrchestratorError as e:
+            return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
             buffer_backend_session_log(
                 session_id=getattr(request, "pixe_session_id", ""),
@@ -191,6 +199,8 @@ class PillarFeedbackView(ViewSet):
             data = PillarSerializer(pillar).data
             return JsonResponse(data, status=200)
 
+        except APIException:
+            raise
         except Exception as e:
             buffer_backend_session_log(
                 session_id=getattr(request, "pixe_session_id", ""),

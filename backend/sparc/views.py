@@ -2,7 +2,8 @@
 SPARC API views.
 
 Provides endpoints for both agentic (quick scan) and monolithic
-SPARC evaluations.
+SPARC evaluations, now using per-user API key resolution via
+UserLLMOrchestratorMixin.
 """
 
 import logging
@@ -16,8 +17,8 @@ from rest_framework.views import APIView
 
 from game_concept.models import Project
 from helpdesk.session_logging import buffer_backend_session_log
-from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
+from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest, LLMResponse
 from llm.view_utils import get_model_id
 from projects.utils import get_current_project
@@ -201,7 +202,7 @@ def _build_llm_request(
 def _run_sparc_evaluation(
     *,
     request: Request,
-    orchestrator: LLMOrchestrator,
+    orchestrator,
     operation: str,
     mode: str,
     span_name: str,
@@ -290,7 +291,7 @@ def _run_sparc_evaluation(
                 )
 
 
-class SPARCQuickScanView(APIView):
+class SPARCQuickScanView(UserLLMOrchestratorMixin, APIView):
     """
     Quick scan evaluation using parallel agentic execution.
 
@@ -299,13 +300,13 @@ class SPARCQuickScanView(APIView):
     POST /api/sparc/quick-scan/
     Body: {
         "game_text": "...",
-        "model": "gemini" | "openai" (optional, defaults to "openai")
+        "model": "gemini" | "openai" (optional)
     }
 
     Response: {
         "readiness_score": 0-100,
         "readiness_status": "Ready" | "Nearly Ready" | "Needs Work" |
-                           "Not Ready",
+                            "Not Ready",
         "aspect_scores": [...],
         "strongest_aspects": [...],
         "weakest_aspects": [...],
@@ -318,14 +319,11 @@ class SPARCQuickScanView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.orchestrator = LLMOrchestrator()
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> JsonResponse:
         """Execute quick scan evaluation with agentic execution."""
+        orchestrator = self.get_llm_orchestrator(request)
         context_strategy = request.data.get("context_strategy", "default")
         extra_data = {}
         if request.data.get("context_strategy"):
@@ -333,7 +331,7 @@ class SPARCQuickScanView(APIView):
 
         return _run_sparc_evaluation(
             request=request,
-            orchestrator=self.orchestrator,
+            orchestrator=orchestrator,
             operation="quick_scan",
             mode="quick_scan",
             span_name=f"sparc.evaluate.quick_scan.{context_strategy}.agentic",
@@ -359,7 +357,7 @@ class SPARCQuickScanView(APIView):
         )
 
 
-class SPARCMonolithicView(APIView):
+class SPARCMonolithicView(UserLLMOrchestratorMixin, APIView):
     """
     Monolithic baseline evaluation for comparison.
 
@@ -369,7 +367,7 @@ class SPARCMonolithicView(APIView):
     POST /api/sparc/monolithic/
     Body: {
         "game_text": "...",
-        "model": "gemini" | "openai" (optional, defaults to "openai")
+        "model": "gemini" | "openai" (optional)
     }
 
     Response: {
@@ -382,17 +380,14 @@ class SPARCMonolithicView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.orchestrator = LLMOrchestrator()
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> JsonResponse:
         """Execute monolithic evaluation with handler-based execution."""
+        orchestrator = self.get_llm_orchestrator(request)
         return _run_sparc_evaluation(
             request=request,
-            orchestrator=self.orchestrator,
+            orchestrator=orchestrator,
             operation="monolithic",
             mode="monolithic",
             span_name="sparc.evaluate.monolithic.default.monolithic",

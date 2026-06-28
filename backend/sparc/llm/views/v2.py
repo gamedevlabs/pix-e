@@ -6,7 +6,7 @@ Router-based agentic evaluation endpoints.
 
 import logging
 import os
-from typing import Optional, cast
+from typing import Optional
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from game_concept.models import Project
 from helpdesk.session_logging import buffer_backend_session_log
 from llm.logfire_config import get_logfire
+from llm.mixins import UserLLMOrchestratorMixin
 from projects.utils import get_current_project
 
 # Import to trigger workflow registration
@@ -64,16 +65,18 @@ def save_game_concept(
     )
 
 
-class SPARCV2EvaluateView(APIView):
+class SPARCV2EvaluateView(UserLLMOrchestratorMixin, APIView):
     """
     V2 full evaluation using router-based agentic execution.
+
+    Uses per-user API keys via session encryption key.
 
     Runs: Router → 10 parallel aspect agents → Synthesis
 
     POST /api/sparc/v2/evaluate/
     Body: {
         "game_text": "...",
-        "model": "gemini" | "openai" (optional, defaults to "openai")
+        "model": "gemini" | "openai" (optional)
     }
 
     Response: {
@@ -98,7 +101,7 @@ class SPARCV2EvaluateView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> JsonResponse:
         """Execute full V2 evaluation."""
@@ -203,12 +206,15 @@ class SPARCV2EvaluateView(APIView):
                         context_strategy=context_strategy,
                         document_data=document_data,
                     )
+                    orchestrator = self.get_llm_orchestrator(request)
+
                     result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
                         model_id=model_id,
                         evaluation=evaluation,
                         user=request.user if request.user.is_authenticated else None,
                         mode="full",
+                        model_manager=orchestrator.model_manager,
                     )
 
                     if not result.success:
@@ -225,9 +231,7 @@ class SPARCV2EvaluateView(APIView):
 
                     # Auto-save game concept
                     if request.user.is_authenticated:
-                        save_game_concept(
-                            cast(User, request.user), game_text, evaluation
-                        )
+                        save_game_concept(request.user, game_text, evaluation)
 
                     return JsonResponse(aggregated, status=status.HTTP_200_OK)
 
@@ -261,9 +265,11 @@ class SPARCV2EvaluateView(APIView):
                             logger.warning(f"Failed to clean up temp file: {str(e)}")
 
 
-class SPARCV2AspectView(APIView):
+class SPARCV2AspectView(UserLLMOrchestratorMixin, APIView):
     """
     V2 single or multiple aspect evaluation.
+
+    Uses per-user API keys via session encryption key.
 
     Runs: Router (focused) → Selected aspect agent(s)
 
@@ -284,7 +290,7 @@ class SPARCV2AspectView(APIView):
     }
     """
 
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request) -> JsonResponse:
         """Execute single or multiple aspect evaluation."""
@@ -378,6 +384,8 @@ class SPARCV2AspectView(APIView):
                         context_strategy=context_strategy,
                     )
 
+                    orchestrator = self.get_llm_orchestrator(request)
+
                     result = async_to_sync(run_router_workflow)(
                         request_data=request_data,
                         model_id=model_id,
@@ -385,6 +393,7 @@ class SPARCV2AspectView(APIView):
                         user=request.user if request.user.is_authenticated else None,
                         mode=mode,
                         target_aspects=target_aspects,
+                        model_manager=orchestrator.model_manager,
                     )
 
                     if not result.success:

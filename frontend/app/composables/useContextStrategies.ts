@@ -150,6 +150,15 @@ export function useContextStrategies() {
 
   const { success: successToast, error: errorToast } = usePixeToast()
 
+  function resolveModel(fallback: string): string {
+    try {
+      const store = useLLM()
+      return store.activeModelName || fallback
+    } catch {
+      return fallback
+    }
+  }
+
   /**
    * Fetch available strategies from the API.
    */
@@ -191,7 +200,7 @@ export function useContextStrategies() {
           chart_id: options.chartId,
           strategy: options.strategy ?? 'structural_memory',
           execution_mode: modeToUse,
-          llm_model: options.llmModel ?? 'gpt-4o-mini',
+          llm_model: options.llmModel ?? resolveModel('gpt-4o-mini'),
         },
       })
 
@@ -260,7 +269,7 @@ export function useContextStrategies() {
             node_id: options.nodeId,
             chart_id: options.chartId,
             strategies: options.strategies,
-            llm_model: options.llmModel ?? 'gpt-4o-mini',
+            llm_model: options.llmModel ?? resolveModel('gpt-4o-mini'),
           },
         },
       )

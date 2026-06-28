@@ -5,6 +5,9 @@ import { useApi } from '~/composables/useApi'
  *
  * Handles generating knowledge triples, atomic facts, and embeddings
  * for PX nodes in selected charts.
+ *
+ * Uses the user's selected LLM model from useLLM() store as the
+ * default fallback for extraction.
  */
 
 export interface GenerationOptions {
@@ -108,6 +111,7 @@ export interface EvaluationResponse {
 
 export function useStructuralMemory() {
   const { apiFetch } = useApi()
+  const llm = useLLM()
 
   const loading = ref(false)
   const evaluating = ref(false)
@@ -115,8 +119,17 @@ export function useStructuralMemory() {
   const lastResult = ref<GenerationResponse | null>(null)
   const lastEvaluation = ref<ChartEvaluationResult | null>(null)
   const stats = ref<ChartStats[]>([])
+  const needsOpenAiKey = ref(false)
 
   const { success: successToast, error: errorToast } = usePixeToast()
+
+  function clearNeedsOpenAiKey() {
+    needsOpenAiKey.value = false
+  }
+
+  function resolveModel(fallback: string): string {
+    return llm.activeModelName || fallback
+  }
 
   /**
    * Generate structural memory for selected charts.
@@ -136,7 +149,7 @@ export function useStructuralMemory() {
           chart_ids: options.chartIds,
           force_regenerate: options.forceRegenerate ?? false,
           skip_embeddings: options.skipEmbeddings ?? false,
-          llm_model: options.llmModel ?? 'gpt-4o-mini',
+          llm_model: options.llmModel ?? resolveModel('gpt-4o-mini'),
           embedding_model: options.embeddingModel ?? 'text-embedding-3-small',
         },
       })
@@ -156,6 +169,18 @@ export function useStructuralMemory() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Generation failed'
       error.value = errorMessage
+
+      // Check if the backend is telling us an OpenAI key is needed for embeddings
+      const status =
+        (err as Record<string, unknown>)?.response?.status ??
+        (err as Record<string, unknown>)?.status ??
+        0
+      const data = (err as Record<string, unknown>)?.data as Record<string, unknown> | undefined
+      if (status === 400 && data?.error === 'openai_key_required') {
+        needsOpenAiKey.value = true
+        return null
+      }
+
       errorToast(err)
       return null
     } finally {
@@ -221,7 +246,7 @@ export function useStructuralMemory() {
           chart_id: options.chartId,
           node_ids: options.nodeIds,
           iterations: options.iterations ?? 3,
-          llm_model: options.llmModel ?? 'gpt-4o-mini',
+          llm_model: options.llmModel ?? resolveModel('gpt-4o-mini'),
         },
       })
 
@@ -242,6 +267,17 @@ export function useStructuralMemory() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Evaluation failed'
       error.value = errorMessage
+
+      const status =
+        (err as Record<string, unknown>)?.response?.status ??
+        (err as Record<string, unknown>)?.status ??
+        0
+      const data = (err as Record<string, unknown>)?.data as Record<string, unknown> | undefined
+      if (status === 400 && data?.error === 'openai_key_required') {
+        needsOpenAiKey.value = true
+        return null
+      }
+
       errorToast(err)
       return null
     } finally {
@@ -264,12 +300,14 @@ export function useStructuralMemory() {
     lastResult,
     lastEvaluation,
     stats,
+    needsOpenAiKey,
 
     // Actions
     generate,
     getStats,
     evaluate,
     clearEvaluation,
+    clearNeedsOpenAiKey,
 
     // Helpers
     hasPendingNodes,

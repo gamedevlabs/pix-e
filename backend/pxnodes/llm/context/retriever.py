@@ -118,6 +118,7 @@ class IterativeRetriever:
         self,
         llm_provider: LLMProvider,
         embedding_model: str = "text-embedding-3-small",
+        api_key: Optional[str] = None,
     ):
         """
         Initialize the retriever.
@@ -125,9 +126,13 @@ class IterativeRetriever:
         Args:
             llm_provider: LLM for query refinement
             embedding_model: OpenAI embedding model for query embedding
+            api_key: OpenAI API key (uses env var if not provided)
         """
         self.llm_provider = llm_provider
-        self.embedding_generator = OpenAIEmbeddingGenerator(model=embedding_model)
+        self.embedding_generator = OpenAIEmbeddingGenerator(
+            model=embedding_model,
+            api_key=api_key,
+        )
         self.vector_store = VectorStore()
 
     def retrieve(

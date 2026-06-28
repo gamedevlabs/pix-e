@@ -4,6 +4,7 @@ Tests for basic orchestrator functionality.
 Tests orchestrator initialization, configuration, and basic request validation.
 """
 
+import warnings
 from unittest.mock import Mock
 
 import pytest
@@ -17,12 +18,14 @@ from llm.types import LLMRequest
 @pytest.fixture
 def orchestrator():
     """Return a configured orchestrator or skip if missing credentials."""
-    try:
-        return LLMOrchestrator()
-    except ProviderError as e:
-        pytest.skip(f"Missing provider ({e})")
-    except Exception as e:
-        raise e
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        try:
+            return LLMOrchestrator()
+        except ProviderError as e:
+            pytest.skip(f"Missing provider ({e})")
+        except Exception as e:
+            raise e
 
 
 class TestOrchestratorInitialization:
@@ -72,8 +75,8 @@ class TestOrchestratorConfiguration:
         assert hasattr(config, "resolve_model_alias")
         # Test common aliases
         assert config.resolve_model_alias("gemini") == "gemini-3.1-flash-lite-preview"
-        # TODO: fix at next merge
-        assert config.resolve_model_alias("openai") == "gemini-3.1-flash-lite-preview"
+        # Note: "openai" alias was removed — it now returns "openai" as-is
+        assert config.resolve_model_alias("openai") == "openai"
 
     def test_config_returns_unknown_alias_as_is(self):
         """Test that unknown aliases are returned as-is."""

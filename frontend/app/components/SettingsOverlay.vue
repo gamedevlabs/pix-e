@@ -8,6 +8,9 @@ import ApiKeyList from '~/components/ApiKeyList.vue'
 import MorpheusHelpModal from '~/components/MorpheusHelpModal.vue'
 
 const open = defineModel<boolean>('open', { default: false })
+
+///////////////new
+const props = withDefaults(defineProps<{ presetProvider?: string }>(), { presetProvider: '' })
 const llmStore = useLLM()
 
 const { fetchKeys, testKey } = useApiKeysApi()
@@ -33,6 +36,16 @@ watch(open, async (val) => {
   } else {
     showAddForm.value = false
   }
+
+  //////////newwwwww
+  // If presetProvider was given, jump directly to the add-form with provider pre-selected
+  if (props.presetProvider) {
+    showAddForm.value = true
+    formStep.value = 'details'
+    formProvider.value = props.presetProvider
+    formLabel.value = `${props.presetProvider.charAt(0).toUpperCase() + props.presetProvider.slice(1)} Key`
+  }
+  /////////////////
 })
 
 async function onKeyCreated(key: UserApiKey) {
