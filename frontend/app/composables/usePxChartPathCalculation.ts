@@ -181,7 +181,7 @@ export function usePxChartPathCalculation(
 
         const isBetter = pushIfBetter(newNodeState, poppedNodeState)
 
-        if (isBetter) continue;
+        if (isBetter) continue
       }
 
       if (outEdges.length === 0) {
