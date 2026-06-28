@@ -34,10 +34,10 @@ export function usePxChartPathStyling(
       } else if (!result.value.pathNodes.length && selectedNodes.value.includes(node.id)) {
         // use error color for selected nodes when no path connects them
         node.style = getPathStyle('var(--ui-error)')
-      } else if (settings.value.show_soft_locks && result.value.softLocked.includes(node.id)) {
+      } else if (result.value.softLocked.includes(node.id)) {
         // use info color for nodes with potential soft locks
         node.style = getPathStyle('var(--ui-info)')
-      } else if (gatedPath.value.nodes.includes(node.id)) {
+      } else if (settings.value.use_locks && gatedPath.value.nodes.includes(node.id)) {
         // use warn color for path parts behind a soft gate
         node.style = getPathStyle('var(--ui-warning)')
       } else if (result.value.pathNodes.includes(node.id)) {
