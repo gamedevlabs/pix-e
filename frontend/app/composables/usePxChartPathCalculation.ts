@@ -96,7 +96,7 @@ export function usePxChartPathCalculation(
 
     const q: QueueNode[] = [sourceState]
 
-    function pushIfBetter(newNodeState: QueueNode, previousState: QueueNode, edge?: Edge) {
+    function pushIfBetter(newNodeState: QueueNode, previousState: QueueNode, edge?: Edge): boolean {
       const newStateKey = makeStateKey(newNodeState)
       const previousStateKey = makeStateKey(previousState)
 
@@ -115,7 +115,9 @@ export function usePxChartPathCalculation(
         }
 
         q.push(newNodeState)
+        return true
       }
+      return false
     }
 
     // iterate
@@ -177,7 +179,9 @@ export function usePxChartPathCalculation(
           alreadyCollected: [...poppedNodeState.alreadyCollected, poppedNodeState.id],
         }
 
-        pushIfBetter(newNodeState, poppedNodeState)
+        const isBetter = pushIfBetter(newNodeState, poppedNodeState)
+
+        if (isBetter) continue;
       }
 
       if (outEdges.length === 0) {
