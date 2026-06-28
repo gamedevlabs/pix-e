@@ -23,7 +23,7 @@ const {
 const { items: pxCharts, fetchAll: fetchPxCharts } = usePxCharts()
 
 const { currentProject } = useProjectHandler()
-const { toggleSubstep, loadForProject } = useProjectWorkflow()
+const { loadForProject } = useProjectWorkflow()
 if (currentProject.value?.id) {
   await loadForProject(currentProject.value.id)
 }
@@ -87,9 +87,6 @@ async function updatePxNode(newEntityDraft: Partial<NamedEntity>) {
 
 async function createItem(newEntityDraft: Partial<NamedEntity>) {
   await createPxNode(newEntityDraft)
-
-  // px-2-2: "Create your first node"
-  await toggleSubstep('px-2', 'px-2-2')
 }
 
 // Not particularly efficient, but works for now.
@@ -180,11 +177,6 @@ function getIssueTypeColor(type: string): string {
     default:
       return 'neutral'
   }
-}
-
-async function handleAddComponent() {
-  // px-2-3: "Add a component to your new node"
-  await toggleSubstep('px-2', 'px-2-3')
 }
 </script>
 
@@ -426,7 +418,6 @@ async function handleAddComponent() {
             :visualization-style="'detailed'"
             @delete="deletePxNode"
             @add-foreign-component="handleForeignAddComponent"
-            @add-component="handleAddComponent"
           />
         </div>
         <div v-if="newItem">

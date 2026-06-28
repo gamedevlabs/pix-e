@@ -16,6 +16,8 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from game_concept.models import Project
+from helpdesk.session_logging import buffer_backend_session_log
+from llm import LLMOrchestrator
 from llm.logfire_config import get_logfire
 from llm.mixins import UserLLMOrchestratorMixin
 from llm.types import LLMRequest, LLMResponse
@@ -270,6 +272,20 @@ def _run_sparc_evaluation(
 
             except Exception as e:
                 logfire.exception(error_event, error=str(e))
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="sparc_views.evaluation.error",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "model": request.data.get("model"),
+                        "game_text_length": len(request.data.get("game_text", "")),
+                        "context_strategy": request.data.get("context_strategy"),
+                        "pillar_mode": request.data.get("pillar_mode"),
+                        "has_document": bool(request.FILES.get("document")),
+                    },
+                )
                 logger.exception("Error in SPARC evaluation: %s", e)
                 return JsonResponse(
                     {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR

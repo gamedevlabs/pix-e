@@ -292,21 +292,21 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
           },
           {
             id: 'px-1-4',
-            name: 'Add a container',
+            name: 'Add a new node',
             route: '/pxcharts',
             description:
-              'Containers represent stages or segments of gameplay (e.g., tutorial, combat, exploration).',
+              'Nodes represent stages or segments of gameplay (e.g., tutorial, combat, exploration).',
           },
           {
             id: 'px-1-5',
-            name: 'Add another container',
+            name: 'Add another node',
             route: '/pxcharts',
             description:
-              'Adding multiple containers allows you to define progression or different gameplay phases.',
+              'Adding multiple nodes allows you to define progression or different gameplay phases.',
           },
           {
             id: 'px-1-6',
-            name: 'Connect containers',
+            name: 'Connect nodes',
             route: '/pxcharts',
             description:
               'Connections define how players move between stages. This creates a flow of the experience.',
@@ -317,7 +317,7 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
         id: 'px-2',
         name: 'Define gameplay building blocks',
         description: 'Use nodes and components to describe what actually happens in your game.',
-        route: '/pxnodes',
+        route: '/pxcomponentdefinitions',
         substeps: [
           {
             id: 'px-2-1',
@@ -328,24 +328,10 @@ export const WORKFLOW_TEMPLATE: PhaseTemplate[] = [
           },
           {
             id: 'px-2-2',
-            name: 'Create your first node',
-            route: '/pxnodes',
-            description:
-              'A node represents a specific gameplay moment or interaction. Think of it as a concrete instance in your player experience.',
-          },
-          {
-            id: 'px-2-3',
             name: 'Add a component to your node',
             route: '/pxnodes',
             description:
               'Attaching components defines what happens in that moment (e.g., player fights, explores, interacts).',
-          },
-          {
-            id: 'px-2-4',
-            name: 'Place a node inside a chart',
-            route: '/pxcharts',
-            description:
-              'Placing nodes into containers connects your gameplay elements to the overall player journey.',
           },
         ],
       },

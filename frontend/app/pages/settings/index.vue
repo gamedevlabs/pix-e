@@ -4,6 +4,7 @@ import SettingsProjectDetailsCard from '~/components/settings/SettingsProjectDet
 import SettingsProjectIconCard from '~/components/settings/SettingsProjectIconCard.vue'
 import SettingsMetadataCard from '~/components/settings/SettingsMetadataCard.vue'
 import SettingsSaveBar from '~/components/settings/SettingsSaveBar.vue'
+import ProjectExportButton from '~/components/ProjectExportButton.vue'
 
 definePageMeta({
   middleware: 'authentication',
@@ -47,6 +48,7 @@ const { formData, originalProject, isLoading, isSaving, hasChanges, handleCancel
           <div class="space-y-6">
             <SettingsProjectIconCard v-model:icon="formData.icon" :name="formData.name" />
             <SettingsMetadataCard v-if="originalProject" :project="originalProject" />
+            <ProjectExportButton />
           </div>
         </div>
 

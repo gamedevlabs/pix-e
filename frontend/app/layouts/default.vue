@@ -19,7 +19,7 @@ useOnboardingProgress(searchOpen)
     <main class="flex-1 min-h-0">
       <!-- No sidebar: page fills the main area -->
       <!-- pt-16 leaves space for the sticky UHeader so the page isn't covered. -->
-      <div v-if="!showSidebar" class="h-full min-h-0 px-8 pt-16 pb-8 overflow-auto">
+      <div v-if="!showSidebar" class="h-full min-h-0 pt-16 overflow-auto">
         <slot />
       </div>
 
@@ -33,7 +33,7 @@ useOnboardingProgress(searchOpen)
           <div class="flex-1 min-h-0 overflow-hidden">
             <UDashboardPanel class="h-full relative">
               <!-- pt-16 leaves space for the sticky UHeader so the page isn't covered. -->
-              <div class="h-full min-h-0 overflow-auto px-6 pt-16 pb-6">
+              <div class="h-full min-h-0 pt-16 overflow-auto">
                 <slot />
               </div>
             </UDashboardPanel>

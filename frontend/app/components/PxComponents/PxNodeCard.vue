@@ -1,12 +1,22 @@
 <script setup lang="ts">
+import PxNodeCardSimple from '~/components/PxComponents/PxNodeCardSimple.vue'
+
 const props = defineProps({
   nodeId: {
     type: String as PropType<string>,
     required: true,
   },
   visualizationStyle: {
-    type: String as PropType<'preview' | 'detailed'>,
+    type: String as PropType<'preview' | 'detailed' | 'simple'>,
     default: 'detailed',
+  },
+  showContextMenu: {
+    type: Boolean,
+    default: false,
+  },
+  isCollapsible: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -17,12 +27,14 @@ const {
   updateItem: updatePxNode,
 } = usePxNodes()
 
+const { toggleSubstep } = useProjectWorkflow()
 const { fetchById: fetchComponentById } = usePxComponents()
 const { fetchById: fetchPxKeyById } = usePxKeys()
 
+// TODO: figure out what "addForeign" is supposed to do and clean up emits
 const emit = defineEmits<{
   (e: 'addForeignComponent' | 'addForeignKey', nodeId: string, componentId: string): void
-  (e: 'addComponent' | 'addKey' | 'deleteKey'): void
+  (e: 'addComponent' | 'addKey' | 'deleteKey' | 'componentsUpdated'): void
 }>()
 
 onMounted(() => {
@@ -56,8 +68,12 @@ async function handleAddComponent(nodeId: string, componentId: string) {
   } catch (err) {
     console.error(err)
   }
+  // px-2-2: "Add a component to your new node"
+  console.log('addedComp')
+  await toggleSubstep('px-2', 'px-2-2')
   fetchedNode.value.components.push(addedComponent!)
-  emit('addComponent')
+
+  emit('componentsUpdated')
 }
 
 async function handleDeleteComponent(nodeId: string, componentId: string) {
@@ -65,6 +81,8 @@ async function handleDeleteComponent(nodeId: string, componentId: string) {
   if (index > -1) {
     fetchedNode.value.components.splice(index, 1)
   }
+
+  emit('componentsUpdated')
 }
 
 async function handleAddKey(nodeId: string, keyId: string) {
@@ -103,13 +121,28 @@ async function handleDeleteKey(nodeId: string, keyId: string) {
   <PxNodeCardDetailed
     v-else-if="fetchedNode?.components && visualizationStyle === 'detailed'"
     :node="fetchedNode"
-    :is-collapsible="false"
+    :is-collapsible="isCollapsible"
     @delete-component="handleDeleteComponent"
     @add-component="handleAddComponent"
     @delete-key="handleDeleteKey"
     @add-key="handleAddKey"
     @update="handleUpdate"
   />
+  <PxNodeCardSimple
+    v-else-if="fetchedNode?.components && visualizationStyle === 'simple'"
+    :node="fetchedNode"
+    :is-collapsible="isCollapsible"
+    :show-context-menu="showContextMenu"
+    @delete-component="handleDeleteComponent"
+    @add-component="handleAddComponent"
+    @delete-key="handleDeleteKey"
+    @add-key="handleAddKey"
+    @update="handleUpdate"
+  >
+    <template #bottom-right-buttons>
+      <slot name="bottom-right-buttons" />
+    </template>
+  </PxNodeCardSimple>
 </template>
 
 <style scoped></style>

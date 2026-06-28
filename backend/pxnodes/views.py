@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from game_concept.utils import get_current_game_concept
 from llm.llm_adapter import LLMProviderAdapter
 from llm.mixins import UserLLMOrchestratorMixin
+from helpdesk.session_logging import buffer_backend_session_log
 from pillars.models import Pillar
 from projects.utils import get_current_project
 from pxcharts.models import PxChart
@@ -257,6 +258,22 @@ class StructuralMemoryGenerateView(UserLLMOrchestratorMixin, APIView):
                 logfire.error(
                     "structural_memory.api.generate.failed",
                     error=str(e),
+                )
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes.structural_memory.generate.failed",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "error_type": type(e).__name__,
+                        "chart_ids": [str(chart_id) for chart_id in chart_ids],
+                        "chart_count": len(chart_ids),
+                        "force_regenerate": force_regenerate,
+                        "skip_embeddings": skip_embeddings,
+                        "llm_model": llm_model,
+                        "embedding_model": embedding_model,
+                    },
                 )
                 return Response(
                     {"error": str(e)},
@@ -724,6 +741,21 @@ class CoherenceEvaluateView(UserLLMOrchestratorMixin, APIView):
                     "structural_memory.api.evaluate.failed",
                     error=str(e),
                 )
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes.structural_memory.evaluate.failed",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "chart_id": str(chart_id),
+                        "node_ids": (
+                            [str(node_id) for node_id in node_ids] if node_ids else None
+                        ),
+                        "iterations": iterations,
+                        "llm_model": llm_model,
+                    },
+                )
                 return Response(
                     {"error": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1008,6 +1040,21 @@ class StrategyEvaluateView(UserLLMOrchestratorMixin, APIView):
                     "context.evaluate.failed",
                     error=str(e),
                 )
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes.context.evaluate.failed",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "chart_id": str(chart_id),
+                        "node_id": str(node_id),
+                        "strategy": strategy,
+                        "execution_mode": execution_mode,
+                        "llm_model": llm_model,
+                        "pillars_count": len(pillars),
+                    },
+                )
                 return Response(
                     {"error": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1200,6 +1247,20 @@ class StrategyCompareView(UserLLMOrchestratorMixin, APIView):
                     "context.compare.failed",
                     error=str(e),
                 )
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes.context.compare.failed",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "chart_id": str(chart_id),
+                        "node_id": str(node_id),
+                        "strategies": strategies_list,
+                        "llm_model": llm_model,
+                        "pillars_count": len(pillars),
+                    },
+                )
                 return Response(
                     {"error": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1344,6 +1405,18 @@ class ContextBuildView(APIView):
                 raise
             except Exception as e:
                 logger.exception("Context building failed")
+                buffer_backend_session_log(
+                    session_id=getattr(request, "pixe_session_id", ""),
+                    level="error",
+                    event="pxnodes.context.build.failed",
+                    message=str(e),
+                    request=request,
+                    metadata={
+                        "chart_id": str(chart_id),
+                        "node_id": str(node_id),
+                        "strategy": strategy,
+                    },
+                )
                 return Response(
                     {"error": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,

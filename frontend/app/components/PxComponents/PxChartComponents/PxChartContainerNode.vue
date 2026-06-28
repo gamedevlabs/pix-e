@@ -7,6 +7,7 @@ const props = defineProps<NodeProps<PxChartContainer>>()
 const emit = defineEmits<{
   (e: 'delete' | 'switchPxNode', id: string): void
   (e: 'updatePxNode', containerId: string, pxNodeId: string): void
+  (e: 'componentsUpdated'): void
 }>()
 
 const { updateItem: updatePxChartContainer } = usePxChartContainers(props.data.px_chart)
@@ -78,20 +79,41 @@ function listenToResizing() {
     observer.observe(cardRef.value)
   }
 }
+
+defineShortcuts({
+  Delete: () => {
+    if (props.selected) {
+      handleDelete()
+    }
+  },
+})
 </script>
 
 <template>
-  <div ref="cardRef">
+  <div ref="cardRef" class="px-node group">
     <div v-if="pxNode">
       <PxNodeCard
         :node-id="pxNode.id"
-        :visualization-style="'detailed'"
+        :visualization-style="'simple'"
         :is-collapsible="true"
-        @delete-container="handleDelete()"
+        :show-context-menu="true"
+        @delete="handleDelete()"
         @switch-node="handleSwitchPxNode()"
         @add-key="handleUpdatePxNode()"
         @delete-key="handleUpdatePxNode()"
-      />
+        @components-updated="$emit('componentsUpdated')"
+      >
+        <template #bottom-right-buttons>
+          <UTooltip text="Switch Node">
+            <UButton
+              icon="i-lucide-arrow-right-left"
+              color="secondary"
+              variant="soft"
+              @click="handleSwitchPxNode()"
+            />
+          </UTooltip>
+        </template>
+      </PxNodeCard>
     </div>
 
     <NodeResizer
@@ -101,15 +123,57 @@ function listenToResizing() {
       @resize-end="handleResizeEnd"
     />
 
-    <Handle id="target-a" type="target" :position="Position.Top" />
-    <Handle id="target-b" type="target" :position="Position.Right" />
-    <Handle id="target-c" type="target" :position="Position.Bottom" />
-    <Handle id="target-d" type="target" :position="Position.Left" />
-    <Handle id="source-a" type="source" :position="Position.Top" />
-    <Handle id="source-b" type="source" :position="Position.Right" />
-    <Handle id="source-c" type="source" :position="Position.Bottom" />
-    <Handle id="source-d" type="source" :position="Position.Left" />
+    <Handle id="target-a" class="px-node-handle" type="target" :position="Position.Top" />
+    <Handle id="target-b" class="px-node-handle" type="target" :position="Position.Right" />
+    <Handle id="target-c" class="px-node-handle" type="target" :position="Position.Bottom" />
+    <Handle id="target-d" class="px-node-handle" type="target" :position="Position.Left" />
+    <Handle id="source-a" class="px-node-handle" type="source" :position="Position.Top" />
+    <Handle id="source-b" class="px-node-handle" type="source" :position="Position.Right" />
+    <Handle id="source-c" class="px-node-handle" type="source" :position="Position.Bottom" />
+    <Handle id="source-d" class="px-node-handle" type="source" :position="Position.Left" />
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.px-node {
+  position: relative;
+  padding: 12px;
+  margin: -12px;
+}
+
+.px-node::before {
+  content: '';
+  position: absolute;
+  inset: -16px; /* expand hover area by 16px on all sides */
+  z-index: -1;
+}
+
+.px-node-handle {
+  width: 16px;
+  height: 16px;
+
+  background: color-mix(in srgb, var(--ui-primary) 25%, transparent);
+  border: 2px solid var(--ui-primary);
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition: all 0.15s ease;
+}
+
+.px-node-handle::after {
+  content: '';
+  position: absolute;
+  inset: -16px;
+}
+
+.px-node:hover .px-node-handle,
+.px-node:focus-within .px-node-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.px-node-handle:hover {
+  background: var(--ui-primary);
+}
+</style>

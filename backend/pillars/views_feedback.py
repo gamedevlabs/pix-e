@@ -10,6 +10,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
+from helpdesk.session_logging import buffer_backend_session_log
 from llm.agent_registry import get_workflow
 from llm.exceptions import OrchestratorError, ProviderError
 from llm.logfire_config import get_logfire
@@ -134,6 +135,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.overall_feedback.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in overall_feedback: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -174,6 +186,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.completeness.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in completeness: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -214,6 +237,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.contradictions.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in contradictions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -254,6 +288,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.additions.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in additions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -296,6 +341,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.context.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in context: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -468,6 +524,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.evaluate_all.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in evaluate_all: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -546,6 +613,17 @@ class LLMFeedbackView(UserLLMOrchestratorMixin, ViewSet):
         except OrchestratorError as e:
             return handle_orchestrator_error(e, cast(User, request.user), model=model)
         except Exception as e:
+            buffer_backend_session_log(
+                session_id=getattr(request, "pixe_session_id", ""),
+                level="error",
+                event="pillars_feedback.resolve_contradictions.fail",
+                message=str(e),
+                request=request,
+                metadata={
+                    "model": request.data.get("model"),
+                    "execution_mode": request.data.get("execution_mode"),
+                },
+            )
             logger.exception("Error in resolve_contradictions: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 

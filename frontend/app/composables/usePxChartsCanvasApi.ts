@@ -16,7 +16,11 @@ export function usePxChartsCanvasApi(chartId: string) {
     createItem: createPxChartContainer,
     deleteItem: deletePxChartContainer,
   } = usePxChartContainers(chartId)
-  const { createItem: createPxEdge, deleteItem: deletePxEdge } = usePxChartEdges(chartId)
+  const {
+    createItem: createPxEdge,
+    deleteItem: deletePxEdge,
+    updateItem: updatePxEdge,
+  } = usePxChartEdges(chartId)
   const { fetchById: fetchPxNode, fetchAll: fetchPxNodes, items: _pxNodes } = usePxNodes()
   const { fetchAll: fetchPxLocks, items: pxLocks } = usePxLocks(chartId)
   const { fetchAll: fetchPxKeys, items: pxKeys } = usePxKeys()
@@ -96,9 +100,13 @@ export function usePxChartsCanvasApi(chartId: string) {
       sourceHandle: e.sourceHandle,
       target: e.target,
       targetHandle: e.targetHandle,
-      markerEnd: edgeDefaultValues.markerEnd,
+      markerEnd: e.bidirectional ? undefined : edgeDefaultValues.markerEnd,
       type: edgeDefaultValues.type,
-      data: { px_chart: chartId, locks: pxLocks.value.filter((lock) => lock.edge === e.id) },
+      data: {
+        px_chart: chartId,
+        locks: pxLocks.value.filter((lock) => lock.edge === e.id),
+        bidirectional: e.bidirectional,
+      },
     }))
   }
 
@@ -140,9 +148,9 @@ export function usePxChartsCanvasApi(chartId: string) {
     return pxLocks.value.filter((lock) => lock.edge === edgeId)
   }
 
-  async function addContainer(position_x = 0, position_y = 0) {
+  async function addContainer(name: string, position_x = 0, position_y = 0) {
     const newContainerPayload = {
-      name: 'Empty Container',
+      name: name,
       content: containerDefaultValues.content,
       layout: {
         position_x: position_x,
@@ -193,7 +201,11 @@ export function usePxChartsCanvasApi(chartId: string) {
     if (!nodeId) {
       return
     } else {
-      const containerId = await addContainer(position_x, position_y)
+      const containerId = await addContainer(
+        _pxNodes.value.filter((node) => node.id === nodeId)[0]?.name ?? 'New Container',
+        position_x,
+        position_y,
+      )
       await addNodeToContainer(containerId, nodeId)
     }
   }
@@ -363,6 +375,7 @@ export function usePxChartsCanvasApi(chartId: string) {
         targetHandle: connection.targetHandle!,
         px_chart: chartId,
         locks: [],
+        bidirectional: false,
       })
     } catch (err) {
       alert('Could not add edge: ' + err.message)
@@ -377,7 +390,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       targetHandle: connection.targetHandle,
       type: edgeDefaultValues.type,
       markerEnd: edgeDefaultValues.markerEnd,
-      data: { px_chart: chartId, locks: [] },
+      data: { px_chart: chartId, locks: [], bidirectional: false },
     })
   }
 
@@ -410,6 +423,18 @@ export function usePxChartsCanvasApi(chartId: string) {
     }
   }
 
+  async function changeEdgeDirectionality(edgeId: string) {
+    const edge = edges.value.find((e) => e.id === edgeId)
+    if (!edge) {
+      console.warn(`Could not find edge. (ID: ${edgeId})`)
+      console.warn(`Available Edges: ${JSON.stringify(edges.value, null, 2)}`)
+    } else {
+      edge.data.bidirectional = !edge.data.bidirectional
+      edge.markerEnd = edge.data.bidirectional ? undefined : edgeDefaultValues.markerEnd
+      await updatePxEdge(edgeId, { bidirectional: edge.data.bidirectional })
+    }
+  }
+
   return {
     nodes,
     edges,
@@ -431,5 +456,6 @@ export function usePxChartsCanvasApi(chartId: string) {
     deleteEdge,
     updateLocksOnEdge,
     getKeysForNode,
+    changeEdgeDirectionality,
   }
 }

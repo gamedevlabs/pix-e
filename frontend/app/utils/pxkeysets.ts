@@ -31,15 +31,20 @@ export function pxKeySetDifference(
   consumed: PxKeySet,
   consumableKeyDefs: string[],
 ): PxKeySet {
-  const res = { ...inventory }
+  const diff = { ...inventory }
   for (const [def, count] of Object.entries(consumed)) {
-    if (!res[def] || res[def] < 1) {
+    if (!diff[def] || diff[def] < 1) {
       return {}
     } else if (consumableKeyDefs.includes(def)) {
-      res[def] -= count
+      diff[def] -= count
     }
   }
-  return res
+  const filteredDiff: PxKeySet = {}
+  for (const [def, count] of Object.entries(diff)) {
+    if (count) filteredDiff[def] = count
+  }
+
+  return filteredDiff
 }
 
 export function mergePxKeySets(keyset1: PxKeySet, keyset2: PxKeySet) {
@@ -52,4 +57,45 @@ export function mergePxKeySets(keyset1: PxKeySet, keyset2: PxKeySet) {
     }
   }
   return res
+}
+
+export function pxKeySetsAreEqual(keyset1: PxKeySet, keyset2: PxKeySet) {
+  for (const [def, count] of Object.entries(keyset1)) {
+    if (!keyset2[def] || keyset2[def] != count) {
+      return false
+    }
+  }
+  for (const [def, count] of Object.entries(keyset2)) {
+    if (!keyset1[def] || keyset1[def] != count) {
+      return false
+    }
+  }
+  return true
+}
+
+export function pxKeyInventoriesAreEqual(inv1: PxKeySet[], inv2: PxKeySet[]) {
+  if (inv1.length !== inv2.length) return false
+
+  for (const keyset of inv1) {
+    if (inv2.every((keyset2) => !pxKeySetsAreEqual(keyset, keyset2))) {
+      return false
+    }
+  }
+  for (const keyset of inv2) {
+    if (inv1.every((keyset1) => !pxKeySetsAreEqual(keyset, keyset1))) {
+      return false
+    }
+  }
+  return true
+}
+
+export function filterPxKeySet(keyset: PxKeySet, remainingDefs: PxKeyDefinition[]) {
+  const remainingDefIds = remainingDefs.map((def) => def.id)
+  const filtered: PxKeySet = {}
+  for (const [def, count] of Object.entries(keyset)) {
+    if (remainingDefIds.includes(def)) {
+      filtered[def] = count
+    }
+  }
+  return filtered
 }

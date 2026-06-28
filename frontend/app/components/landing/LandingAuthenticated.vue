@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import LandingStandaloneModuleCard from '~/components/landing/LandingStandaloneModuleCard.vue'
+import ProjectImporter from '~/components/ProjectImporter.vue'
 
 interface ProjectCard {
   id: number
@@ -24,7 +25,9 @@ defineProps<{
 }>()
 
 const router = useRouter()
-const { projects, switchProject, deleteProject } = useProjectHandler()
+const { projects, switchProject, deleteProject, fetchProjects } = useProjectHandler()
+
+const open = ref(false)
 
 const getInitials = (name: string): string =>
   name
@@ -94,6 +97,11 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
   if (event?.target && (event.target as HTMLElement).closest('.project-menu-button')) return
   await switchProject(projectId)
 }
+
+async function handleSuccessfulProjectImport() {
+  open.value = false
+  await fetchProjects()
+}
 </script>
 
 <template>
@@ -110,6 +118,18 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
       </div>
 
       <div class="flex gap-3">
+        <UModal
+          v-model:open="open"
+          title="Import Project"
+          description="Drag and drop a json file or search in file browser."
+        >
+          <UButton label="Import Project" icon="i-lucide-import" color="primary" size="md" />
+
+          <template #body>
+            <ProjectImporter @submit-success="handleSuccessfulProjectImport" />
+          </template>
+        </UModal>
+
         <UButton
           label="New Project"
           icon="i-lucide-plus"
@@ -135,6 +155,7 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
             Create your first project to get started with pix:e's player experience tools.
           </p>
         </div>
+
         <UButton
           label="Create Project"
           icon="i-lucide-plus"
