@@ -516,6 +516,7 @@ def evaluate_node_with_strategy(
     chart_id: str,
     strategy: str = "structural_memory",
     llm_provider: Optional[LLMProvider] = None,
+    model_manager: Optional[Any] = None,
 ) -> dict[str, Any]:
     """
     Convenience function to evaluate a node with a specific strategy.
@@ -525,6 +526,7 @@ def evaluate_node_with_strategy(
         chart_id: UUID of the chart
         strategy: Strategy name (structural_memory, hierarchical_graph, hmem, combined)
         llm_provider: Optional LLM provider
+        model_manager: Optional ModelManager for creating new LLM providers
 
     Returns:
         Evaluation result dictionary
@@ -534,7 +536,12 @@ def evaluate_node_with_strategy(
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
 
-    llm = llm_provider or create_llm_provider()
+    if llm_provider is None:
+        if model_manager is None:
+            raise ValueError("Either llm_provider or model_manager must be provided")
+        llm: LLMProvider = create_llm_provider(model_manager=model_manager)
+    else:
+        llm = llm_provider
     strategy_type = StrategyType(strategy)
 
     evaluator = StrategyEvaluator(llm_provider=llm)
@@ -547,6 +554,7 @@ def compare_all_strategies(
     node_id: str,
     chart_id: str,
     llm_provider: Optional[LLMProvider] = None,
+    model_manager: Optional[Any] = None,
 ) -> dict[str, Any]:
     """
     Compare all strategies for a single node.
@@ -555,6 +563,7 @@ def compare_all_strategies(
         node_id: UUID of the node to evaluate
         chart_id: UUID of the chart
         llm_provider: Optional LLM provider
+        model_manager: Optional ModelManager for creating new LLM providers
 
     Returns:
         Comparison result dictionary
@@ -564,7 +573,12 @@ def compare_all_strategies(
     node = PxNode.objects.get(id=node_id)
     chart = PxChart.objects.get(id=chart_id)
 
-    llm = llm_provider or create_llm_provider()
+    if llm_provider is None:
+        if model_manager is None:
+            raise ValueError("Either llm_provider or model_manager must be provided")
+        llm: LLMProvider = create_llm_provider(model_manager=model_manager)
+    else:
+        llm = llm_provider
 
     evaluator = StrategyEvaluator(llm_provider=llm)
     result = evaluator.compare_strategies(node, chart)

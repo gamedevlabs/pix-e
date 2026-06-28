@@ -188,7 +188,7 @@ class ArtifactInventory:
             # Extract model_manager from the passed provider if available
             mm = getattr(llm_provider, "model_manager", None)
             self.llm_provider: Optional[LLMProviderAdapter] = LLMProviderAdapter(
-                model_manager=mm,
+                model_manager=mm,  # type: ignore[arg-type]
                 model_name=PRECOMPUTE_MODEL,
                 temperature=0,
             )

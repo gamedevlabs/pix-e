@@ -16,7 +16,6 @@ from rest_framework.request import Request
 from rest_framework.viewsets import ViewSet
 
 from helpdesk.session_logging import buffer_backend_session_log
-from llm import LLMOrchestrator
 from llm.exceptions import OrchestratorError
 from llm.logfire_config import get_logfire
 from llm.mixins import UserLLMOrchestratorMixin

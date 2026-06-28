@@ -167,7 +167,7 @@ class SPARCV2StreamView(UserLLMOrchestratorMixin, APIView):
                     context_strategy=context_strategy,
                     model_id=model_id,
                     evaluation=evaluation,
-                    user=request.user,
+                    user=request.user,  # type: ignore[arg-type]
                     model_manager=orchestrator.model_manager,
                     document_data=document_data,
                     temp_file_path=temp_file_path,
