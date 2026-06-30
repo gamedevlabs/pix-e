@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.112",
+    "@types/node": "^26.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",
     "prettier": "^3.5.3"
   },

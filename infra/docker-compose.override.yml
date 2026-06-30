@@ -30,6 +30,8 @@ services:
       - ../frontend:/app
       - frontend-node-modules:/app/node_modules
       - frontend-nuxt-cache:/app/.nuxt
+      - ../package.json:/package.json
+      - ../.git:/app/.git
     environment:
       - NUXT_HOST=0.0.0.0
       - HOST=0.0.0.0
