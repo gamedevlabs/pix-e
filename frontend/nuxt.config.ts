@@ -22,7 +22,8 @@ try {
 }
 
 // Resolve the Git commit hash (from Env or local git command)
-let gitHash = process.env.NUXT_PUBLIC_GIT_HASH || process.env.COMMIT_HASH || process.env.GITHUB_SHA || ''
+let gitHash =
+  process.env.NUXT_PUBLIC_GIT_HASH || process.env.COMMIT_HASH || process.env.GITHUB_SHA || ''
 
 if (!gitHash) {
   try {
