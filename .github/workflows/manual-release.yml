@@ -1,0 +1,55 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version number (e.g. 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    name: Merge main to release, update version, and tag
+    runs-on: ubuntu-latest
+    if: contains(fromJSON(vars.ALLOWED_RELEASE_USERS || '["KuroiX"]'), github.actor)
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          ref: release
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into release
+        run: |
+          git fetch origin main
+          git merge origin/main --no-edit
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Update version in package.json
+        run: |
+          npm version ${{ inputs.version }} --no-git-tag-version
+
+      - name: Commit version bump
+        run: |
+          git commit -am "chore(release): bump version to ${{ inputs.version }}"
+
+      - name: Push changes to release branch
+        run: |
+          git push origin release
+
+      - name: Create and push tag
+        run: |
+          git tag release/v${{ inputs.version }}
+          git push origin release/v${{ inputs.version }}
