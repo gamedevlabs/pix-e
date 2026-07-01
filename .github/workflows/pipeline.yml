@@ -143,6 +143,12 @@ jobs:
             type=semver,pattern={{version}}
             type=ref,event=branch
             type=ref,event=pr
+      - name: Get version from root package.json
+        if: matrix.component == 'frontend' && needs[matrix.component].result == 'success'
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
       - name: Build image (push on main/release)
         if: needs[matrix.component].result == 'success'
         uses: docker/build-push-action@v7
@@ -150,3 +156,6 @@ jobs:
           context: ./${{ matrix.component }}
           push: ${{ github.ref_name == 'main' || github.ref_name == 'release' }}
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            NUXT_PUBLIC_VERSION=${{ steps.get_version.outputs.version }}
+            NUXT_PUBLIC_GIT_HASH=${{ github.sha }}

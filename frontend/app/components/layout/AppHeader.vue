@@ -4,6 +4,7 @@ import HelpdeskFormModal from '~/components/helpdesk/HelpdeskFormModal.vue'
 const authentication = useAuthentication()
 const llmStore = useLLM()
 const router = useRouter()
+const config = useRuntimeConfig()
 const apiKeysOpen = ref(false)
 
 const dropdownItems = computed(() => [
@@ -34,6 +35,9 @@ const dropdownItems = computed(() => [
         <NuxtImg src="/favicon.png" alt="Logo" class="h-10 w-auto object-contain" />
         <h1 class="text-xl font-bold">pix:e</h1>
       </NuxtLink>
+      <div class="text-xs text-neutral-500 self-end mb-2">
+        v{{ config.public.version }}-{{ config.public.gitHash }}
+      </div>
     </template>
 
     <template #right>
