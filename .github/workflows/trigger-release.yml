@@ -3,8 +3,14 @@ name: Trigger release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'New version number (e.g. 1.0.0)'
+      release_version:
+        description: 'Release version number'
+        default: "1.0.0"
+        required: true
+        type: string
+      next_version:
+        description: 'Next version number'
+        default: "1.0.1-SNAPSHOT"
         required: true
         type: string
 
@@ -39,11 +45,11 @@ jobs:
 
       - name: Update version in package.json
         run: |
-          npm version ${{ inputs.version }} --no-git-tag-version
+          npm version ${{ inputs.release_version }} --no-git-tag-version
 
       - name: Commit version bump
         run: |
-          git commit -am "chore(release): bump version to ${{ inputs.version }}"
+          git commit -am "chore(release): bump version to ${{ inputs.release_version }}"
 
       - name: Push changes to release branch
         run: |
@@ -51,5 +57,21 @@ jobs:
 
       - name: Create and push tag
         run: |
-          git tag release/v${{ inputs.version }}
-          git push origin release/v${{ inputs.version }}
+          git tag release/v${{ inputs.release_version }}
+          git push origin release/v${{ inputs.release_version }}
+
+      - name: Checkout main branch
+        run: |
+          git checkout main
+
+      - name: Update version to next development version in package.json
+        run: |
+          npm version ${{ inputs.next_version }} --no-git-tag-version
+
+      - name: Commit next version bump
+        run: |
+          git commit -am "chore(main): bump version to ${{ inputs.next_version }}"
+
+      - name: Push changes to main branch
+        run: |
+          git push origin main
