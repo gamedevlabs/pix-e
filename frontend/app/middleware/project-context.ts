@@ -18,7 +18,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   const { currentProjectId, fetchProjectById } = useProjectHandler()
-
   // Extract project ID from query parameter
   const projectIdFromUrl = Number(to.query.id)
 
@@ -36,10 +35,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If URL has a project ID, validate it exists
   // Only validate if it's different from the current project
-  if (
-    Number.isFinite(projectIdFromUrl) &&
-    projectIdFromUrl !== currentProjectId.value
-  ) {
+  if (Number.isFinite(projectIdFromUrl) && projectIdFromUrl !== currentProjectId.value) {
     const project = await fetchProjectById(projectIdFromUrl)
 
     if (!project) {
@@ -52,8 +48,5 @@ export default defineNuxtRouteMiddleware(async (to) => {
         },
       })
     }
-
-    // Project exists, set it in context
-    //await selectProject(project.id)
   }
 })
