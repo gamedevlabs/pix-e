@@ -14,16 +14,27 @@ export const useProjectHandler = () => {
   const { items, createItem, updateItem, fetchAll, fetchById, deleteItem } =
     useCrudWithAuthentication<Project>('/api/projects/')
 
+  const authentication = useAuthentication()
+
   // actions
   const fetchProjects = async (): Promise<Project[]> => {
+    if (!authentication.isLoggedIn.value) {
+      return []
+    }
     return await fetchAll()
   }
 
   const fetchProjectById = async (id: number): Promise<Project | null> => {
+    if (!authentication.isLoggedIn.value) {
+      return null
+    }
     return await fetchById(id)
   }
 
   const selectProject = async (projectId: number) => {
+    if (!authentication.isLoggedIn.value) {
+      return
+    }
     const data = await apiFetch<Project>(`/api/projects/${projectId}/switch/`, {
       method: 'POST',
       credentials: 'include',
@@ -68,16 +79,24 @@ export const useProjectHandler = () => {
   const syncProjectFromUrl = () => {
     const route = useRoute()
 
-    onMounted(() => {
-      const projectIdFromUrl = route.query.id as number | undefined
-      if (projectIdFromUrl && projectIdFromUrl !== currentProjectId.value) {
-        selectProject(projectIdFromUrl)
+    const sync = async () => {
+      if (!authentication.isLoggedIn.value) return
+
+      const id = Number(route.query.id)
+      if (Number.isFinite(id) && id !== currentProjectId.value) {
+        await selectProject(id)
       }
+    }
+
+    onMounted(() => {
+      void sync()
     })
 
     watch(
       () => route.query.id,
       (newVal) => {
+        if (!authentication.isLoggedIn.value) return
+
         const id = newVal as number | undefined
         if (id && id !== currentProjectId.value) {
           selectProject(id)

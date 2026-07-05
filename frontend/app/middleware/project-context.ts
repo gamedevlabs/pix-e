@@ -9,13 +9,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
+  const { isLoggedIn, checkedLogin, checkAuthentication } = useAuthentication()
+  if (!checkedLogin.value) {
+    await checkAuthentication()
+  }
+  if (!isLoggedIn.value) {
+    return
+  }
+
   const { currentProjectId, fetchProjectById } = useProjectHandler()
 
   // Extract project ID from query parameter
-  const projectIdFromUrl = to.query.id as number | undefined
+  const projectIdFromUrl = Number(to.query.id)
 
   // If no project ID in URL and no current project, redirect to projects list
-  if (!projectIdFromUrl && !currentProjectId.value) {
+  if (!Number.isFinite(projectIdFromUrl) && !currentProjectId.value) {
     // Redirect with error info in query params
     return navigateTo({
       path: '/',
@@ -27,24 +35,22 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // If URL has a project ID, validate it exists
-  if (projectIdFromUrl) {
-    // Only validate if it's different from the current project
-    if (projectIdFromUrl != currentProjectId.value) {
-      const project = await fetchProjectById(projectIdFromUrl)
+  // Only validate if it's different from the current project
+  if (Number.isFinite(projectIdFromUrl) && projectIdFromUrl !== currentProjectId.value) {
+    const project = await fetchProjectById(projectIdFromUrl)
 
-      if (!project) {
-        // Project doesn't exist - redirect with error info
-        return navigateTo({
-          path: '/',
-          query: {
-            error: 'project-not-found',
-            projectId: projectIdFromUrl,
-          },
-        })
-      }
-
-      // Project exists, set it in context
-      //await selectProject(project.id)
+    if (!project) {
+      // Project doesn't exist - redirect with error info
+      return navigateTo({
+        path: '/',
+        query: {
+          error: 'project-not-found',
+          projectId: projectIdFromUrl,
+        },
+      })
     }
+
+    // Project exists, set it in context
+    //await selectProject(project.id)
   }
 })

@@ -58,8 +58,8 @@ export function useAuthentication() {
   //let authPromise: Promise<boolean> | null = null
 
   async function checkAuthentication(): Promise<boolean> {
+    checkedLogin.value = true
     try {
-      checkedLogin.value = true
       user.value = await apiFetch<User>('/api/accounts/me/')
       await llmStore.refreshModels()
       return true
