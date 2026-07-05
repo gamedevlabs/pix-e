@@ -36,7 +36,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If URL has a project ID, validate it exists
   // Only validate if it's different from the current project
-  if (Number.isFinite(projectIdFromUrl) && projectIdFromUrl !== currentProjectId.value) {
+  if (
+    Number.isFinite(projectIdFromUrl) &&
+    projectIdFromUrl !== currentProjectId.value
+  ) {
     const project = await fetchProjectById(projectIdFromUrl)
 
     if (!project) {

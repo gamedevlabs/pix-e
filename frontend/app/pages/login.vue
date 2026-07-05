@@ -13,6 +13,11 @@ definePageMeta({
 const state = reactive({ username: '', password: '' })
 const authentication = useAuthentication()
 const show = ref(false)
+const route = useRoute()
+const redirectTo = computed(() => {
+  const value = route.query.redirect
+  return typeof value === 'string' ? value : '/'
+})
 
 const { loadForUser, toggleSubstep } = useProjectWorkflow()
 const isLoggedIn = computed(() => authentication.isLoggedIn.value)
@@ -36,7 +41,7 @@ const validate = (state: { username: string; password: string }): FormError[] =>
 const toast = useToast()
 
 async function handleLogin() {
-  const success = await authentication.login(state.username, state.password)
+  const success = await authentication.login(state.username, state.password, redirectTo.value)
   if (success) {
     // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
     await toggleSubstep('user-onb-1', 'user-onb-1-2')
@@ -60,7 +65,7 @@ async function handleRegistration() {
     })
     return
   }
-  const success = await authentication.register(state.username, state.password)
+  const success = await authentication.register(state.username, state.password, redirectTo.value)
   if (success) {
     // Mark the final login substep complete (preceding substeps are auto-completed by toggleSubstep)
     await toggleSubstep('user-onb-1', 'user-onb-1-2')
