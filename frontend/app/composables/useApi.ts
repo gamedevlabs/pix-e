@@ -13,10 +13,20 @@ export const useApi = () => {
   const apiFetch = $fetch.create({
     baseURL: baseURL as string,
     onResponseError({ request, response }) {
+      const requestPath = String(request)
+
+      // check if it's an expected auth error (error happens naturally when user is logged out) -> ignore expected error
+      const isExpectedAuthCheck =
+        requestPath.includes('/api/accounts/me/') && response.status === 401
+
+      if (isExpectedAuthCheck) {
+        return
+      }
+
       console.error('API Error (call: ' + baseURL + '):', response.status, response._data)
 
       addLog('error', 'api_error', {
-        request: String(request),
+        request: requestPath,
         status: response.status,
         hasResponseData: Boolean(response._data),
       })

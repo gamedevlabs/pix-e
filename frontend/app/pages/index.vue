@@ -12,7 +12,6 @@ definePageMeta({
 })
 
 const authentication = useAuthentication()
-await authentication.checkAuthentication()
 
 const router = useRouter()
 const route = useRoute()

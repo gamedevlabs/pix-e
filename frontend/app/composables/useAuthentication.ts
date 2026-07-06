@@ -6,9 +6,12 @@ export function useAuthentication() {
   const router = useRouter()
   const { addLog } = useSessionLog()
   const llmStore = useLLM()
-  const route = useRoute()
 
-  async function register(username: string, password: string): Promise<boolean> {
+  async function register(
+    username: string,
+    password: string,
+    redirectTo: string = '/',
+  ): Promise<boolean> {
     // log registration start
     addLog('info', 'registration_started')
     try {
@@ -16,7 +19,7 @@ export function useAuthentication() {
         method: 'POST',
         body: { username: username, password: password },
       })
-      return await login(username, password)
+      return await login(username, password, redirectTo)
     } catch {
       // log registration fail
       addLog('error', 'registration_failed')
@@ -24,7 +27,11 @@ export function useAuthentication() {
     }
   }
 
-  async function login(username: string, password: string): Promise<boolean> {
+  async function login(
+    username: string,
+    password: string,
+    redirectTo: string = '/',
+  ): Promise<boolean> {
     // log login start
     addLog('info', 'login_started')
     try {
@@ -41,7 +48,6 @@ export function useAuthentication() {
         return false
       }
       await llmStore.refreshModels()
-      const redirectTo = (route.query.redirect as string) || '/'
       await router.push(redirectTo)
       // log login success
       addLog('info', 'login_succeeded')
@@ -58,8 +64,8 @@ export function useAuthentication() {
   //let authPromise: Promise<boolean> | null = null
 
   async function checkAuthentication(): Promise<boolean> {
+    checkedLogin.value = true
     try {
-      checkedLogin.value = true
       user.value = await apiFetch<User>('/api/accounts/me/')
       await llmStore.refreshModels()
       return true

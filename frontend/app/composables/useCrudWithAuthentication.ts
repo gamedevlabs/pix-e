@@ -7,8 +7,14 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   const error = ref<unknown>(null)
   const { success, error: errorToast } = usePixeToast()
   const projectStore = useProject()
+  const authentication = useAuthentication()
 
   async function fetchAll(): Promise<T[]> {
+    if (!authentication.isLoggedIn.value) {
+      items.value = []
+      return []
+    }
+
     loading.value = true
     try {
       const data = await apiFetch<T[]>(apiUrl, {
@@ -29,6 +35,10 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   }
 
   async function fetchById(id: number | string) {
+    if (!authentication.isLoggedIn.value) {
+      return null
+    }
+
     loading.value = true
     try {
       return await apiFetch<T>(`${apiUrl}${id}`, {
@@ -47,6 +57,10 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   }
 
   async function createItem(payload: Partial<T>): Promise<T> {
+    if (!authentication.isLoggedIn.value) {
+      throw new Error('Not authenticated')
+    }
+
     try {
       const data = await apiFetch<T>(apiUrl, {
         method: 'POST',
@@ -67,6 +81,10 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   }
 
   async function updateItem(id: number | string, payload: Partial<T>) {
+    if (!authentication.isLoggedIn.value) {
+      throw new Error('Not authenticated')
+    }
+
     try {
       const data = await apiFetch<T>(`${apiUrl}${id}/`, {
         method: 'PATCH',
@@ -87,6 +105,10 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   }
 
   async function deleteItem(id: number | string) {
+    if (!authentication.isLoggedIn.value) {
+      throw new Error('Not authenticated')
+    }
+
     try {
       await apiFetch<null>(`${apiUrl}${id}/`, {
         method: 'DELETE',
@@ -107,6 +129,7 @@ export function useCrudWithAuthentication<T>(apiUrl: string) {
   watch(
     () => projectStore.activeProjectId,
     async (nextId, previousId) => {
+      if (!authentication.isLoggedIn.value) return
       if (previousId !== null && nextId !== previousId) {
         console.log('weird fetchAll going on')
         await fetchAll()

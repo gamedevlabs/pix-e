@@ -9,9 +9,14 @@ import type { Project, ProjectTargetPlatform } from '~/utils/project.d'
  */
 export function useProjectSettings() {
   const { updateProject, fetchProjectById, syncProjectFromUrl, selectProject } = useProjectHandler()
+  const authentication = useAuthentication()
   const router = useRouter()
   const route = useRoute()
   const toast = useToast()
+
+  if (!authentication.checkedLogin.value) {
+    void authentication.checkAuthentication()
+  }
 
   syncProjectFromUrl()
 
@@ -50,6 +55,8 @@ export function useProjectSettings() {
   })
 
   async function loadProject() {
+    if (!authentication.isLoggedIn.value) return
+
     if (!projectId.value) {
       toast.add({
         title: 'No Project Selected',
@@ -136,12 +143,14 @@ export function useProjectSettings() {
   }
 
   onMounted(() => {
+    if (!authentication.isLoggedIn.value) return
     loadProject()
   })
 
   watch(
     () => route.query.id,
     () => {
+      if (!authentication.isLoggedIn.value) return
       loadProject()
     },
   )
