@@ -584,7 +584,7 @@ async function handleChangeEdgeDirectionality() {
       v-else
       v-model:nodes="nodes"
       v-model:edges="edges"
-      class="flex-1 min-h-0 rounded-xl mt-2"
+      class="flex-1 min-h-0"
       :edge-types="edgeTypes"
       :apply-default="false"
       :snap-to-grid="menuSnapToGrid"
