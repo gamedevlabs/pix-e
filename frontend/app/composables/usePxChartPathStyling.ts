@@ -26,6 +26,10 @@ export function usePxChartPathStyling(
     }
   }
 
+  // version 1: reachable nodes neutral
+  // version 2: unreachable nodes red
+  const reachabilityStyling = ref(2)
+
   async function updateNodeStyling() {
     // set style of nodes in calculated path
     for (const node of nodes.value) {
@@ -33,6 +37,21 @@ export function usePxChartPathStyling(
         node.style = getPathStyle('var(--ui-secondary)')
       } else if (!result.value.pathNodes.length && selectedNodes.value.includes(node.id)) {
         // use error color for selected nodes when no path connects them
+        node.style = getPathStyle('var(--ui-error)')
+      } else if (
+        reachabilityStyling.value === 1 &&
+        !result.value.pathNodes.length &&
+        result.value.reachable.includes(node.id)
+      ) {
+        // use neutral color for (not selected and) reachable nodes when pathfinding fails
+        node.style = getPathStyle('var(--ui-neutral)')
+      } else if (
+        reachabilityStyling.value === 2 &&
+        selectedNodes.value.length &&
+        !result.value.pathNodes.length &&
+        !result.value.reachable.includes(node.id)
+      ) {
+        // use error color for unreachable nodes when pathfinding fails
         node.style = getPathStyle('var(--ui-error)')
       } else if (settings.value.show_soft_locks && result.value.softLocked.includes(node.id)) {
         // use info color for nodes with potential soft locks
