@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   type NodeDragEvent,
   VueFlow,
@@ -584,13 +584,16 @@ async function handleChangeEdgeDirectionality() {
       v-else
       v-model:nodes="nodes"
       v-model:edges="edges"
-      class="flex-1 min-h-0"
+      class="flex-1 min-h-0 rounded-xl mt-2"
       :edge-types="edgeTypes"
       :apply-default="false"
       :snap-to-grid="menuSnapToGrid"
       :snap-grid="grid"
       :min-zoom="0.1"
       :max-zoom="4"
+      :style="{
+        backgroundColor: 'var(--ui-background)',
+      }"
       @node-drag-stop="onNodeDragStop"
       @connect="onConnect"
       @nodes-change="onNodesChange"

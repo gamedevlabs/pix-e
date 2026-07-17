@@ -108,6 +108,7 @@
   --ui-warning: var(--ui-color-warning-500);
   --ui-error: var(--ui-color-error-500);
   --ui-neutral: var(--ui-color-neutral-500);
+  --ui-background: var(--ui-color-neutral-100);
   --ui-container: var(--container-max-width);
   --ui-header-height: 52px;
 }
@@ -120,4 +121,5 @@
   --ui-warning: var(--ui-color-warning-400);
   --ui-error: var(--ui-color-error-400);
   --ui-neutral: var(--ui-color-neutral-400);
+  --ui-background: var(--ui-color-neutral-800);
 }
