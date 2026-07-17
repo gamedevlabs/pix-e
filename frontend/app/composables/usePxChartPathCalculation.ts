@@ -312,7 +312,11 @@ export function usePxChartPathCalculation(
       )
     }
 
-    result.value.reachable = dist.entries().toArray().filter((id, dist) => dist < Infinity).map(pair => JSON.parse(pair[0]).id)
+    result.value.reachable = dist
+      .entries()
+      .toArray()
+      .filter((id, dist) => dist < Infinity)
+      .map((pair) => JSON.parse(pair[0]).id)
     result.value.pathEdges = seqEdges.reverse()
     return { path: seq.reverse(), targetState: states.get(targetKeyState) ?? undefined }
   }
@@ -390,7 +394,7 @@ export function usePxChartPathCalculation(
       locked: [],
       softLocked: [],
       edgeLocked: [],
-      reachable: []
+      reachable: [],
     }
     selectedNodes.value = []
   }
