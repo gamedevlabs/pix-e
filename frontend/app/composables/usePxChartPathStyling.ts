@@ -38,10 +38,19 @@ export function usePxChartPathStyling(
       } else if (!result.value.pathNodes.length && selectedNodes.value.includes(node.id)) {
         // use error color for selected nodes when no path connects them
         node.style = getPathStyle('var(--ui-error)')
-      } else if (reachabilityStyling.value === 1 && !result.value.pathNodes.length && result.value.reachable.includes(node.id)) {
+      } else if (
+        reachabilityStyling.value === 1 &&
+        !result.value.pathNodes.length &&
+        result.value.reachable.includes(node.id)
+      ) {
         // use neutral color for (not selected and) reachable nodes when pathfinding fails
         node.style = getPathStyle('var(--ui-neutral)')
-      } else if (reachabilityStyling.value === 2 && selectedNodes.value.length && !result.value.pathNodes.length && !result.value.reachable.includes(node.id)) {
+      } else if (
+        reachabilityStyling.value === 2 &&
+        selectedNodes.value.length &&
+        !result.value.pathNodes.length &&
+        !result.value.reachable.includes(node.id)
+      ) {
         // use error color for unreachable nodes when pathfinding fails
         node.style = getPathStyle('var(--ui-error)')
       } else if (settings.value.show_soft_locks && result.value.softLocked.includes(node.id)) {
