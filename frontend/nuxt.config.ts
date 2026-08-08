@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/test-utils',
     '@nuxt/ui',
+    'nuxt-emoji-picker',
   ],
 
   css: ['~/assets/css/main.css'],
