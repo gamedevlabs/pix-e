@@ -33,6 +33,7 @@ export interface PxLockDefinition {
   soft_gate: boolean
   unlocked_by: string[] // ids of key definitions
   unlock_mode: PxUnlockModeType
+  symbol: string
   created_at: string
   updated_at: string
   owner: number | null
@@ -45,6 +46,7 @@ export interface PxKeyDefinition {
   consumable: boolean
   fixed: boolean
   unique: boolean // can also be verified. alternatively: show summary with count of each key
+  symbol: string
   created_at: string
   updated_at: string
   owner: number | null
