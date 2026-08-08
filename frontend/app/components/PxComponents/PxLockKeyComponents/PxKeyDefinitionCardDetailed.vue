@@ -12,7 +12,7 @@ const isBeingEdited = ref(false)
 
 type EditableKeyDefinition = Pick<
   PxKeyDefinition,
-  'name' | 'key_type' | 'consumable' | 'fixed' | 'unique'
+  'name' | 'key_type' | 'consumable' | 'fixed' | 'unique' | 'symbol'
 >
 
 const editForm: Ref<EditableKeyDefinition> = ref({
@@ -21,6 +21,7 @@ const editForm: Ref<EditableKeyDefinition> = ref({
   consumable: props.definition.consumable,
   fixed: props.definition.fixed,
   unique: props.definition.unique,
+  symbol: props.definition.symbol,
 })
 
 function startEdit() {
@@ -40,18 +41,31 @@ function cancelEdit() {
 function emitDelete() {
   emit('delete', props.definition.id)
 }
+
+async function onSelectKeyEmoji(emoji) {
+  editForm.value.symbol = emoji.i
+}
 </script>
 <template>
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <div class="flex items-center gap-2">
-        🔑
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
+          {{ editForm.symbol }}
           <NuxtLink :to="{ name: 'pxkeydefinitions-id', params: { id: props.definition.id } }">
-            {{ props.definition.name }}
+          {{ props.definition.name }}
           </NuxtLink>
         </h2>
-        <UTextarea v-else v-model="editForm.name" :rows="1" size="lg" />
+        <div v-else>
+          <UPopover :enable-touch="false">
+            <UButton :label="editForm.symbol" color="neutral" variant="subtle" size="xl" />
+
+            <template #content>
+              <NuxtEmojiPicker :hide-search="false" theme="light" @select="onSelectKeyEmoji" />
+            </template>
+          </UPopover>
+          <UInput v-model="editForm.name" size="xl" />
+        </div>
       </div>
     </template>
 
