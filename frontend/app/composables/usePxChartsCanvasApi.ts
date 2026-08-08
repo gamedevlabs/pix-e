@@ -23,6 +23,7 @@ export function usePxChartsCanvasApi(chartId: string) {
   } = usePxChartEdges(chartId)
   const { fetchById: fetchPxNode, fetchAll: fetchPxNodes, items: _pxNodes } = usePxNodes()
   const { fetchAll: fetchPxLocks, items: pxLocks } = usePxLocks(chartId)
+  const { fetchAll: fetchPxLockDefinitions, items: pxLockDefinitions } = usePxLockDefinitions()
   const { fetchAll: fetchPxKeys, items: pxKeys } = usePxKeys()
 
   const { applyNodeChanges, applyEdgeChanges } = useVueFlow()
@@ -52,6 +53,17 @@ export function usePxChartsCanvasApi(chartId: string) {
   const modalAddPxNode = overlay.create(PxChartContainerAddPxNodeForm)
   const modalCreatePxNode = overlay.create(PxChartContainerCreatePxNodeForm)
 
+  // edges are labeled with the symbols of any locks on them
+  async function getLabelForEdge(locks: PxLock[], refetch: boolean = false) {
+    if (refetch) {
+        await fetchPxLockDefinitions()
+    }
+    return locks
+      .map((lock) => pxLockDefinitions.value.find((def) => def.id === lock.definition)!)
+      .map((def) => def.symbol)
+      .join('')
+  }
+
   // Load graph with Vue Flow properties
   async function loadGraph() {
     loading.value = true
@@ -76,6 +88,7 @@ export function usePxChartsCanvasApi(chartId: string) {
     await fetchPxLocks()
     await fetchPxNodes()
     await fetchPxKeys()
+    await fetchPxLockDefinitions()
 
     nodes.value = data.containers.map((n: PxChartContainer) => ({
       id: n.id,
@@ -108,6 +121,13 @@ export function usePxChartsCanvasApi(chartId: string) {
         bidirectional: e.bidirectional,
       },
     }))
+
+    edges.value = await Promise.all(
+      edges.value.map(async (e: Edge) => {
+        e.label = await getLabelForEdge(e.data.locks)
+        return e
+      }),
+    )
   }
 
   /*
@@ -420,6 +440,7 @@ export function usePxChartsCanvasApi(chartId: string) {
       console.warn('Could not find edge.')
     } else {
       edge.data.locks = await getLocksForEdge(edgeId)
+      edge.label = await getLabelForEdge(edge!.data.locks, true)
     }
   }
 
