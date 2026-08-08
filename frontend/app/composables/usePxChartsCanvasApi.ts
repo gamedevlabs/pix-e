@@ -59,8 +59,11 @@ export function usePxChartsCanvasApi(chartId: string) {
       await fetchPxLockDefinitions()
     }
     return locks
-      .map((lock) => pxLockDefinitions.value.find((def) => def.id === lock.definition)!)
-      .map((def) => def.symbol)
+      .map((lock) =>
+        pxLockDefinitions.value
+          .find((def) => def.id === lock.definition)!
+          .symbol.repeat(lock.count),
+      )
       .join('')
   }
 
