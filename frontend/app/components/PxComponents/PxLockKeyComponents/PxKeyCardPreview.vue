@@ -12,7 +12,11 @@ function emitDelete() {
 <template>
   <UFieldGroup>
     <UTooltip :text="props.definition.name">
-      <UButton :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }" variant="outline" size="lg">
+      <UButton
+        :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }"
+        variant="outline"
+        size="lg"
+      >
         <p>{{ props.pxkey.count }}x</p>
         <p>{{ props.definition.symbol }}</p></UButton
       >

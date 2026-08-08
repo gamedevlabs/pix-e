@@ -56,7 +56,7 @@ export function usePxChartsCanvasApi(chartId: string) {
   // edges are labeled with the symbols of any locks on them
   async function getLabelForEdge(locks: PxLock[], refetch: boolean = false) {
     if (refetch) {
-        await fetchPxLockDefinitions()
+      await fetchPxLockDefinitions()
     }
     return locks
       .map((lock) => pxLockDefinitions.value.find((def) => def.id === lock.definition)!)

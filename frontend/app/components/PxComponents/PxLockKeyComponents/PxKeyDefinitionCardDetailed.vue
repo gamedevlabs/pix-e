@@ -53,7 +53,7 @@ async function onSelectKeyEmoji(emoji) {
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
           {{ editForm.symbol }}
           <NuxtLink :to="{ name: 'pxkeydefinitions-id', params: { id: props.definition.id } }">
-          {{ props.definition.name }}
+            {{ props.definition.name }}
           </NuxtLink>
         </h2>
         <div v-else>

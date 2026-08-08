@@ -612,7 +612,7 @@ async function handleChangeEdgeDirectionality() {
       </Panel>
 
       <Panel :position="'bottom-right'">
-        <PxLockKeyLegend/>
+        <PxLockKeyLegend />
       </Panel>
 
       <template #node-pxEmpty="customNodeProps">
