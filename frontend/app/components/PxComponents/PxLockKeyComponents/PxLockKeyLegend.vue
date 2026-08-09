@@ -110,7 +110,9 @@ const keyColumns: TableColumn<KeyDef4User>[] = [
     }"
     :dismissible="false"
   >
-    <UButton icon="lucide-book-key" class="m-2" />
+    <UTooltip text="Lock/Key Legend">
+      <UButton icon="lucide-book-key" class="m-2" />
+    </UTooltip>
 
     <template #content>
       <UCard title="Definitions Legend">
