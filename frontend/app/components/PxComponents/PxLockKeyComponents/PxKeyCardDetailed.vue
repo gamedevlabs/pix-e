@@ -18,6 +18,7 @@ function emitDelete() {
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <h2 class="font-semibold text-lg">
+        {{ definition.symbol }}
         <NuxtLink :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }">
           Definition: {{ props.definition.name }}
         </NuxtLink>

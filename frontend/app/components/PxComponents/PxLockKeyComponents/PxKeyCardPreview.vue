@@ -11,10 +11,16 @@ function emitDelete() {
 </script>
 <template>
   <UFieldGroup>
-    <UButton :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }" variant="outline">
-      <p>{{ props.pxkey.count }}x</p>
-      <p class="font-semibold">{{ props.definition.name }}</p></UButton
-    >
+    <UTooltip :text="props.definition.name">
+      <UButton
+        :to="{ name: 'pxkeys-id', params: { id: props.pxkey.id } }"
+        variant="outline"
+        size="lg"
+      >
+        <p>{{ props.pxkey.count }}x</p>
+        <p>{{ props.definition.symbol }}</p></UButton
+      >
+    </UTooltip>
     <UButton
       v-if="!readonly"
       color="error"

@@ -15,7 +15,7 @@ const isBeingEdited = ref(false)
 
 type EditableLockDefinition = Pick<
   PxLockDefinition,
-  'name' | 'unlocked_by' | 'unlock_mode' | 'soft_gate'
+  'name' | 'unlocked_by' | 'unlock_mode' | 'soft_gate' | 'symbol'
 >
 
 const editForm: Ref<EditableLockDefinition> = ref({
@@ -23,6 +23,7 @@ const editForm: Ref<EditableLockDefinition> = ref({
   unlock_mode: props.definition.unlock_mode,
   unlocked_by: props.definition.unlocked_by,
   soft_gate: props.definition.soft_gate,
+  symbol: props.definition.symbol,
 })
 
 function startEdit() {
@@ -43,6 +44,10 @@ function emitDelete() {
   emit('delete', props.definition.id)
 }
 
+async function onSelectLockEmoji(emoji) {
+  editForm.value.symbol = emoji.i
+}
+
 const unlockedByKeyNames = computed(() => {
   return props.keysForSelection
     .filter((key) => props.definition.unlocked_by.includes(key.value))
@@ -53,13 +58,22 @@ const unlockedByKeyNames = computed(() => {
   <UCard class="hover:shadow-lg transition">
     <template #header>
       <div class="flex items-center gap-2">
-        🔒
         <h2 v-if="!isBeingEdited" class="font-semibold text-lg">
+          {{ editForm.symbol }}
           <NuxtLink :to="{ name: 'pxlockdefinitions-id', params: { id: props.definition.id } }">
             {{ props.definition.name }}
           </NuxtLink>
         </h2>
-        <UTextarea v-else v-model="editForm.name" :rows="1" size="lg" />
+        <div v-else>
+          <UPopover :enable-touch="false">
+            <UButton :label="editForm.symbol" color="neutral" variant="subtle" size="xl" />
+
+            <template #content>
+              <NuxtEmojiPicker :hide-search="false" theme="light" @select="onSelectLockEmoji" />
+            </template>
+          </UPopover>
+          <UInput v-model="editForm.name" size="xl" />
+        </div>
       </div>
     </template>
 

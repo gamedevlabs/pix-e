@@ -398,6 +398,7 @@ class PxKeyDefinition(models.Model):
     consumable = models.BooleanField()
     fixed = models.BooleanField()
     unique = models.BooleanField()
+    symbol = models.CharField(max_length=20)
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -446,6 +447,7 @@ class PxLockDefinition(models.Model):
     ]
     unlock_mode = models.CharField(max_length=20, choices=UNLOCK_MODE_CHOICES)
     unlocked_by = models.ManyToManyField(PxKeyDefinition)
+    symbol = models.CharField(max_length=20)
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

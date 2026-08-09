@@ -27,6 +27,7 @@ export interface LockInfo {
   newCount: number
   lockId: string | undefined
   unlockedBy: string[]
+  symbol: string
 }
 
 const emit = defineEmits<{
@@ -35,6 +36,10 @@ const emit = defineEmits<{
 
 function getNameFromDefinitionId(defId: string) {
   return pxLockDefinitions.value.find((def) => def.id === defId)!.name
+}
+
+function getSymbolFromDefinitionId(defId: string) {
+  return pxLockDefinitions.value.find((def) => def.id === defId)!.symbol
 }
 
 function getNamesOfUnlockingKeys(lockDef: PxLockDefinition) {
@@ -61,6 +66,7 @@ async function initialize() {
         newCount: instance.count,
         lockId: instance.id,
         unlockedBy: getNamesOfUnlockingKeys(def),
+        symbol: getSymbolFromDefinitionId(def.id),
       }
     } else {
       state.value[def.id] = {
@@ -70,6 +76,7 @@ async function initialize() {
         newCount: 0,
         lockId: undefined,
         unlockedBy: getNamesOfUnlockingKeys(def),
+        symbol: getSymbolFromDefinitionId(def.id),
       }
     }
   })
@@ -127,6 +134,12 @@ function getColor(lockInfo: LockInfo) {
         <UFormField v-for="[id, lockInfo] of Object.entries(state)" :key="id" :name="`state.${id}`">
           <UFieldGroup>
             <UBadge
+              :label="lockInfo.symbol"
+              size="lg"
+              :variant="lockInfo.newCount ? 'subtle' : 'outline'"
+              :color="getColor(lockInfo)"
+            />
+            <UBadge
               class="min-w-64"
               :label="lockInfo.defName"
               size="lg"
@@ -136,13 +149,23 @@ function getColor(lockInfo: LockInfo) {
             <UInputNumber
               v-model="lockInfo.newCount"
               name="count"
+              size="lg"
               :variant="lockInfo.newCount ? 'subtle' : 'outline'"
               :color="getColor(lockInfo)"
               :min="0"
             />
-            <UTooltip :text="lockInfo.unlockedBy.toString()">
+            <UTooltip
+              :text="`Unlocked by: ${lockInfo.unlockedBy.toString()}`"
+              :content="{
+                align: 'center',
+                side: 'right',
+                sideOffset: 8,
+              }"
+            >
               <UBadge
-                label="🔑"
+                class="p-2"
+                size="lg"
+                icon="i-lucide-info"
                 :color="getColor(lockInfo)"
                 :variant="lockInfo.newCount ? 'subtle' : 'outline'"
               />

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   type NodeDragEvent,
   VueFlow,
@@ -15,6 +15,7 @@ import { Background } from '@vue-flow/background'
 import PxChartToolbar from './PxChartToolbar.vue'
 import { PxChartEdge, PxChartSettingsForm, PxLockEditForm } from '#components'
 import { useApi } from '~/composables/useApi'
+import PxLockKeyLegend from '../PxLockKeyComponents/PxLockKeyLegend.vue'
 
 const { apiFetch } = useApi()
 const props = defineProps({ chartId: { type: String, default: -1 } })
@@ -608,6 +609,10 @@ async function handleChangeEdgeDirectionality() {
           :px-components="pxComponents"
           :px-component-definitions="pxComponentDefinitions"
         />
+      </Panel>
+
+      <Panel :position="'bottom-right'">
+        <PxLockKeyLegend />
       </Panel>
 
       <template #node-pxEmpty="customNodeProps">

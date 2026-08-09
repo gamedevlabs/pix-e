@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FormError, SelectMenuItem } from '@nuxt/ui'
+import { NuxtEmojiPicker } from '#components'
 
 definePageMeta({
   middleware: ['authentication', 'project-context'],
@@ -42,6 +43,7 @@ interface PxKeyDefState {
   consumable: boolean
   fixed: boolean
   unique: boolean
+  symbol: string
 }
 
 const defaultKeyState: PxKeyDefState = {
@@ -50,6 +52,7 @@ const defaultKeyState: PxKeyDefState = {
   consumable: false,
   fixed: false,
   unique: false,
+  symbol: '🔑',
 }
 
 const keyState = ref<PxKeyDefState>({ ...defaultKeyState })
@@ -70,6 +73,11 @@ async function handleUpdateKey(updatedDefinition: PxKeyDefinition) {
   await updatePxKeyDefinition(updatedDefinition.id, updatedDefinition)
 }
 
+// see https://github.com/delowardev/vue3-emoji-picker/?tab=readme-ov-file#usage
+async function onSelectKeyEmoji(emoji) {
+  keyState.value.symbol = emoji.i
+}
+
 export type PxKeySelectMenuItem = SelectMenuItem & { label: string; value: string }
 
 const keysForUnlockedBySelection: Ref<PxKeySelectMenuItem[]> = computed(() => {
@@ -81,6 +89,7 @@ interface PxLockDefState {
   soft_gate: boolean
   unlocked_by: string[]
   unlock_mode: PxUnlockModeType
+  symbol: string
 }
 
 const defaultLockState: PxLockDefState = {
@@ -88,6 +97,7 @@ const defaultLockState: PxLockDefState = {
   soft_gate: false,
   unlocked_by: [],
   unlock_mode: 'permanent',
+  symbol: '🔒',
 }
 
 const lockState = ref<PxLockDefState>({ ...defaultLockState })
@@ -106,6 +116,11 @@ async function handleCreateLock() {
 
 async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
   await updatePxLockDefinition(updatedDefinition.id, updatedDefinition)
+}
+
+// see https://github.com/delowardev/vue3-emoji-picker/?tab=readme-ov-file#usage
+async function onSelectLockEmoji(emoji) {
+  lockState.value.symbol = emoji.i
 }
 </script>
 
@@ -161,6 +176,15 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           >
             <UCheckbox v-model="keyState.unique" />
           </UFormField>
+          <UFormField name="symbol" label="Symbol" orientation="horizontal">
+            <UPopover :enable-touch="false">
+              <UButton :label="keyState.symbol" color="neutral" variant="subtle" />
+
+              <template #content>
+                <NuxtEmojiPicker :hide-search="false" theme="light" @select="onSelectKeyEmoji" />
+              </template>
+            </UPopover>
+          </UFormField>
           <UButton type="submit" :block="true" class="mt-4">Create PxKey Definition</UButton>
         </UForm>
         <UScrollArea
@@ -168,7 +192,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           v-slot="{ item }"
           :items="pxKeyDefinitions"
           orientation="horizontal"
-          class="w-full data-[orientation=horizontal]:h-96"
+          class="w-full"
           :ui="{ viewport: 'gap-8 p-1' }"
         >
           <PxKeyDefinitionCardDetailed
@@ -227,6 +251,15 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
               class="min-w-max"
             />
           </UFormField>
+          <UFormField name="symbol" label="Symbol" orientation="horizontal">
+            <UPopover :enable-touch="false">
+              <UButton :label="lockState.symbol" color="neutral" variant="subtle" />
+
+              <template #content>
+                <NuxtEmojiPicker :hide-search="false" theme="light" @select="onSelectLockEmoji" />
+              </template>
+            </UPopover>
+          </UFormField>
           <UButton type="submit" :block="true" class="mt-4">Create PxLock Definition</UButton>
         </UForm>
 
@@ -235,7 +268,7 @@ async function handleUpdateLock(updatedDefinition: PxLockDefinition) {
           v-slot="{ item }"
           :items="pxLockDefinitions"
           orientation="horizontal"
-          class="w-full data-[orientation=horizontal]:h-96"
+          class="w-full"
           :ui="{ viewport: 'gap-8 p-1' }"
         >
           <PxLockDefinitionCardDetailed

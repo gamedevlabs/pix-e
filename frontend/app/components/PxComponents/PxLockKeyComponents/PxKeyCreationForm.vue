@@ -96,7 +96,19 @@ async function onSubmit() {
             :items="availableDefinitionsForSelectedNode"
             class="w-full"
             placeholder="Select Definition Reference"
-          />
+          >
+            <template #leading="{ modelValue, ui }">
+              <span v-if="modelValue" class="size-5 text-center">
+                {{ selectedDefinition?.symbol }}
+              </span>
+              <UIcon v-else name="i-lucide-key-round" :class="ui.leadingIcon()" />
+            </template>
+            <template #item-leading="{ item }">
+              <span class="size-5 text-center">
+                {{ item.symbol }}
+              </span>
+            </template>
+          </USelectMenu>
         </UFormField>
 
         <UFormField label="Count" name="count">
