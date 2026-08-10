@@ -29,7 +29,7 @@
     "@vue-flow/core": "^1.45.0",
     "@vue-flow/node-resizer": "^1.5.0",
     "chart.js": "^4.5.1",
-    "eslint": "^9.38.0",
+    "eslint": "^10.5.0",
     "lodash.findindex": "^4.6.0",
     "lodash.merge": "^4.6.2",
     "nuxt": "^4.4.8",
