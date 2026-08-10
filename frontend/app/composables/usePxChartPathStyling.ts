@@ -20,7 +20,7 @@ export function usePxChartPathStyling(
 
   function getPathStyle(color: string) {
     return {
-      border: `3px solid ${color}`,
+      border: `5px solid ${color}`,
       borderRadius: '10px',
       boxShadow: `0 0 10px ${color}`,
     }
