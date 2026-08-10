@@ -11,7 +11,7 @@ google_genai==1.12.1
 openai==1.82.0
 pydantic==2.11.10
 python-dotenv==1.1.1
-pytest==8.4.2
+pytest==9.1.0
 httpx==0.28.1
 opentelemetry-api==1.39.1
 opentelemetry-sdk==1.39.1
