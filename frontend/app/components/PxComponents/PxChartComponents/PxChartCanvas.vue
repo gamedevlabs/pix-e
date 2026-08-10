@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   type NodeDragEvent,
   VueFlow,
@@ -591,6 +591,9 @@ async function handleChangeEdgeDirectionality() {
       :snap-grid="grid"
       :min-zoom="0.1"
       :max-zoom="4"
+      :style="{
+        backgroundColor: 'var(--ui-background)',
+      }"
       @node-drag-stop="onNodeDragStop"
       @connect="onConnect"
       @nodes-change="onNodesChange"
