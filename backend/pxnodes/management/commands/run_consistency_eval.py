@@ -184,6 +184,9 @@ class Command(BaseCommand):
             "avg_false_positives": m.avg_false_positives,
             "avg_hallucinations": m.avg_hallucinations,
             "durations_s": report.durations_s,
+            "n_calls": report.n_calls,
+            "prompt_tokens": report.prompt_tokens,
+            "completion_tokens": report.completion_tokens,
             "per_run": [
                 {
                     "tp": [t.id for t in r.tp],

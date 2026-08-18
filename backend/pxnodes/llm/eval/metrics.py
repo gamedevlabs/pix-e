@@ -89,7 +89,9 @@ class RunResult:
         return 2 * p * r / (p + r) if (p + r) else 0.0
 
 
-def _trap_matches(finding: Finding, trap: Trap) -> bool:
+def _trap_matches(
+    finding: Finding, trap: Trap, strict_pairs: bool = False
+) -> bool:
     if finding.category != trap.category:
         return False
     if trap.node is None:
@@ -98,23 +100,38 @@ def _trap_matches(finding: Finding, trap: Trap) -> bool:
     trap_names = {trap.node}
     if trap.partner:
         trap_names.add(trap.partner)
-    # A pairwise finding implicates two nodes; match if EITHER side of the
-    # finding (node_A via entity_id, or node_B via the message) is in the trap.
+    # A pairwise finding implicates two nodes (node_A via entity_id, node_B via
+    # the message). The default (loose) rule matches if EITHER side coincides
+    # with the trap, so a genuine detection is not missed merely because the two
+    # nodes were named in the opposite order. The optional strict rule requires
+    # BOTH nodes of a pairwise trap (an unordered exact pair), used for the
+    # robustness check in the evaluation.
     finding_names = {
         name for name in (finding.resolved_name, finding.partner_name) if name
     }
+    if strict_pairs and trap.partner:
+        return trap_names <= finding_names
     return bool(trap_names & finding_names)
 
 
-def match_run(findings: Sequence[Finding], traps: Sequence[Trap]) -> RunResult:
-    """Match one run's findings against the trap set (greedy, each trap once)."""
+def match_run(
+    findings: Sequence[Finding],
+    traps: Sequence[Trap],
+    strict_pairs: bool = False,
+) -> RunResult:
+    """Match one run's findings against the trap set (greedy, each trap once).
+
+    With ``strict_pairs=True`` a pairwise trap is credited only when a finding
+    names *both* its nodes (unordered), rather than either one; used for the
+    matching-robustness check reported in the evaluation.
+    """
     result = RunResult(fn=list(traps))
     unmatched = list(traps)
 
     for finding in findings:
         matched: Optional[Trap] = None
         for trap in unmatched:
-            if _trap_matches(finding, trap):
+            if _trap_matches(finding, trap, strict_pairs):
                 matched = trap
                 break
         if matched is not None:

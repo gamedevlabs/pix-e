@@ -28,3 +28,6 @@ backend/docs/experiments/*
 backend/db_backup_20260104_125924.sql
 backend/vectors.db
 backend/artifacts/*
+# secrets (never commit)
+.env
+cookies.txt

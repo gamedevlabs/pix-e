@@ -14,7 +14,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from llm.providers.manager import ModelManager
 from projects.models import Project
@@ -95,6 +95,33 @@ def load_traps(path: str | Path, layer: str) -> List[Trap]:
     return traps
 
 
+class _CountingModelManager(ModelManager):
+    """Wraps ModelManager to tally LLM calls and token usage for feasibility
+    reporting, mirroring the change-propagation harness."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.n_calls = 0
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+
+    def _tally(self, result: Any) -> Any:
+        self.n_calls += 1
+        self.prompt_tokens += getattr(result, "prompt_tokens", 0) or 0
+        self.completion_tokens += getattr(result, "completion_tokens", 0) or 0
+        return result
+
+    def generate_structured_with_model(self, *args: Any, **kwargs: Any) -> Any:
+        return self._tally(super().generate_structured_with_model(*args, **kwargs))
+
+    async def generate_structured_with_model_async(
+        self, *args: Any, **kwargs: Any
+    ) -> Any:
+        return self._tally(
+            await super().generate_structured_with_model_async(*args, **kwargs)
+        )
+
+
 @dataclass
 class ConsistencyEvalReport:
     layer: str
@@ -104,6 +131,9 @@ class ConsistencyEvalReport:
     run_results: List[RunResult] = field(default_factory=list)
     raw_findings: List[List[dict]] = field(default_factory=list)
     durations_s: List[float] = field(default_factory=list)
+    n_calls: List[int] = field(default_factory=list)
+    prompt_tokens: List[int] = field(default_factory=list)
+    completion_tokens: List[int] = field(default_factory=list)
     metrics: Optional[AggregateMetrics] = None
 
 
@@ -139,8 +169,9 @@ def run_consistency_eval(
         # A transient API failure (e.g. rate limit) on one run must not discard
         # all the others — record only successful runs and carry on.
         try:
+            mm = _CountingModelManager() if needs_model else None
             workflow = ConsistencyWorkflow(
-                model_manager=ModelManager() if needs_model else None,
+                model_manager=mm,
                 min_confidence=min_confidence,
                 run_structural=run_structural,
                 model_id=model_id,
@@ -150,6 +181,10 @@ def run_consistency_eval(
             start = time.perf_counter()
             result = workflow.check_project(project)
             report.durations_s.append(time.perf_counter() - start)
+            if mm is not None:
+                report.n_calls.append(mm.n_calls)
+                report.prompt_tokens.append(mm.prompt_tokens)
+                report.completion_tokens.append(mm.completion_tokens)
 
             raw = [
                 {

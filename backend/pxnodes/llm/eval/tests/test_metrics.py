@@ -88,6 +88,45 @@ class TestMatchRun:
         assert len(res.fp) == 1
 
 
+class TestStrictPairMatching:
+    """Robustness rule: a pairwise trap needs BOTH nodes (unordered)."""
+
+    def _pair_finding(self, node_a, node_b):
+        return Finding(
+            category="node_contradiction",
+            entity_id="id-a",
+            resolved_name=node_a,
+            partner_name=node_b,
+        )
+
+    def test_strict_requires_both_pair_nodes(self):
+        # Only one side (partner Y) named: matches loose, misses strict.
+        one_side = self._pair_finding("Some Other Node", "Y")
+        assert [t.id for t in match_run([one_side], [C1]).tp] == ["C1"]
+        strict = match_run([one_side], [C1], strict_pairs=True)
+        assert strict.tp == []
+        assert [t.id for t in strict.fn] == ["C1"]
+
+    def test_strict_matches_when_both_nodes_named(self):
+        both = self._pair_finding("X", "Y")
+        assert [t.id for t in match_run([both], [C1], strict_pairs=True).tp] == ["C1"]
+
+    def test_strict_ignores_pair_order(self):
+        swapped = self._pair_finding("Y", "X")
+        assert [
+            t.id for t in match_run([swapped], [C1], strict_pairs=True).tp
+        ] == ["C1"]
+
+    def test_strict_leaves_single_node_traps_unchanged(self):
+        # Non-pairwise traps (no partner) behave identically under strict.
+        assert [
+            t.id
+            for t in match_run(
+                [_f("pillar_misalignment", "A")], [P1], strict_pairs=True
+            ).tp
+        ] == ["P1"]
+
+
 class TestAggregate:
     def test_precision_recall_f1_single_run(self):
         res = match_run([_f("pillar_misalignment", "A")], [P1, T1])
