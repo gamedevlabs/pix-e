@@ -11,6 +11,7 @@ Central manager that handles:
 """
 
 import logging
+import os
 import time
 from typing import Any, Dict, List, Optional, Tuple, cast
 
@@ -84,11 +85,19 @@ class ModelManager:
 
         if self.config.openai_api_key:
             try:
+                # Eval-only: an OPENAI_BASE_URL env var routes the OpenAI-compatible
+                # client to a custom endpoint (e.g. OpenRouter) and, when set, keeps
+                # all model ids (not just gpt-*) so non-OpenAI slugs resolve. No
+                # effect in normal operation (env var unset -> base_url None,
+                # include_all_models False).
+                _openai_base_url = os.getenv("OPENAI_BASE_URL") or None
                 openai = OpenAIProvider(
                     {
                         "api_key": self.config.openai_api_key,
                         "organization": self.config.openai_organization,
                         "timeout": self.config.openai_timeout_seconds,
+                        "base_url": _openai_base_url,
+                        "include_all_models": bool(_openai_base_url),
                     }
                 )
                 if openai.is_available():

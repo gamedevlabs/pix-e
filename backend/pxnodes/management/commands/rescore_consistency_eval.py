@@ -34,6 +34,15 @@ class Command(BaseCommand):
         parser.add_argument("--results", type=str, required=True)
         parser.add_argument("--dataset", type=str, required=True)
         parser.add_argument("--ground-truth", type=str, default=str(_DEFAULT_GT))
+        parser.add_argument(
+            "--strict-pairs",
+            action="store_true",
+            help=(
+                "Credit a pairwise trap only when a finding names BOTH its "
+                "nodes (unordered exact pair) instead of either side. Used for "
+                "the matching-robustness check."
+            ),
+        )
 
     def handle(self, *args, **options):
         for key in ("results", "dataset"):
@@ -44,9 +53,11 @@ class Command(BaseCommand):
         dataset = json.loads(Path(options["dataset"]).read_text())
         node_map = {str(n["id"]): n["name"] for n in dataset["pxnodes"]}
 
+        strict = options["strict_pairs"]
         self.stdout.write(
             f"Re-scoring {Path(options['results']).name} "
-            f"({len(node_map)} nodes in dataset)\n"
+            f"({len(node_map)} nodes in dataset)"
+            f"{'  [strict unordered-pair matching]' if strict else ''}\n"
         )
 
         for layer, payload in results.get("layers", {}).items():
@@ -61,7 +72,7 @@ class Command(BaseCommand):
                     to_finding(f["category"], f["entity_id"], f["message"], node_map)
                     for f in raw
                 ]
-                run_results.append(match_run(findings, traps))
+                run_results.append(match_run(findings, traps, strict_pairs=strict))
 
             m = aggregate(run_results, traps)
             self.stdout.write(

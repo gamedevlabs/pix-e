@@ -55,7 +55,7 @@ class ChangePropagationWorkflow:
         findings: List[PropagationFinding] = []
         try:
             if use_graph_context:
-                findings = self._run_iterative_graph_propagation(
+                findings = self._run_graph_propagation(
                     project=project,
                     changed_node=changed_node,
                     old_description=old_description,
@@ -280,7 +280,7 @@ class ChangePropagationWorkflow:
             if nid in nodes_by_id
         ]
 
-    def _run_iterative_graph_propagation(
+    def _run_graph_propagation(
         self,
         project: Project,
         changed_node: PxNode,
@@ -290,6 +290,16 @@ class ChangePropagationWorkflow:
         max_depth: int,
         model_id: Optional[str] = None,
     ) -> List[PropagationFinding]:
+        """Graph-aware retrieval in retrieve-then-judge form.
+
+        Collect the changed node's chart neighbourhood up to ``max_depth`` hops with
+        a pure BFS over PxChartEdge (no LLM), then judge that whole candidate set in a
+        *single* LLM pass. This mirrors the flat and semantic arms (retrieve a
+        candidate set, then one call) and differs only in *how* the set is
+        retrieved — graph neighbourhood vs. all nodes vs. embedding top-k. Cost is one
+        call per change at any depth, so it scales to dense dependency graphs, unlike
+        an iterative per-hop expansion (one call per expanded node) which cascades.
+        """
         assert self._model_manager is not None
         agent = ChangePropagationAgent(
             model_manager=self._model_manager,
@@ -297,14 +307,11 @@ class ChangePropagationWorkflow:
             model_id=model_id,
         )
 
-        all_findings: Dict[str, PropagationFinding] = {}
-        visited: Set[str] = {str(changed_node.id)}
-
-        # Round 1: direct 1-hop neighbors of the changed node
-        neighbors = self._get_1hop_neighbors(changed_node.id)
-        if neighbors is None:
+        # A node not placed in any chart has no neighbourhood → fall back to flat.
+        first_hop = self._get_1hop_neighbors(changed_node.id)
+        if first_hop is None:
             logger.warning(
-                "[BFS] Node '%s' not in any chart — falling back to flat list.",
+                "[graph] Node '%s' not in any chart — falling back to flat list.",
                 changed_node.name,
             )
             other_nodes = list(project.pxnodes.exclude(id=changed_node.id))
@@ -316,77 +323,38 @@ class ChangePropagationWorkflow:
                 use_graph_context=False,
             )
 
-        if not neighbors:
-            logger.warning("[BFS] Node '%s' has no graph neighbors.", changed_node.name)
-            return []
-
-        logger.warning(
-            "[BFS] Round 1: %d neighbors of '%s'",
-            len(neighbors),
-            changed_node.name,
-        )
-
-        round1_findings = agent.analyze_change(
-            changed_node=changed_node,
-            old_description=old_description,
-            new_description=new_description,
-            other_nodes=neighbors,
-            use_graph_context=True,
-        )
-
-        frontier: List[PropagationFinding] = []
-        for f in round1_findings:
-            nid = f.affected_node_id
-            visited.add(nid)
-            all_findings[nid] = f
-            frontier.append(f)
-
-        # Rounds 2..max_depth
-        for depth in range(2, max_depth + 1):
+        # BFS to max_depth, collecting the neighbourhood as candidate dicts.
+        visited: Set[str] = {str(changed_node.id)}
+        collected: Dict[str, Dict[str, Any]] = {}
+        frontier: List[Any] = [changed_node.id]
+        for _ in range(max_depth):
+            next_frontier: List[Any] = []
+            for nid in frontier:
+                for nb in self._get_1hop_neighbors(nid) or []:
+                    if nb["id"] not in visited:
+                        visited.add(nb["id"])
+                        collected[nb["id"]] = nb
+                        next_frontier.append(nb["id"])
+            frontier = next_frontier
             if not frontier:
                 break
 
-            next_frontier: List[PropagationFinding] = []
-            for parent_finding in frontier:
-                parent_id = parent_finding.affected_node_id
-                parent_neighbors = self._get_1hop_neighbors(parent_id)
-                if not parent_neighbors:
-                    continue
+        if not collected:
+            logger.warning(
+                "[graph] Node '%s' has no graph neighbours.", changed_node.name
+            )
+            return []
 
-                unseen = [n for n in parent_neighbors if n["id"] not in visited]
-                if not unseen:
-                    continue
-
-                logger.warning(
-                    "[BFS] Round %d: expanding '%s' → %d unseen neighbors",
-                    depth,
-                    parent_finding.affected_node_name,
-                    len(unseen),
-                )
-
-                try:
-                    parent_node = PxNode.objects.get(id=parent_id)
-                except PxNode.DoesNotExist:
-                    continue
-
-                new_findings = agent.analyze_transitive_change(
-                    changed_node_name=changed_node.name,
-                    old_description=old_description,
-                    new_description=new_description,
-                    affected_node_name=parent_node.name,
-                    affected_node_description=parent_node.description or "",
-                    reason_chain=parent_finding.reason,
-                    neighbors=unseen,
-                )
-
-                for f in new_findings:
-                    nid = f.affected_node_id
-                    visited.add(nid)
-                    if nid not in all_findings:
-                        all_findings[nid] = f
-                        next_frontier.append(f)
-
-            frontier = next_frontier
-
-        logger.warning("[BFS] Done. Total findings: %d", len(all_findings))
-        return list(all_findings.values())
+        logger.warning(
+            "[graph] '%s': %d-node neighbourhood within %d hop(s), single LLM pass.",
+            changed_node.name,
+            len(collected),
+            max_depth,
+        )
+        return agent.analyze_change(
+            changed_node=changed_node,
+            old_description=old_description,
+            new_description=new_description,
+            other_nodes=list(collected.values()),
+            use_graph_context=True,
+        )
