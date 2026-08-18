@@ -113,9 +113,9 @@ class TestStrictPairMatching:
 
     def test_strict_ignores_pair_order(self):
         swapped = self._pair_finding("Y", "X")
-        assert [
-            t.id for t in match_run([swapped], [C1], strict_pairs=True).tp
-        ] == ["C1"]
+        assert [t.id for t in match_run([swapped], [C1], strict_pairs=True).tp] == [
+            "C1"
+        ]
 
     def test_strict_leaves_single_node_traps_unchanged(self):
         # Non-pairwise traps (no partner) behave identically under strict.

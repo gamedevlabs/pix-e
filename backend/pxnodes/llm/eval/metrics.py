@@ -89,9 +89,7 @@ class RunResult:
         return 2 * p * r / (p + r) if (p + r) else 0.0
 
 
-def _trap_matches(
-    finding: Finding, trap: Trap, strict_pairs: bool = False
-) -> bool:
+def _trap_matches(finding: Finding, trap: Trap, strict_pairs: bool = False) -> bool:
     if finding.category != trap.category:
         return False
     if trap.node is None:
