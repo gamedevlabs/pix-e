@@ -20,6 +20,7 @@ from .serializers import (
     ProjectTransferSerializer,
 )
 from .services.import_project import import_project_data
+from .services.overwrite_project import overwrite_project_data
 from .utils import get_current_project
 
 
@@ -101,6 +102,17 @@ class ProjectViewSet(ModelViewSet):
         data.update(export_nodes(project))
 
         return Response(data)
+
+    @action(detail=True, methods=["post"], url_path="overwrite")
+    def overwrite(self, request, pk=None):
+        project = self.get_object()
+        with transaction.atomic():
+            overwrite_project_data(
+                project=project,
+                payload=request.data,
+                user=request.user,
+            )
+        return Response({"id": project.id}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="clone")
     def clone(self, request: Request, pk: Optional[int] = None) -> Response:

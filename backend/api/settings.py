@@ -58,6 +58,7 @@ ALLOWED_HOSTS: list = [
     "localhost",
     "127.0.0.1",
     "backend-dev",
+    "host.docker.internal",
 ]
 
 # Application definition

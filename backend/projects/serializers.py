@@ -32,11 +32,13 @@ class ProjectTransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
+            "id",
             "name",
             "description",
             "genres",
             "target_platforms",
         ]
+        read_only_fields = ["id"]
 
     def validate_genres(self, value):
         if not isinstance(value, list):

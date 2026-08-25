@@ -1,74 +1,43 @@
 <script setup lang="ts">
-import * as z from 'zod'
-import { useDataTransfer } from '~/composables/useDataTransfer'
+const emit = defineEmits<{
+  (e: 'filePicked', file: File): void
+}>()
 
-const emit = defineEmits(['submitSuccess'])
-
-type schema = z.output<typeof schema>
-
-const { importProject } = useDataTransfer()
+const { error } = usePixeToast()
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024
-const ACCEPTED_FILE_FORMATS = ['application/json']
 
-const formatBytes = (bytes: number, decimals = 2) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
-}
-
-const schema = z.object({
-  file: z
-    .instanceof(File, {
-      message: 'Please provide a JSON file.',
-    })
-    .refine((file) => file.size <= MAX_FILE_SIZE, {
-      message: `The file size is too large. Please choose a file smaller than ${formatBytes(MAX_FILE_SIZE)}.`,
-    })
-    .refine((file) => ACCEPTED_FILE_FORMATS.includes(file.type), {
-      message: 'Please upload a valid file (JSON).',
-    }),
-})
-
-const state = reactive<Partial<schema>>({
-  file: undefined,
-})
-
-// event: FormSubmitEvent<schema>
-async function onSubmit() {
-  if (!state.file) return
-
-  const file = state.file
-  const text = await file.text()
-  const json = JSON.parse(text)
-
-  console.log(json)
-
-  await importProject(json)
-  emit('submitSuccess')
+// Fires as soon as a file is chosen — the shared import flow (parse, match,
+// diff-or-new) runs in the parent, so there's no separate Submit step.
+function onSelect(file: File | File[] | null) {
+  const picked = Array.isArray(file) ? file[0] : file
+  if (!picked) return
+  if (picked.type && picked.type !== 'application/json') {
+    error('Please choose a JSON file.')
+    return
+  }
+  if (picked.size > MAX_FILE_SIZE) {
+    error('The file is too large. Please choose a file smaller than 8MB.')
+    return
+  }
+  emit('filePicked', picked)
 }
 </script>
 
 <template>
-  <div>
-    <UForm :schema="schema" :state="state" @submit="onSubmit">
-      <UFormField name="file">
-        <UFileUpload
-          v-model="state.file"
-          accept="application/json"
-          label="Import project data here"
-          :dropzone="true"
-          description="JSON File (Max. 8MB)"
-          class="w-96 min-h-48"
-        />
-      </UFormField>
-
-      <UButton type="submit" color="primary" label="Submit" />
-    </UForm>
-  </div>
+  <UFileUpload
+    accept="application/json"
+    :dropzone="true"
+    icon="i-lucide-file-json"
+    label="Drop your project export here"
+    description="or click to browse · JSON file up to 8MB"
+    class="w-full min-h-56"
+    :ui="{
+      base: 'border-2 border-dashed rounded-xl transition-colors hover:border-primary-400 data-[dragging=true]:border-primary-500 data-[dragging=true]:bg-primary-50/50 dark:data-[dragging=true]:bg-primary-950/20',
+      avatar: 'bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300',
+      label: 'font-semibold text-gray-800 dark:text-gray-100',
+      description: 'text-gray-500 dark:text-gray-400',
+    }"
+    @update:model-value="onSelect"
+  />
 </template>
-
-<style scoped></style>

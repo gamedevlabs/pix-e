@@ -2,6 +2,9 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import LandingStandaloneModuleCard from '~/components/landing/LandingStandaloneModuleCard.vue'
 import ProjectImporter from '~/components/ProjectImporter.vue'
+import ProjectDiffModal from '~/components/ProjectDiffModal.vue'
+import { exportFileName, useDataTransfer } from '~/composables/useDataTransfer'
+import { useProjectDiff, type ProjectDiff } from '~/composables/useProjectDiff'
 
 interface ProjectCard {
   id: number
@@ -26,8 +29,119 @@ defineProps<{
 
 const router = useRouter()
 const { projects, switchProject, deleteProject, fetchProjects } = useProjectHandler()
+const { exportProject, importProject, overwriteProject } = useDataTransfer()
+const { downloadJson } = useDownloadJson()
+const { computeDiff, buildMergedPayload } = useProjectDiff()
+const { error: errorToast } = usePixeToast()
 
 const open = ref(false)
+
+type Payload = Record<string, unknown> & { project?: { id?: number; name?: string } }
+
+// Diff-viewer state (shared by both import entry points).
+const diffOpen = ref(false)
+const diffFileName = ref('')
+const diff = ref<ProjectDiff | null>(null)
+let flowFileData: Payload | null = null
+let flowDbData: Payload | null = null
+let flowTargetId: number | null = null
+
+// Hidden picker used by the card-menu "Import".
+const cardFileInput = ref<HTMLInputElement | null>(null)
+let cardRequireId: number | null = null
+
+function findMatchingProject(fileData: Payload) {
+  const list = projects?.value ?? []
+  const fid = fileData.project?.id
+  if (fid != null) {
+    const byId = list.find((p) => p.id === fid)
+    if (byId) return byId
+  }
+  // Old files without an id fall back to matching by name.
+  if (fid == null) {
+    const byName = list.find((p) => p.name === fileData.project?.name)
+    if (byName) return byName
+  }
+  return undefined
+}
+
+async function startImportFlow(file: File, requireProjectId?: number) {
+  let fileData: Payload
+  try {
+    fileData = JSON.parse(await file.text())
+  } catch {
+    errorToast('Could not read the file. Please choose a valid project JSON export.')
+    return
+  }
+  if (!fileData || fileData.version !== 1 || !fileData.project) {
+    errorToast('This file is not a valid pix:e project export.')
+    return
+  }
+
+  // Card-menu pre-check: the file must belong to the clicked card's project.
+  if (requireProjectId != null && fileData.project.id !== requireProjectId) {
+    errorToast(
+      "This file belongs to a different project and can't be imported here. " +
+        'Use this card’s own export, or the Import button on the project overview.',
+    )
+    return
+  }
+
+  const match = findMatchingProject(fileData)
+  if (!match) {
+    // No match → keep the existing behavior: import as a brand-new project.
+    await importProject(fileData)
+    await fetchProjects()
+    return
+  }
+
+  const dbData = (await exportProject(String(match.id))) as Payload | undefined
+  if (!dbData) return
+
+  flowFileData = fileData
+  flowDbData = dbData
+  flowTargetId = match.id
+  diff.value = computeDiff(fileData, dbData)
+  diffFileName.value = file.name
+  diffOpen.value = true
+}
+
+async function onDiffApply(ticks: Set<string>) {
+  if (!flowFileData || !flowDbData || flowTargetId == null) return
+  const merged = buildMergedPayload(flowFileData, flowDbData, ticks)
+  try {
+    await overwriteProject(String(flowTargetId), merged)
+    diffOpen.value = false
+    await fetchProjects()
+  } catch {
+    // Toast already shown; keep the modal open so the user can retry/cancel.
+  }
+}
+
+async function onOverviewFilePicked(file: File) {
+  open.value = false
+  await startImportFlow(file)
+}
+
+async function exportProjectToFile(projectId: number) {
+  const data = (await exportProject(String(projectId))) as Payload | undefined
+  if (!data) return
+  downloadJson(data, exportFileName(data.project?.name ?? 'project'))
+}
+
+function triggerCardImport(projectId: number) {
+  cardRequireId = projectId
+  cardFileInput.value?.click()
+}
+
+async function onCardFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // allow re-picking the same file
+  if (!file || cardRequireId == null) return
+  await startImportFlow(file, cardRequireId)
+  cardRequireId = null
+}
 
 const getInitials = (name: string): string =>
   name
@@ -80,6 +194,18 @@ const getProjectMenuItems = (projectId: number): DropdownMenuItem[][] => [
   ],
   [
     {
+      label: 'Export',
+      icon: 'i-lucide-download',
+      onSelect: () => exportProjectToFile(projectId),
+    },
+    {
+      label: 'Import',
+      icon: 'i-lucide-upload',
+      onSelect: () => triggerCardImport(projectId),
+    },
+  ],
+  [
+    {
       label: 'Delete',
       icon: 'i-lucide-trash',
       color: 'error' as const,
@@ -98,10 +224,6 @@ const handleProjectClick = async (projectId: number, event?: MouseEvent) => {
   await switchProject(projectId)
 }
 
-async function handleSuccessfulProjectImport() {
-  open.value = false
-  await fetchProjects()
-}
 </script>
 
 <template>
@@ -126,7 +248,7 @@ async function handleSuccessfulProjectImport() {
           <UButton label="Import Project" icon="i-lucide-import" color="primary" size="md" />
 
           <template #body>
-            <ProjectImporter @submit-success="handleSuccessfulProjectImport" />
+            <ProjectImporter @file-picked="onOverviewFilePicked" />
           </template>
         </UModal>
 
@@ -204,5 +326,22 @@ async function handleSuccessfulProjectImport() {
         />
       </div>
     </div>
+
+    <!-- Hidden picker for the card-menu "Import" (with per-card pre-check) -->
+    <input
+      ref="cardFileInput"
+      type="file"
+      accept="application/json"
+      class="hidden"
+      @change="onCardFileChange"
+    />
+
+    <!-- Shared diff viewer for imports that match an existing project -->
+    <ProjectDiffModal
+      v-model:open="diffOpen"
+      :file-name="diffFileName"
+      :diff="diff"
+      @apply="onDiffApply"
+    />
   </div>
 </template>

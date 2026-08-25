@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDataTransfer } from '~/composables/useDataTransfer'
+import { exportFileName, useDataTransfer } from '~/composables/useDataTransfer'
 
 const { downloadJson } = useDownloadJson()
 const { exportProject } = useDataTransfer()
@@ -15,7 +15,8 @@ async function onClickExportCurrentData() {
 
   if (!pxdata) return
 
-  downloadJson(pxdata)
+  const name = (pxdata as { project?: { name?: string } })?.project?.name ?? 'project'
+  downloadJson(pxdata, exportFileName(name))
 }
 </script>
 

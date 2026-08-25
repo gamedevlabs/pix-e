@@ -52,6 +52,27 @@ export function useDataTransfer() {
     }
   }
 
+  async function overwriteProject(projectId: string, payload: object) {
+    addLog('info', 'project_overwrite_started')
+    try {
+      await apiFetch<object>(`/api/projects/${projectId}/overwrite/`, {
+        method: 'POST',
+        body: payload,
+        credentials: 'include',
+        headers: {
+          'X-CSRFToken': useCookie('csrftoken').value,
+        } as HeadersInit,
+      })
+      success('Project updated successfully!')
+      addLog('info', 'project_overwrite_succeeded')
+    } catch (err) {
+      addLog('error', 'project_overwrite_failed')
+      error.value = err
+      errorToast(err)
+      throw err
+    }
+  }
+
   async function exportPxData(): Promise<object> {
     addLog('info', 'px_export_started')
 
@@ -105,5 +126,16 @@ export function useDataTransfer() {
     importPxData,
     exportProject,
     importProject,
+    overwriteProject,
   }
+}
+
+// Filesystem-safe "<name>-<timestamp>.json" for exported projects.
+export function exportFileName(projectName: string): string {
+  const safe = (projectName || 'project')
+    .replace(/[^a-z0-9-_]+/gi, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60)
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  return `${safe || 'project'}-${stamp}.json`
 }
