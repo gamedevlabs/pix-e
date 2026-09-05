@@ -1270,11 +1270,18 @@ class PxKeyDefinitionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action == "list":
-            return PxKeyDefinition.objects.filter(owner=self.request.user)
+            return PxKeyDefinition.objects.filter(
+                owner=self.request.user,
+                project=get_current_project(self.request.user),
+            )
         return PxKeyDefinition.objects.order_by("created_at")
 
     def perform_create(self, serializer):
-        serializer.save(id=uuid.uuid4(), owner=self.request.user)
+        serializer.save(
+            id=uuid.uuid4(),
+            owner=self.request.user,
+            project=get_current_project(self.request.user),
+        )
 
 
 class PxKeyAssignmentViewSet(viewsets.ModelViewSet):
@@ -1283,7 +1290,10 @@ class PxKeyAssignmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action == "list":
-            return PxKeyAssignment.objects.filter(owner=self.request.user)
+            return PxKeyAssignment.objects.filter(
+                owner=self.request.user,
+                node__project=get_current_project(self.request.user),
+            )
         return PxKeyAssignment.objects.order_by("created_at")
 
     def perform_create(self, serializer):
@@ -1296,8 +1306,15 @@ class PxLockDefinitionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.action == "list":
-            return PxLockDefinition.objects.filter(owner=self.request.user)
+            return PxLockDefinition.objects.filter(
+                owner=self.request.user,
+                project=get_current_project(self.request.user),
+            )
         return PxLockDefinition.objects.order_by("created_at")
 
     def perform_create(self, serializer):
-        serializer.save(id=uuid.uuid4(), owner=self.request.user)
+        serializer.save(
+            id=uuid.uuid4(),
+            owner=self.request.user,
+            project=get_current_project(self.request.user),
+        )

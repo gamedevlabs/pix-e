@@ -16,15 +16,22 @@ from services.transfer import import_objects
 
 
 def export_project_data(project):
-    pxcharts = PxChart.objects.filter(project=project)
+    # Every collection is ordered so that two exports of an unchanged project are
+    # byte-identical on any database backend, not just wherever the query planner
+    # happens to be stable. Layouts order by container, their own id being local.
+    pxcharts = PxChart.objects.filter(project=project).order_by("id")
 
-    pxchartcontainers = PxChartContainer.objects.filter(px_chart__in=pxcharts)
+    pxchartcontainers = PxChartContainer.objects.filter(
+        px_chart__in=pxcharts
+    ).order_by("id")
     pxchartcontainerlayouts = PxChartContainerLayout.objects.filter(
         container__in=pxchartcontainers
-    )
-    pxchartedges = PxChartEdge.objects.filter(px_chart__in=pxcharts)
+    ).order_by("container_id")
+    pxchartedges = PxChartEdge.objects.filter(px_chart__in=pxcharts).order_by("id")
 
-    pxLockAssignments = PxLockAssignment.objects.filter(px_chart__in=pxcharts)
+    pxLockAssignments = PxLockAssignment.objects.filter(px_chart__in=pxcharts).order_by(
+        "id"
+    )
 
     return {
         "px_charts": PxChartTransferSerializer(pxcharts, many=True).data,
@@ -58,7 +65,8 @@ def import_project_data(project, payload, user, node_map, lock_definition_map):
         lambda d: PxChartContainer.objects.create(
             name=d["name"],
             px_chart=chart_map[d["px_chart"]],
-            content=node_map[d["content"]],
+            # An empty container is a legal vertex, so content may be null.
+            content=node_map.get(d["content"]) if d["content"] else None,
             owner=user,
         ),
     )

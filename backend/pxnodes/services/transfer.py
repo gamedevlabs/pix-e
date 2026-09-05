@@ -18,13 +18,40 @@ from services.transfer import import_objects
 
 
 def export_project_data(project):
-    px_nodes = PxNode.objects.filter(project=project)
+    """Serialise a project's nodes, components, keys and locks.
 
-    px_component_definitions = PxComponentDefinition.objects.filter(project=project)
-    px_component = PxComponent.objects.filter(node__in=px_nodes)
-    px_key_definition = PxKeyDefinition.objects.filter(owner=project.user)
-    px_key_assignment = PxKeyAssignment.objects.filter(owner=project.user)
-    px_lock_definition = PxLockDefinition.objects.filter(owner=project.user)
+    Gating semantics, as the frontend solver in usePxChartPathCalculationUnlock.ts
+    actually implements them - written down here so nobody has to derive them from
+    the solver a second time:
+
+    - A key is granted by a NODE (PxKeyAssignment), so by every container holding
+      that node. A lock sits on an EDGE (PxLockAssignment), never on a container.
+    - `unlocked_by` is OR: any one listed key opens that lock.
+    - Several locks on one edge are ANDed together.
+    - PxLockAssignment.count means that many copies of the requirement. For a
+      non-consumable key presence is enough and count is ignored; for a consumable
+      key you must hold `count` of them and they are spent on traversal.
+    - `fixed` keys open locks on edges leaving the node holding them and never
+      enter the inventory.
+    - `soft_gate` locks are passable; they mark narrative closure only.
+    - An empty `unlocked_by` imposes NO requirement at all, on soft gates and hard
+      locks alike - cartesian() drops empty sets, so a keyless lock is a no-op that
+      everyone walks through, not a wall. See the integrity warnings for why that
+      is almost always an authoring mistake.
+    """
+    # Everything is scoped to the project and ordered by id, so the document is
+    # self-contained (every FK resolves inside it) and byte-stable across exports.
+    px_nodes = PxNode.objects.filter(project=project).order_by("id")
+
+    px_component_definitions = PxComponentDefinition.objects.filter(
+        project=project
+    ).order_by("id")
+    px_component = PxComponent.objects.filter(node__in=px_nodes).order_by("id")
+    px_key_definition = PxKeyDefinition.objects.filter(project=project).order_by("id")
+    px_key_assignment = PxKeyAssignment.objects.filter(
+        node__project=project
+    ).order_by("id")
+    px_lock_definition = PxLockDefinition.objects.filter(project=project).order_by("id")
 
     return {
         "px_nodes": PxNodeSerializer(px_nodes, many=True).data,
@@ -82,6 +109,7 @@ def import_project_data(project, payload, user):
 
         definition, _created = PxKeyDefinition.objects.get_or_create(
             owner=user,
+            project=project,
             name=d["name"],
             defaults={
                 "key_type": d["key_type"],
@@ -112,6 +140,7 @@ def import_project_data(project, payload, user):
 
         lock, _created = PxLockDefinition.objects.get_or_create(
             owner=user,
+            project=project,
             name=d["name"],
             defaults={
                 "soft_gate": d["soft_gate"],

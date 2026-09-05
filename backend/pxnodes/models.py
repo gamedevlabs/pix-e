@@ -399,6 +399,12 @@ class PxKeyDefinition(models.Model):
     fixed = models.BooleanField()
     unique = models.BooleanField()
 
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.CASCADE,
+        related_name="pxkeydefinitions",
+    )
+
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -446,6 +452,12 @@ class PxLockDefinition(models.Model):
     ]
     unlock_mode = models.CharField(max_length=20, choices=UNLOCK_MODE_CHOICES)
     unlocked_by = models.ManyToManyField(PxKeyDefinition)
+
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.CASCADE,
+        related_name="pxlockdefinitions",
+    )
 
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

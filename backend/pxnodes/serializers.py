@@ -56,6 +56,7 @@ class PxKeyDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxKeyDefinition
         fields = "__all__"
+        read_only_fields = ["project"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:
@@ -121,6 +122,7 @@ class PxLockDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxLockDefinition
         fields = "__all__"
+        read_only_fields = ["project"]
 
     def update(self, instance, validated_data):
         if "id" in validated_data and validated_data["id"] != instance.id:

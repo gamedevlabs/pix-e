@@ -1,19 +1,14 @@
 from rest_framework.exceptions import ValidationError
 
+from game_concept.models import GameConcept
+from pillars.models import Pillar
 from projects.models import Project
 from projects.serializers import ProjectTransferSerializer
 from pxcharts.services.transfer import import_project_data as import_chart_data
 from pxnodes.services.transfer import import_project_data as import_node_data
 
-SUPPORTED_VERSION = 1
-
 
 def import_project_data(payload, user):
-    version = payload.get("version")
-
-    if version != SUPPORTED_VERSION:
-        raise ValidationError(f"Unsupported export version: {version}")
-
     project_data = payload.get("project")
 
     if not project_data:
@@ -27,6 +22,23 @@ def import_project_data(payload, user):
     serializer.is_valid(raise_exception=True)
 
     project = serializer.save(user=user)
+
+    for d in payload.get("pillars", []):
+        Pillar.objects.create(
+            user=user,
+            project=project,
+            name=d["name"],
+            description=d["description"],
+        )
+
+    concept = payload.get("game_concept")
+    if concept:
+        GameConcept.objects.create(
+            user=user,
+            project=project,
+            content=concept["content"],
+            is_current=True,
+        )
 
     node_map, lock_definitions_map = import_node_data(project, payload, user)
     import_chart_data(project, payload, user, node_map, lock_definitions_map)

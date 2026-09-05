@@ -36,6 +36,11 @@ type Payload = Record<string, unknown> & { project?: Row }
 // Order + labels mirror the Unity import dialog. Layouts are folded into the
 // Containers section (not its own collection).
 const COLLECTIONS: { key: string; label: string }[] = [
+  // Pillars are diffed like everything else. Their ids are DB-local ints rather
+  // than uuids, so the backend rebuilds the set rather than preserving them -
+  // see overwrite_project.py. Without this entry the merged payload carried no
+  // pillars at all and an overwrite silently kept the target's old ones.
+  { key: 'pillars', label: 'Design Pillars' },
   { key: 'px_component_definitions', label: 'Component Definitions' },
   { key: 'px_nodes', label: 'Nodes' },
   { key: 'px_components', label: 'Components' },
@@ -201,11 +206,16 @@ export function useProjectDiff() {
     const dbMeta = (dbData.project ?? {}) as Row
     const fileMeta = (fileData.project ?? {}) as Row
     const merged: Payload = {
-      version: 1,
+      version: 2,
       project: ticks.has('project:meta') ? { ...fileMeta } : { ...dbMeta },
     }
     // Preserve the DB project id regardless (match-only, read-only server-side).
     ;(merged.project as Row).id = dbMeta.id
+
+    // The concept is a single row, not a collection, so it follows the project
+    // metadata tick rather than getting one of its own. Omitting it would drop
+    // the target's concept on every overwrite.
+    merged.game_concept = ticks.has('project:meta') ? fileData.game_concept : dbData.game_concept
 
     const containerSource = new Map<string, 'file' | 'db'>()
 

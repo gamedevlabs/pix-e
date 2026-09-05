@@ -1,5 +1,7 @@
 from rest_framework.exceptions import ValidationError
 
+from game_concept.models import GameConcept
+from pillars.models import Pillar
 from projects.serializers import ProjectTransferSerializer
 from pxcharts.models import (
     PxChart,
@@ -17,8 +19,6 @@ from pxnodes.models import (
     PxNode,
 )
 
-SUPPORTED_VERSION = 1
-
 
 def overwrite_project_data(project, payload, user):
     """Replace `project`'s child data with the merged desired state in `payload`.
@@ -28,10 +28,6 @@ def overwrite_project_data(project, payload, user):
     UNCHANGED kept). Ids from the payload are preserved so re-export round-trips.
     Runs inside the caller's transaction.
     """
-    version = payload.get("version")
-    if version != SUPPORTED_VERSION:
-        raise ValidationError(f"Unsupported export version: {version}")
-
     project_data = payload.get("project")
     if not project_data:
         raise ValidationError("Missing project data.")
@@ -41,18 +37,63 @@ def overwrite_project_data(project, payload, user):
     serializer.is_valid(raise_exception=True)
     serializer.save()
 
-    # Key/lock definitions are owner-scoped and shared across projects, so we
-    # upsert by id instead of delete+recreate (deleting could hit other projects).
+    # Pillars and the concept are rebuilt, not upserted. Their ids are DB-local
+    # autoincrement ints with no meaning outside this database - the same reason
+    # px_chart_container_layouts[].id must never be keyed on - so honouring an id
+    # from the payload would either collide with another project's row or invent
+    # a false identity. The merged payload is the desired final state, so the set
+    # is replaced wholesale and new ids are issued.
+    #
+    # Absent means "the client did not send them", which is not the same as an
+    # empty list meaning "the user removed them all". Only touch what was sent;
+    # an older client that knows nothing about pillars must not wipe them.
+    if "pillars" in payload:
+        Pillar.objects.filter(project=project).delete()
+        for d in payload["pillars"]:
+            Pillar.objects.create(
+                user=user,
+                project=project,
+                name=d["name"],
+                description=d["description"],
+            )
+
+    if "game_concept" in payload:
+        concept = payload["game_concept"]
+        current = GameConcept.objects.filter(project=project, is_current=True).first()
+
+        # Only the current concept is exported; the history behind it is not, so
+        # it must not be destroyed either. Demote rather than delete, and skip
+        # entirely when the content already matches - otherwise re-importing the
+        # same file piles up an identical row every time.
+        if concept is None or current is None or current.content != concept["content"]:
+            if current is not None:
+                # The one_current_concept_per_project constraint means the old
+                # current has to step down before the new one can be created.
+                current.is_current = False
+                current.save(update_fields=["is_current"])
+
+            if concept:
+                GameConcept.objects.create(
+                    user=user,
+                    project=project,
+                    content=concept["content"],
+                    is_current=True,
+                )
+
+    # Key/lock definitions are project-scoped now, but still upserted by id
+    # rather than delete+recreate so that lock assignments referencing them
+    # survive the wipe below.
     for d in payload.get("px_key_definitions", []):
         PxKeyDefinition.objects.update_or_create(
             id=d["id"],
-            owner=user,
             defaults={
                 "name": d["name"],
                 "key_type": d["key_type"],
                 "consumable": d["consumable"],
                 "fixed": d["fixed"],
                 "unique": d["unique"],
+                "project": project,
+                "owner": user,
             },
         )
 
@@ -60,11 +101,12 @@ def overwrite_project_data(project, payload, user):
     for d in lock_defs:
         PxLockDefinition.objects.update_or_create(
             id=d["id"],
-            owner=user,
             defaults={
                 "name": d["name"],
                 "soft_gate": d["soft_gate"],
                 "unlock_mode": d["unlock_mode"],
+                "project": project,
+                "owner": user,
             },
         )
     for d in lock_defs:

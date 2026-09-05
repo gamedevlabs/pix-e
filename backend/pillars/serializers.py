@@ -8,3 +8,10 @@ class PillarSerializer(serializers.ModelSerializer):
         model = Pillar
         fields = ["id", "name", "description", "project"]
         read_only_fields = ["project"]
+
+
+class PillarTransferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pillar
+        fields = ["id", "name", "description"]
+        read_only_fields = ["id"]

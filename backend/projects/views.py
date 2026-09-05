@@ -10,6 +10,9 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ModelViewSet
 
+from game_concept.utils import get_current_game_concept
+from pillars.models import Pillar
+from pillars.serializers import PillarTransferSerializer
 from projects.services.clone import clone_project
 from pxcharts.services.transfer import export_project_data as export_charts
 from pxnodes.services.transfer import export_project_data as export_nodes
@@ -22,6 +25,10 @@ from .serializers import (
 from .services.import_project import import_project_data
 from .services.overwrite_project import overwrite_project_data
 from .utils import get_current_project
+
+# Bumped when the export gains or changes fields. Written into every export;
+# nothing rejects a payload on it, since import is only ever fed our own files.
+EXPORT_VERSION = 2
 
 
 # Create your views here.
@@ -96,7 +103,19 @@ class ProjectViewSet(ModelViewSet):
 
         serializer = ProjectTransferSerializer(project)
 
-        data = {"version": 1, "project": serializer.data}
+        concept = get_current_game_concept(project)
+
+        data = {
+            "version": EXPORT_VERSION,
+            "project": serializer.data,
+            "pillars": PillarTransferSerializer(
+                Pillar.objects.filter(project=project).order_by("id"), many=True
+            ).data,
+            # The current concept only. The history is authoring noise.
+            "game_concept": (
+                {"id": concept.id, "content": concept.content} if concept else None
+            ),
+        }
 
         data.update(export_charts(project))
         data.update(export_nodes(project))

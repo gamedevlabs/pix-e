@@ -73,7 +73,10 @@ async function startImportFlow(file: File, requireProjectId?: number) {
     errorToast('Could not read the file. Please choose a valid project JSON export.')
     return
   }
-  if (!fileData || fileData.version !== 1 || !fileData.project) {
+  // Version 1 is still accepted: it is a strict subset of 2, and the backend
+  // fills the fields it lacks (pillars, game concept) with empty defaults.
+  // Rejecting anything but 1 meant the app could not import its own exports.
+  if (!fileData || (fileData.version !== 1 && fileData.version !== 2) || !fileData.project) {
     errorToast('This file is not a valid pix:e project export.')
     return
   }

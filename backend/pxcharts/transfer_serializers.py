@@ -30,6 +30,9 @@ class PxChartContainerSerializer(serializers.ModelSerializer):
 class PxChartContainerLayoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = PxChartContainerLayout
+        # `id` is a DB-local autoincrement with no meaning outside this database
+        # and it changes on every import. Consumers must key layouts on
+        # `container`, as overwrite_project.py and useProjectDiff.ts do.
         fields = ["id", "container", "position_x", "position_y", "height", "width"]
 
 
