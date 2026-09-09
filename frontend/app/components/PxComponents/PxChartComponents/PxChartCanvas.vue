@@ -160,7 +160,19 @@ defineShortcuts({
   m: () => {
     handleAddContainerFromPanel(false, false)
   },
+  delete: () => {
+    handleDeleteSelectedEdges()
+  },
+  backspace: () => {
+    handleDeleteSelectedEdges()
+  },
 })
+
+async function handleDeleteSelectedEdges() {
+  for (const edge of [...getSelectedEdges.value]) {
+    await deleteEdge(edge.id)
+  }
+}
 
 function handleNodeClick(event: { node: Node }) {
   const container = event.node.data as PxChartContainer
